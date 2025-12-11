@@ -1,0 +1,5 @@
+- Rewrite watch-and-copy.mjs to TS using Bun
+- Add CONTRIBUTING.md
+- Add README.md
+- Add DEVELOPMENT.md
+- LATER: Take each column in the view and use the data in the different rows to display GitHub like graphs and progress bars
