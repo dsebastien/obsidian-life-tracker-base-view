@@ -4,7 +4,7 @@
  */
 export interface PluginSettings {
     /** Global plugin settings */
-    globalSettings: {}
+    globalSettings: Record<string, unknown>
 }
 
 /**

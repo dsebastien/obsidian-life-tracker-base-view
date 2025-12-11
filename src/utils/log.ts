@@ -1,4 +1,3 @@
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import * as pluginManifest from '../../manifest.json'
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'

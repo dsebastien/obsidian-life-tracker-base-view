@@ -25,7 +25,6 @@ export class LifeTrackerBaseViewPlugin extends Plugin {
         this.addSettingTab(new LifeTrackerBaseViewPluginSettingTab(this.app, this))
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     override onunload() {}
 
     /**
