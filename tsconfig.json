@@ -1,0 +1,50 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "lib": ["DOM", "ESNext"],
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleDetection": "force",
+        // Bundler mode
+        "moduleResolution": "bundler",
+        "jsx": "react-jsx",
+        "allowJs": true,
+        "allowImportingTsExtensions": true,
+        "verbatimModuleSyntax": true,
+        "esModuleInterop": true,
+        "importHelpers": true,
+        "inlineSources": true,
+        "isolatedModules": true,
+        "resolveJsonModule": true,
+        "checkJs": false,
+
+        // Maximum strictness
+        "strict": true,
+        "alwaysStrict": true,
+        "strictBindCallApply": true,
+        "strictFunctionTypes": true,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "allowUnreachableCode": false,
+        "allowUnusedLabels": false,
+        "skipLibCheck": true,
+
+        // Output
+        "declaration": false,
+        "declarationMap": false,
+        "noEmit": true,
+        "noEmitOnError": true,
+        "sourceMap": true
+    },
+    "include": ["src/**/*", "eslint.config.ts", "commitlint.config.ts"],
+    "exclude": ["node_modules", "dist"]
+}
