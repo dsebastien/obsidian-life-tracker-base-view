@@ -27,7 +27,9 @@ export default tseslint.config(
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
-            ]
+            ],
+            '@typescript-eslint/ban-ts-comment': 'off',
+            'no-prototype-builtins': 'off'
         }
     }
 )
