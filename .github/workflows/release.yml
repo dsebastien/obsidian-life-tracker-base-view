@@ -1,0 +1,118 @@
+name: Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: 'Version to release (e.g., 1.2.3 or v1.2.3)'
+                required: true
+                type: string
+    push:
+        tags:
+            - '*.*.*'
+            - 'v*.*.*'
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: ubuntu-slim
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - name: Setup Git
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            - name: Determine version
+              id: version
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                    VERSION="${{ github.event.inputs.version }}"
+                  else
+                    VERSION="${{ github.ref_name }}"
+                  fi
+                  # Strip 'v' prefix if present
+                  VERSION="${VERSION#v}"
+                  echo "version=$VERSION" >> $GITHUB_OUTPUT
+                  echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+                  echo "Version: $VERSION"
+
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Update package.json version
+              run: bun run release:update-version ${{ steps.version.outputs.version }}
+
+            - name: Update manifest and versions.json
+              run: |
+                  export npm_package_version=${{ steps.version.outputs.version }}
+                  bun run release:version-bump
+
+            - name: Build for production
+              run: bun run build
+
+            - name: Generate changelog
+              run: bun run release:changelog
+
+            - name: Log changelog
+              run: |
+                  echo "=== Changelog for ${{ steps.version.outputs.version }} ==="
+                  head -100 CHANGELOG.md
+
+            - name: Commit release changes
+              run: |
+                  git add package.json versions.json manifest.json CHANGELOG.md
+                  git commit -m "chore(release): ${{ steps.version.outputs.version }}" || echo "No changes to commit"
+                  git push origin HEAD:${{ github.ref_name }}
+
+            - name: Create and push tag (manual trigger only)
+              if: github.event_name == 'workflow_dispatch'
+              run: |
+                  git tag -a ${{ steps.version.outputs.tag }} -m "Release ${{ steps.version.outputs.version }}"
+                  git push origin ${{ steps.version.outputs.tag }}
+
+            - name: Create release zip
+              run: bun run release:zip
+
+            - name: Get package name
+              id: package
+              run: |
+                  NAME=$(jq -r .name package.json)
+                  echo "name=$NAME" >> $GITHUB_OUTPUT
+
+            - name: Extract changelog for release notes
+              id: changelog
+              run: |
+                  # Extract the latest version section from CHANGELOG.md
+                  NOTES=$(awk '/^## \[?[0-9]/{if(p) exit; p=1} p' CHANGELOG.md)
+                  # Handle multi-line output
+                  echo "notes<<EOF" >> $GITHUB_OUTPUT
+                  echo "$NOTES" >> $GITHUB_OUTPUT
+                  echo "EOF" >> $GITHUB_OUTPUT
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.version.outputs.tag }}
+                  name: ${{ steps.version.outputs.version }}
+                  body: ${{ steps.changelog.outputs.notes }}
+                  files: |
+                      dist/${{ steps.package.outputs.name }}.zip
+                      dist/main.js
+                      dist/manifest.json
+                      dist/styles.css
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
