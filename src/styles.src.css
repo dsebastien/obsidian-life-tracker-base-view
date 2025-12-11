@@ -5,6 +5,6 @@
    ======================================== */
 
 /* Support section */
-.support-section-margin {
+.support-header-margin {
     @apply mb-5;
 }

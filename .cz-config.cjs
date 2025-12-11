@@ -27,7 +27,6 @@ module.exports = {
     scopes: [
         { name: 'all' },
         { name: 'build' },
-        { name: 'cli' },
         { name: 'deps' },
         { name: 'docs' },
         { name: 'plugin' }

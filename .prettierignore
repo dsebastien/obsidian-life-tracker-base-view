@@ -3,4 +3,3 @@ node_modules
 CHANGELOG.md
 .claude/
 bun.lockb
-main.js
