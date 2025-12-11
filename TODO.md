@@ -1,1 +1,0 @@
-- Take each column in the view and use the data in the different rows to display GitHub like graphs and progress bars
