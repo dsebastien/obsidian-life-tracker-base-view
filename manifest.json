@@ -1,0 +1,11 @@
+{
+	"id": "life-tracker-base-view",
+	"name": "Life Tracker Base View",
+	"description": "Adds a Life Tracker View to Bases",
+  "version": "1.0.0",
+	"minAppVersion": "1.4.0",
+  "isDesktopOnly": false,
+  "author": "Sébastien Dubois",
+	"authorUrl": "https://dsebastien.net",
+  "fundingUrl": "https://www.buymeacoffee.com/dsebastien"
+}
