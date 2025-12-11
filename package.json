@@ -82,6 +82,7 @@
         "typescript-eslint": "8.48.1"
     },
     "dependencies": {
+        "chart.js": "4.5.1",
         "immer": "11.0.1",
         "zod": "^4.1.13"
     }

@@ -5,6 +5,8 @@ import { LifeTrackerBaseViewPluginSettingTab } from './settings/settings-tab'
 import { log } from '../utils/log'
 import { produce } from 'immer'
 import type { Draft } from 'immer'
+import { LifeTrackerView, LIFE_TRACKER_VIEW_TYPE } from './view/life-tracker-view'
+import { getLifeTrackerViewOptions } from './view/view-options'
 
 export class LifeTrackerBaseViewPlugin extends Plugin {
     /**
@@ -19,7 +21,20 @@ export class LifeTrackerBaseViewPlugin extends Plugin {
         log('Initializing', 'debug')
         await this.loadSettings()
 
-        // TODO
+        // Register the Life Tracker Base View
+        const registered = this.registerBasesView(LIFE_TRACKER_VIEW_TYPE, {
+            name: 'Life Tracker',
+            icon: 'activity',
+            factory: (controller, containerEl) =>
+                new LifeTrackerView(controller, containerEl, this),
+            options: getLifeTrackerViewOptions
+        })
+
+        if (!registered) {
+            log('Bases feature is not enabled in this vault', 'warn')
+        } else {
+            log('Life Tracker view registered', 'debug')
+        }
 
         // Add a settings screen for the plugin
         this.addSettingTab(new LifeTrackerBaseViewPluginSettingTab(this.app, this))

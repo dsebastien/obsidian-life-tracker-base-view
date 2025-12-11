@@ -8,3 +8,828 @@
 .support-header-margin {
     @apply mb-5;
 }
+
+/* ========================================
+   SETTINGS - VISUALIZATION PRESETS
+   ======================================== */
+
+.lt-presets-container {
+    @apply mb-4;
+}
+
+.lt-presets-empty {
+    @apply text-sm py-4 px-3 rounded;
+    color: var(--text-muted);
+    background-color: var(--background-secondary);
+}
+
+.lt-preset-name-input {
+    @apply w-32;
+}
+
+/* ========================================
+   LIFE TRACKER VIEW
+   ======================================== */
+
+/* Container - no scrolling, content fits naturally */
+.lt-container {
+    @apply flex flex-col gap-4 p-4;
+    overflow: visible;
+}
+
+/* ========================================
+   CONTROL BAR
+   ======================================== */
+
+.lt-control-bar {
+    @apply flex items-center justify-between mb-4 pb-3;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-control-bar-left {
+    @apply flex items-center gap-2;
+}
+
+.lt-control-bar-right {
+    @apply flex items-center gap-4;
+}
+
+.lt-control-group {
+    @apply flex items-center gap-1.5;
+}
+
+.lt-control-icon {
+    @apply w-4 h-4 opacity-60;
+    color: var(--text-muted);
+}
+
+.lt-control-icon svg {
+    @apply w-4 h-4;
+}
+
+.lt-control-btn {
+    @apply w-6 h-6 p-0 flex items-center justify-center rounded;
+    @apply cursor-pointer transition-colors duration-150;
+    background-color: var(--background-modifier-hover);
+    border: none;
+    color: var(--text-normal);
+}
+
+.lt-control-btn:hover {
+    background-color: var(--interactive-hover);
+}
+
+.lt-control-btn svg {
+    @apply w-3 h-3;
+}
+
+.lt-control-value {
+    @apply text-sm font-medium min-w-[1.5rem] text-center;
+    color: var(--text-normal);
+}
+
+.lt-control-slider {
+    @apply w-20 h-1.5 rounded-full cursor-pointer;
+    appearance: none;
+    background-color: var(--background-modifier-border);
+}
+
+.lt-control-slider::-webkit-slider-thumb {
+    @apply w-3 h-3 rounded-full cursor-pointer;
+    appearance: none;
+    background-color: var(--interactive-accent);
+}
+
+.lt-control-slider::-moz-range-thumb {
+    @apply w-3 h-3 rounded-full cursor-pointer border-0;
+    background-color: var(--interactive-accent);
+}
+
+/* ========================================
+   GRID LAYOUT
+   ======================================== */
+
+.lt-grid {
+    @apply grid gap-4;
+    /* CSS custom properties set by JS */
+    --lt-grid-columns: 2;
+    --lt-card-min-height: 200px;
+    grid-template-columns: repeat(var(--lt-grid-columns), 1fr);
+}
+
+/* ========================================
+   CARD COMPONENT
+   ======================================== */
+
+.lt-card {
+    @apply rounded-lg p-4;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    overflow: hidden;
+    min-height: var(--lt-card-min-height, 200px);
+}
+
+.lt-card:hover {
+    border-color: var(--background-modifier-border-hover);
+}
+
+/* Card content should fill available space */
+.lt-card > .lt-section {
+    @apply h-full flex flex-col;
+}
+
+/* ========================================
+   MAXIMIZED CARD STATE
+   ======================================== */
+
+/* Container when a card is maximized */
+.lt-container--has-maximized {
+    @apply relative;
+}
+
+.lt-container--has-maximized .lt-grid {
+    @apply relative;
+}
+
+/* Hidden cards when another is maximized */
+.lt-card--hidden {
+    @apply hidden;
+}
+
+/* Maximized card - fullscreen overlay */
+.lt-card--maximized {
+    @apply fixed inset-4 z-50 p-6;
+    @apply flex flex-col;
+    @apply overflow-auto;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    min-height: auto;
+}
+
+.lt-card--maximized > .lt-section {
+    @apply flex-1 flex flex-col;
+}
+
+/* Maximized card header adjustments */
+.lt-card--maximized .lt-section-header {
+    @apply mb-4 pb-3;
+}
+
+.lt-card--maximized .lt-section-title {
+    @apply text-base;
+}
+
+/* Maximize button styling when maximized */
+.lt-card--maximized .lt-maximize-btn {
+    @apply opacity-100;
+}
+
+/* Backdrop overlay */
+.lt-container--has-maximized::before {
+    content: '';
+    @apply fixed inset-0 z-40;
+    background-color: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+/* ========================================
+   COLUMN CONFIGURATION CARD
+   ======================================== */
+
+.lt-config-card {
+    @apply flex flex-col items-center justify-center;
+}
+
+.lt-config-card-header {
+    @apply flex flex-col items-center gap-1 mb-4;
+}
+
+.lt-config-card-title {
+    @apply text-base font-semibold;
+    color: var(--text-normal);
+}
+
+.lt-config-card-subtitle {
+    @apply text-sm;
+    color: var(--text-muted);
+}
+
+.lt-config-card-options {
+    @apply grid gap-2;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    width: 100%;
+    max-width: 400px;
+}
+
+.lt-config-option {
+    @apply flex flex-col items-center gap-2 p-3 rounded-lg cursor-pointer;
+    @apply transition-all duration-150;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.lt-config-option:hover {
+    background-color: var(--background-modifier-hover);
+    border-color: var(--interactive-accent);
+}
+
+.lt-config-option:focus {
+    @apply outline-none;
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.lt-config-option-icon {
+    @apply w-6 h-6;
+    color: var(--text-muted);
+}
+
+.lt-config-option-icon svg {
+    @apply w-6 h-6;
+}
+
+.lt-config-option:hover .lt-config-option-icon {
+    color: var(--interactive-accent);
+}
+
+.lt-config-option-label {
+    @apply text-xs font-medium text-center;
+    color: var(--text-normal);
+}
+
+/* Scale configuration section */
+.lt-config-scale-section {
+    @apply w-full;
+}
+
+.lt-scale-form {
+    @apply flex flex-col gap-3;
+}
+
+.lt-scale-info {
+    @apply text-sm text-center;
+    color: var(--text-muted);
+}
+
+.lt-scale-inputs {
+    @apply flex items-center justify-center gap-4;
+}
+
+.lt-scale-input-group {
+    @apply flex items-center gap-2;
+}
+
+.lt-scale-label {
+    @apply text-sm font-medium;
+    color: var(--text-muted);
+}
+
+.lt-scale-input {
+    @apply w-20 px-2 py-1 rounded text-sm text-center;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-scale-input:focus {
+    @apply outline-none;
+    border-color: var(--interactive-accent);
+}
+
+.lt-scale-input::placeholder {
+    color: var(--text-faint);
+}
+
+.lt-scale-presets {
+    @apply flex items-center justify-center gap-2 flex-wrap;
+}
+
+.lt-scale-presets-label {
+    @apply text-xs;
+    color: var(--text-muted);
+}
+
+.lt-scale-preset-btn {
+    @apply px-2 py-0.5 text-xs rounded cursor-pointer;
+    @apply transition-colors duration-150;
+    background-color: var(--background-modifier-hover);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-muted);
+}
+
+.lt-scale-preset-btn:hover {
+    background-color: var(--interactive-hover);
+    border-color: var(--interactive-accent);
+    color: var(--text-normal);
+}
+
+.lt-scale-buttons {
+    @apply flex items-center justify-center gap-3 mt-2;
+}
+
+.lt-scale-btn {
+    @apply px-4 py-1.5 text-sm font-medium rounded cursor-pointer;
+    @apply transition-colors duration-150;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.lt-scale-btn--secondary {
+    background-color: var(--background-primary);
+    color: var(--text-muted);
+}
+
+.lt-scale-btn--secondary:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.lt-scale-btn--primary {
+    background-color: var(--interactive-accent);
+    border-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.lt-scale-btn--primary:hover {
+    opacity: 0.9;
+}
+
+/* ========================================
+   SCALE MODAL (for context menu)
+   ======================================== */
+
+.lt-scale-modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.lt-scale-modal {
+    @apply flex flex-col gap-4 p-5 rounded-lg shadow-xl;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    min-width: 280px;
+}
+
+.lt-scale-modal-header {
+    @apply text-base font-semibold;
+    color: var(--text-normal);
+}
+
+.lt-scale-modal-form {
+    @apply flex flex-col gap-3;
+}
+
+.lt-scale-modal-input-group {
+    @apply flex items-center gap-3;
+}
+
+.lt-scale-modal-input-group span {
+    @apply text-sm font-medium w-10;
+    color: var(--text-muted);
+}
+
+.lt-scale-modal-input {
+    @apply flex-1 px-3 py-2 rounded text-sm;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-scale-modal-input:focus {
+    @apply outline-none;
+    border-color: var(--interactive-accent);
+}
+
+.lt-scale-modal-input::placeholder {
+    color: var(--text-faint);
+}
+
+.lt-scale-modal-buttons {
+    @apply flex items-center justify-end gap-2 mt-2;
+}
+
+.lt-scale-modal-btn {
+    @apply px-4 py-2 text-sm font-medium rounded cursor-pointer;
+    @apply transition-colors duration-150;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.lt-scale-modal-btn--secondary {
+    background-color: var(--background-secondary);
+    color: var(--text-normal);
+}
+
+.lt-scale-modal-btn--secondary:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-scale-modal-btn--primary {
+    background-color: var(--interactive-accent);
+    border-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.lt-scale-modal-btn--primary:hover {
+    opacity: 0.9;
+}
+
+/* ========================================
+   SECTION (inside cards)
+   ======================================== */
+
+/* Section */
+.lt-section {
+    @apply mb-0;
+}
+
+.lt-section-header {
+    @apply flex items-center justify-between mb-3 pb-2;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-section-title {
+    @apply text-sm font-semibold uppercase tracking-wide;
+    color: var(--text-muted);
+}
+
+.lt-section-actions {
+    @apply flex items-center gap-1;
+}
+
+.lt-maximize-btn {
+    @apply w-6 h-6 flex items-center justify-center rounded cursor-pointer;
+    @apply transition-colors duration-150 opacity-60;
+    color: var(--text-muted);
+}
+
+.lt-maximize-btn:hover {
+    @apply opacity-100;
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.lt-maximize-btn:focus {
+    @apply outline-none opacity-100;
+    box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.lt-maximize-btn svg {
+    @apply w-4 h-4;
+}
+
+/* ========================================
+   HEATMAP VISUALIZATION
+   ======================================== */
+
+.lt-heatmap {
+    @apply flex flex-col gap-2;
+    overflow-x: auto; /* Allow horizontal scroll for wide heatmaps if needed */
+}
+
+.lt-heatmap-wrapper {
+    @apply flex gap-1;
+}
+
+.lt-heatmap-grid {
+    @apply flex gap-0.5;
+}
+
+.lt-heatmap-week {
+    @apply flex flex-col gap-0.5;
+}
+
+.lt-heatmap-cell {
+    @apply w-3 h-3 rounded-sm cursor-pointer;
+    @apply transition-all duration-150;
+    background-color: var(--background-modifier-border);
+}
+
+.lt-heatmap-cell:hover {
+    @apply ring-2 ring-offset-1;
+    --tw-ring-color: var(--interactive-accent);
+    --tw-ring-offset-color: var(--background-primary);
+}
+
+.lt-heatmap-cell--has-data:hover {
+    @apply scale-110;
+}
+
+/* Heatmap color levels */
+.lt-heatmap-cell--level-0 {
+    background-color: var(--lt-heatmap-empty, var(--background-modifier-border));
+}
+
+.lt-heatmap-cell--level-1 {
+    background-color: var(--lt-heatmap-level-1, #9be9a8);
+}
+
+.lt-heatmap-cell--level-2 {
+    background-color: var(--lt-heatmap-level-2, #40c463);
+}
+
+.lt-heatmap-cell--level-3 {
+    background-color: var(--lt-heatmap-level-3, #30a14e);
+}
+
+.lt-heatmap-cell--level-4 {
+    background-color: var(--lt-heatmap-level-4, #216e39);
+}
+
+/* Dark theme heatmap colors */
+.theme-dark .lt-heatmap-cell--level-1 {
+    background-color: var(--lt-heatmap-level-1, #0e4429);
+}
+
+.theme-dark .lt-heatmap-cell--level-2 {
+    background-color: var(--lt-heatmap-level-2, #006d32);
+}
+
+.theme-dark .lt-heatmap-cell--level-3 {
+    background-color: var(--lt-heatmap-level-3, #26a641);
+}
+
+.theme-dark .lt-heatmap-cell--level-4 {
+    background-color: var(--lt-heatmap-level-4, #39d353);
+}
+
+/* Heatmap labels */
+.lt-heatmap-months {
+    @apply flex text-xs gap-1;
+    color: var(--text-muted);
+}
+
+.lt-heatmap-month-label {
+    @apply text-xs;
+    color: var(--text-muted);
+}
+
+.lt-heatmap-month-spacer {
+    @apply flex-shrink-0;
+}
+
+.lt-heatmap-days {
+    @apply flex flex-col gap-0.5 text-xs pr-1;
+    color: var(--text-muted);
+}
+
+.lt-heatmap-day-label {
+    @apply text-xs text-right;
+    color: var(--text-muted);
+}
+
+.lt-heatmap-legend {
+    @apply flex items-center gap-1 text-xs mt-2;
+    color: var(--text-muted);
+}
+
+/* Heatmap grid variants */
+.lt-heatmap-grid--weekly,
+.lt-heatmap-grid--yearly {
+    @apply flex-row flex-wrap;
+}
+
+.lt-heatmap-grid--monthly,
+.lt-heatmap-grid--quarterly {
+    @apply gap-1;
+}
+
+/* ========================================
+   CHART VISUALIZATION
+   ======================================== */
+
+.lt-chart {
+    @apply w-full;
+    /* Auto-height based on aspect ratio */
+}
+
+.lt-chart-header {
+    @apply flex items-center justify-between mb-3;
+}
+
+.lt-chart-title {
+    @apply text-sm font-medium;
+    color: var(--text-normal);
+}
+
+.lt-chart-canvas {
+    @apply w-full;
+}
+
+/* ========================================
+   TAG CLOUD VISUALIZATION
+   ======================================== */
+
+.lt-tag-cloud {
+    @apply flex flex-wrap gap-2;
+}
+
+.lt-tag {
+    @apply px-2 py-1 rounded-full cursor-pointer;
+    @apply transition-all duration-150;
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.lt-tag:hover {
+    @apply scale-105;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+/* Tag size variants */
+.lt-tag--xs {
+    @apply text-xs;
+}
+
+.lt-tag--sm {
+    @apply text-sm;
+}
+
+.lt-tag--md {
+    @apply text-base;
+}
+
+.lt-tag--lg {
+    @apply text-lg;
+}
+
+.lt-tag--xl {
+    @apply text-xl;
+}
+
+/* ========================================
+   TIMELINE VISUALIZATION
+   ======================================== */
+
+.lt-timeline {
+    @apply relative py-8 px-4;
+    height: 80px; /* Fixed compact height for timeline */
+}
+
+.lt-timeline-line {
+    @apply absolute left-4 right-4 h-0.5;
+    top: 50%;
+    background-color: var(--background-modifier-border);
+}
+
+.lt-timeline-point {
+    @apply absolute w-3 h-3 rounded-full cursor-pointer;
+    @apply transition-all duration-150;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--interactive-accent);
+}
+
+.lt-timeline-point:hover {
+    @apply scale-150;
+    box-shadow: 0 0 0 4px var(--background-modifier-hover);
+}
+
+.lt-timeline-label {
+    @apply absolute text-xs whitespace-nowrap;
+    bottom: 10px;
+    color: var(--text-muted);
+}
+
+.lt-timeline-label--start {
+    left: 4px;
+}
+
+.lt-timeline-label--end {
+    right: 4px;
+}
+
+/* ========================================
+   SHARED COMPONENTS
+   ======================================== */
+
+/* Tooltip */
+.lt-tooltip {
+    @apply absolute z-50 px-3 py-2 rounded-lg shadow-lg;
+    @apply text-sm pointer-events-none;
+    @apply opacity-0 transition-opacity duration-150;
+    transform: translate(-50%, -100%);
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-tooltip--visible {
+    @apply opacity-100;
+}
+
+.lt-tooltip-title {
+    @apply font-medium mb-1;
+}
+
+.lt-tooltip-value {
+    color: var(--text-accent);
+}
+
+.lt-tooltip-subtitle {
+    @apply text-xs mt-1;
+    color: var(--text-muted);
+}
+
+/* Empty state */
+.lt-empty {
+    @apply flex flex-col items-center justify-center py-12 text-center;
+    color: var(--text-muted);
+}
+
+.lt-empty-icon {
+    @apply text-4xl mb-4 opacity-50;
+}
+
+.lt-empty-text {
+    @apply text-sm;
+}
+
+/* Loading state */
+.lt-loading {
+    @apply flex items-center justify-center py-8;
+}
+
+.lt-loading-spinner {
+    @apply w-6 h-6 animate-spin rounded-full;
+    border: 2px solid var(--background-modifier-border);
+    border-top-color: var(--interactive-accent);
+}
+
+/* Error state */
+.lt-error {
+    @apply flex flex-col items-center justify-center py-8 text-center;
+    color: var(--text-error);
+}
+
+.lt-error-icon {
+    @apply text-2xl mb-2;
+}
+
+.lt-error-message {
+    @apply text-sm font-medium;
+}
+
+.lt-error-details {
+    @apply text-xs mt-1;
+    color: var(--text-muted);
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+
+/* Embedded view (smaller space) */
+.lt-embedded .lt-heatmap-cell {
+    @apply w-2.5 h-2.5;
+}
+
+.lt-embedded .lt-chart {
+    @apply p-2;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+    .lt-container {
+        @apply p-2 gap-3;
+    }
+
+    .lt-control-bar {
+        @apply flex-wrap gap-2;
+    }
+
+    .lt-control-bar-right {
+        @apply gap-2;
+    }
+
+    .lt-control-slider {
+        @apply w-16;
+    }
+
+    .lt-grid {
+        @apply gap-3;
+        /* Force single column on mobile */
+        grid-template-columns: 1fr !important;
+    }
+
+    .lt-card {
+        @apply p-3;
+        min-height: auto;
+    }
+
+    .lt-heatmap-cell {
+        @apply w-2 h-2;
+    }
+
+    .lt-tag-cloud {
+        @apply gap-1;
+    }
+
+    .lt-tag {
+        @apply px-1.5 py-0.5 text-xs;
+    }
+
+    .lt-timeline {
+        @apply px-2;
+    }
+}
