@@ -1,0 +1,16 @@
+/**
+ * Global plugin configuration stored in data.json.
+ *
+ */
+export interface PluginSettings {
+    /** Global plugin settings */
+    globalSettings: {}
+}
+
+/**
+ * Default plugin settings.
+ *
+ */
+export const DEFAULT_SETTINGS: PluginSettings = {
+    globalSettings: {}
+}

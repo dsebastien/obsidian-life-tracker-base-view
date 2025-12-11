@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+/* ========================================
+   SUPPORT & UI SECTIONS
+   ======================================== */
+
+/* Support section */
+.support-section-margin {
+    @apply mb-5;
+}
