@@ -95,9 +95,11 @@ async function copyAssets(): Promise<void> {
         console.log(`  ✓ ${file}`)
     }
 
-    // Also copy manifest.json to dist
+    // Also copy manifest.json and versions.json to dist
     await Bun.write(join(DIST, 'manifest.json'), Bun.file('manifest.json'))
     console.log('  ✓ manifest.json')
+    await Bun.write(join(DIST, 'versions.json'), Bun.file('versions.json'))
+    console.log('  ✓ versions.json')
 }
 
 async function copyToVault(): Promise<void> {
