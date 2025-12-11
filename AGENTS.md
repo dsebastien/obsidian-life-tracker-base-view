@@ -119,12 +119,24 @@ Default to using Bun instead of Node.js.
 
 Use `bun test` to run tests.
 
-```ts#index.test.ts
+**MANDATORY**: All test files MUST use the `.spec.ts` extension (not `.test.ts`).
+
+```ts#example.spec.ts
 import { test, expect } from "bun:test";
 
 test("hello world", () => {
   expect(1).toBe(1);
 });
+```
+
+Test files should be placed next to the files they test:
+
+```
+scripts/
+  build.ts
+  build.spec.ts        # Tests for build.ts
+  update-version.ts
+  update-version.spec.ts
 ```
 
 - Manual install for testing: copy `main.js`, `manifest.json`, `styles.css` (if any) to:
