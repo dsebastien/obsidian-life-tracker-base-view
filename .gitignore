@@ -1,0 +1,94 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# Editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.iml
+*.ipr
+*.iws
+.idea
+*.sw?
+*.swo
+*~
+.netrwhist
+
+# Dependencies
+node_modules
+
+# Don't include the compiled main.js file in the repo.
+# They should be uploaded to GitHub releases instead.
+main.js
+
+# Exclude sourcemaps
+*.map
+
+# Obsidian
+data.json
+
+# System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.fuse_hidden*
+.nfs*
+
+# Build output
+dist/
+out/
+out-tsc/
+build/
+
+# Code coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Temp files
+*.tmp
+*.temp
+*.bak
+*.local
+tmp/
+temp/
+
+# Dotenv environment variable files
+.env
+.env.*
+!.env.example
+
+# Test output
+test-results/
+playwright-report/
+.vitest/
+
+# Debug
+.debug/
+*.heapsnapshot
+
+# Caches
+.eslintcache
+.cache
+*.tsbuildinfo
+.turbo/
+.parcel-cache/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
