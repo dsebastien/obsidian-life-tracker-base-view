@@ -51,6 +51,8 @@ export class ChartVisualization extends BaseVisualization {
     private resizeObserver: ResizeObserver | null = null
     private chartContainer: HTMLElement | null = null
     private originalData: (number | null)[][] = []
+    private animationInterval: ReturnType<typeof setInterval> | null = null
+    private currentAnimationIndex: number = 0
 
     constructor(
         containerEl: HTMLElement,
@@ -257,7 +259,7 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
-     * Play animation - reset chart and animate from zero
+     * Play animation - progressively reveal data points from oldest to newest
      */
     override playAnimation(): void {
         if (!this.chart || !this.chartData || this.animationState === 'playing') return
@@ -270,41 +272,70 @@ export class ChartVisualization extends BaseVisualization {
             this.originalData = this.chart.data.datasets.map((ds) => [...ds.data])
         }
 
-        // Set all data to 0 first
+        const totalPoints = this.originalData[0]?.length ?? 0
+        if (totalPoints === 0) {
+            this.animationState = 'idle'
+            this.updatePlayButtonIcon()
+            return
+        }
+
+        // Start with all null values (hidden)
         this.chart.data.datasets.forEach((dataset) => {
-            dataset.data = dataset.data.map(() => 0)
+            dataset.data = dataset.data.map(() => null)
         })
-        this.chart.update('none') // Update without animation
+        this.chart.update('none')
 
-        // Animate back to original values
-        setTimeout(() => {
-            if (!this.chart || this.animationState !== 'playing') return
+        // Reset animation index
+        this.currentAnimationIndex = 0
 
-            // Restore original data
-            this.chart.data.datasets.forEach((dataset, i) => {
-                const original = this.originalData[i]
-                if (original) {
-                    dataset.data = [...original]
+        // Calculate interval to complete animation in ~3 seconds
+        const animationDuration = 3000
+        const intervalMs = Math.max(30, animationDuration / totalPoints)
+
+        // Progressively reveal data points from oldest (index 0) to newest
+        this.animationInterval = setInterval(() => {
+            if (!this.chart || this.animationState !== 'playing') {
+                this.clearAnimationInterval()
+                return
+            }
+
+            // Reveal the next data point for all datasets
+            this.chart.data.datasets.forEach((dataset, datasetIndex) => {
+                const original = this.originalData[datasetIndex]
+                if (original && this.currentAnimationIndex < original.length) {
+                    const value = original[this.currentAnimationIndex]
+                    dataset.data[this.currentAnimationIndex] = value ?? null
                 }
             })
 
-            // Update with animation
-            this.chart.update()
+            this.chart.update('none')
+            this.currentAnimationIndex++
 
-            // Reset state after animation completes
-            setTimeout(() => {
-                if (this.animationState === 'playing') {
-                    this.animationState = 'idle'
-                    this.updatePlayButtonIcon()
-                }
-            }, 1000) // Chart.js default animation duration
-        }, 50)
+            // Check if animation is complete
+            if (this.currentAnimationIndex >= totalPoints) {
+                this.clearAnimationInterval()
+                this.animationState = 'idle'
+                this.updatePlayButtonIcon()
+            }
+        }, intervalMs)
+    }
+
+    /**
+     * Clear the animation interval
+     */
+    private clearAnimationInterval(): void {
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval)
+            this.animationInterval = null
+        }
     }
 
     /**
      * Stop animation and restore original data
      */
     override stopAnimation(): void {
+        this.clearAnimationInterval()
+
         if (!this.chart) {
             this.animationState = 'idle'
             this.updatePlayButtonIcon()
