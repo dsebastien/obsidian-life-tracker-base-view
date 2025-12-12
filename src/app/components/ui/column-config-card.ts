@@ -1,47 +1,12 @@
 import { setIcon } from 'obsidian'
 import { VisualizationType } from '../../domain/visualization-type.enum'
+import { CONFIG_CARD_VISUALIZATION_OPTIONS } from '../../domain/visualization-options'
 import { supportsScale, type ScaleConfig } from '../../types/column-config.types'
 
 /**
- * Visualization type options with display info
+ * Re-export for backwards compatibility
  */
-const VISUALIZATION_OPTIONS: Array<{
-    type: VisualizationType
-    label: string
-    icon: string
-    description: string
-}> = [
-    {
-        type: VisualizationType.Heatmap,
-        label: 'Heatmap',
-        icon: 'flame',
-        description: 'GitHub-style intensity grid'
-    },
-    {
-        type: VisualizationType.BarChart,
-        label: 'Bar Chart',
-        icon: 'bar-chart-2',
-        description: 'Vertical bars over time'
-    },
-    {
-        type: VisualizationType.LineChart,
-        label: 'Line Chart',
-        icon: 'trending-up',
-        description: 'Connected line over time'
-    },
-    {
-        type: VisualizationType.TagCloud,
-        label: 'Cloud',
-        icon: 'cloud',
-        description: 'Frequency-sized items'
-    },
-    {
-        type: VisualizationType.Timeline,
-        label: 'Timeline',
-        icon: 'calendar',
-        description: 'Date distribution'
-    }
-]
+export const VISUALIZATION_OPTIONS = CONFIG_CARD_VISUALIZATION_OPTIONS
 
 /**
  * Configuration result from the config card

@@ -33,7 +33,11 @@ export interface ColumnVisualizationConfig {
 export const SCALE_SUPPORTED_TYPES: VisualizationType[] = [
     'heatmap' as VisualizationType,
     'bar-chart' as VisualizationType,
-    'line-chart' as VisualizationType
+    'line-chart' as VisualizationType,
+    'area-chart' as VisualizationType,
+    'radar-chart' as VisualizationType,
+    'scatter-chart' as VisualizationType,
+    'bubble-chart' as VisualizationType
 ]
 
 /**

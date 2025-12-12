@@ -57,6 +57,57 @@ export interface ChartDataset {
 }
 
 /**
+ * Aggregated data for pie/doughnut chart visualization
+ * Shows distribution of values
+ */
+export interface PieChartData {
+    propertyId: BasesPropertyId
+    displayName: string
+    labels: string[]
+    values: number[]
+    entries: BasesEntry[][]
+}
+
+/**
+ * Single point for scatter chart
+ */
+export interface ScatterPoint {
+    x: number
+    y: number
+}
+
+/**
+ * Single point for bubble chart (includes radius)
+ */
+export interface BubblePoint {
+    x: number
+    y: number
+    r: number
+}
+
+/**
+ * Aggregated data for scatter chart visualization
+ * Shows correlation between time (x) and value (y)
+ */
+export interface ScatterChartData {
+    propertyId: BasesPropertyId
+    displayName: string
+    points: ScatterPoint[]
+    entries: BasesEntry[]
+}
+
+/**
+ * Aggregated data for bubble chart visualization
+ * Shows time (x), value (y), and count (r)
+ */
+export interface BubbleChartData {
+    propertyId: BasesPropertyId
+    displayName: string
+    points: BubblePoint[]
+    entries: BasesEntry[][]
+}
+
+/**
  * Aggregated data for tag cloud visualization
  */
 export interface TagCloudData {
@@ -126,15 +177,30 @@ export interface HeatmapConfig extends VisualizationConfig {
 }
 
 /**
+ * Supported Chart.js chart types
+ */
+export type ChartJsType =
+    | 'line'
+    | 'bar'
+    | 'pie'
+    | 'doughnut'
+    | 'radar'
+    | 'polarArea'
+    | 'scatter'
+    | 'bubble'
+
+/**
  * Chart-specific configuration
  */
 export interface ChartConfig extends VisualizationConfig {
-    chartType: 'line' | 'bar'
+    chartType: ChartJsType
     showLegend: boolean
     showGrid: boolean
     tension: number
     /** Optional scale configuration for Y-axis */
     scale?: ScaleConfig
+    /** For pie/doughnut: whether to aggregate by value distribution */
+    aggregateByValue?: boolean
 }
 
 /**

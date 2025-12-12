@@ -1,19 +1,14 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import type LifeTrackerBaseViewPlugin from '../../main'
 import { VisualizationType } from '../domain/visualization-type.enum'
+import { SETTINGS_TAB_VISUALIZATION_OPTIONS } from '../domain/visualization-options'
 import type { PropertyVisualizationPreset } from '../types/plugin-settings.intf'
 import { supportsScale } from '../types/column-config.types'
 
 /**
- * Visualization type options for dropdown
+ * Re-export for backwards compatibility
  */
-const VISUALIZATION_OPTIONS: Record<string, string> = {
-    [VisualizationType.Heatmap]: 'Heatmap',
-    [VisualizationType.BarChart]: 'Bar Chart',
-    [VisualizationType.LineChart]: 'Line Chart',
-    [VisualizationType.TagCloud]: 'Cloud',
-    [VisualizationType.Timeline]: 'Timeline'
-}
+export const VISUALIZATION_OPTIONS = SETTINGS_TAB_VISUALIZATION_OPTIONS
 
 /**
  * Scale presets for dropdown

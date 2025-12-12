@@ -1,5 +1,6 @@
 import { Menu } from 'obsidian'
 import { VisualizationType } from '../../domain/visualization-type.enum'
+import { CONTEXT_MENU_VISUALIZATION_OPTIONS } from '../../domain/visualization-options'
 import { supportsScale, type ScaleConfig } from '../../types/column-config.types'
 
 /**
@@ -17,19 +18,9 @@ export type CardMenuAction =
 export type CardMenuCallback = (action: CardMenuAction) => void
 
 /**
- * Visualization type options for menu
+ * Re-export for backwards compatibility
  */
-const VISUALIZATION_OPTIONS: Array<{
-    type: VisualizationType
-    label: string
-    icon: string
-}> = [
-    { type: VisualizationType.Heatmap, label: 'Heatmap', icon: 'flame' },
-    { type: VisualizationType.BarChart, label: 'Bar Chart', icon: 'bar-chart-2' },
-    { type: VisualizationType.LineChart, label: 'Line Chart', icon: 'trending-up' },
-    { type: VisualizationType.TagCloud, label: 'Cloud', icon: 'cloud' },
-    { type: VisualizationType.Timeline, label: 'Timeline', icon: 'calendar' }
-]
+export const VISUALIZATION_OPTIONS = CONTEXT_MENU_VISUALIZATION_OPTIONS
 
 /**
  * Scale presets for quick selection

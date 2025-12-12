@@ -1,8 +1,12 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
 import type {
+    BubbleChartData,
     ChartConfig,
     ChartData,
+    ChartJsType,
+    PieChartData,
+    ScatterChartData,
     VisualizationDataPoint
 } from '../../../types/visualization.types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
@@ -10,7 +14,7 @@ import { CHART_COLORS_HEX, getColorWithAlpha } from '../../../../utils/color-uti
 import { log } from '../../../../utils/log'
 
 // Chart.js types - will be dynamically imported
-type ChartType = 'line' | 'bar'
+type ChartType = ChartJsType
 
 interface ChartInstance {
     destroy: () => void
@@ -48,6 +52,9 @@ export class ChartVisualization extends BaseVisualization {
     private chart: ChartInstance | null = null
     private canvasEl: HTMLCanvasElement | null = null
     private chartData: ChartData | null = null
+    private pieChartData: PieChartData | null = null
+    private scatterChartData: ScatterChartData | null = null
+    private bubbleChartData: BubbleChartData | null = null
     private resizeObserver: ResizeObserver | null = null
     private chartContainer: HTMLElement | null = null
     private originalData: (number | null)[][] = []
@@ -67,22 +74,85 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
+     * Check if this is a pie-type chart (pie, doughnut, polarArea)
+     */
+    private isPieType(): boolean {
+        return ['pie', 'doughnut', 'polarArea'].includes(this.chartConfig.chartType)
+    }
+
+    /**
+     * Check if this is a scatter chart
+     */
+    private isScatterType(): boolean {
+        return this.chartConfig.chartType === 'scatter'
+    }
+
+    /**
+     * Check if this is a bubble chart
+     */
+    private isBubbleType(): boolean {
+        return this.chartConfig.chartType === 'bubble'
+    }
+
+    /**
      * Render the chart with data
      */
     override render(data: VisualizationDataPoint[]): void {
         log(`Rendering chart for ${this.displayName}`, 'debug')
 
-        // Aggregate data
-        this.chartData = this.aggregationService.aggregateForChart(
-            data,
-            this.propertyId,
-            this.displayName,
-            this.chartConfig.granularity
-        )
+        // Reset all data
+        this.chartData = null
+        this.pieChartData = null
+        this.scatterChartData = null
+        this.bubbleChartData = null
 
-        if (this.chartData.labels.length === 0) {
-            this.showEmptyState(`No numeric data with dates found for "${this.displayName}"`)
-            return
+        // Aggregate data based on chart type
+        if (this.isPieType()) {
+            this.pieChartData = this.aggregationService.aggregateForPieChart(
+                data,
+                this.propertyId,
+                this.displayName
+            )
+
+            if (this.pieChartData.labels.length === 0) {
+                this.showEmptyState(`No data found for "${this.displayName}"`)
+                return
+            }
+        } else if (this.isScatterType()) {
+            this.scatterChartData = this.aggregationService.aggregateForScatterChart(
+                data,
+                this.propertyId,
+                this.displayName
+            )
+
+            if (this.scatterChartData.points.length === 0) {
+                this.showEmptyState(`No numeric data with dates found for "${this.displayName}"`)
+                return
+            }
+        } else if (this.isBubbleType()) {
+            this.bubbleChartData = this.aggregationService.aggregateForBubbleChart(
+                data,
+                this.propertyId,
+                this.displayName,
+                this.chartConfig.granularity
+            )
+
+            if (this.bubbleChartData.points.length === 0) {
+                this.showEmptyState(`No numeric data with dates found for "${this.displayName}"`)
+                return
+            }
+        } else {
+            this.chartData = this.aggregationService.aggregateForChart(
+                data,
+                this.propertyId,
+                this.displayName,
+                this.chartConfig.granularity
+            )
+
+            if (this.chartData.labels.length === 0) {
+                this.showEmptyState(`No numeric data with dates found for "${this.displayName}"`)
+                return
+            }
         }
 
         // Clear container
@@ -105,7 +175,14 @@ export class ChartVisualization extends BaseVisualization {
      * Initialize Chart.js
      */
     private async initChart(): Promise<void> {
-        if (!this.canvasEl || !this.chartData) return
+        if (!this.canvasEl) return
+
+        // Check we have appropriate data for the chart type
+        if (this.isPieType() && !this.pieChartData) return
+        if (this.isScatterType() && !this.scatterChartData) return
+        if (this.isBubbleType() && !this.bubbleChartData) return
+        if (!this.isPieType() && !this.isScatterType() && !this.isBubbleType() && !this.chartData)
+            return
 
         try {
             // Dynamically import Chart.js
@@ -115,80 +192,18 @@ export class ChartVisualization extends BaseVisualization {
             const ctx = this.canvasEl.getContext('2d')
             if (!ctx) return
 
-            // Prepare datasets
-            const datasets: ChartDatasetConfig[] = this.chartData.datasets.map((dataset, index) => {
-                const color = CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
-
-                return {
-                    label: dataset.label,
-                    data: dataset.data,
-                    backgroundColor:
-                        this.chartConfig.chartType === 'bar'
-                            ? getColorWithAlpha(color, 0.7)
-                            : getColorWithAlpha(color, 0.1),
-                    borderColor: color,
-                    borderWidth: 2,
-                    tension: this.chartConfig.tension,
-                    fill: this.chartConfig.chartType === 'line'
-                }
-            })
-
-            // Create chart
-            this.chart = new Chart(ctx, {
-                type: this.chartConfig.chartType as ChartType,
-                data: {
-                    labels: this.chartData.labels,
-                    datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 2.5, // Width:height ratio for compact display
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    },
-                    plugins: {
-                        legend: {
-                            display: this.chartConfig.showLegend
-                        },
-                        tooltip: {
-                            enabled: true,
-                            callbacks: {
-                                label: (context) => {
-                                    const label = context.dataset.label ?? ''
-                                    const value = context.parsed.y
-                                    if (value === null || value === undefined) return label
-                                    return `${label}: ${value.toFixed(2)}`
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            display: true,
-                            grid: {
-                                display: this.chartConfig.showGrid
-                            }
-                        },
-                        y: {
-                            display: true,
-                            beginAtZero: !this.chartConfig.scale?.min,
-                            min: this.chartConfig.scale?.min ?? undefined,
-                            max: this.chartConfig.scale?.max ?? undefined,
-                            grid: {
-                                display: this.chartConfig.showGrid
-                            }
-                        }
-                    },
-                    onClick: (
-                        _event: unknown,
-                        elements: Array<{ index: number; datasetIndex: number }>
-                    ) => {
-                        this.handleChartClick(elements)
-                    }
-                }
-            }) as unknown as ChartInstance
+            // Build chart configuration based on type
+            if (this.isPieType()) {
+                this.initPieChart(Chart, ctx)
+            } else if (this.chartConfig.chartType === 'radar') {
+                this.initRadarChart(Chart, ctx)
+            } else if (this.isScatterType()) {
+                this.initScatterChart(Chart, ctx)
+            } else if (this.isBubbleType()) {
+                this.initBubbleChart(Chart, ctx)
+            } else {
+                this.initCartesianChart(Chart, ctx)
+            }
 
             // Set up ResizeObserver to handle container size changes
             this.setupResizeObserver()
@@ -196,6 +211,378 @@ export class ChartVisualization extends BaseVisualization {
             log('Failed to initialize Chart.js', 'error', error)
             this.showEmptyState('Failed to load chart library')
         }
+    }
+
+    /**
+     * Initialize pie/doughnut/polarArea chart
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private initPieChart(Chart: any, ctx: CanvasRenderingContext2D): void {
+        if (!this.pieChartData) return
+
+        // Generate colors for each segment
+        const backgroundColors = this.pieChartData.labels.map((_, index) => {
+            const color = CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+            return getColorWithAlpha(color, 0.7)
+        })
+
+        const borderColors = this.pieChartData.labels.map((_, index) => {
+            return CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+        })
+
+        this.chart = new Chart(ctx, {
+            type: this.chartConfig.chartType as ChartType,
+            data: {
+                labels: this.pieChartData.labels,
+                datasets: [
+                    {
+                        label: this.displayName,
+                        data: this.pieChartData.values,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        display: this.chartConfig.showLegend,
+                        position: 'right'
+                    },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            label: (context: any) => {
+                                const label = context.label ?? ''
+                                const value = context.parsed
+                                const total =
+                                    this.pieChartData?.values.reduce((a, b) => a + b, 0) ?? 1
+                                const percentage = ((value / total) * 100).toFixed(1)
+                                return `${label}: ${value} (${percentage}%)`
+                            }
+                        }
+                    }
+                },
+                onClick: (
+                    _event: unknown,
+                    elements: Array<{ index: number; datasetIndex: number }>
+                ) => {
+                    this.handlePieChartClick(elements)
+                }
+            }
+        }) as unknown as ChartInstance
+    }
+
+    /**
+     * Initialize radar chart
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private initRadarChart(Chart: any, ctx: CanvasRenderingContext2D): void {
+        if (!this.chartData) return
+
+        const datasets: ChartDatasetConfig[] = this.chartData.datasets.map((dataset, index) => {
+            const color = CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+
+            return {
+                label: dataset.label,
+                data: dataset.data,
+                backgroundColor: getColorWithAlpha(color, 0.2),
+                borderColor: color,
+                borderWidth: 2,
+                fill: true
+            }
+        })
+
+        this.chart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: this.chartData.labels,
+                datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        display: this.chartConfig.showLegend
+                    },
+                    tooltip: {
+                        enabled: true
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        grid: {
+                            display: this.chartConfig.showGrid
+                        }
+                    }
+                },
+                onClick: (
+                    _event: unknown,
+                    elements: Array<{ index: number; datasetIndex: number }>
+                ) => {
+                    this.handleChartClick(elements)
+                }
+            }
+        }) as unknown as ChartInstance
+    }
+
+    /**
+     * Initialize cartesian chart (line, bar, area)
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private initCartesianChart(Chart: any, ctx: CanvasRenderingContext2D): void {
+        if (!this.chartData) return
+
+        // Determine if this is an area chart (line with fill)
+        const isAreaChart = this.chartConfig.chartType === 'line' && this.chartConfig.tension > 0
+
+        const datasets: ChartDatasetConfig[] = this.chartData.datasets.map((dataset, index) => {
+            const color = CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+
+            return {
+                label: dataset.label,
+                data: dataset.data,
+                backgroundColor:
+                    this.chartConfig.chartType === 'bar'
+                        ? getColorWithAlpha(color, 0.7)
+                        : getColorWithAlpha(color, 0.3),
+                borderColor: color,
+                borderWidth: 2,
+                tension: this.chartConfig.tension,
+                fill: isAreaChart || this.chartConfig.chartType === 'line'
+            }
+        })
+
+        // Map chart type (area uses line type)
+        const chartJsType =
+            this.chartConfig.chartType === 'line' ? 'line' : this.chartConfig.chartType
+
+        this.chart = new Chart(ctx, {
+            type: chartJsType as ChartType,
+            data: {
+                labels: this.chartData.labels,
+                datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2.5,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: this.chartConfig.showLegend
+                    },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            label: (context: any) => {
+                                const label = context.dataset.label ?? ''
+                                const value = context.parsed.y
+                                if (value === null || value === undefined) return label
+                                return `${label}: ${value.toFixed(2)}`
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        grid: {
+                            display: this.chartConfig.showGrid
+                        }
+                    },
+                    y: {
+                        display: true,
+                        beginAtZero: !this.chartConfig.scale?.min,
+                        min: this.chartConfig.scale?.min ?? undefined,
+                        max: this.chartConfig.scale?.max ?? undefined,
+                        grid: {
+                            display: this.chartConfig.showGrid
+                        }
+                    }
+                },
+                onClick: (
+                    _event: unknown,
+                    elements: Array<{ index: number; datasetIndex: number }>
+                ) => {
+                    this.handleChartClick(elements)
+                }
+            }
+        }) as unknown as ChartInstance
+    }
+
+    /**
+     * Initialize scatter chart
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private initScatterChart(Chart: any, ctx: CanvasRenderingContext2D): void {
+        if (!this.scatterChartData) return
+
+        const color = CHART_COLORS_HEX[0]!
+
+        this.chart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: this.displayName,
+                        data: this.scatterChartData.points,
+                        backgroundColor: getColorWithAlpha(color, 0.7),
+                        borderColor: color,
+                        borderWidth: 1,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                plugins: {
+                    legend: {
+                        display: this.chartConfig.showLegend
+                    },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            label: (context: any) => {
+                                const x = context.parsed.x?.toFixed(1) ?? 0
+                                const y = context.parsed.y?.toFixed(2) ?? 0
+                                return `Time: ${x}%, Value: ${y}`
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Time →'
+                        },
+                        min: 0,
+                        max: 100,
+                        grid: {
+                            display: this.chartConfig.showGrid
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Value'
+                        },
+                        beginAtZero: !this.chartConfig.scale?.min,
+                        min: this.chartConfig.scale?.min ?? undefined,
+                        max: this.chartConfig.scale?.max ?? undefined,
+                        grid: {
+                            display: this.chartConfig.showGrid
+                        }
+                    }
+                },
+                onClick: (
+                    _event: unknown,
+                    elements: Array<{ index: number; datasetIndex: number }>
+                ) => {
+                    this.handleScatterChartClick(elements)
+                }
+            }
+        }) as unknown as ChartInstance
+    }
+
+    /**
+     * Initialize bubble chart
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private initBubbleChart(Chart: any, ctx: CanvasRenderingContext2D): void {
+        if (!this.bubbleChartData) return
+
+        const color = CHART_COLORS_HEX[0]!
+
+        this.chart = new Chart(ctx, {
+            type: 'bubble',
+            data: {
+                datasets: [
+                    {
+                        label: this.displayName,
+                        data: this.bubbleChartData.points,
+                        backgroundColor: getColorWithAlpha(color, 0.5),
+                        borderColor: color,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                plugins: {
+                    legend: {
+                        display: this.chartConfig.showLegend
+                    },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            label: (context: any) => {
+                                const y = context.parsed.y?.toFixed(2) ?? 0
+                                const r = context.raw?.r ?? 0
+                                // Calculate count from radius (reverse the formula)
+                                const count = Math.round(((r - 5) / 25) * 10) || 1
+                                return `Value: ${y}, Entries: ~${count}`
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Time →'
+                        },
+                        min: 0,
+                        max: 100,
+                        grid: {
+                            display: this.chartConfig.showGrid
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Value'
+                        },
+                        beginAtZero: !this.chartConfig.scale?.min,
+                        min: this.chartConfig.scale?.min ?? undefined,
+                        max: this.chartConfig.scale?.max ?? undefined,
+                        grid: {
+                            display: this.chartConfig.showGrid
+                        }
+                    }
+                },
+                onClick: (
+                    _event: unknown,
+                    elements: Array<{ index: number; datasetIndex: number }>
+                ) => {
+                    this.handleBubbleChartClick(elements)
+                }
+            }
+        }) as unknown as ChartInstance
     }
 
     /**
@@ -248,14 +635,23 @@ export class ChartVisualization extends BaseVisualization {
         this.canvasEl = null
         this.chartContainer = null
         this.chartData = null
+        this.pieChartData = null
+        this.scatterChartData = null
+        this.bubbleChartData = null
         this.originalData = []
     }
 
     /**
-     * Chart.js supports animation
+     * Chart.js supports animation (only for cartesian charts)
      */
     override supportsAnimation(): boolean {
-        return true
+        // Only line/bar/area charts support progressive animation well
+        return (
+            !this.isPieType() &&
+            !this.isScatterType() &&
+            !this.isBubbleType() &&
+            this.chartConfig.chartType !== 'radar'
+        )
     }
 
     /**
@@ -369,6 +765,53 @@ export class ChartVisualization extends BaseVisualization {
         if (!dataset) return
 
         const entries = dataset.entries[element.index]
+        if (entries && entries.length > 0) {
+            this.openEntries(entries)
+        }
+    }
+
+    /**
+     * Handle pie chart click - open related entries for the segment
+     */
+    private handlePieChartClick(elements: Array<{ index: number; datasetIndex: number }>): void {
+        if (!this.pieChartData || elements.length === 0) return
+
+        const element = elements[0]
+        if (!element) return
+
+        const entries = this.pieChartData.entries[element.index]
+        if (entries && entries.length > 0) {
+            this.openEntries(entries)
+        }
+    }
+
+    /**
+     * Handle scatter chart click - open related entry for the point
+     */
+    private handleScatterChartClick(
+        elements: Array<{ index: number; datasetIndex: number }>
+    ): void {
+        if (!this.scatterChartData || elements.length === 0) return
+
+        const element = elements[0]
+        if (!element) return
+
+        const entry = this.scatterChartData.entries[element.index]
+        if (entry) {
+            this.openFile(entry)
+        }
+    }
+
+    /**
+     * Handle bubble chart click - open related entries for the bubble
+     */
+    private handleBubbleChartClick(elements: Array<{ index: number; datasetIndex: number }>): void {
+        if (!this.bubbleChartData || elements.length === 0) return
+
+        const element = elements[0]
+        if (!element) return
+
+        const entries = this.bubbleChartData.entries[element.index]
         if (entries && entries.length > 0) {
             this.openEntries(entries)
         }

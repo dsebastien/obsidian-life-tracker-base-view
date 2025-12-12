@@ -1,10 +1,15 @@
 import type { BasesEntry, BasesPropertyId } from 'obsidian'
 import { TimeGranularity } from '../domain/time-granularity.enum'
 import type {
+    BubbleChartData,
+    BubblePoint,
     ChartData,
     ChartDataset,
     HeatmapCell,
     HeatmapData,
+    PieChartData,
+    ScatterChartData,
+    ScatterPoint,
     TagCloudData,
     TagCloudItem,
     TimelineData,
@@ -196,6 +201,168 @@ export class DataAggregationService {
             labels,
             datasets: [dataset]
         }
+    }
+
+    /**
+     * Aggregate data for pie/doughnut chart visualization
+     * Groups values and counts their frequency
+     */
+    aggregateForPieChart(
+        dataPoints: VisualizationDataPoint[],
+        propertyId: BasesPropertyId,
+        displayName: string
+    ): PieChartData {
+        // Group by value
+        const valueGroups = new Map<string, { count: number; entries: BasesEntry[] }>()
+
+        for (const point of dataPoints) {
+            if (point.value === null || point.value === undefined) continue
+
+            const valueStr = String(point.value).trim()
+            if (!valueStr) continue
+
+            if (!valueGroups.has(valueStr)) {
+                valueGroups.set(valueStr, { count: 0, entries: [] })
+            }
+
+            const group = valueGroups.get(valueStr)!
+            group.count++
+            group.entries.push(point.entry)
+        }
+
+        // Convert to arrays sorted by count descending
+        const sortedEntries = [...valueGroups.entries()].sort((a, b) => b[1].count - a[1].count)
+
+        const labels = sortedEntries.map(([label]) => label)
+        const values = sortedEntries.map(([, data]) => data.count)
+        const entries = sortedEntries.map(([, data]) => data.entries)
+
+        return {
+            propertyId,
+            displayName,
+            labels,
+            values,
+            entries
+        }
+    }
+
+    /**
+     * Aggregate data for radar chart visualization
+     * Groups numeric values by time period
+     */
+    aggregateForRadarChart(
+        dataPoints: VisualizationDataPoint[],
+        propertyId: BasesPropertyId,
+        displayName: string,
+        granularity: TimeGranularity
+    ): ChartData {
+        // For radar charts, we use the same aggregation as regular charts
+        // but the rendering will be different
+        return this.aggregateForChart(dataPoints, propertyId, displayName, granularity)
+    }
+
+    /**
+     * Aggregate data for scatter chart visualization
+     * Each point shows time (x) vs value (y)
+     */
+    aggregateForScatterChart(
+        dataPoints: VisualizationDataPoint[],
+        propertyId: BasesPropertyId,
+        displayName: string
+    ): ScatterChartData {
+        // Filter points with valid date anchors and numeric values
+        const validPoints = dataPoints.filter(
+            (p) => p.dateAnchor !== null && p.normalizedValue !== null
+        )
+
+        if (validPoints.length === 0) {
+            return { propertyId, displayName, points: [], entries: [] }
+        }
+
+        // Get date range for normalization
+        const dates = validPoints.map((p) => p.dateAnchor!.date.getTime())
+        const minTime = Math.min(...dates)
+        const maxTime = Math.max(...dates)
+        const timeRange = maxTime - minTime || 1
+
+        // Create scatter points with normalized x (time) and raw y (value)
+        const points: ScatterPoint[] = []
+        const entries: BasesEntry[] = []
+
+        for (const point of validPoints) {
+            const x = ((point.dateAnchor!.date.getTime() - minTime) / timeRange) * 100
+            const y = point.normalizedValue!
+
+            points.push({ x, y })
+            entries.push(point.entry)
+        }
+
+        return { propertyId, displayName, points, entries }
+    }
+
+    /**
+     * Aggregate data for bubble chart visualization
+     * Groups by time period, showing value (y) and count (radius)
+     */
+    aggregateForBubbleChart(
+        dataPoints: VisualizationDataPoint[],
+        propertyId: BasesPropertyId,
+        displayName: string,
+        granularity: TimeGranularity
+    ): BubbleChartData {
+        // Filter points with valid date anchors and numeric values
+        const validPoints = dataPoints.filter(
+            (p) => p.dateAnchor !== null && p.normalizedValue !== null
+        )
+
+        if (validPoints.length === 0) {
+            return { propertyId, displayName, points: [], entries: [] }
+        }
+
+        // Group by time unit
+        const grouped = new Map<string, { date: Date; values: number[]; entries: BasesEntry[] }>()
+
+        for (const point of validPoints) {
+            const date = point.dateAnchor!.date
+            const key = this.getTimeKey(date, granularity)
+            const normalizedDate = this.normalizeDate(date, granularity)
+
+            if (!grouped.has(key)) {
+                grouped.set(key, { date: normalizedDate, values: [], entries: [] })
+            }
+
+            const group = grouped.get(key)!
+            group.values.push(point.normalizedValue!)
+            group.entries.push(point.entry)
+        }
+
+        // Get date range for x-axis normalization
+        const allDates = [...grouped.values()].map((g) => g.date.getTime())
+        const minTime = Math.min(...allDates)
+        const maxTime = Math.max(...allDates)
+        const timeRange = maxTime - minTime || 1
+
+        // Find max count for radius normalization
+        const maxCount = Math.max(...[...grouped.values()].map((g) => g.entries.length))
+
+        // Create bubble points
+        const points: BubblePoint[] = []
+        const entries: BasesEntry[][] = []
+
+        // Sort by date
+        const sortedGroups = [...grouped.values()].sort((a, b) => compareAsc(a.date, b.date))
+
+        for (const group of sortedGroups) {
+            const x = ((group.date.getTime() - minTime) / timeRange) * 100
+            const y = group.values.reduce((a, b) => a + b, 0) / group.values.length
+            // Radius proportional to count, min 5, max 30
+            const r = 5 + (group.entries.length / maxCount) * 25
+
+            points.push({ x, y, r })
+            entries.push(group.entries)
+        }
+
+        return { propertyId, displayName, points, entries }
     }
 
     /**

@@ -328,6 +328,13 @@ export class LifeTrackerView extends BasesView {
 
             case VisualizationType.LineChart:
             case VisualizationType.BarChart:
+            case VisualizationType.AreaChart:
+            case VisualizationType.PieChart:
+            case VisualizationType.DoughnutChart:
+            case VisualizationType.RadarChart:
+            case VisualizationType.PolarAreaChart:
+            case VisualizationType.ScatterChart:
+            case VisualizationType.BubbleChart:
                 visualization = new ChartVisualization(
                     cardEl,
                     this.app,
@@ -646,9 +653,16 @@ export class LifeTrackerView extends BasesView {
 
             case VisualizationType.LineChart:
             case VisualizationType.BarChart:
+            case VisualizationType.AreaChart:
+            case VisualizationType.PieChart:
+            case VisualizationType.DoughnutChart:
+            case VisualizationType.RadarChart:
+            case VisualizationType.PolarAreaChart:
+            case VisualizationType.ScatterChart:
+            case VisualizationType.BubbleChart:
                 return {
                     ...baseConfig,
-                    chartType: vizType === VisualizationType.LineChart ? 'line' : 'bar',
+                    chartType: this.mapVisualizationTypeToChartType(vizType),
                     showLegend: (this.config.get('chartShowLegend') as boolean) ?? false,
                     showGrid: (this.config.get('chartShowGrid') as boolean) ?? true,
                     tension: 0.3,
@@ -668,6 +682,35 @@ export class LifeTrackerView extends BasesView {
 
             default:
                 return baseConfig
+        }
+    }
+
+    /**
+     * Map VisualizationType to Chart.js chart type
+     */
+    private mapVisualizationTypeToChartType(
+        vizType: VisualizationType
+    ): 'line' | 'bar' | 'pie' | 'doughnut' | 'radar' | 'polarArea' | 'scatter' | 'bubble' {
+        switch (vizType) {
+            case VisualizationType.LineChart:
+            case VisualizationType.AreaChart:
+                return 'line'
+            case VisualizationType.BarChart:
+                return 'bar'
+            case VisualizationType.PieChart:
+                return 'pie'
+            case VisualizationType.DoughnutChart:
+                return 'doughnut'
+            case VisualizationType.RadarChart:
+                return 'radar'
+            case VisualizationType.PolarAreaChart:
+                return 'polarArea'
+            case VisualizationType.ScatterChart:
+                return 'scatter'
+            case VisualizationType.BubbleChart:
+                return 'bubble'
+            default:
+                return 'line'
         }
     }
 
