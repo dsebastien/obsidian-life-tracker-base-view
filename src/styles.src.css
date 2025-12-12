@@ -456,6 +456,50 @@
     @apply flex items-center gap-1;
 }
 
+/* Play button */
+.lt-play-btn {
+    @apply w-6 h-6 flex items-center justify-center rounded cursor-pointer;
+    @apply transition-all duration-150 opacity-60;
+    color: var(--text-muted);
+}
+
+.lt-play-btn:hover {
+    @apply opacity-100;
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.lt-play-btn:focus {
+    @apply outline-none opacity-100;
+    box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.lt-play-btn svg {
+    @apply w-4 h-4;
+}
+
+/* Playing state - pulsing animation */
+.lt-play-btn--playing {
+    @apply opacity-100;
+    color: var(--interactive-accent);
+    animation: lt-pulse 1s ease-in-out infinite;
+}
+
+.lt-play-btn--playing:hover {
+    color: var(--interactive-accent);
+}
+
+@keyframes lt-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Maximize button */
 .lt-maximize-btn {
     @apply w-6 h-6 flex items-center justify-center rounded cursor-pointer;
     @apply transition-colors duration-150 opacity-60;

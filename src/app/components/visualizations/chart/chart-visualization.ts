@@ -14,11 +14,18 @@ type ChartType = 'line' | 'bar'
 
 interface ChartInstance {
     destroy: () => void
-    update: () => void
+    update: (mode?: string) => void
     resize: () => void
+    reset: () => void
     data: {
         labels: string[]
         datasets: ChartDatasetConfig[]
+    }
+    options: {
+        animation?: {
+            duration?: number
+            easing?: string
+        }
     }
 }
 
@@ -43,6 +50,7 @@ export class ChartVisualization extends BaseVisualization {
     private chartData: ChartData | null = null
     private resizeObserver: ResizeObserver | null = null
     private chartContainer: HTMLElement | null = null
+    private originalData: (number | null)[][] = []
 
     constructor(
         containerEl: HTMLElement,
@@ -229,6 +237,7 @@ export class ChartVisualization extends BaseVisualization {
      * Clean up resources
      */
     override destroy(): void {
+        this.stopAnimation()
         this.cleanupResizeObserver()
         if (this.chart) {
             this.chart.destroy()
@@ -237,6 +246,84 @@ export class ChartVisualization extends BaseVisualization {
         this.canvasEl = null
         this.chartContainer = null
         this.chartData = null
+        this.originalData = []
+    }
+
+    /**
+     * Chart.js supports animation
+     */
+    override supportsAnimation(): boolean {
+        return true
+    }
+
+    /**
+     * Play animation - reset chart and animate from zero
+     */
+    override playAnimation(): void {
+        if (!this.chart || !this.chartData || this.animationState === 'playing') return
+
+        this.animationState = 'playing'
+        this.updatePlayButtonIcon()
+
+        // Store original data if not already stored
+        if (this.originalData.length === 0) {
+            this.originalData = this.chart.data.datasets.map((ds) => [...ds.data])
+        }
+
+        // Set all data to 0 first
+        this.chart.data.datasets.forEach((dataset) => {
+            dataset.data = dataset.data.map(() => 0)
+        })
+        this.chart.update('none') // Update without animation
+
+        // Animate back to original values
+        setTimeout(() => {
+            if (!this.chart || this.animationState !== 'playing') return
+
+            // Restore original data
+            this.chart.data.datasets.forEach((dataset, i) => {
+                const original = this.originalData[i]
+                if (original) {
+                    dataset.data = [...original]
+                }
+            })
+
+            // Update with animation
+            this.chart.update()
+
+            // Reset state after animation completes
+            setTimeout(() => {
+                if (this.animationState === 'playing') {
+                    this.animationState = 'idle'
+                    this.updatePlayButtonIcon()
+                }
+            }, 1000) // Chart.js default animation duration
+        }, 50)
+    }
+
+    /**
+     * Stop animation and restore original data
+     */
+    override stopAnimation(): void {
+        if (!this.chart) {
+            this.animationState = 'idle'
+            this.updatePlayButtonIcon()
+            return
+        }
+
+        // Restore original data if we have it
+        if (this.originalData.length > 0) {
+            this.chart.data.datasets.forEach((dataset, i) => {
+                const original = this.originalData[i]
+                if (original) {
+                    dataset.data = [...original]
+                }
+            })
+            this.chart.update('none')
+        }
+
+        this.animationState = 'idle'
+        this.updatePlayButtonIcon()
     }
 
     /**
