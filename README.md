@@ -26,6 +26,43 @@ Capture and visualize the data that matters in your life. This Obsidian plugin a
 - **Persistent settings**: grid layout and card configurations saved per view
 - **Empty states**: helpful messages when data is missing or misconfigured
 
+## Screenshots
+
+### Dashboard with multiple visualizations
+
+![Visualizations](documentation/screenshots/visualizations.png)
+View your tracked data with different visualization types: area charts, heatmaps, bar charts, and line charts in a grid layout.
+
+### Select visualization type
+
+![Select visualization type](documentation/screenshots/select-visualization-type.png)
+Choose from 12 visualization types when configuring a new property: Heatmap, Bar Chart, Line Chart, Area Chart, Pie Chart, Doughnut Chart, Radar Chart, Polar Area Chart, Scatter Chart, Bubble Chart, Tag Cloud, and Timeline.
+
+### Customize time granularity
+
+![Customize granularity](documentation/screenshots/customize-granularity.png)
+Set the time granularity for your visualizations: Daily, Weekly, Monthly, Quarterly, or Yearly.
+
+### Configure view settings
+
+![Configure view settings](documentation/screenshots/customize-base-view-settings.png)
+Adjust layout options including number of columns, empty date display, default chart type, and legend visibility.
+
+### Right-click context menu
+
+![Customize visualizations](documentation/screenshots/customize-visualizations.png)
+Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), maximize, or reset configuration.
+
+### Maximize view
+
+![Zoom in](documentation/screenshots/zoom-in.png)
+Expand any visualization to full view for detailed analysis. Press Escape to exit.
+
+### Global settings and presets
+
+![Global settings](documentation/screenshots/configure-global-settings-and-presets.png)
+Configure animation duration and create visualization presets that auto-apply to properties matching specific name patterns.
+
 ## Roadmap
 
 - Data capture UI: easily add/update data points for tracked properties
