@@ -7,7 +7,7 @@ import type {
 } from '../../../app/types/visualization.types'
 import { DataAggregationService } from '../../../app/services/data-aggregation.service'
 import { Tooltip } from '../../ui/tooltip'
-import { formatDateISO } from '../../../utils/date-utils'
+import { formatDateByGranularity } from '../../../utils/date-utils'
 import { log } from '../../../utils/log'
 
 /**
@@ -138,14 +138,14 @@ export class TimelineVisualization extends BaseVisualization {
         const startLabel = this.timelineEl.createDiv({
             cls: 'lt-timeline-label lt-timeline-label--start'
         })
-        startLabel.textContent = formatDateISO(minDate)
+        startLabel.textContent = formatDateByGranularity(minDate, this.config.granularity)
         startLabel.style.left = '0'
 
         // End label
         const endLabel = this.timelineEl.createDiv({
             cls: 'lt-timeline-label lt-timeline-label--end'
         })
-        endLabel.textContent = formatDateISO(maxDate)
+        endLabel.textContent = formatDateByGranularity(maxDate, this.config.granularity)
         endLabel.style.right = '0'
     }
 
@@ -181,7 +181,7 @@ export class TimelineVisualization extends BaseVisualization {
         if (!dateStr) return
 
         const date = new Date(dateStr)
-        const title = formatDateISO(date)
+        const title = formatDateByGranularity(date, this.config.granularity)
         const value = label
         const subtitle = count > 0 ? `${count} ${count === 1 ? 'entry' : 'entries'}` : ''
 

@@ -292,6 +292,53 @@ export function formatDateISO(date: Date): string {
 }
 
 /**
+ * Get ISO week number for a date
+ */
+export function getISOWeekNumber(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+    const dayNum = d.getUTCDay() || 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+}
+
+/**
+ * Format date based on time granularity
+ * - Daily: YYYY-MM-DD
+ * - Weekly: YYYY-Www (ISO week)
+ * - Monthly: YYYY-MM
+ * - Quarterly: YYYY-Qq
+ * - Yearly: YYYY
+ */
+export function formatDateByGranularity(
+    date: Date,
+    granularity: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+): string {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+
+    switch (granularity) {
+        case 'daily':
+            return `${year}-${month}-${day}`
+        case 'weekly': {
+            const week = getISOWeekNumber(date)
+            return `${year}-W${String(week).padStart(2, '0')}`
+        }
+        case 'monthly':
+            return `${year}-${month}`
+        case 'quarterly': {
+            const quarter = Math.ceil((date.getMonth() + 1) / 3)
+            return `${year}-Q${quarter}`
+        }
+        case 'yearly':
+            return `${year}`
+        default:
+            return `${year}-${month}-${day}`
+    }
+}
+
+/**
  * Get day of week name (short)
  */
 export function getDayName(date: Date, format: 'short' | 'long' = 'short'): string {

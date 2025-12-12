@@ -16,6 +16,7 @@ import {
     addDays,
     addMonths,
     addWeeks,
+    formatDateByGranularity,
     formatDateISO,
     getQuarter,
     isSameDay,
@@ -180,7 +181,7 @@ export class DataAggregationService {
             (a, b) => a.date.getTime() - b.date.getTime()
         )
 
-        const labels = sortedGroups.map((g) => formatDateISO(g.date))
+        const labels = sortedGroups.map((g) => formatDateByGranularity(g.date, granularity))
         const data = sortedGroups.map((g) => g.values.reduce((a, b) => a + b, 0) / g.values.length)
         const entries = sortedGroups.map((g) => g.entries)
 

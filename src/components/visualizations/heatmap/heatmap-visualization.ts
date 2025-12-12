@@ -142,7 +142,13 @@ export class HeatmapVisualization extends BaseVisualization {
             title,
             value: tooltipValue,
             subtitle
-        } = formatHeatmapTooltip(date, value, count, this.displayName)
+        } = formatHeatmapTooltip(
+            date,
+            value,
+            count,
+            this.displayName,
+            this.heatmapConfig.granularity
+        )
 
         // Position tooltip near cursor
         const rect = cellEl.getBoundingClientRect()

@@ -1,3 +1,6 @@
+import { formatDateByGranularity } from '../../utils/date-utils'
+import type { TimeGranularity } from '../../app/domain/time-granularity.enum'
+
 /**
  * Shared tooltip component for visualizations
  */
@@ -92,12 +95,10 @@ export function formatHeatmapTooltip(
     date: Date,
     value: number | null,
     count: number,
-    displayName: string
+    displayName: string,
+    granularity: TimeGranularity = 'daily' as TimeGranularity
 ): { title: string; value: string; subtitle: string } {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const dateStr = `${year}-${month}-${day}`
+    const dateStr = formatDateByGranularity(date, granularity)
 
     const valueStr = value !== null ? value.toFixed(2) : 'No data'
 
