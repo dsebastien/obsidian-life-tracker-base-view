@@ -18,11 +18,6 @@ export interface PropertyVisualizationPreset {
 
 export interface PluginSettings {
     /**
-     * Enable
-     */
-    enabled: boolean
-
-    /**
      * Global visualization presets by property name
      * Applied automatically when a property name matches
      */
@@ -36,7 +31,6 @@ export interface PluginSettings {
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-    enabled: false,
     visualizationPresets: [],
     animationDuration: 3000
 }

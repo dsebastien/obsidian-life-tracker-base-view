@@ -22,6 +22,7 @@ import {
     eachWeekOfInterval
 } from 'date-fns'
 import type { DatePattern } from '../app/types/date-anchor.types'
+import { TimeGranularity } from '../app/domain/time-granularity.enum'
 
 /**
  * Supported date patterns for filename parsing
@@ -30,7 +31,7 @@ export const DATE_PATTERNS: DatePattern[] = [
     {
         // Daily: YYYY-MM-DD
         regex: /^(\d{4})-(\d{2})-(\d{2})$/,
-        granularity: 'daily',
+        granularity: TimeGranularity.Daily,
         parser: (match: RegExpMatchArray): Date | null => {
             const dateStr = match[0]
             if (!dateStr) return null
@@ -41,7 +42,7 @@ export const DATE_PATTERNS: DatePattern[] = [
     {
         // Weekly: YYYY-Www (ISO week)
         regex: /^(\d{4})-W(\d{2})$/,
-        granularity: 'weekly',
+        granularity: TimeGranularity.Weekly,
         parser: (match: RegExpMatchArray): Date | null => {
             const yearStr = match[1]
             const weekStr = match[2]
@@ -54,7 +55,7 @@ export const DATE_PATTERNS: DatePattern[] = [
     {
         // Monthly: YYYY-MM
         regex: /^(\d{4})-(\d{2})$/,
-        granularity: 'monthly',
+        granularity: TimeGranularity.Monthly,
         parser: (match: RegExpMatchArray): Date | null => {
             const dateStr = match[0]
             if (!dateStr) return null
@@ -65,7 +66,7 @@ export const DATE_PATTERNS: DatePattern[] = [
     {
         // Quarterly: YYYY-Qq
         regex: /^(\d{4})-Q([1-4])$/,
-        granularity: 'quarterly',
+        granularity: TimeGranularity.Quarterly,
         parser: (match: RegExpMatchArray): Date | null => {
             const yearStr = match[1]
             const quarterStr = match[2]
@@ -80,7 +81,7 @@ export const DATE_PATTERNS: DatePattern[] = [
     {
         // Yearly: YYYY
         regex: /^(\d{4})$/,
-        granularity: 'yearly',
+        granularity: TimeGranularity.Yearly,
         parser: (match: RegExpMatchArray): Date | null => {
             const yearStr = match[1]
             if (!yearStr) return null
@@ -103,7 +104,7 @@ export function isValidDate(date: Date): boolean {
  */
 export function parseDateFromFilename(
     filename: string
-): { date: Date; granularity: string } | null {
+): { date: Date; granularity: TimeGranularity } | null {
     for (const pattern of DATE_PATTERNS) {
         const match = filename.match(pattern.regex)
         if (match) {
@@ -282,26 +283,23 @@ export function formatDateISO(date: Date): string {
  * - Quarterly: YYYY-Qq
  * - Yearly: YYYY
  */
-export function formatDateByGranularity(
-    date: Date,
-    granularity: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
-): string {
+export function formatDateByGranularity(date: Date, granularity: TimeGranularity): string {
     switch (granularity) {
-        case 'daily':
+        case TimeGranularity.Daily:
             return format(date, 'yyyy-MM-dd')
-        case 'weekly': {
+        case TimeGranularity.Weekly: {
             const year = format(date, 'yyyy')
             const week = String(getISOWeek(date)).padStart(2, '0')
             return `${year}-W${week}`
         }
-        case 'monthly':
+        case TimeGranularity.Monthly:
             return format(date, 'yyyy-MM')
-        case 'quarterly': {
+        case TimeGranularity.Quarterly: {
             const year = format(date, 'yyyy')
             const quarter = dateFnsGetQuarter(date)
             return `${year}-Q${quarter}`
         }
-        case 'yearly':
+        case TimeGranularity.Yearly:
             return format(date, 'yyyy')
         default:
             return format(date, 'yyyy-MM-dd')

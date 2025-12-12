@@ -1,4 +1,5 @@
 import type { BasesPropertyId } from 'obsidian'
+import type { TimeGranularity } from '../domain/time-granularity.enum'
 
 /**
  * Source for date anchor extraction
@@ -30,6 +31,6 @@ export interface ResolvedDateAnchor {
  */
 export interface DatePattern {
     regex: RegExp
-    granularity: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+    granularity: TimeGranularity
     parser: (match: RegExpMatchArray) => Date | null
 }

@@ -1,6 +1,9 @@
 import { Menu } from 'obsidian'
 import { VisualizationType } from '../../domain/visualization-type.enum'
-import { CONTEXT_MENU_VISUALIZATION_OPTIONS } from '../../domain/visualization-options'
+import {
+    CONTEXT_MENU_VISUALIZATION_OPTIONS,
+    SCALE_PRESETS
+} from '../../domain/visualization-options'
 import { supportsScale, type ScaleConfig } from '../../types/column-config.types'
 
 /**
@@ -16,23 +19,6 @@ export type CardMenuAction =
  * Callback when a menu action is selected
  */
 export type CardMenuCallback = (action: CardMenuAction) => void
-
-/**
- * Re-export for backwards compatibility
- */
-export const VISUALIZATION_OPTIONS = CONTEXT_MENU_VISUALIZATION_OPTIONS
-
-/**
- * Scale presets for quick selection
- */
-const SCALE_PRESETS: Array<{ label: string; min: number; max: number }> = [
-    { label: '0-1', min: 0, max: 1 },
-    { label: '0-5', min: 0, max: 5 },
-    { label: '1-5', min: 1, max: 5 },
-    { label: '0-10', min: 0, max: 10 },
-    { label: '1-10', min: 1, max: 10 },
-    { label: '0-100', min: 0, max: 100 }
-]
 
 /**
  * Show context menu for a visualization card
@@ -63,7 +49,7 @@ export function showCardContextMenu(
         item.setTitle('Change to:').setDisabled(true).setIsLabel(true)
     })
 
-    for (const option of VISUALIZATION_OPTIONS) {
+    for (const option of CONTEXT_MENU_VISUALIZATION_OPTIONS) {
         menu.addItem((item) => {
             item.setTitle(option.label)
                 .setIcon(option.icon)
@@ -189,6 +175,19 @@ function showCustomScaleModal(
         maxInput.value = String(currentScale.max)
     }
 
+    // Close on escape - define early so cleanup can reference it
+    const handleEscape = (e: KeyboardEvent): void => {
+        if (e.key === 'Escape') {
+            cleanup()
+        }
+    }
+
+    // Cleanup function to remove overlay and event listener
+    const cleanup = (): void => {
+        document.removeEventListener('keydown', handleEscape)
+        overlay.remove()
+    }
+
     // Buttons
     const buttons = modal.createDiv({ cls: 'lt-scale-modal-buttons' })
 
@@ -197,7 +196,7 @@ function showCustomScaleModal(
         text: 'Cancel'
     })
     cancelBtn.addEventListener('click', () => {
-        overlay.remove()
+        cleanup()
     })
 
     const confirmBtn = buttons.createEl('button', {
@@ -220,23 +219,16 @@ function showCustomScaleModal(
             onConfirm(undefined)
         }
 
-        overlay.remove()
+        cleanup()
     })
 
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
-            overlay.remove()
+            cleanup()
         }
     })
 
-    // Close on escape
-    const handleEscape = (e: KeyboardEvent): void => {
-        if (e.key === 'Escape') {
-            overlay.remove()
-            document.removeEventListener('keydown', handleEscape)
-        }
-    }
     document.addEventListener('keydown', handleEscape)
 
     // Focus min input

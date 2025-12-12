@@ -1,5 +1,5 @@
 import { formatDateByGranularity } from '../../../utils/date-utils'
-import type { TimeGranularity } from '../../domain/time-granularity.enum'
+import { TimeGranularity } from '../../domain/time-granularity.enum'
 
 /**
  * Shared tooltip component for visualizations
@@ -96,7 +96,7 @@ export function formatHeatmapTooltip(
     value: number | null,
     count: number,
     displayName: string,
-    granularity: TimeGranularity = 'daily' as TimeGranularity
+    granularity: TimeGranularity = TimeGranularity.Daily
 ): { title: string; value: string; subtitle: string } {
     const dateStr = formatDateByGranularity(date, granularity)
 

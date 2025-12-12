@@ -1,27 +1,12 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import { VisualizationType } from '../domain/visualization-type.enum'
-import { SETTINGS_TAB_VISUALIZATION_OPTIONS } from '../domain/visualization-options'
+import {
+    SETTINGS_TAB_VISUALIZATION_OPTIONS,
+    SCALE_PRESETS_RECORD
+} from '../domain/visualization-options'
 import type { PropertyVisualizationPreset } from '../types/plugin-settings.intf'
 import { supportsScale } from '../types/column-config.types'
-
-/**
- * Re-export for backwards compatibility
- */
-export const VISUALIZATION_OPTIONS = SETTINGS_TAB_VISUALIZATION_OPTIONS
-
-/**
- * Scale presets for dropdown
- */
-const SCALE_PRESETS: Record<string, { min: number; max: number } | null> = {
-    'auto': null,
-    '0-1': { min: 0, max: 1 },
-    '0-5': { min: 0, max: 5 },
-    '1-5': { min: 1, max: 5 },
-    '0-10': { min: 0, max: 10 },
-    '1-10': { min: 1, max: 10 },
-    '0-100': { min: 0, max: 100 }
-}
 
 export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     plugin: LifeTrackerPlugin
@@ -124,7 +109,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         // Visualization type dropdown
         setting.addDropdown((dropdown) => {
             dropdown
-                .addOptions(VISUALIZATION_OPTIONS)
+                .addOptions(SETTINGS_TAB_VISUALIZATION_OPTIONS)
                 .setValue(preset.visualizationType)
                 .onChange(async (value) => {
                     await this.plugin.updateSettings((draft) => {
@@ -148,7 +133,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                 const scaleOptions: Record<string, string> = {
                     auto: 'Auto'
                 }
-                for (const key of Object.keys(SCALE_PRESETS)) {
+                for (const key of Object.keys(SCALE_PRESETS_RECORD)) {
                     if (key !== 'auto') {
                         scaleOptions[key] = key
                     }
@@ -157,7 +142,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                 // Determine current value
                 let currentValue = 'auto'
                 if (preset.scale) {
-                    const matchingKey = Object.entries(SCALE_PRESETS).find(
+                    const matchingKey = Object.entries(SCALE_PRESETS_RECORD).find(
                         ([_, value]) =>
                             value?.min === preset.scale?.min && value?.max === preset.scale?.max
                     )
@@ -170,7 +155,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                     .addOptions(scaleOptions)
                     .setValue(currentValue)
                     .onChange(async (value) => {
-                        const scaleValue = SCALE_PRESETS[value]
+                        const scaleValue = SCALE_PRESETS_RECORD[value]
                         await this.plugin.updateSettings((draft) => {
                             const p = draft.visualizationPresets.find((p) => p.id === preset.id)
                             if (p) {

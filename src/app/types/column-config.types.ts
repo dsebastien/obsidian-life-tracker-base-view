@@ -1,5 +1,5 @@
 import type { BasesPropertyId } from 'obsidian'
-import type { VisualizationType } from '../domain/visualization-type.enum'
+import { VisualizationType } from '../domain/visualization-type.enum'
 
 /**
  * Scale configuration for numeric visualizations
@@ -31,13 +31,13 @@ export interface ColumnVisualizationConfig {
  * Visualization types that support scale configuration
  */
 export const SCALE_SUPPORTED_TYPES: VisualizationType[] = [
-    'heatmap' as VisualizationType,
-    'bar-chart' as VisualizationType,
-    'line-chart' as VisualizationType,
-    'area-chart' as VisualizationType,
-    'radar-chart' as VisualizationType,
-    'scatter-chart' as VisualizationType,
-    'bubble-chart' as VisualizationType
+    VisualizationType.Heatmap,
+    VisualizationType.BarChart,
+    VisualizationType.LineChart,
+    VisualizationType.AreaChart,
+    VisualizationType.RadarChart,
+    VisualizationType.ScatterChart,
+    VisualizationType.BubbleChart
 ]
 
 /**

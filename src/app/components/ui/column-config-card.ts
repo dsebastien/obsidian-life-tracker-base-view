@@ -1,12 +1,10 @@
 import { setIcon } from 'obsidian'
-import { VisualizationType } from '../../domain/visualization-type.enum'
-import { CONFIG_CARD_VISUALIZATION_OPTIONS } from '../../domain/visualization-options'
+import type { VisualizationType } from '../../domain/visualization-type.enum'
+import {
+    CONFIG_CARD_VISUALIZATION_OPTIONS,
+    SCALE_PRESETS
+} from '../../domain/visualization-options'
 import { supportsScale, type ScaleConfig } from '../../types/column-config.types'
-
-/**
- * Re-export for backwards compatibility
- */
-export const VISUALIZATION_OPTIONS = CONFIG_CARD_VISUALIZATION_OPTIONS
 
 /**
  * Configuration result from the config card
@@ -46,7 +44,7 @@ export function createColumnConfigCard(
     const scaleSection = card.createDiv({ cls: 'lt-config-scale-section' })
     scaleSection.style.display = 'none'
 
-    for (const option of VISUALIZATION_OPTIONS) {
+    for (const option of CONFIG_CARD_VISUALIZATION_OPTIONS) {
         const optionBtn = optionsGrid.createDiv({ cls: 'lt-config-option' })
         optionBtn.setAttribute('role', 'button')
         optionBtn.setAttribute('tabindex', '0')
@@ -132,16 +130,7 @@ function renderScaleConfig(
     const presetsRow = form.createDiv({ cls: 'lt-scale-presets' })
     presetsRow.createSpan({ cls: 'lt-scale-presets-label', text: 'Presets:' })
 
-    const presets = [
-        { label: '0-1', min: 0, max: 1 },
-        { label: '0-5', min: 0, max: 5 },
-        { label: '1-5', min: 1, max: 5 },
-        { label: '0-10', min: 0, max: 10 },
-        { label: '1-10', min: 1, max: 10 },
-        { label: '0-100', min: 0, max: 100 }
-    ]
-
-    for (const preset of presets) {
+    for (const preset of SCALE_PRESETS) {
         const btn = presetsRow.createEl('button', {
             cls: 'lt-scale-preset-btn',
             text: preset.label

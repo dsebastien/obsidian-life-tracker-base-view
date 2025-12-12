@@ -494,6 +494,8 @@ this.addCommand({
 
 ### Persist settings
 
+WARNING, use Immer, not just the default approach below:
+
 ```ts
 interface MySettings { enabled: boolean }
 const DEFAULT_SETTINGS: MySettings = { enabled: true };

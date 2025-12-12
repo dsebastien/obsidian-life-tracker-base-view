@@ -65,17 +65,7 @@ export class LifeTrackerPlugin extends Plugin {
             return
         }
 
-        let needToSaveSettings = false
-
         this.settings = produce(DEFAULT_SETTINGS, (draft: Draft<PluginSettings>) => {
-            // Load enabled setting
-            if (loadedSettings.enabled !== undefined) {
-                draft.enabled = loadedSettings.enabled
-            } else {
-                log('The loaded settings miss the [enabled] property', 'debug')
-                needToSaveSettings = true
-            }
-
             // Load visualization presets
             if (Array.isArray(loadedSettings.visualizationPresets)) {
                 draft.visualizationPresets = loadedSettings.visualizationPresets
@@ -88,10 +78,6 @@ export class LifeTrackerPlugin extends Plugin {
         })
 
         log(`Settings loaded`, 'debug', loadedSettings)
-
-        if (needToSaveSettings) {
-            this.saveSettings()
-        }
     }
 
     /**

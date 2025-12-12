@@ -135,3 +135,33 @@ export const SETTINGS_TAB_VISUALIZATION_OPTIONS: Record<string, string> = {
     [VisualizationType.TagCloud]: 'Cloud',
     [VisualizationType.Timeline]: 'Timeline'
 }
+
+/**
+ * Scale preset for numeric visualizations
+ */
+export interface ScalePreset {
+    label: string
+    min: number
+    max: number
+}
+
+/**
+ * Common scale presets for numeric visualizations
+ * Used by card-context-menu.ts, column-config-card.ts, and settings-tab.ts
+ */
+export const SCALE_PRESETS: ScalePreset[] = [
+    { label: '0-1', min: 0, max: 1 },
+    { label: '0-5', min: 0, max: 5 },
+    { label: '1-5', min: 1, max: 5 },
+    { label: '0-10', min: 0, max: 10 },
+    { label: '1-10', min: 1, max: 10 },
+    { label: '0-100', min: 0, max: 100 }
+]
+
+/**
+ * Scale presets as a Record (used by settings-tab.ts dropdown)
+ */
+export const SCALE_PRESETS_RECORD: Record<string, { min: number; max: number } | null> = {
+    auto: null,
+    ...Object.fromEntries(SCALE_PRESETS.map((p) => [p.label, { min: p.min, max: p.max }]))
+}

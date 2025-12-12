@@ -27,6 +27,7 @@ import {
     getMonthName,
     DATE_PATTERNS
 } from './date-utils'
+import { TimeGranularity } from '../app/domain/time-granularity.enum'
 
 describe('date-utils', () => {
     describe('isValidDate', () => {
@@ -50,35 +51,35 @@ describe('date-utils', () => {
 
         test('daily pattern matches YYYY-MM-DD', () => {
             const pattern = DATE_PATTERNS[0]!
-            expect(pattern.granularity).toBe('daily')
+            expect(pattern.granularity).toBe(TimeGranularity.Daily)
             expect('2024-01-15'.match(pattern.regex)).toBeTruthy()
             expect('2024-1-15'.match(pattern.regex)).toBeFalsy()
         })
 
         test('weekly pattern matches YYYY-Www', () => {
             const pattern = DATE_PATTERNS[1]!
-            expect(pattern.granularity).toBe('weekly')
+            expect(pattern.granularity).toBe(TimeGranularity.Weekly)
             expect('2024-W01'.match(pattern.regex)).toBeTruthy()
             expect('2024-W1'.match(pattern.regex)).toBeFalsy()
         })
 
         test('monthly pattern matches YYYY-MM', () => {
             const pattern = DATE_PATTERNS[2]!
-            expect(pattern.granularity).toBe('monthly')
+            expect(pattern.granularity).toBe(TimeGranularity.Monthly)
             expect('2024-01'.match(pattern.regex)).toBeTruthy()
             expect('2024-1'.match(pattern.regex)).toBeFalsy()
         })
 
         test('quarterly pattern matches YYYY-Qq', () => {
             const pattern = DATE_PATTERNS[3]!
-            expect(pattern.granularity).toBe('quarterly')
+            expect(pattern.granularity).toBe(TimeGranularity.Quarterly)
             expect('2024-Q1'.match(pattern.regex)).toBeTruthy()
             expect('2024-Q5'.match(pattern.regex)).toBeFalsy()
         })
 
         test('yearly pattern matches YYYY', () => {
             const pattern = DATE_PATTERNS[4]!
-            expect(pattern.granularity).toBe('yearly')
+            expect(pattern.granularity).toBe(TimeGranularity.Yearly)
             expect('2024'.match(pattern.regex)).toBeTruthy()
             expect('24'.match(pattern.regex)).toBeFalsy()
         })
@@ -88,7 +89,7 @@ describe('date-utils', () => {
         test('parses daily format YYYY-MM-DD', () => {
             const result = parseDateFromFilename('2024-01-15')
             expect(result).not.toBeNull()
-            expect(result!.granularity).toBe('daily')
+            expect(result!.granularity).toBe(TimeGranularity.Daily)
             expect(result!.date.getFullYear()).toBe(2024)
             expect(result!.date.getMonth()).toBe(0) // January
             expect(result!.date.getDate()).toBe(15)
@@ -97,14 +98,14 @@ describe('date-utils', () => {
         test('parses weekly format YYYY-Www', () => {
             const result = parseDateFromFilename('2024-W01')
             expect(result).not.toBeNull()
-            expect(result!.granularity).toBe('weekly')
+            expect(result!.granularity).toBe(TimeGranularity.Weekly)
             expect(result!.date.getFullYear()).toBe(2024)
         })
 
         test('parses monthly format YYYY-MM', () => {
             const result = parseDateFromFilename('2024-03')
             expect(result).not.toBeNull()
-            expect(result!.granularity).toBe('monthly')
+            expect(result!.granularity).toBe(TimeGranularity.Monthly)
             expect(result!.date.getFullYear()).toBe(2024)
             expect(result!.date.getMonth()).toBe(2) // March
         })
@@ -112,7 +113,7 @@ describe('date-utils', () => {
         test('parses quarterly format YYYY-Qq', () => {
             const result = parseDateFromFilename('2024-Q2')
             expect(result).not.toBeNull()
-            expect(result!.granularity).toBe('quarterly')
+            expect(result!.granularity).toBe(TimeGranularity.Quarterly)
             expect(result!.date.getFullYear()).toBe(2024)
             expect(result!.date.getMonth()).toBe(3) // April (Q2 starts)
         })
@@ -120,7 +121,7 @@ describe('date-utils', () => {
         test('parses yearly format YYYY', () => {
             const result = parseDateFromFilename('2024')
             expect(result).not.toBeNull()
-            expect(result!.granularity).toBe('yearly')
+            expect(result!.granularity).toBe(TimeGranularity.Yearly)
             expect(result!.date.getFullYear()).toBe(2024)
             expect(result!.date.getMonth()).toBe(0) // January
         })
@@ -448,24 +449,24 @@ describe('date-utils', () => {
         const date = new Date(2024, 3, 15) // April 15, 2024
 
         test('formats daily as YYYY-MM-DD', () => {
-            expect(formatDateByGranularity(date, 'daily')).toBe('2024-04-15')
+            expect(formatDateByGranularity(date, TimeGranularity.Daily)).toBe('2024-04-15')
         })
 
         test('formats weekly as YYYY-Www', () => {
-            const result = formatDateByGranularity(date, 'weekly')
+            const result = formatDateByGranularity(date, TimeGranularity.Weekly)
             expect(result).toMatch(/^2024-W\d{2}$/)
         })
 
         test('formats monthly as YYYY-MM', () => {
-            expect(formatDateByGranularity(date, 'monthly')).toBe('2024-04')
+            expect(formatDateByGranularity(date, TimeGranularity.Monthly)).toBe('2024-04')
         })
 
         test('formats quarterly as YYYY-Qq', () => {
-            expect(formatDateByGranularity(date, 'quarterly')).toBe('2024-Q2')
+            expect(formatDateByGranularity(date, TimeGranularity.Quarterly)).toBe('2024-Q2')
         })
 
         test('formats yearly as YYYY', () => {
-            expect(formatDateByGranularity(date, 'yearly')).toBe('2024')
+            expect(formatDateByGranularity(date, TimeGranularity.Yearly)).toBe('2024')
         })
     })
 

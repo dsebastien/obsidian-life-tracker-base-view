@@ -2,7 +2,7 @@ import type { ViewOption } from 'obsidian'
 import { TimeGranularity } from '../domain/time-granularity.enum'
 
 /**
- * Default embedded height in pixels (unused now, kept for compatibility)
+ * Default embedded height in pixels
  */
 export const DEFAULT_EMBEDDED_HEIGHT = 400
 
