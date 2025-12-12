@@ -64,6 +64,9 @@ export class LifeTrackerView extends BasesView {
     // Grid settings (runtime state)
     private gridSettings: GridSettings = { ...DEFAULT_GRID_SETTINGS }
 
+    // Flag to skip re-render when only grid settings change
+    private isUpdatingGridSettings = false
+
     // Maximized card state
     private maximizedPropertyId: BasesPropertyId | null = null
     private escapeHandler: ((e: KeyboardEvent) => void) | null = null
@@ -201,6 +204,12 @@ export class LifeTrackerView extends BasesView {
      * Called when data changes - main render logic
      */
     override onDataUpdated(): void {
+        // Skip full re-render if we're just updating grid settings
+        if (this.isUpdatingGridSettings) {
+            log('onDataUpdated skipped (grid settings update only)', 'debug')
+            return
+        }
+
         log('onDataUpdated called', 'debug')
 
         // Clean up maximize state and existing visualizations
@@ -222,15 +231,27 @@ export class LifeTrackerView extends BasesView {
             return
         }
 
-        // Load grid columns from config
+        // Load grid settings from config
         const savedColumns = this.config.get('gridColumns') as number | undefined
+        const savedCardHeight = this.config.get('cardMinHeight') as number | undefined
         this.gridSettings.columns = savedColumns ?? DEFAULT_GRID_COLUMNS
+        this.gridSettings.cardMinHeight = savedCardHeight ?? DEFAULT_GRID_SETTINGS.cardMinHeight
 
         // Create control bar at the top
         createGridControls(this.containerEl, this.gridSettings, (settings) => {
             this.gridSettings = settings
-            // Persist columns to view config
+
+            // Set flag to prevent full re-render when config.set triggers onDataUpdated
+            this.isUpdatingGridSettings = true
+
+            // Persist grid settings to view config
             this.config.set('gridColumns', settings.columns)
+            this.config.set('cardMinHeight', settings.cardMinHeight)
+
+            // Reset flag after config updates
+            this.isUpdatingGridSettings = false
+
+            // Just apply CSS changes, no full re-render needed
             this.applyGridSettings()
         })
 
