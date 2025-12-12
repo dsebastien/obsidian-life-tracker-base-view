@@ -1,5 +1,5 @@
 import type { BasesEntry, BasesPropertyId } from 'obsidian'
-import type { TimeGranularity } from '../domain/time-granularity.enum'
+import type { TimeGranularity } from './time-granularity.intf'
 import type { ResolvedDateAnchor } from './date-anchor.types'
 import type { ScaleConfig } from './column-config.types'
 

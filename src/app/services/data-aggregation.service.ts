@@ -1,5 +1,5 @@
 import type { BasesEntry, BasesPropertyId } from 'obsidian'
-import { TimeGranularity } from '../domain/time-granularity.enum'
+import { TimeGranularity } from '../types/time-granularity.intf'
 import type {
     BubbleChartData,
     ChartData,

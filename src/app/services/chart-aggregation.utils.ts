@@ -1,6 +1,6 @@
 import type { BasesEntry, BasesPropertyId } from 'obsidian'
 import { compareAsc } from 'date-fns'
-import { TimeGranularity } from '../domain/time-granularity.enum'
+import { TimeGranularity } from '../types/time-granularity.intf'
 import type {
     BubbleChartData,
     BubblePoint,

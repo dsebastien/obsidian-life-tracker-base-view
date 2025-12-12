@@ -22,7 +22,7 @@ import {
     eachWeekOfInterval
 } from 'date-fns'
 import type { DatePattern } from '../app/types/date-anchor.types'
-import { TimeGranularity } from '../app/domain/time-granularity.enum'
+import { TimeGranularity } from '../app/types/time-granularity.intf'
 
 /**
  * Supported date patterns for filename parsing

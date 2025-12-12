@@ -1,5 +1,5 @@
 import type { ViewOption } from 'obsidian'
-import { TimeGranularity } from '../domain/time-granularity.enum'
+import { TimeGranularity } from '../types/time-granularity.intf'
 
 /**
  * Default embedded height in pixels

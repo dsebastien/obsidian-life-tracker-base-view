@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
-import { VisualizationType } from './visualization-type.enum'
+import { VisualizationType } from './visualization-type.intf'
 import {
     CONTEXT_MENU_VISUALIZATION_OPTIONS,
     CONFIG_CARD_VISUALIZATION_OPTIONS,
     SETTINGS_TAB_VISUALIZATION_OPTIONS
-} from './visualization-options'
+} from './visualization-options.intf'
 
 /**
  * Get all values from the VisualizationType enum

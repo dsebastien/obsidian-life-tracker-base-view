@@ -1,9 +1,9 @@
 import { setIcon } from 'obsidian'
-import type { VisualizationType } from '../../domain/visualization-type.enum'
+import type { VisualizationType } from '../../types/visualization-type.intf'
 import {
     CONFIG_CARD_VISUALIZATION_OPTIONS,
     SCALE_PRESETS
-} from '../../domain/visualization-options'
+} from '../../types/visualization-options.intf'
 import { supportsScale, type ScaleConfig } from '../../types/column-config.types'
 
 /**

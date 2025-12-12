@@ -27,7 +27,7 @@ import {
     getMonthName,
     DATE_PATTERNS
 } from './date-utils'
-import { TimeGranularity } from '../app/domain/time-granularity.enum'
+import { TimeGranularity } from '../app/types/time-granularity.intf'
 
 describe('date-utils', () => {
     describe('isValidDate', () => {

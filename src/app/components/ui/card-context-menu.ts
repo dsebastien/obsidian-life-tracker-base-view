@@ -1,9 +1,9 @@
 import { Menu } from 'obsidian'
-import { VisualizationType } from '../../domain/visualization-type.enum'
+import { VisualizationType } from '../../types/visualization-type.intf'
 import {
     CONTEXT_MENU_VISUALIZATION_OPTIONS,
     SCALE_PRESETS
-} from '../../domain/visualization-options'
+} from '../../types/visualization-options.intf'
 import { supportsScale, type ScaleConfig } from '../../types/column-config.types'
 
 /**

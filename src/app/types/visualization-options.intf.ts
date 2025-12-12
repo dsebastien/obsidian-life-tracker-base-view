@@ -1,4 +1,4 @@
-import { VisualizationType } from './visualization-type.enum'
+import { VisualizationType } from './visualization-type.intf'
 
 /**
  * Visualization option for context menu

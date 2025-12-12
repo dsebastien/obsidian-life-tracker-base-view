@@ -1,4 +1,4 @@
-import type { VisualizationType } from '../domain/visualization-type.enum'
+import type { VisualizationType } from './visualization-type.intf'
 import type { ScaleConfig } from './column-config.types'
 
 /**

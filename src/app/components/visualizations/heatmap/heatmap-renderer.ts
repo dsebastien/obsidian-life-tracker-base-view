@@ -1,5 +1,5 @@
 import type { HeatmapConfig, HeatmapData, HeatmapCell } from '../../../types/visualization.types'
-import { TimeGranularity } from '../../../domain/time-granularity.enum'
+import { TimeGranularity } from '../../../types/time-granularity.intf'
 import { compareAsc, format, getMonth, getYear } from 'date-fns'
 import {
     addDays,

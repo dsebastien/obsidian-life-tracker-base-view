@@ -5,8 +5,8 @@ import type {
     TagCloudConfig,
     VisualizationConfig
 } from '../types/visualization.types'
-import { TimeGranularity } from '../domain/time-granularity.enum'
-import { VisualizationType } from '../domain/visualization-type.enum'
+import { TimeGranularity } from '../types/time-granularity.intf'
+import { VisualizationType } from '../types/visualization-type.intf'
 import { HEATMAP_PRESETS } from '../../utils/color-utils'
 import { DEFAULT_CELL_SIZE, DEFAULT_EMBEDDED_HEIGHT } from './view-options'
 

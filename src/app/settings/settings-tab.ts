@@ -1,10 +1,10 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
-import { VisualizationType } from '../domain/visualization-type.enum'
+import { VisualizationType } from '../types/visualization-type.intf'
 import {
     SETTINGS_TAB_VISUALIZATION_OPTIONS,
     SCALE_PRESETS_RECORD
-} from '../domain/visualization-options'
+} from '../types/visualization-options.intf'
 import type { PropertyVisualizationPreset } from '../types/plugin-settings.intf'
 import { supportsScale } from '../types/column-config.types'
 

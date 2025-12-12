@@ -6,7 +6,7 @@ import type {
     ColumnVisualizationConfig,
     ScaleConfig
 } from '../types/column-config.types'
-import { VisualizationType } from '../domain/visualization-type.enum'
+import { VisualizationType } from '../types/visualization-type.intf'
 import { log } from '../../utils/log'
 
 /**

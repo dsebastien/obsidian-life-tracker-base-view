@@ -2,7 +2,7 @@ import { BasesView, type BasesPropertyId, type QueryController } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import { DateAnchorService } from '../services/date-anchor.service'
 import { DataAggregationService } from '../services/data-aggregation.service'
-import { VisualizationType } from '../domain/visualization-type.enum'
+import { VisualizationType } from '../types/visualization-type.intf'
 import type { ColumnVisualizationConfig } from '../types/column-config.types'
 import type {
     ChartConfig,
