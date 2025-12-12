@@ -68,6 +68,9 @@ export class LifeTrackerView extends BasesView {
     private maximizedPropertyId: BasesPropertyId | null = null
     private escapeHandler: ((e: KeyboardEvent) => void) | null = null
 
+    // Cleanup function for settings listener
+    private unsubscribeSettings: (() => void) | null = null
+
     constructor(
         controller: QueryController,
         scrollEl: HTMLElement,
@@ -83,6 +86,12 @@ export class LifeTrackerView extends BasesView {
         // Initialize services
         this.dateAnchorService = new DateAnchorService()
         this.aggregationService = new DataAggregationService()
+
+        // Subscribe to global settings changes
+        this.unsubscribeSettings = this.plugin.onSettingsChange(() => {
+            log('Global settings changed, refreshing view', 'debug')
+            this.onDataUpdated()
+        })
 
         log('LifeTrackerView created', 'debug')
     }
@@ -126,14 +135,34 @@ export class LifeTrackerView extends BasesView {
     }
 
     /**
-     * Find a matching global preset for a property name
+     * Find a matching global preset for a property
+     * Matches against the raw property name (e.g., 'energy_level_evening')
      */
-    private findMatchingPreset(displayName: string): PropertyVisualizationPreset | null {
+    private findMatchingPreset(propertyId: BasesPropertyId): PropertyVisualizationPreset | null {
         const presets = this.plugin.settings.visualizationPresets
-        const lowerName = displayName.toLowerCase()
+        if (presets.length === 0) return null
+
+        // Extract raw property name from ID (e.g., 'note.energy_level_evening' -> 'energy_level_evening')
+        const rawPropertyName = propertyId.includes('.')
+            ? propertyId.substring(propertyId.indexOf('.') + 1)
+            : propertyId
+
+        const lowerRawName = rawPropertyName.toLowerCase()
+
+        log('Finding preset', 'debug', {
+            propertyId,
+            rawPropertyName,
+            presetPatterns: presets.map((p) => p.propertyNamePattern)
+        })
 
         for (const preset of presets) {
-            if (preset.propertyNamePattern.toLowerCase() === lowerName) {
+            const patternLower = preset.propertyNamePattern.toLowerCase()
+
+            if (patternLower === lowerRawName) {
+                log('Preset matched', 'debug', {
+                    pattern: preset.propertyNamePattern,
+                    matchedTo: propertyId
+                })
                 return preset
             }
         }
@@ -156,7 +185,7 @@ export class LifeTrackerView extends BasesView {
         }
 
         // Check for matching global preset
-        const preset = this.findMatchingPreset(displayName)
+        const preset = this.findMatchingPreset(propertyId)
         if (preset) {
             // Create a config from the preset
             const configFromPreset: ColumnVisualizationConfig = {
@@ -729,6 +758,13 @@ export class LifeTrackerView extends BasesView {
      */
     override onunload(): void {
         log('LifeTrackerView unloading', 'debug')
+
+        // Unsubscribe from settings changes
+        if (this.unsubscribeSettings) {
+            this.unsubscribeSettings()
+            this.unsubscribeSettings = null
+        }
+
         this.cleanupMaximizeState()
         this.destroyVisualizations()
     }

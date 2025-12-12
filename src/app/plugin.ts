@@ -8,11 +8,21 @@ import type { Draft } from 'immer'
 import { LifeTrackerView, LIFE_TRACKER_VIEW_TYPE } from './view/life-tracker-view'
 import { getLifeTrackerViewOptions } from './view/view-options'
 
+/**
+ * Callback type for settings change listeners
+ */
+export type SettingsChangeCallback = (settings: PluginSettings) => void
+
 export class LifeTrackerBaseViewPlugin extends Plugin {
     /**
      * The plugin settings are immutable
      */
     settings: PluginSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS)
+
+    /**
+     * Listeners for settings changes
+     */
+    private settingsChangeListeners: Set<SettingsChangeCallback> = new Set()
 
     /**
      * Executed as soon as the plugin loads
@@ -100,5 +110,31 @@ export class LifeTrackerBaseViewPlugin extends Plugin {
     async updateSettings(updater: (draft: Draft<PluginSettings>) => void): Promise<void> {
         this.settings = produce(this.settings, updater)
         await this.saveSettings()
+        this.notifySettingsChanged()
+    }
+
+    /**
+     * Register a callback to be notified when settings change
+     * @param callback Function to call when settings change
+     * @returns Function to unregister the callback
+     */
+    onSettingsChange(callback: SettingsChangeCallback): () => void {
+        this.settingsChangeListeners.add(callback)
+        return () => {
+            this.settingsChangeListeners.delete(callback)
+        }
+    }
+
+    /**
+     * Notify all listeners that settings have changed
+     */
+    private notifySettingsChanged(): void {
+        for (const listener of this.settingsChangeListeners) {
+            try {
+                listener(this.settings)
+            } catch (error) {
+                log('Error in settings change listener', 'error', error)
+            }
+        }
     }
 }
