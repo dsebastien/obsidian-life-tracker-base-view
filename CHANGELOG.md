@@ -1,15 +1,21 @@
-## [1.1.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/v1.0.0...v1.1.0) (2025-12-12)
+## [1.1.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.1.0...1.1.1) (2025-12-12)
+
+### Bug Fixes
+
+* **all:** fixed issue where after minimizing a maximized card, another was maximized ([08eb94e](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/08eb94e53625249c26552efe4e7ee31aca12383a)), closes [#11](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/11)
+* **all:** fixed the release workflow to name the tags correctly ([34cd4d5](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/34cd4d5ad241b64c16b5c00abe0569578be562e6))
+## [1.1.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.0.0...1.1.0) (2025-12-12)
 
 ### Features
 
 * **all:** avoid fully recreating the base view when grid settings are changed (eg number of columns) ([e1747d7](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/e1747d75aff92445e19d7722ff0bbb088e78d5db))
 * **all:** renamed the plugin (wider scope) ([cb4832c](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/cb4832cd9855f48d7975729ee3d2bad785b40584))
-## [1.0.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/v0.2.0...v1.0.0) (2025-12-12)
+## [1.0.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/0.2.0...1.0.0) (2025-12-12)
 
 ### Bug Fixes
 
 * **all:** fix matching between columns and global visualization presets ([c16932a](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c16932a4c003770c47f79d8cb87ee0396cae943b))
-## [0.2.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/v0.1.0...v0.2.0) (2025-12-12)
+## [0.2.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/0.1.0...0.2.0) (2025-12-12)
 
 ### Features
 
@@ -18,7 +24,7 @@
 ### Bug Fixes
 
 * **all:** fix issue with settings update ([34b81eb](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/34b81ebd1637c1dbaf47bb700c7767d5f4310dc7))
-## [0.1.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1e4cacab4c98354c4e36114638c3e4463f8ae651...v0.1.0) (2025-12-12)
+## [0.1.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1e4cacab4c98354c4e36114638c3e4463f8ae651...0.1.0) (2025-12-12)
 
 ### Features
 
