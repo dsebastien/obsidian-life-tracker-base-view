@@ -201,7 +201,7 @@ export class LifeTrackerView extends BasesView {
         const savedColumns = this.config.get('gridColumns') as number | undefined
         this.gridSettings.columns = savedColumns ?? DEFAULT_GRID_COLUMNS
 
-        // Create control bar
+        // Create control bar at the top
         createGridControls(this.containerEl, this.gridSettings, (settings) => {
             this.gridSettings = settings
             // Persist columns to view config
