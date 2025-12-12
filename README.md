@@ -2,6 +2,8 @@
 
 Capture and visualize the data that matters in your life. This Obsidian plugin adds a "Life Tracker" Base View type that transforms your tracked data into beautiful visualizations.
 
+You can find more details and background information here: https://www.knowii.net/c/announcements/new-obsidian-plugin-life-tracker
+
 ## Features
 
 ### Visualizations
