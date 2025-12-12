@@ -12,6 +12,7 @@ import type {
     VisualizationDataPoint
 } from '../types/visualization.types'
 import type { ResolvedDateAnchor } from '../types/date-anchor.types'
+import { format, compareAsc, min, max } from 'date-fns'
 import {
     addDays,
     addMonths,
@@ -76,8 +77,8 @@ export class DataAggregationService {
 
         // Get date range
         const dates = validPoints.map((p) => p.dateAnchor!.date)
-        const minDate = new Date(Math.min(...dates.map((d) => d.getTime())))
-        const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())))
+        const minDate = min(dates)
+        const maxDate = max(dates)
 
         // Group by time unit
         const cellMap = new Map<string, { date: Date; values: number[]; entries: BasesEntry[] }>()
@@ -127,7 +128,7 @@ export class DataAggregationService {
         }
 
         // Sort cells by date
-        cells.sort((a, b) => a.date.getTime() - b.date.getTime())
+        cells.sort((a, b) => compareAsc(a.date, b.date))
 
         return {
             propertyId,
@@ -177,9 +178,7 @@ export class DataAggregationService {
         }
 
         // Sort by date and create chart data
-        const sortedGroups = [...grouped.values()].sort(
-            (a, b) => a.date.getTime() - b.date.getTime()
-        )
+        const sortedGroups = [...grouped.values()].sort((a, b) => compareAsc(a.date, b.date))
 
         const labels = sortedGroups.map((g) => formatDateByGranularity(g.date, granularity))
         const data = sortedGroups.map((g) => g.values.reduce((a, b) => a + b, 0) / g.values.length)
@@ -281,7 +280,7 @@ export class DataAggregationService {
         }))
 
         // Sort by date
-        points.sort((a, b) => a.date.getTime() - b.date.getTime())
+        points.sort((a, b) => compareAsc(a.date, b.date))
 
         const minDate = points[0]?.date ?? new Date()
         const maxDate = points[points.length - 1]?.date ?? new Date()
@@ -307,13 +306,13 @@ export class DataAggregationService {
                 return formatDateISO(startOfWeek(date))
 
             case TimeGranularity.Monthly:
-                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+                return format(date, 'yyyy-MM')
 
             case TimeGranularity.Quarterly:
-                return `${date.getFullYear()}-Q${getQuarter(date)}`
+                return `${format(date, 'yyyy')}-Q${getQuarter(date)}`
 
             case TimeGranularity.Yearly:
-                return `${date.getFullYear()}`
+                return format(date, 'yyyy')
 
             default:
                 return formatDateISO(date)

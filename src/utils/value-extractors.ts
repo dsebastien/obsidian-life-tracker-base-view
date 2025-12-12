@@ -1,4 +1,5 @@
 import { Value } from 'obsidian'
+import { parseISO, isValid } from 'date-fns'
 
 /**
  * Extract number value from Obsidian Value type
@@ -30,9 +31,9 @@ export function extractDate(value: Value | null): Date | null {
 
     const str = value.toString()
 
-    // Try to parse as date
-    const date = new Date(str)
-    if (!isNaN(date.getTime())) {
+    // Try to parse as ISO date first
+    const date = parseISO(str)
+    if (isValid(date)) {
         return date
     }
 
@@ -85,9 +86,9 @@ export function isDateLike(value: Value | null): boolean {
     // ISO date format
     if (/^\d{4}-\d{2}-\d{2}/.test(str)) return true
 
-    // Try parsing
-    const date = new Date(str)
-    return !isNaN(date.getTime())
+    // Try parsing as ISO
+    const date = parseISO(str)
+    return isValid(date)
 }
 
 /**

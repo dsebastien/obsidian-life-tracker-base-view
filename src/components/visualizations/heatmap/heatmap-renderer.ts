@@ -4,6 +4,7 @@ import type {
     HeatmapCell
 } from '../../../app/types/visualization.types'
 import { TimeGranularity } from '../../../app/domain/time-granularity.enum'
+import { compareAsc, format, getMonth, getYear } from 'date-fns'
 import {
     addDays,
     formatDateISO,
@@ -81,7 +82,7 @@ function renderDailyHeatmap(
         weekCol.style.gap = `${config.cellGap}px`
 
         // Track month changes for labels
-        const monthNum = weekStart.getMonth()
+        const monthNum = getMonth(weekStart)
         if (monthNum !== currentMonth) {
             monthLabels.push({ week: weekIndex, name: getMonthName(weekStart) })
             currentMonth = monthNum
@@ -154,7 +155,7 @@ function renderWeeklyHeatmap(
     gridEl.style.gap = `${config.cellGap}px`
 
     // Sort cells by date
-    const sortedCells = [...data.cells].sort((a, b) => a.date.getTime() - b.date.getTime())
+    const sortedCells = [...data.cells].sort((a, b) => compareAsc(a.date, b.date))
 
     for (const cell of sortedCells) {
         const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
@@ -191,7 +192,7 @@ function renderMonthlyHeatmap(
     // Group cells by year-month
     const byMonth = new Map<string, HeatmapCell>()
     for (const cell of data.cells) {
-        const key = `${cell.date.getFullYear()}-${String(cell.date.getMonth() + 1).padStart(2, '0')}`
+        const key = format(cell.date, 'yyyy-MM')
         byMonth.set(key, cell)
     }
 
@@ -209,8 +210,8 @@ function renderMonthlyHeatmap(
     }
 
     // Get year range
-    const startYear = data.minDate.getFullYear()
-    const endYear = data.maxDate.getFullYear()
+    const startYear = getYear(data.minDate)
+    const endYear = getYear(data.maxDate)
 
     for (let year = startYear; year <= endYear; year++) {
         for (let month = 0; month < 12; month++) {
@@ -264,7 +265,7 @@ function renderQuarterlyHeatmap(
     }
 
     // Sort cells and render
-    const sortedCells = [...data.cells].sort((a, b) => a.date.getTime() - b.date.getTime())
+    const sortedCells = [...data.cells].sort((a, b) => compareAsc(a.date, b.date))
 
     for (const cell of sortedCells) {
         const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
@@ -301,7 +302,7 @@ function renderYearlyHeatmap(
     gridEl.style.gap = `${config.cellGap}px`
 
     // Sort cells and render
-    const sortedCells = [...data.cells].sort((a, b) => a.date.getTime() - b.date.getTime())
+    const sortedCells = [...data.cells].sort((a, b) => compareAsc(a.date, b.date))
 
     for (const cell of sortedCells) {
         const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
@@ -322,7 +323,7 @@ function renderYearlyHeatmap(
         }
 
         // Add year label
-        cellEl.textContent = String(cell.date.getFullYear())
+        cellEl.textContent = format(cell.date, 'yyyy')
     }
 
     return gridEl

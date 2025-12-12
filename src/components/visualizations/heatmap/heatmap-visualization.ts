@@ -8,6 +8,7 @@ import type {
 import { DataAggregationService } from '../../../app/services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
 import { renderHeatmapGrid } from './heatmap-renderer'
+import { parseISO, isSameDay } from 'date-fns'
 import { log } from '../../../utils/log'
 
 /**
@@ -134,7 +135,7 @@ export class HeatmapVisualization extends BaseVisualization {
 
         if (!dateStr) return
 
-        const date = new Date(dateStr)
+        const date = parseISO(dateStr)
         const value = valueStr ? parseFloat(valueStr) : null
         const count = countStr ? parseInt(countStr, 10) : 0
 
@@ -171,12 +172,10 @@ export class HeatmapVisualization extends BaseVisualization {
         const dateStr = cellEl.dataset['date']
         if (!dateStr) return
 
-        const date = new Date(dateStr)
+        const date = parseISO(dateStr)
 
         // Find entries for this date
-        const cell = this.heatmapData.cells.find(
-            (c) => c.date.toDateString() === date.toDateString()
-        )
+        const cell = this.heatmapData.cells.find((c) => isSameDay(c.date, date))
 
         if (cell && cell.entries.length > 0) {
             this.openEntries(cell.entries)

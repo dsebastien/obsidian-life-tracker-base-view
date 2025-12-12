@@ -7,6 +7,7 @@ import type {
 } from '../../../app/types/visualization.types'
 import { DataAggregationService } from '../../../app/services/data-aggregation.service'
 import { Tooltip } from '../../ui/tooltip'
+import { differenceInMilliseconds, parseISO } from 'date-fns'
 import { formatDateByGranularity } from '../../../utils/date-utils'
 import { log } from '../../../utils/log'
 
@@ -77,7 +78,7 @@ export class TimelineVisualization extends BaseVisualization {
         if (!this.timelineEl || !this.timelineData) return
 
         const { points, minDate, maxDate } = this.timelineData
-        const timeRange = maxDate.getTime() - minDate.getTime()
+        const timeRange = differenceInMilliseconds(maxDate, minDate)
 
         if (timeRange === 0) {
             // Single point - center it
@@ -89,7 +90,8 @@ export class TimelineVisualization extends BaseVisualization {
         }
 
         for (const point of points) {
-            const position = ((point.date.getTime() - minDate.getTime()) / timeRange) * 100
+            const elapsed = differenceInMilliseconds(point.date, minDate)
+            const position = (elapsed / timeRange) * 100
             this.renderPoint(point.date, point.label, point.entries.length, position)
         }
     }
@@ -180,7 +182,7 @@ export class TimelineVisualization extends BaseVisualization {
 
         if (!dateStr) return
 
-        const date = new Date(dateStr)
+        const date = parseISO(dateStr)
         const title = formatDateByGranularity(date, this.config.granularity)
         const value = label
         const subtitle = count > 0 ? `${count} ${count === 1 ? 'entry' : 'entries'}` : ''
