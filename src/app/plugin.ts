@@ -47,22 +47,33 @@ export class LifeTrackerBaseViewPlugin extends Plugin {
      */
     async loadSettings() {
         log('Loading settings', 'debug')
-        let loadedSettings = (await this.loadData()) as PluginSettings
+        const loadedSettings = (await this.loadData()) as PluginSettings | null
 
         if (!loadedSettings) {
             log('Using default settings', 'debug')
-            loadedSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS)
+            this.settings = produce(DEFAULT_SETTINGS, (draft) => draft)
             return
         }
 
         let needToSaveSettings = false
 
-        this.settings = produce(this.settings, (draft: Draft<PluginSettings>) => {
-            if (loadedSettings.enabled) {
+        this.settings = produce(DEFAULT_SETTINGS, (draft: Draft<PluginSettings>) => {
+            // Load enabled setting
+            if (loadedSettings.enabled !== undefined) {
                 draft.enabled = loadedSettings.enabled
             } else {
                 log('The loaded settings miss the [enabled] property', 'debug')
                 needToSaveSettings = true
+            }
+
+            // Load visualization presets
+            if (Array.isArray(loadedSettings.visualizationPresets)) {
+                draft.visualizationPresets = loadedSettings.visualizationPresets
+            }
+
+            // Load animation duration
+            if (typeof loadedSettings.animationDuration === 'number') {
+                draft.animationDuration = loadedSettings.animationDuration
             }
         })
 
@@ -80,5 +91,14 @@ export class LifeTrackerBaseViewPlugin extends Plugin {
         log('Saving settings', 'debug', this.settings)
         await this.saveData(this.settings)
         log('Settings saved', 'debug', this.settings)
+    }
+
+    /**
+     * Update settings immutably using immer
+     * @param updater Function that receives a draft and can mutate it
+     */
+    async updateSettings(updater: (draft: Draft<PluginSettings>) => void): Promise<void> {
+        this.settings = produce(this.settings, updater)
+        await this.saveSettings()
     }
 }

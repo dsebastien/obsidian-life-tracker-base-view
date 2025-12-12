@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
-import type LifeTrackerBaseViewPlugin from '../../main'
+import type { LifeTrackerBaseViewPlugin } from '../plugin'
 import { VisualizationType } from '../domain/visualization-type.enum'
 import { SETTINGS_TAB_VISUALIZATION_OPTIONS } from '../domain/visualization-options'
 import type { PropertyVisualizationPreset } from '../types/plugin-settings.intf'
@@ -53,8 +53,9 @@ export class LifeTrackerBaseViewPluginSettingTab extends PluginSettingTab {
                     .setValue(this.plugin.settings.animationDuration / 1000)
                     .setDynamicTooltip()
                     .onChange(async (value) => {
-                        this.plugin.settings.animationDuration = value * 1000
-                        await this.plugin.saveSettings()
+                        await this.plugin.updateSettings((draft) => {
+                            draft.animationDuration = value * 1000
+                        })
                     })
             })
     }
@@ -77,8 +78,8 @@ export class LifeTrackerBaseViewPluginSettingTab extends PluginSettingTab {
             button
                 .setButtonText('Add preset')
                 .setIcon('plus')
-                .onClick(() => {
-                    this.addNewPreset()
+                .onClick(async () => {
+                    await this.addNewPreset()
                     this.display() // Refresh
                 })
         })
@@ -110,8 +111,12 @@ export class LifeTrackerBaseViewPluginSettingTab extends PluginSettingTab {
             text.setPlaceholder('Property name')
                 .setValue(preset.propertyNamePattern)
                 .onChange(async (value) => {
-                    preset.propertyNamePattern = value
-                    await this.plugin.saveSettings()
+                    await this.plugin.updateSettings((draft) => {
+                        const p = draft.visualizationPresets.find((p) => p.id === preset.id)
+                        if (p) {
+                            p.propertyNamePattern = value
+                        }
+                    })
                 })
             text.inputEl.classList.add('lt-preset-name-input')
         })
@@ -122,12 +127,16 @@ export class LifeTrackerBaseViewPluginSettingTab extends PluginSettingTab {
                 .addOptions(VISUALIZATION_OPTIONS)
                 .setValue(preset.visualizationType)
                 .onChange(async (value) => {
-                    preset.visualizationType = value as VisualizationType
-                    // Clear scale if new type doesn't support it
-                    if (!supportsScale(preset.visualizationType)) {
-                        preset.scale = undefined
-                    }
-                    await this.plugin.saveSettings()
+                    await this.plugin.updateSettings((draft) => {
+                        const p = draft.visualizationPresets.find((p) => p.id === preset.id)
+                        if (p) {
+                            p.visualizationType = value as VisualizationType
+                            // Clear scale if new type doesn't support it
+                            if (!supportsScale(p.visualizationType)) {
+                                p.scale = undefined
+                            }
+                        }
+                    })
                     this.display() // Refresh to show/hide scale
                 })
         })
@@ -162,10 +171,14 @@ export class LifeTrackerBaseViewPluginSettingTab extends PluginSettingTab {
                     .setValue(currentValue)
                     .onChange(async (value) => {
                         const scaleValue = SCALE_PRESETS[value]
-                        preset.scale = scaleValue
-                            ? { min: scaleValue.min, max: scaleValue.max }
-                            : undefined
-                        await this.plugin.saveSettings()
+                        await this.plugin.updateSettings((draft) => {
+                            const p = draft.visualizationPresets.find((p) => p.id === preset.id)
+                            if (p) {
+                                p.scale = scaleValue
+                                    ? { min: scaleValue.min, max: scaleValue.max }
+                                    : undefined
+                            }
+                        })
                     })
             })
         }
@@ -176,26 +189,27 @@ export class LifeTrackerBaseViewPluginSettingTab extends PluginSettingTab {
                 .setIcon('trash')
                 .setTooltip('Delete preset')
                 .onClick(async () => {
-                    this.deletePreset(preset.id)
+                    await this.deletePreset(preset.id)
                     this.display() // Refresh
                 })
         })
     }
 
-    addNewPreset(): void {
+    async addNewPreset(): Promise<void> {
         const newPreset: PropertyVisualizationPreset = {
             id: crypto.randomUUID(),
             propertyNamePattern: '',
             visualizationType: VisualizationType.Heatmap
         }
-        this.plugin.settings.visualizationPresets.push(newPreset)
-        this.plugin.saveSettings()
+        await this.plugin.updateSettings((draft) => {
+            draft.visualizationPresets.push(newPreset)
+        })
     }
 
-    deletePreset(id: string): void {
-        this.plugin.settings.visualizationPresets =
-            this.plugin.settings.visualizationPresets.filter((p) => p.id !== id)
-        this.plugin.saveSettings()
+    async deletePreset(id: string): Promise<void> {
+        await this.plugin.updateSettings((draft) => {
+            draft.visualizationPresets = draft.visualizationPresets.filter((p) => p.id !== id)
+        })
     }
 
     renderFollowButton(containerEl: HTMLElement): void {

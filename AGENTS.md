@@ -199,6 +199,46 @@ scripts/
 - Persist settings using `this.loadData()` / `this.saveData()`.
 - Use stable command IDs; avoid renaming once released.
 
+### Settings State Management with Immer
+
+**CRITICAL**: This project uses [immer](https://immerjs.github.io/immer/) to manage settings state immutably. Settings objects are frozen and cannot be mutated directly.
+
+**Rules:**
+
+- NEVER directly mutate `this.plugin.settings` or any of its properties
+- ALWAYS use `this.plugin.updateSettings(draft => { ... })` to modify settings
+- The `draft` parameter in the updater function can be mutated freely - immer handles immutability
+
+**Example - Correct:**
+
+```typescript
+// Adding to an array
+await this.plugin.updateSettings((draft) => {
+    draft.visualizationPresets.push(newPreset)
+})
+
+// Modifying a property
+await this.plugin.updateSettings((draft) => {
+    draft.animationDuration = 5000
+})
+
+// Finding and updating an item
+await this.plugin.updateSettings((draft) => {
+    const preset = draft.visualizationPresets.find((p) => p.id === id)
+    if (preset) {
+        preset.propertyNamePattern = newValue
+    }
+})
+```
+
+**Example - WRONG (will throw "object is not extensible" error):**
+
+```typescript
+// ❌ Direct mutation - WILL FAIL
+this.plugin.settings.visualizationPresets.push(newPreset)
+this.plugin.settings.animationDuration = 5000
+```
+
 ## Versioning & releases
 
 - Bump `version` in `manifest.json` (SemVer) and update `versions.json` to map plugin version → minimum app version.
