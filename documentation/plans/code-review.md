@@ -95,36 +95,50 @@ These are unused code items that may be kept for future use or removed for clean
 - **Escape handler cleanup**: Fixed - `removeEventListener` called in cleanup paths
 - **isDesktopOnly: false**: Plugin designed for mobile compatibility
 
-### Potential Issues to Discuss
+### Resolved Issues
 
-16. **Q16: Large files exceed 200-300 line guideline**:
+16. **Q16: Large files exceed 200-300 line guideline** - **FIXED**:
+    Original sizes:
     - `life-tracker-view.ts`: 800 lines
     - `chart-visualization.ts`: 819 lines
     - `data-aggregation.service.ts`: 614 lines
-    - Should these be split into smaller modules?
 
-17. **Q17: versions.json inconsistency** - Contains:
+    Split into smaller modules:
+    - `life-tracker-view.ts`: 503 lines (main view, orchestration)
+    - `column-config.service.ts`: 168 lines (column config management)
+    - `maximize-state.service.ts`: 127 lines (maximize/minimize state)
+    - `visualization-config.helper.ts`: 115 lines (config helpers)
+    - `chart-visualization.ts`: 450 lines (main chart class)
+    - `chart-initializers.ts`: 387 lines (chart type initialization)
+    - `chart-types.ts`: 47 lines (type definitions)
+    - `data-aggregation.service.ts`: 241 lines (main service)
+    - `date-grouping.utils.ts`: 155 lines (date utilities)
+    - `chart-aggregation.utils.ts`: 319 lines (aggregation functions)
 
-    ```json
-    {
-        "1.0.0": "0.15.0",
-        "0.1.0": "1.4.0"
-    }
-    ```
+17. **Q17: versions.json inconsistency** - **FIXED**:
+    - Fixed to `{"0.1.0": "1.10.0"}` - single entry since all versions require same minAppVersion
+    - Updated manifest.json minAppVersion from 1.4.0 to 1.10.0 (Bases API requirement)
+    - Note: versions.json only needs entries when minAppVersion CHANGES (per official Obsidian spec)
 
-    Current manifest is v1.1.0 with minAppVersion 1.4.0. Missing entry for 1.1.0. Also "1.0.0": "0.15.0" seems wrong (0.15.0 is very old). Should this be cleaned up?
+18. **Q18: Unused dependency** - **FIXED**: Removed `zod` from package.json dependencies.
 
-18. **Q18: Unused dependency** - `zod` is in package.json dependencies but not imported anywhere in src/. Remove?
+19. **Q19: Event listeners audit** - **RESOLVED (No Changes Needed)**:
 
-19. **Q19: Event listeners without register\* helpers** - Several UI components use raw `addEventListener` without Obsidian's `register*` helpers:
-    - `column-config-card.ts`: 5 addEventListener calls
-    - `grid-controls.ts`: 3 addEventListener calls
-    - `card-context-menu.ts`: 4 addEventListener calls (modal)
-    - `base-visualization.ts`: 4 addEventListener calls
-    - `heatmap-visualization.ts`: 4 addEventListener calls
-    - `timeline-visualization.ts`: 3 addEventListener calls
-    - `tag-cloud-visualization.ts`: 3 addEventListener calls
+    After detailed audit, the current implementation is correct:
 
-    **Note**: These are on dynamically created DOM elements that get removed when the view is destroyed, so memory leaks are unlikely. However, the AGENTS.md guideline says "Use `this.register*` helpers for everything that needs cleanup." Should we audit these more carefully, or is the current cleanup sufficient?
+    **Document-level listeners** (need explicit cleanup):
+    - `card-context-menu.ts`: Escape handler - properly cleaned up via `cleanup()` function
+    - `life-tracker-view.ts`: Escape handler - properly cleaned up in `closeAllMenus()`
 
-20. **Q20: Missing entry in versions.json** - Current version 1.1.0 not listed. Add it?
+    **Element-level listeners** (auto-cleaned by garbage collection):
+    - `column-config-card.ts`: Click/keydown on option buttons - attached to child elements, GC'd when card removed
+    - `grid-controls.ts`: Click handlers on buttons - attached to child elements, GC'd when controls removed
+    - `base-visualization.ts`: Click/mousemove/mouseleave on container - GC'd when viz destroyed
+    - All visualization files: Hover/click handlers on cells/elements - GC'd when parent removed
+
+    **Conclusion**: Obsidian's `register*` helpers are for plugin-level listeners (app events, workspace events, intervals). For DOM listeners on dynamically created child elements, explicit cleanup is NOT required because:
+    1. When parent DOM is removed, child listeners are automatically garbage collected
+    2. The view's `destroy()` method empties the container, triggering GC
+    3. Document-level listeners ARE explicitly cleaned up (the only ones that need it)
+
+20. **Q20: Missing entry in versions.json** - **RESOLVED**: No entry needed for 1.1.0 since minAppVersion hasn't changed from 1.10.0. The versions.json file only tracks when minAppVersion changes.

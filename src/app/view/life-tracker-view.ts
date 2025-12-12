@@ -1,20 +1,13 @@
 import { BasesView, type BasesPropertyId, type QueryController } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
-import type { PropertyVisualizationPreset } from '../types/plugin-settings.intf'
 import { DateAnchorService } from '../services/date-anchor.service'
 import { DataAggregationService } from '../services/data-aggregation.service'
-import { TimeGranularity } from '../domain/time-granularity.enum'
 import { VisualizationType } from '../domain/visualization-type.enum'
-import type {
-    ColumnConfigMap,
-    ColumnVisualizationConfig,
-    ScaleConfig
-} from '../types/column-config.types'
+import type { ColumnVisualizationConfig } from '../types/column-config.types'
 import type {
     ChartConfig,
     HeatmapConfig,
     TagCloudConfig,
-    VisualizationConfig,
     VisualizationDataPoint
 } from '../types/visualization.types'
 import { BaseVisualization } from '../components/visualizations/base-visualization'
@@ -30,19 +23,16 @@ import {
     DEFAULT_GRID_SETTINGS,
     type GridSettings
 } from '../components/ui/grid-controls'
-import { DEFAULT_CELL_SIZE, DEFAULT_EMBEDDED_HEIGHT, DEFAULT_GRID_COLUMNS } from './view-options'
-import { HEATMAP_PRESETS } from '../../utils/color-utils'
+import { DEFAULT_GRID_COLUMNS } from './view-options'
 import { log } from '../../utils/log'
+import { ColumnConfigService } from './column-config.service'
+import { MaximizeStateService } from './maximize-state.service'
+import { getVisualizationConfig } from './visualization-config.helper'
 
 /**
  * View type identifier
  */
 export const LIFE_TRACKER_VIEW_TYPE = 'life-tracker'
-
-/**
- * Config key for storing column configurations
- */
-const COLUMN_CONFIGS_KEY = 'columnConfigs'
 
 /**
  * Life Tracker Base View implementation
@@ -57,6 +47,8 @@ export class LifeTrackerView extends BasesView {
     // Services
     private dateAnchorService: DateAnchorService
     private aggregationService: DataAggregationService
+    private columnConfigService: ColumnConfigService
+    private maximizeService: MaximizeStateService
 
     // Active visualizations
     private visualizations: Map<BasesPropertyId, BaseVisualization> = new Map()
@@ -66,10 +58,6 @@ export class LifeTrackerView extends BasesView {
 
     // Flag to skip re-render when only grid settings change
     private isUpdatingGridSettings = false
-
-    // Maximized card state
-    private maximizedPropertyId: BasesPropertyId | null = null
-    private escapeHandler: ((e: KeyboardEvent) => void) | null = null
 
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
@@ -85,6 +73,17 @@ export class LifeTrackerView extends BasesView {
         // Initialize services
         this.dateAnchorService = new DateAnchorService()
         this.aggregationService = new DataAggregationService()
+        this.columnConfigService = new ColumnConfigService(
+            plugin,
+            (key) => this.config.get(key),
+            (key, value) => this.config.set(key, value)
+        )
+        this.maximizeService = new MaximizeStateService(
+            this.containerEl,
+            () => this.gridEl,
+            () => this.visualizations,
+            (propertyId) => this.getDataPointsForProperty(propertyId)
+        )
 
         // Subscribe to global settings changes
         this.unsubscribeSettings = this.plugin.onSettingsChange(() => {
@@ -96,108 +95,12 @@ export class LifeTrackerView extends BasesView {
     }
 
     /**
-     * Get stored column configurations
+     * Get data points for a specific property
      */
-    private getColumnConfigs(): ColumnConfigMap {
-        return (this.config.get(COLUMN_CONFIGS_KEY) as ColumnConfigMap) ?? {}
-    }
-
-    /**
-     * Save column configuration for a property
-     */
-    private saveColumnConfig(
-        propertyId: BasesPropertyId,
-        visualizationType: VisualizationType,
-        displayName: string,
-        scale?: ScaleConfig
-    ): void {
-        const configs = this.getColumnConfigs()
-        const config: ColumnVisualizationConfig = {
-            propertyId,
-            visualizationType,
-            displayName,
-            configuredAt: Date.now()
-        }
-        if (scale) {
-            config.scale = scale
-        }
-        configs[propertyId] = config
-        this.config.set(COLUMN_CONFIGS_KEY, configs)
-    }
-
-    /**
-     * Get column config for a property (if exists as local override)
-     */
-    private getColumnConfig(propertyId: BasesPropertyId): ColumnVisualizationConfig | null {
-        const configs = this.getColumnConfigs()
-        return configs[propertyId] ?? null
-    }
-
-    /**
-     * Find a matching global preset for a property
-     * Matches against the raw property name (e.g., 'energy_level_evening')
-     */
-    private findMatchingPreset(propertyId: BasesPropertyId): PropertyVisualizationPreset | null {
-        const presets = this.plugin.settings.visualizationPresets
-        if (presets.length === 0) return null
-
-        // Extract raw property name from ID (e.g., 'note.energy_level_evening' -> 'energy_level_evening')
-        const rawPropertyName = propertyId.includes('.')
-            ? propertyId.substring(propertyId.indexOf('.') + 1)
-            : propertyId
-
-        const lowerRawName = rawPropertyName.toLowerCase()
-
-        log('Finding preset', 'debug', {
-            propertyId,
-            rawPropertyName,
-            presetPatterns: presets.map((p) => p.propertyNamePattern)
-        })
-
-        for (const preset of presets) {
-            const patternLower = preset.propertyNamePattern.toLowerCase()
-
-            if (patternLower === lowerRawName) {
-                log('Preset matched', 'debug', {
-                    pattern: preset.propertyNamePattern,
-                    matchedTo: propertyId
-                })
-                return preset
-            }
-        }
-
-        return null
-    }
-
-    /**
-     * Get effective configuration for a property
-     * Priority: local override > global preset > null (unconfigured)
-     */
-    private getEffectiveConfig(
-        propertyId: BasesPropertyId,
-        displayName: string
-    ): { config: ColumnVisualizationConfig; isFromPreset: boolean } | null {
-        // Check for local override first
-        const localConfig = this.getColumnConfig(propertyId)
-        if (localConfig) {
-            return { config: localConfig, isFromPreset: false }
-        }
-
-        // Check for matching global preset
-        const preset = this.findMatchingPreset(propertyId)
-        if (preset) {
-            // Create a config from the preset
-            const configFromPreset: ColumnVisualizationConfig = {
-                propertyId,
-                visualizationType: preset.visualizationType,
-                displayName,
-                configuredAt: 0, // Not persisted
-                scale: preset.scale
-            }
-            return { config: configFromPreset, isFromPreset: true }
-        }
-
-        return null
+    private getDataPointsForProperty(propertyId: BasesPropertyId): VisualizationDataPoint[] {
+        const entries = this.data.data
+        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
+        return this.aggregationService.createDataPoints(entries, propertyId, dateAnchors)
     }
 
     /**
@@ -213,7 +116,7 @@ export class LifeTrackerView extends BasesView {
         log('onDataUpdated called', 'debug')
 
         // Clean up maximize state and existing visualizations
-        this.cleanupMaximizeState()
+        this.maximizeService.cleanup()
         this.destroyVisualizations()
         this.containerEl.empty()
 
@@ -268,7 +171,10 @@ export class LifeTrackerView extends BasesView {
             if (propertyId.startsWith('file.')) continue
 
             const displayName = this.config.getDisplayName(propertyId)
-            const effectiveConfig = this.getEffectiveConfig(propertyId, displayName)
+            const effectiveConfig = this.columnConfigService.getEffectiveConfig(
+                propertyId,
+                displayName
+            )
 
             if (effectiveConfig) {
                 // Has configuration (local override or global preset)
@@ -305,8 +211,35 @@ export class LifeTrackerView extends BasesView {
             cls: 'lt-card',
             attr: { 'data-property-id': columnConfig.propertyId }
         })
-        const vizConfig = this.getVisualizationConfig(columnConfig.visualizationType, columnConfig)
 
+        // Add context menu and touch handlers
+        this.setupCardEventHandlers(cardEl, columnConfig, displayName, isFromPreset)
+
+        // Create visualization
+        const visualization = this.createVisualization(cardEl, columnConfig, displayName)
+
+        // Wire up maximize callback
+        visualization.setMaximizeCallback((propertyId, maximize) => {
+            this.maximizeService.handleMaximizeToggle(propertyId, maximize)
+        })
+
+        // Set animation duration from plugin settings
+        visualization.setAnimationDuration(this.plugin.settings.animationDuration)
+
+        // Render and store
+        visualization.render(dataPoints)
+        this.visualizations.set(columnConfig.propertyId, visualization)
+    }
+
+    /**
+     * Setup event handlers for card (context menu, touch)
+     */
+    private setupCardEventHandlers(
+        cardEl: HTMLElement,
+        columnConfig: ColumnVisualizationConfig,
+        displayName: string,
+        isFromPreset: boolean
+    ): void {
         // Add context menu handler (right-click)
         cardEl.addEventListener('contextmenu', (event) => {
             event.preventDefault()
@@ -358,19 +291,31 @@ export class LifeTrackerView extends BasesView {
             }
             touchStartPos = null
         })
+    }
 
-        let visualization: BaseVisualization
+    /**
+     * Create a visualization instance based on type
+     */
+    private createVisualization(
+        cardEl: HTMLElement,
+        columnConfig: ColumnVisualizationConfig,
+        displayName: string
+    ): BaseVisualization {
+        const vizConfig = getVisualizationConfig(
+            columnConfig.visualizationType,
+            columnConfig,
+            (key) => this.config.get(key)
+        )
 
         switch (columnConfig.visualizationType) {
             case VisualizationType.Heatmap:
-                visualization = new HeatmapVisualization(
+                return new HeatmapVisualization(
                     cardEl,
                     this.app,
                     columnConfig.propertyId,
                     displayName,
                     vizConfig as HeatmapConfig
                 )
-                break
 
             case VisualizationType.LineChart:
             case VisualizationType.BarChart:
@@ -381,38 +326,35 @@ export class LifeTrackerView extends BasesView {
             case VisualizationType.PolarAreaChart:
             case VisualizationType.ScatterChart:
             case VisualizationType.BubbleChart:
-                visualization = new ChartVisualization(
+                return new ChartVisualization(
                     cardEl,
                     this.app,
                     columnConfig.propertyId,
                     displayName,
                     vizConfig as ChartConfig
                 )
-                break
 
             case VisualizationType.TagCloud:
-                visualization = new TagCloudVisualization(
+                return new TagCloudVisualization(
                     cardEl,
                     this.app,
                     columnConfig.propertyId,
                     displayName,
                     vizConfig as TagCloudConfig
                 )
-                break
 
             case VisualizationType.Timeline:
-                visualization = new TimelineVisualization(
+                return new TimelineVisualization(
                     cardEl,
                     this.app,
                     columnConfig.propertyId,
                     displayName,
                     vizConfig
                 )
-                break
 
             default:
-                // Should not happen, but fallback to heatmap
-                visualization = new HeatmapVisualization(
+                // Fallback to heatmap
+                return new HeatmapVisualization(
                     cardEl,
                     this.app,
                     columnConfig.propertyId,
@@ -420,18 +362,6 @@ export class LifeTrackerView extends BasesView {
                     vizConfig as HeatmapConfig
                 )
         }
-
-        // Wire up maximize callback
-        visualization.setMaximizeCallback((propertyId, maximize) => {
-            this.handleMaximizeToggle(propertyId, maximize)
-        })
-
-        // Set animation duration from plugin settings
-        visualization.setAnimationDuration(this.plugin.settings.animationDuration)
-
-        // Render and store
-        visualization.render(dataPoints)
-        this.visualizations.set(columnConfig.propertyId, visualization)
     }
 
     /**
@@ -443,7 +373,7 @@ export class LifeTrackerView extends BasesView {
         displayName: string,
         isFromPreset: boolean
     ): void {
-        const isMaximized = this.maximizedPropertyId === columnConfig.propertyId
+        const isMaximized = this.maximizeService.isMaximized(columnConfig.propertyId)
         showCardContextMenu(
             event,
             columnConfig.visualizationType,
@@ -469,14 +399,14 @@ export class LifeTrackerView extends BasesView {
             case 'changeVisualization':
                 if (isFromPreset) {
                     // Create local override from preset with new visualization type
-                    this.saveColumnConfig(
+                    this.columnConfigService.saveColumnConfig(
                         columnConfig.propertyId,
                         action.visualizationType,
                         displayName,
                         undefined // Clear scale for new type
                     )
                 } else {
-                    this.updateColumnConfig(columnConfig.propertyId, {
+                    this.columnConfigService.updateColumnConfig(columnConfig.propertyId, {
                         visualizationType: action.visualizationType,
                         scale: undefined
                     })
@@ -488,14 +418,14 @@ export class LifeTrackerView extends BasesView {
             case 'configureScale':
                 if (isFromPreset) {
                     // Create local override from preset with new scale
-                    this.saveColumnConfig(
+                    this.columnConfigService.saveColumnConfig(
                         columnConfig.propertyId,
                         columnConfig.visualizationType,
                         displayName,
                         action.scale
                     )
                 } else {
-                    this.updateColumnConfig(columnConfig.propertyId, {
+                    this.columnConfigService.updateColumnConfig(columnConfig.propertyId, {
                         scale: action.scale
                     })
                 }
@@ -504,131 +434,20 @@ export class LifeTrackerView extends BasesView {
                 break
 
             case 'resetConfig':
-                this.deleteColumnConfig(columnConfig.propertyId)
+                this.columnConfigService.deleteColumnConfig(columnConfig.propertyId)
                 // Re-render the view
                 this.onDataUpdated()
                 break
 
             case 'toggleMaximize': {
-                const isCurrentlyMaximized = this.maximizedPropertyId === columnConfig.propertyId
-                this.handleMaximizeToggle(columnConfig.propertyId, !isCurrentlyMaximized)
+                const isCurrentlyMaximized = this.maximizeService.isMaximized(
+                    columnConfig.propertyId
+                )
+                this.maximizeService.handleMaximizeToggle(
+                    columnConfig.propertyId,
+                    !isCurrentlyMaximized
+                )
                 break
-            }
-        }
-    }
-
-    /**
-     * Update an existing column configuration (local override)
-     */
-    private updateColumnConfig(
-        propertyId: BasesPropertyId,
-        updates: Partial<ColumnVisualizationConfig>
-    ): void {
-        const configs = this.getColumnConfigs()
-        const existing = configs[propertyId]
-        if (existing) {
-            configs[propertyId] = {
-                ...existing,
-                ...updates,
-                configuredAt: Date.now()
-            }
-            this.config.set(COLUMN_CONFIGS_KEY, configs)
-        }
-    }
-
-    /**
-     * Delete a column configuration (reset to unconfigured state)
-     */
-    private deleteColumnConfig(propertyId: BasesPropertyId): void {
-        const configs = this.getColumnConfigs()
-        delete configs[propertyId]
-        this.config.set(COLUMN_CONFIGS_KEY, configs)
-    }
-
-    /**
-     * Handle maximize toggle for a card
-     */
-    private handleMaximizeToggle(propertyId: BasesPropertyId, maximize: boolean): void {
-        const previousMaximized = this.maximizedPropertyId
-
-        // Clean up any existing escape handler first
-        if (this.escapeHandler) {
-            document.removeEventListener('keydown', this.escapeHandler)
-            this.escapeHandler = null
-        }
-
-        if (maximize) {
-            this.maximizedPropertyId = propertyId
-
-            // Add escape key handler - use arrow function that reads current state
-            this.escapeHandler = (e: KeyboardEvent): void => {
-                if (e.key === 'Escape' && this.maximizedPropertyId) {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    this.handleMaximizeToggle(this.maximizedPropertyId, false)
-                }
-            }
-            document.addEventListener('keydown', this.escapeHandler)
-
-            // Add maximized class to container
-            this.containerEl.classList.add('lt-container--has-maximized')
-        } else {
-            this.maximizedPropertyId = null
-
-            // Remove maximized class from container
-            this.containerEl.classList.remove('lt-container--has-maximized')
-        }
-
-        // Update visualization states
-        for (const [id, viz] of this.visualizations) {
-            const isMaximized = id === this.maximizedPropertyId
-            viz.setMaximized(isMaximized)
-        }
-
-        // Update card classes
-        if (this.gridEl) {
-            const cards = this.gridEl.querySelectorAll('.lt-card')
-            cards.forEach((card) => {
-                const cardPropertyId = card.getAttribute('data-property-id')
-                if (cardPropertyId === this.maximizedPropertyId) {
-                    card.classList.add('lt-card--maximized')
-                } else {
-                    card.classList.remove('lt-card--maximized')
-                    if (this.maximizedPropertyId) {
-                        card.classList.add('lt-card--hidden')
-                    } else {
-                        card.classList.remove('lt-card--hidden')
-                    }
-                }
-            })
-        }
-
-        // Re-render the maximized visualization to fit new size
-        if (maximize) {
-            const viz = this.visualizations.get(propertyId)
-            if (viz) {
-                // Get data points for re-render
-                const entries = this.data.data
-                const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
-                const dataPoints = this.aggregationService.createDataPoints(
-                    entries,
-                    propertyId,
-                    dateAnchors
-                )
-                viz.update(dataPoints)
-            }
-        } else if (previousMaximized) {
-            // Re-render the previously maximized visualization
-            const viz = this.visualizations.get(previousMaximized)
-            if (viz) {
-                const entries = this.data.data
-                const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
-                const dataPoints = this.aggregationService.createDataPoints(
-                    entries,
-                    previousMaximized,
-                    dateAnchors
-                )
-                viz.update(dataPoints)
             }
         }
     }
@@ -641,7 +460,12 @@ export class LifeTrackerView extends BasesView {
 
         createColumnConfigCard(this.gridEl, displayName, (result) => {
             // Save config and re-render
-            this.saveColumnConfig(propertyId, result.visualizationType, displayName, result.scale)
+            this.columnConfigService.saveColumnConfig(
+                propertyId,
+                result.visualizationType,
+                displayName,
+                result.scale
+            )
             this.onDataUpdated()
         })
     }
@@ -657,107 +481,6 @@ export class LifeTrackerView extends BasesView {
         // Set CSS custom properties for grid layout
         this.gridEl.style.setProperty('--lt-grid-columns', String(columns))
         this.gridEl.style.setProperty('--lt-card-min-height', `${cardMinHeight}px`)
-    }
-
-    /**
-     * Get visualization configuration from view config
-     */
-    private getVisualizationConfig(
-        vizType: VisualizationType,
-        columnConfig: ColumnVisualizationConfig
-    ): VisualizationConfig {
-        const granularity =
-            (this.config.get('granularity') as TimeGranularity) ?? TimeGranularity.Daily
-        const showEmptyDates = (this.config.get('showEmptyDates') as boolean) ?? true
-        const embeddedHeight =
-            (this.config.get('embeddedHeight') as number) ?? DEFAULT_EMBEDDED_HEIGHT
-
-        const baseConfig: VisualizationConfig = {
-            granularity,
-            showEmptyDates,
-            embeddedHeight
-        }
-
-        // Extract scale from column config if present
-        const scale = columnConfig.scale
-
-        switch (vizType) {
-            case VisualizationType.Heatmap: {
-                const colorSchemeName = (this.config.get('heatmapColorScheme') as string) ?? 'green'
-                const colorScheme = HEATMAP_PRESETS[colorSchemeName] ?? HEATMAP_PRESETS['green']!
-
-                return {
-                    ...baseConfig,
-                    colorScheme,
-                    cellSize: (this.config.get('heatmapCellSize') as number) ?? DEFAULT_CELL_SIZE,
-                    cellGap: 2,
-                    showMonthLabels: (this.config.get('heatmapShowMonthLabels') as boolean) ?? true,
-                    showDayLabels: (this.config.get('heatmapShowDayLabels') as boolean) ?? true,
-                    scale
-                } as HeatmapConfig
-            }
-
-            case VisualizationType.LineChart:
-            case VisualizationType.BarChart:
-            case VisualizationType.AreaChart:
-            case VisualizationType.PieChart:
-            case VisualizationType.DoughnutChart:
-            case VisualizationType.RadarChart:
-            case VisualizationType.PolarAreaChart:
-            case VisualizationType.ScatterChart:
-            case VisualizationType.BubbleChart:
-                return {
-                    ...baseConfig,
-                    chartType: this.mapVisualizationTypeToChartType(vizType),
-                    showLegend: (this.config.get('chartShowLegend') as boolean) ?? false,
-                    showGrid: (this.config.get('chartShowGrid') as boolean) ?? true,
-                    tension: 0.3,
-                    scale
-                } as ChartConfig
-
-            case VisualizationType.TagCloud:
-                return {
-                    ...baseConfig,
-                    minFontSize: 12,
-                    maxFontSize: 32,
-                    sortBy:
-                        (this.config.get('tagCloudSortBy') as 'frequency' | 'alphabetical') ??
-                        'frequency',
-                    maxTags: (this.config.get('tagCloudMaxTags') as number) ?? 50
-                } as TagCloudConfig
-
-            default:
-                return baseConfig
-        }
-    }
-
-    /**
-     * Map VisualizationType to Chart.js chart type
-     */
-    private mapVisualizationTypeToChartType(
-        vizType: VisualizationType
-    ): 'line' | 'bar' | 'pie' | 'doughnut' | 'radar' | 'polarArea' | 'scatter' | 'bubble' {
-        switch (vizType) {
-            case VisualizationType.LineChart:
-            case VisualizationType.AreaChart:
-                return 'line'
-            case VisualizationType.BarChart:
-                return 'bar'
-            case VisualizationType.PieChart:
-                return 'pie'
-            case VisualizationType.DoughnutChart:
-                return 'doughnut'
-            case VisualizationType.RadarChart:
-                return 'radar'
-            case VisualizationType.PolarAreaChart:
-                return 'polarArea'
-            case VisualizationType.ScatterChart:
-                return 'scatter'
-            case VisualizationType.BubbleChart:
-                return 'bubble'
-            default:
-                return 'line'
-        }
     }
 
     /**
@@ -782,19 +505,7 @@ export class LifeTrackerView extends BasesView {
             this.unsubscribeSettings = null
         }
 
-        this.cleanupMaximizeState()
+        this.maximizeService.cleanup()
         this.destroyVisualizations()
-    }
-
-    /**
-     * Clean up maximize state and handlers
-     */
-    private cleanupMaximizeState(): void {
-        if (this.escapeHandler) {
-            document.removeEventListener('keydown', this.escapeHandler)
-            this.escapeHandler = null
-        }
-        this.maximizedPropertyId = null
-        this.containerEl.classList.remove('lt-container--has-maximized')
     }
 }
