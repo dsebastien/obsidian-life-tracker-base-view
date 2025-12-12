@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/v1.0.0...v1.1.0) (2025-12-12)
+
+### Features
+
+* **all:** avoid fully recreating the base view when grid settings are changed (eg number of columns) ([e1747d7](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/e1747d75aff92445e19d7722ff0bbb088e78d5db))
+* **all:** renamed the plugin (wider scope) ([cb4832c](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/cb4832cd9855f48d7975729ee3d2bad785b40584))
 ## [1.0.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/v0.2.0...v1.0.0) (2025-12-12)
 
 ### Bug Fixes

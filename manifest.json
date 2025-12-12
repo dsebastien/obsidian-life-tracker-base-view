@@ -2,7 +2,7 @@
     "id": "life-tracker",
     "name": "Life Tracker",
     "description": "Capture and visualize the data that matters in your life",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "minAppVersion": "1.4.0",
     "isDesktopOnly": false,
     "author": "Sébastien Dubois",
