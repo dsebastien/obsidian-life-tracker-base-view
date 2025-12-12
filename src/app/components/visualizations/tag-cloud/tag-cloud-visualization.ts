@@ -4,10 +4,10 @@ import type {
     TagCloudConfig,
     TagCloudData,
     VisualizationDataPoint
-} from '../../../app/types/visualization.types'
-import { DataAggregationService } from '../../../app/services/data-aggregation.service'
+} from '../../../types/visualization.types'
+import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatTagTooltip } from '../../ui/tooltip'
-import { log } from '../../../utils/log'
+import { log } from '../../../../utils/log'
 
 /**
  * Tag cloud visualization for tags and lists

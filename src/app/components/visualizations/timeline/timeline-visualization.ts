@@ -4,12 +4,12 @@ import type {
     TimelineData,
     VisualizationConfig,
     VisualizationDataPoint
-} from '../../../app/types/visualization.types'
-import { DataAggregationService } from '../../../app/services/data-aggregation.service'
+} from '../../../types/visualization.types'
+import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip } from '../../ui/tooltip'
 import { differenceInMilliseconds, parseISO } from 'date-fns'
-import { formatDateByGranularity } from '../../../utils/date-utils'
-import { log } from '../../../utils/log'
+import { formatDateByGranularity } from '../../../../utils/date-utils'
+import { log } from '../../../../utils/log'
 
 /**
  * Timeline visualization for date-based data

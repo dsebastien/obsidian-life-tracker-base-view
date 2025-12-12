@@ -1,5 +1,5 @@
-import { formatDateByGranularity } from '../../utils/date-utils'
-import type { TimeGranularity } from '../../app/domain/time-granularity.enum'
+import { formatDateByGranularity } from '../../../utils/date-utils'
+import type { TimeGranularity } from '../../domain/time-granularity.enum'
 
 /**
  * Shared tooltip component for visualizations

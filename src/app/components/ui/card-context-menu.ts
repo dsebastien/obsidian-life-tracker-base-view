@@ -1,6 +1,6 @@
 import { Menu } from 'obsidian'
-import { VisualizationType } from '../../app/domain/visualization-type.enum'
-import { supportsScale, type ScaleConfig } from '../../app/types/column-config.types'
+import { VisualizationType } from '../../domain/visualization-type.enum'
+import { supportsScale, type ScaleConfig } from '../../types/column-config.types'
 
 /**
  * Menu action types

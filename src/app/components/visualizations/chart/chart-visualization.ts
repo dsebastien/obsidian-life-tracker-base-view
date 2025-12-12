@@ -4,10 +4,10 @@ import type {
     ChartConfig,
     ChartData,
     VisualizationDataPoint
-} from '../../../app/types/visualization.types'
-import { DataAggregationService } from '../../../app/services/data-aggregation.service'
-import { CHART_COLORS_HEX, getColorWithAlpha } from '../../../utils/color-utils'
-import { log } from '../../../utils/log'
+} from '../../../types/visualization.types'
+import { DataAggregationService } from '../../../services/data-aggregation.service'
+import { CHART_COLORS_HEX, getColorWithAlpha } from '../../../../utils/color-utils'
+import { log } from '../../../../utils/log'
 
 // Chart.js types - will be dynamically imported
 type ChartType = 'line' | 'bar'

@@ -17,19 +17,19 @@ import type {
     VisualizationConfig,
     VisualizationDataPoint
 } from '../types/visualization.types'
-import { BaseVisualization } from '../../components/visualizations/base-visualization'
-import { HeatmapVisualization } from '../../components/visualizations/heatmap/heatmap-visualization'
-import { ChartVisualization } from '../../components/visualizations/chart/chart-visualization'
-import { TagCloudVisualization } from '../../components/visualizations/tag-cloud/tag-cloud-visualization'
-import { TimelineVisualization } from '../../components/visualizations/timeline/timeline-visualization'
-import { createEmptyState, EMPTY_STATE_MESSAGES } from '../../components/ui/empty-state'
-import { createColumnConfigCard } from '../../components/ui/column-config-card'
-import { showCardContextMenu, type CardMenuAction } from '../../components/ui/card-context-menu'
+import { BaseVisualization } from '../components/visualizations/base-visualization'
+import { HeatmapVisualization } from '../components/visualizations/heatmap/heatmap-visualization'
+import { ChartVisualization } from '../components/visualizations/chart/chart-visualization'
+import { TagCloudVisualization } from '../components/visualizations/tag-cloud/tag-cloud-visualization'
+import { TimelineVisualization } from '../components/visualizations/timeline/timeline-visualization'
+import { createEmptyState, EMPTY_STATE_MESSAGES } from '../components/ui/empty-state'
+import { createColumnConfigCard } from '../components/ui/column-config-card'
+import { showCardContextMenu, type CardMenuAction } from '../components/ui/card-context-menu'
 import {
     createGridControls,
     DEFAULT_GRID_SETTINGS,
     type GridSettings
-} from '../../components/ui/grid-controls'
+} from '../components/ui/grid-controls'
 import { DEFAULT_CELL_SIZE, DEFAULT_EMBEDDED_HEIGHT, DEFAULT_GRID_COLUMNS } from './view-options'
 import { HEATMAP_PRESETS } from '../../utils/color-utils'
 import { log } from '../../utils/log'

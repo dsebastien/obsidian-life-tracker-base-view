@@ -4,12 +4,12 @@ import type {
     HeatmapConfig,
     HeatmapData,
     VisualizationDataPoint
-} from '../../../app/types/visualization.types'
-import { DataAggregationService } from '../../../app/services/data-aggregation.service'
+} from '../../../types/visualization.types'
+import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
 import { renderHeatmapGrid } from './heatmap-renderer'
 import { parseISO, isSameDay } from 'date-fns'
-import { log } from '../../../utils/log'
+import { log } from '../../../../utils/log'
 
 /**
  * GitHub-contribution-style heatmap visualization
