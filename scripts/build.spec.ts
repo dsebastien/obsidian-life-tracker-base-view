@@ -32,7 +32,7 @@ describe('build constants', () => {
     })
 
     test('PLUGIN_ID is set correctly', () => {
-        expect(PLUGIN_ID).toBe('life-tracker-base-view')
+        expect(PLUGIN_ID).toBe('life-tracker')
     })
 
     test('BANNER contains expected text', () => {

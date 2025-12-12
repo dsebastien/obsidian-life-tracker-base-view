@@ -132,7 +132,7 @@ This creates optimized production files in the `dist/` directory:
 
 ### Manual Installation
 
-If you prefer not to use the environment variable, manually copy these files to `<YourVault>/.obsidian/plugins/obsidian-life-tracker-base-view-plugin/`:
+If you prefer not to use the environment variable, manually copy these files to `<YourVault>/.obsidian/plugins/life-tracker/`:
 
 - `dist/main.js`
 - `dist/manifest.json`
@@ -158,7 +158,7 @@ If you prefer not to use the environment variable, manually copy these files to 
 ### Plugin not appearing in Obsidian
 
 - Verify `OBSIDIAN_VAULT_LOCATION` points to the correct vault
-- Check that files exist in `<vault>/.obsidian/plugins/obsidian-life-tracker-base-view-plugin/`
+- Check that files exist in `<vault>/.obsidian/plugins/life-tracker/`
 - Restart Obsidian
 - Ensure Community plugins are enabled
 

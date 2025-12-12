@@ -1,7 +1,7 @@
 {
-    "name": "obsidian-life-tracker-base-view-plugin",
+    "name": "obsidian-life-tracker-plugin",
     "version": "1.0.0",
-    "description": "Adds a Life Tracker View in Bases",
+    "description": "Capture and visualize the data that matters in your life",
     "author": {
         "name": "Sébastien Dubois",
         "email": "sebastien@developassion.be",

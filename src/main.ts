@@ -1,4 +1,4 @@
-import { LifeTrackerBaseViewPlugin } from './app/plugin'
+import { LifeTrackerPlugin } from './app/plugin'
 
 // noinspection JSUnusedGlobalSymbols
-export default LifeTrackerBaseViewPlugin
+export default LifeTrackerPlugin

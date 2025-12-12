@@ -1,5 +1,5 @@
 import { BasesView, type BasesPropertyId, type QueryController } from 'obsidian'
-import type { LifeTrackerBaseViewPlugin } from '../plugin'
+import type { LifeTrackerPlugin } from '../plugin'
 import type { PropertyVisualizationPreset } from '../types/plugin-settings.intf'
 import { DateAnchorService } from '../services/date-anchor.service'
 import { DataAggregationService } from '../services/data-aggregation.service'
@@ -50,7 +50,7 @@ const COLUMN_CONFIGS_KEY = 'columnConfigs'
 export class LifeTrackerView extends BasesView {
     type = LIFE_TRACKER_VIEW_TYPE
 
-    private plugin: LifeTrackerBaseViewPlugin
+    private plugin: LifeTrackerPlugin
     private containerEl: HTMLElement
     private gridEl: HTMLElement | null = null
 
@@ -71,11 +71,7 @@ export class LifeTrackerView extends BasesView {
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
 
-    constructor(
-        controller: QueryController,
-        scrollEl: HTMLElement,
-        plugin: LifeTrackerBaseViewPlugin
-    ) {
+    constructor(controller: QueryController, scrollEl: HTMLElement, plugin: LifeTrackerPlugin) {
         super(controller)
 
         this.plugin = plugin

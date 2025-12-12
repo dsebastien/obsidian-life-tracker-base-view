@@ -1,7 +1,7 @@
 import { Plugin } from 'obsidian'
 import { DEFAULT_SETTINGS } from './types/plugin-settings.intf'
 import type { PluginSettings } from './types/plugin-settings.intf'
-import { LifeTrackerBaseViewPluginSettingTab } from './settings/settings-tab'
+import { LifeTrackerPluginSettingTab } from './settings/settings-tab'
 import { log } from '../utils/log'
 import { produce } from 'immer'
 import type { Draft } from 'immer'
@@ -13,7 +13,7 @@ import { getLifeTrackerViewOptions } from './view/view-options'
  */
 export type SettingsChangeCallback = (settings: PluginSettings) => void
 
-export class LifeTrackerBaseViewPlugin extends Plugin {
+export class LifeTrackerPlugin extends Plugin {
     /**
      * The plugin settings are immutable
      */
@@ -47,7 +47,7 @@ export class LifeTrackerBaseViewPlugin extends Plugin {
         }
 
         // Add a settings screen for the plugin
-        this.addSettingTab(new LifeTrackerBaseViewPluginSettingTab(this.app, this))
+        this.addSettingTab(new LifeTrackerPluginSettingTab(this.app, this))
     }
 
     override onunload() {}

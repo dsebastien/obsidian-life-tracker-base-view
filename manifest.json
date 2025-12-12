@@ -1,7 +1,7 @@
 {
-    "id": "life-tracker-base-view",
-    "name": "Life Tracker Base View",
-    "description": "Adds a Life Tracker View to Bases",
+    "id": "life-tracker",
+    "name": "Life Tracker",
+    "description": "Capture and visualize the data that matters in your life",
     "version": "1.0.0",
     "minAppVersion": "1.4.0",
     "isDesktopOnly": false,

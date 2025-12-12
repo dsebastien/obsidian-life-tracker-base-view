@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
-import type { LifeTrackerBaseViewPlugin } from '../plugin'
+import type { LifeTrackerPlugin } from '../plugin'
 import { VisualizationType } from '../domain/visualization-type.enum'
 import { SETTINGS_TAB_VISUALIZATION_OPTIONS } from '../domain/visualization-options'
 import type { PropertyVisualizationPreset } from '../types/plugin-settings.intf'
@@ -23,10 +23,10 @@ const SCALE_PRESETS: Record<string, { min: number; max: number } | null> = {
     '0-100': { min: 0, max: 100 }
 }
 
-export class LifeTrackerBaseViewPluginSettingTab extends PluginSettingTab {
-    plugin: LifeTrackerBaseViewPlugin
+export class LifeTrackerPluginSettingTab extends PluginSettingTab {
+    plugin: LifeTrackerPlugin
 
-    constructor(app: App, plugin: LifeTrackerBaseViewPlugin) {
+    constructor(app: App, plugin: LifeTrackerPlugin) {
         super(app, plugin)
         this.plugin = plugin
     }
