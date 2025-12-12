@@ -2,7 +2,7 @@
     "id": "life-tracker-base-view",
     "name": "Life Tracker Base View",
     "description": "Adds a Life Tracker View to Bases",
-    "version": "0.2.0",
+    "version": "1.0.0",
     "minAppVersion": "1.4.0",
     "isDesktopOnly": false,
     "author": "Sébastien Dubois",

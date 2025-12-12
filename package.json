@@ -1,6 +1,6 @@
 {
     "name": "obsidian-life-tracker-base-view-plugin",
-    "version": "0.2.0",
+    "version": "1.0.0",
     "description": "Adds a Life Tracker View in Bases",
     "author": {
         "name": "Sébastien Dubois",

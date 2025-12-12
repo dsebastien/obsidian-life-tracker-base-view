@@ -1,3 +1,8 @@
+## [1.0.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/v0.2.0...v1.0.0) (2025-12-12)
+
+### Bug Fixes
+
+* **all:** fix matching between columns and global visualization presets ([c16932a](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c16932a4c003770c47f79d8cb87ee0396cae943b))
 ## [0.2.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/v0.1.0...v0.2.0) (2025-12-12)
 
 ### Features
