@@ -83,8 +83,22 @@ export class MaximizeStateService {
             const cards = gridEl.querySelectorAll('.lt-card')
             cards.forEach((card) => {
                 const cardPropertyId = card.getAttribute('data-property-id')
-                if (cardPropertyId === this.maximizedPropertyId) {
+
+                // Skip unconfigured cards (those without data-property-id) - they never participate in maximize state
+                if (!cardPropertyId) {
+                    // Ensure unconfigured cards are hidden when another card is maximized
+                    if (this.maximizedPropertyId) {
+                        card.classList.add('lt-card--hidden')
+                    } else {
+                        card.classList.remove('lt-card--hidden')
+                    }
+                    return
+                }
+
+                // Only configured cards with matching propertyId should be maximized
+                if (this.maximizedPropertyId && cardPropertyId === this.maximizedPropertyId) {
                     card.classList.add('lt-card--maximized')
+                    card.classList.remove('lt-card--hidden')
                 } else {
                     card.classList.remove('lt-card--maximized')
                     if (this.maximizedPropertyId) {
