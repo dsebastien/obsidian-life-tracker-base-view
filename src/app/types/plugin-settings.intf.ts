@@ -27,9 +27,16 @@ export interface PluginSettings {
      * Applied automatically when a property name matches
      */
     visualizationPresets: PropertyVisualizationPreset[]
+
+    /**
+     * Animation duration in milliseconds
+     * Controls how long visualization animations take to complete
+     */
+    animationDuration: number
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
     enabled: false,
-    visualizationPresets: []
+    visualizationPresets: [],
+    animationDuration: 3000
 }

@@ -40,9 +40,28 @@ export class LifeTrackerBaseViewPluginSettingTab extends PluginSettingTab {
         const { containerEl } = this
         containerEl.empty()
 
+        this.renderAnimationSettings(containerEl)
         this.renderVisualizationPresets(containerEl)
         this.renderFollowButton(containerEl)
         this.renderSupportHeader(containerEl)
+    }
+
+    renderAnimationSettings(containerEl: HTMLElement): void {
+        new Setting(containerEl).setName('Animation').setHeading()
+
+        new Setting(containerEl)
+            .setName('Animation duration')
+            .setDesc('Duration of visualization animations in seconds')
+            .addSlider((slider) => {
+                slider
+                    .setLimits(1, 10, 0.5)
+                    .setValue(this.plugin.settings.animationDuration / 1000)
+                    .setDynamicTooltip()
+                    .onChange(async (value) => {
+                        this.plugin.settings.animationDuration = value * 1000
+                        await this.plugin.saveSettings()
+                    })
+            })
     }
 
     renderVisualizationPresets(containerEl: HTMLElement): void {

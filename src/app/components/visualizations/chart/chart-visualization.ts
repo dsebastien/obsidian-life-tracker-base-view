@@ -288,9 +288,8 @@ export class ChartVisualization extends BaseVisualization {
         // Reset animation index
         this.currentAnimationIndex = 0
 
-        // Calculate interval to complete animation in ~3 seconds
-        const animationDuration = 3000
-        const intervalMs = Math.max(30, animationDuration / totalPoints)
+        // Calculate interval to complete animation in configured duration
+        const intervalMs = Math.max(30, this.animationDuration / totalPoints)
 
         // Progressively reveal data points from oldest (index 0) to newest
         this.animationInterval = setInterval(() => {

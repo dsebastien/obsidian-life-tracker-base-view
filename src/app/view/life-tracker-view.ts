@@ -373,6 +373,9 @@ export class LifeTrackerView extends BasesView {
             this.handleMaximizeToggle(propertyId, maximize)
         })
 
+        // Set animation duration from plugin settings
+        visualization.setAnimationDuration(this.plugin.settings.animationDuration)
+
         // Render and store
         visualization.render(dataPoints)
         this.visualizations.set(columnConfig.propertyId, visualization)

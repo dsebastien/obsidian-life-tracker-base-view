@@ -14,6 +14,11 @@ export type AnimationState = 'idle' | 'playing' | 'paused'
 /**
  * Abstract base class for all visualization components
  */
+/**
+ * Default animation duration in milliseconds
+ */
+export const DEFAULT_ANIMATION_DURATION = 3000
+
 export abstract class BaseVisualization {
     protected containerEl: HTMLElement
     protected app: App
@@ -25,6 +30,7 @@ export abstract class BaseVisualization {
     protected maximizeBtn: HTMLElement | null = null
     protected playBtn: HTMLElement | null = null
     protected animationState: AnimationState = 'idle'
+    protected animationDuration: number = DEFAULT_ANIMATION_DURATION
 
     constructor(
         containerEl: HTMLElement,
@@ -53,6 +59,13 @@ export abstract class BaseVisualization {
     setMaximized(maximized: boolean): void {
         this.isMaximized = maximized
         this.updateMaximizeButtonIcon()
+    }
+
+    /**
+     * Set animation duration in milliseconds
+     */
+    setAnimationDuration(duration: number): void {
+        this.animationDuration = duration
     }
 
     /**
