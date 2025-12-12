@@ -1,4 +1,13 @@
-## 0.1.0 (2025-12-12)
+## [0.2.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/v0.1.0...v0.2.0) (2025-12-12)
+
+### Features
+
+* **all:** added new visualization types ([4c3af8a](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4c3af8ae6d1371beed3aa2e193a2a3058cbf6c27))
+
+### Bug Fixes
+
+* **all:** fix issue with settings update ([34b81eb](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/34b81ebd1637c1dbaf47bb700c7767d5f4310dc7))
+## [0.1.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1e4cacab4c98354c4e36114638c3e4463f8ae651...v0.1.0) (2025-12-12)
 
 ### Features
 
