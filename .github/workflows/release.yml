@@ -4,13 +4,12 @@ on:
     workflow_dispatch:
         inputs:
             version:
-                description: 'Version to release (e.g., 1.2.3 or v1.2.3)'
+                description: 'Version to release (e.g., 1.2.3)'
                 required: true
                 type: string
     push:
         tags:
             - '*.*.*'
-            - 'v*.*.*'
 
 permissions:
     contents: write
@@ -44,10 +43,11 @@ jobs:
                   else
                     VERSION="${{ github.ref_name }}"
                   fi
-                  # Strip 'v' prefix if present
+                  # Strip 'v' prefix if present (for backwards compatibility)
                   VERSION="${VERSION#v}"
                   echo "version=$VERSION" >> $GITHUB_OUTPUT
-                  echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+                  # Tag WITHOUT 'v' prefix per Obsidian plugin spec
+                  echo "tag=$VERSION" >> $GITHUB_OUTPUT
                   echo "Version: $VERSION"
 
             - name: Install dependencies
