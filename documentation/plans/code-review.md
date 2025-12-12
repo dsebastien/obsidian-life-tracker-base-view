@@ -1,5 +1,14 @@
 # Code Review - Life Tracker Plugin
 
+**IMPORTANT**: When adding or updating features, ALWAYS verify compliance with the guidelines in [AGENTS.md](../../AGENTS.md). This includes:
+
+- Obsidian plugin development best practices
+- Security, privacy, and compliance requirements
+- Code organization and TypeScript conventions
+- Event listener cleanup using `register*` helpers
+- File size limits (~200-300 lines per file)
+- Mobile compatibility considerations
+
 ## Review Status
 
 | File                                                                   | Status  | Issues |
@@ -46,8 +55,8 @@
     - `column-config.types.ts`: SCALE_SUPPORTED_TYPES used `'heatmap' as VisualizationType`
     - `date-anchor.types.ts`: DatePattern.granularity used string literals
     - `tooltip.ts`: Used `'daily' as TimeGranularity`
-    - `date-utils.ts`: DATE_PATTERNS and formatDateByGranularity used string literals
-      **Fixed**: All updated to use proper enum values (VisualizationType._, TimeGranularity._).
+    - `date-utils.ts`: DATE*PATTERNS and formatDateByGranularity used string literals
+      **Fixed**: All updated to use proper enum values (VisualizationType.*, TimeGranularity.\_).
 
 4. **Missing await** - `plugin.ts`: `this.saveSettings()` not awaited. **Was already fixed** in a previous session.
 
@@ -69,3 +78,53 @@ These are unused code items that may be kept for future use or removed for clean
 13. **Unused method** - `base-visualization.ts`: `showLoading()` never called.
 14. **Unused export** - `log.ts`: `LOG_SEPARATOR` exported and tested but never used in production.
 15. **Unused color utils** - `color-utils.ts`: `generateGradient`, `getThemeAwareHeatmapColors`, `DARK_HEATMAP_COLORS` tested but not used.
+
+---
+
+## AGENTS.md Guidelines Compliance Review
+
+### Compliant
+
+- **main.ts is minimal**: Only re-exports the plugin class (4 lines)
+- **manifest.json complete**: Has all required fields (id, name, version, minAppVersion, description, isDesktopOnly, author, authorUrl, fundingUrl)
+- **No network calls**: Plugin operates entirely locally
+- **No telemetry**: No hidden analytics or data collection
+- **Async/await used**: No `.then()` promise chains found
+- **Chart.js cleanup**: `destroy()` properly called on chart instances
+- **ResizeObserver cleanup**: Properly disconnected in `cleanupResizeObserver()`
+- **Escape handler cleanup**: Fixed - `removeEventListener` called in cleanup paths
+- **isDesktopOnly: false**: Plugin designed for mobile compatibility
+
+### Potential Issues to Discuss
+
+16. **Q16: Large files exceed 200-300 line guideline**:
+    - `life-tracker-view.ts`: 800 lines
+    - `chart-visualization.ts`: 819 lines
+    - `data-aggregation.service.ts`: 614 lines
+    - Should these be split into smaller modules?
+
+17. **Q17: versions.json inconsistency** - Contains:
+
+    ```json
+    {
+        "1.0.0": "0.15.0",
+        "0.1.0": "1.4.0"
+    }
+    ```
+
+    Current manifest is v1.1.0 with minAppVersion 1.4.0. Missing entry for 1.1.0. Also "1.0.0": "0.15.0" seems wrong (0.15.0 is very old). Should this be cleaned up?
+
+18. **Q18: Unused dependency** - `zod` is in package.json dependencies but not imported anywhere in src/. Remove?
+
+19. **Q19: Event listeners without register\* helpers** - Several UI components use raw `addEventListener` without Obsidian's `register*` helpers:
+    - `column-config-card.ts`: 5 addEventListener calls
+    - `grid-controls.ts`: 3 addEventListener calls
+    - `card-context-menu.ts`: 4 addEventListener calls (modal)
+    - `base-visualization.ts`: 4 addEventListener calls
+    - `heatmap-visualization.ts`: 4 addEventListener calls
+    - `timeline-visualization.ts`: 3 addEventListener calls
+    - `tag-cloud-visualization.ts`: 3 addEventListener calls
+
+    **Note**: These are on dynamically created DOM elements that get removed when the view is destroyed, so memory leaks are unlikely. However, the AGENTS.md guideline says "Use `this.register*` helpers for everything that needs cleanup." Should we audit these more carefully, or is the current cleanup sufficient?
+
+20. **Q20: Missing entry in versions.json** - Current version 1.1.0 not listed. Add it?
