@@ -198,15 +198,12 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     }
 
     renderFollowButton(containerEl: HTMLElement): void {
-        new Setting(containerEl)
-            .setName('Follow me on X')
-            .setDesc('@dSebastien')
-            .addButton((button) => {
-                button.setCta()
-                button.setButtonText('Follow me on X').onClick(() => {
-                    window.open('https://x.com/dSebastien')
-                })
+        new Setting(containerEl).setName('Follow me on X').addButton((button) => {
+            button.setCta()
+            button.setButtonText('Follow me on X').onClick(() => {
+                window.open('https://x.com/dSebastien')
             })
+        })
     }
 
     renderSupportHeader(containerEl: HTMLElement): void {
