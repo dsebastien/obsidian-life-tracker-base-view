@@ -28,6 +28,10 @@ export abstract class BasePropertyEditor implements PropertyEditor {
         this.config.onCommit?.()
     }
 
+    protected notifyEnterKey(): void {
+        this.config.onEnterKey?.()
+    }
+
     protected getDisplayLabel(): string {
         return this.config.definition.displayName || this.config.definition.name
     }

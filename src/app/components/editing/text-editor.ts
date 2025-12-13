@@ -62,6 +62,12 @@ export class TextEditor extends BasePropertyEditor {
         this.selectEl.addEventListener('blur', () => {
             this.notifyCommit()
         })
+
+        this.selectEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.notifyEnterKey()
+            }
+        })
     }
 
     private renderInput(container: HTMLElement): void {
@@ -87,7 +93,7 @@ export class TextEditor extends BasePropertyEditor {
 
         this.inputEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                this.notifyCommit()
+                this.notifyEnterKey()
             }
         })
     }

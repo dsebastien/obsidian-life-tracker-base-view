@@ -73,7 +73,12 @@ export class ListEditor extends BasePropertyEditor {
         this.inputEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault()
-                this.addCurrentInput()
+                // If input is empty, navigate to next field
+                if (!this.inputEl?.value.trim()) {
+                    this.notifyEnterKey()
+                } else {
+                    this.addCurrentInput()
+                }
             } else if (e.key === 'Backspace' && this.inputEl?.value === '') {
                 // Remove last pill
                 if (this.currentValues.length > 0) {

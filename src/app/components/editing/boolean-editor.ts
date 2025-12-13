@@ -41,7 +41,13 @@ export class BooleanEditor extends BasePropertyEditor {
         })
 
         this.toggleEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === 'Enter') {
+                e.preventDefault()
+                this.currentValue = !this.currentValue
+                this.updateToggleState()
+                this.notifyChange(this.currentValue)
+                this.notifyEnterKey()
+            } else if (e.key === ' ') {
                 e.preventDefault()
                 this.currentValue = !this.currentValue
                 this.updateToggleState()

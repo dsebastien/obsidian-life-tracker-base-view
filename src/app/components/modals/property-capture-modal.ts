@@ -504,8 +504,12 @@ export class PropertyCaptureModal extends Modal {
                 this.debouncedSave()
             },
             onCommit: () => {
-                // Immediate save on commit (e.g., Enter key)
+                // Immediate save on blur
                 this.saveCurrentPropertyImmediate()
+            },
+            onEnterKey: () => {
+                // Validate and navigate to next field (like pressing Next button)
+                this.validateAndNavigateNext()
             }
         })
 
@@ -693,6 +697,51 @@ export class PropertyCaptureModal extends Modal {
         this.currentValue = this.savedValues[newDef?.name ?? '']
 
         this.renderCard()
+    }
+
+    /**
+     * Validate the current field and navigate to next if valid.
+     * Called when user presses Enter in an editor.
+     */
+    private validateAndNavigateNext(): void {
+        if (!this.currentEditor) return
+
+        // Validate the current value
+        const validation = this.currentEditor.validate()
+
+        if (!validation.valid) {
+            // Show validation error
+            new Notice(validation.error ?? 'Invalid value')
+            return
+        }
+
+        // Save immediately before navigating
+        if (this.saveDebounceTimer) {
+            clearTimeout(this.saveDebounceTimer)
+        }
+        this.saveCurrentPropertyImmediate()
+
+        // Navigate based on position
+        if (this.isLastProperty()) {
+            // On last property - behave like the Next/Done button
+            if (this.context.mode === 'batch') {
+                this.handleNextFile()
+            } else {
+                this.handleDone()
+            }
+        } else {
+            // Not on last property - go to next field
+            const currentDef = this.getCurrentDefinition()
+            if (currentDef) {
+                this.savedValues[currentDef.name] = this.currentValue
+            }
+
+            this.currentPropertyIndex++
+            const newDef = this.getCurrentDefinition()
+            this.currentValue = this.savedValues[newDef?.name ?? '']
+
+            this.renderCard()
+        }
     }
 
     /**

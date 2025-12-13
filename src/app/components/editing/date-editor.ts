@@ -38,6 +38,12 @@ export class DateEditor extends BasePropertyEditor {
         this.inputEl.addEventListener('blur', () => {
             this.notifyCommit()
         })
+
+        this.inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.notifyEnterKey()
+            }
+        })
     }
 
     private formatValue(value: unknown): string {

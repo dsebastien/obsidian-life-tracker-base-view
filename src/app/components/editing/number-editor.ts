@@ -94,7 +94,7 @@ export class NumberEditor extends BasePropertyEditor {
         this.inputEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 this.ensureValidValue()
-                this.notifyCommit()
+                this.notifyEnterKey()
             }
         })
     }
@@ -139,7 +139,7 @@ export class NumberEditor extends BasePropertyEditor {
         this.inputEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 this.ensureValidValue()
-                this.notifyCommit()
+                this.notifyEnterKey()
             }
         })
     }

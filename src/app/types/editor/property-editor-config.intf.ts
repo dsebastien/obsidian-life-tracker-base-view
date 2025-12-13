@@ -10,8 +10,10 @@ export interface PropertyEditorConfig {
     value: unknown
     /** Called when value changes */
     onChange: (value: unknown) => void
-    /** Called when editing is committed (blur/enter) */
+    /** Called when editing is committed (blur) - for saving */
     onCommit?: () => void
+    /** Called when Enter key is pressed - for navigation */
+    onEnterKey?: () => void
     /** Compact mode for table cells */
     compact?: boolean
 }
