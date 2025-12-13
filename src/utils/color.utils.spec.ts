@@ -3,14 +3,32 @@ import {
     DEFAULT_HEATMAP_COLORS,
     DARK_HEATMAP_COLORS,
     HEATMAP_PRESETS,
+    HEATMAP_CSS_VARS,
     getHeatmapColor,
     getColorLevelForValue,
     DEFAULT_CHART_COLORS,
     CHART_COLORS_HEX,
     getChartColor,
     getColorWithAlpha,
-    generateGradient
+    generateGradient,
+    applyHeatmapColorScheme
 } from './color.utils'
+import type { HeatmapColorScheme } from '../app/types'
+
+/**
+ * Creates a mock HTMLElement with style.setProperty tracking for testing
+ */
+function createMockElement(): HTMLElement & { appliedStyles: Map<string, string> } {
+    const appliedStyles = new Map<string, string>()
+    return {
+        appliedStyles,
+        style: {
+            setProperty: (name: string, value: string) => {
+                appliedStyles.set(name, value)
+            }
+        }
+    } as unknown as HTMLElement & { appliedStyles: Map<string, string> }
+}
 
 describe('color-utils', () => {
     describe('DEFAULT_HEATMAP_COLORS', () => {
@@ -246,6 +264,123 @@ describe('color-utils', () => {
             expect(result.length).toBe(2)
             expect(result[0]).toBe('#ff0000')
             expect(result[1]).toBe('#0000ff')
+        })
+    })
+
+    describe('HEATMAP_CSS_VARS', () => {
+        test('has correct CSS variable names', () => {
+            expect(HEATMAP_CSS_VARS.EMPTY).toBe('--lt-heatmap-empty')
+            expect(HEATMAP_CSS_VARS.LEVEL_0).toBe('--lt-heatmap-level-0')
+            expect(HEATMAP_CSS_VARS.LEVEL_1).toBe('--lt-heatmap-level-1')
+            expect(HEATMAP_CSS_VARS.LEVEL_2).toBe('--lt-heatmap-level-2')
+            expect(HEATMAP_CSS_VARS.LEVEL_3).toBe('--lt-heatmap-level-3')
+            expect(HEATMAP_CSS_VARS.LEVEL_4).toBe('--lt-heatmap-level-4')
+        })
+
+        test('all variable names start with --lt-heatmap-', () => {
+            Object.values(HEATMAP_CSS_VARS).forEach((varName) => {
+                expect(varName.startsWith('--lt-heatmap-')).toBe(true)
+            })
+        })
+    })
+
+    describe('applyHeatmapColorScheme', () => {
+        test('applies green color scheme CSS variables', () => {
+            const mockEl = createMockElement()
+            const greenScheme = HEATMAP_PRESETS['green']!
+
+            applyHeatmapColorScheme(mockEl, greenScheme)
+
+            expect(mockEl.appliedStyles.get('--lt-heatmap-empty')).toBe(greenScheme.empty)
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-0')).toBe(greenScheme.levels[0])
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-1')).toBe(greenScheme.levels[1])
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-2')).toBe(greenScheme.levels[2])
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-3')).toBe(greenScheme.levels[3])
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-4')).toBe(greenScheme.levels[4])
+        })
+
+        test('applies blue color scheme CSS variables', () => {
+            const mockEl = createMockElement()
+            const blueScheme = HEATMAP_PRESETS['blue']!
+
+            applyHeatmapColorScheme(mockEl, blueScheme)
+
+            expect(mockEl.appliedStyles.get('--lt-heatmap-empty')).toBe(blueScheme.empty)
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-1')).toBe(blueScheme.levels[1])
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-4')).toBe(blueScheme.levels[4])
+        })
+
+        test('applies purple color scheme CSS variables', () => {
+            const mockEl = createMockElement()
+            const purpleScheme = HEATMAP_PRESETS['purple']!
+
+            applyHeatmapColorScheme(mockEl, purpleScheme)
+
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-1')).toBe(purpleScheme.levels[1])
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-4')).toBe(purpleScheme.levels[4])
+        })
+
+        test('applies orange color scheme CSS variables', () => {
+            const mockEl = createMockElement()
+            const orangeScheme = HEATMAP_PRESETS['orange']!
+
+            applyHeatmapColorScheme(mockEl, orangeScheme)
+
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-1')).toBe(orangeScheme.levels[1])
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-4')).toBe(orangeScheme.levels[4])
+        })
+
+        test('applies red color scheme CSS variables', () => {
+            const mockEl = createMockElement()
+            const redScheme = HEATMAP_PRESETS['red']!
+
+            applyHeatmapColorScheme(mockEl, redScheme)
+
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-1')).toBe(redScheme.levels[1])
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-4')).toBe(redScheme.levels[4])
+        })
+
+        test('different color schemes produce different CSS values', () => {
+            const greenEl = createMockElement()
+            const blueEl = createMockElement()
+            const redEl = createMockElement()
+
+            applyHeatmapColorScheme(greenEl, HEATMAP_PRESETS['green']!)
+            applyHeatmapColorScheme(blueEl, HEATMAP_PRESETS['blue']!)
+            applyHeatmapColorScheme(redEl, HEATMAP_PRESETS['red']!)
+
+            // Verify different schemes produce different level-4 colors
+            const greenLevel4 = greenEl.appliedStyles.get('--lt-heatmap-level-4')
+            const blueLevel4 = blueEl.appliedStyles.get('--lt-heatmap-level-4')
+            const redLevel4 = redEl.appliedStyles.get('--lt-heatmap-level-4')
+
+            expect(greenLevel4).not.toBe(blueLevel4)
+            expect(greenLevel4).not.toBe(redLevel4)
+            expect(blueLevel4).not.toBe(redLevel4)
+        })
+
+        test('sets all 6 CSS variables', () => {
+            const mockEl = createMockElement()
+            applyHeatmapColorScheme(mockEl, HEATMAP_PRESETS['green']!)
+
+            expect(mockEl.appliedStyles.size).toBe(6)
+        })
+
+        test('handles custom color scheme', () => {
+            const mockEl = createMockElement()
+            const customScheme: HeatmapColorScheme = {
+                empty: '#000000',
+                levels: ['#111111', '#222222', '#333333', '#444444', '#555555']
+            }
+
+            applyHeatmapColorScheme(mockEl, customScheme)
+
+            expect(mockEl.appliedStyles.get('--lt-heatmap-empty')).toBe('#000000')
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-0')).toBe('#111111')
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-1')).toBe('#222222')
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-2')).toBe('#333333')
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-3')).toBe('#444444')
+            expect(mockEl.appliedStyles.get('--lt-heatmap-level-4')).toBe('#555555')
         })
     })
 })

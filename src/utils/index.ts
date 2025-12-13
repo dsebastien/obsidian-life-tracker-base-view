@@ -3,6 +3,7 @@ export {
     DEFAULT_HEATMAP_COLORS,
     DARK_HEATMAP_COLORS,
     HEATMAP_PRESETS,
+    HEATMAP_CSS_VARS,
     getHeatmapColor,
     getColorLevelForValue,
     DEFAULT_CHART_COLORS,
@@ -11,7 +12,8 @@ export {
     getColorWithAlpha,
     generateGradient,
     isDarkTheme,
-    getThemeAwareHeatmapColors
+    getThemeAwareHeatmapColors,
+    applyHeatmapColorScheme
 } from './color.utils'
 
 // Date utilities

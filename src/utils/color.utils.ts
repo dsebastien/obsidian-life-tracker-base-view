@@ -179,6 +179,39 @@ export function isDarkTheme(): boolean {
 }
 
 /**
+ * CSS variable names for heatmap color scheme
+ */
+export const HEATMAP_CSS_VARS = {
+    EMPTY: '--lt-heatmap-empty',
+    LEVEL_0: '--lt-heatmap-level-0',
+    LEVEL_1: '--lt-heatmap-level-1',
+    LEVEL_2: '--lt-heatmap-level-2',
+    LEVEL_3: '--lt-heatmap-level-3',
+    LEVEL_4: '--lt-heatmap-level-4'
+} as const
+
+/**
+ * Apply heatmap color scheme CSS variables to a container element.
+ * This sets the CSS custom properties that control heatmap cell colors.
+ *
+ * @param element - The container element to apply colors to
+ * @param colorScheme - The color scheme to apply
+ */
+export function applyHeatmapColorScheme(
+    element: HTMLElement,
+    colorScheme: HeatmapColorScheme
+): void {
+    if (!colorScheme) return
+
+    element.style.setProperty(HEATMAP_CSS_VARS.EMPTY, colorScheme.empty)
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_0, colorScheme.levels[0] ?? '')
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_1, colorScheme.levels[1] ?? '')
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_2, colorScheme.levels[2] ?? '')
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_3, colorScheme.levels[3] ?? '')
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_4, colorScheme.levels[4] ?? '')
+}
+
+/**
  * Get appropriate heatmap scheme for current theme
  */
 export function getThemeAwareHeatmapColors(): HeatmapColorScheme {

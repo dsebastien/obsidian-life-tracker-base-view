@@ -5,7 +5,7 @@ import { DataAggregationService } from '../../../services/data-aggregation.servi
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
 import { renderHeatmapGrid } from './heatmap-renderer'
 import { parseISO, isSameDay } from 'date-fns'
-import { log, CSS_SELECTOR } from '../../../../utils'
+import { log, CSS_SELECTOR, applyHeatmapColorScheme } from '../../../../utils'
 
 /**
  * GitHub-contribution-style heatmap visualization
@@ -67,6 +67,9 @@ export class HeatmapVisualization extends BaseVisualization {
 
         // Create heatmap container
         const heatmapEl = this.containerEl.createDiv({ cls: 'lt-heatmap' })
+
+        // Apply color scheme CSS variables
+        this.applyColorScheme(heatmapEl)
 
         // Create tooltip
         this.tooltip = new Tooltip(heatmapEl)
@@ -196,5 +199,15 @@ export class HeatmapVisualization extends BaseVisualization {
         }
 
         legend.createSpan({ text: 'More' })
+    }
+
+    /**
+     * Apply color scheme CSS variables to the heatmap container
+     */
+    private applyColorScheme(container: HTMLElement): void {
+        const { colorScheme } = this.heatmapConfig
+        if (!colorScheme) return
+
+        applyHeatmapColorScheme(container, colorScheme)
     }
 }
