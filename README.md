@@ -73,7 +73,26 @@ Expand any visualization to full view for detailed analysis. Press Escape to exi
 ### Global settings and presets
 
 ![Global settings](documentation/screenshots/configure-global-settings-and-presets.png)
+
 Configure animation duration and create visualization presets that auto-apply to properties matching specific name patterns.
+
+### Life Tracking Grid
+
+![Life Tracking Grid](documentation/screenshots/life-tracking-grid.png)
+
+Use the Life Tracking Grid (custom base view) to quickly capture your data.
+
+### Data Entry Modal
+
+Use the "Life Tracker: Capture properties" command to capture data easily:
+
+Invoked on a specific note:
+
+![Data Entry on a specific note](documentation/screenshots/data-entry-on-a-specific-note.png)
+
+Invoked in a Life Tracking Base view:
+
+![Data Entry on a set of notes](documentation/screenshots/data-entry-on-a-set-of-notes.png)
 
 ## Property definitions
 
@@ -86,6 +105,24 @@ Property definitions let you configure which frontmatter properties to track acr
 - **Note filtering**: Apply the property only to specific notes by folder, tag, or regex pattern
 
 Configure property definitions in **Settings → Life Tracker → Property definitions**. These definitions power the capture command and determine which properties appear in the capture dialog.
+
+## Life Tracking Grid
+
+The Life Tracking Grid is a custom Base view type you can use to edit the different properties for which you have configured property definitions in the plugin settings.
+
+This enables focusing on completing missing information in your notes.
+
+The columns shown by this view correspond to the property definitions. If you show additional columns through the built-in "Properties" dropdown of Obsidian, those will be shown as read-only columns to the left of the property definitions. The idea behind this feature is that you can show additional information providing context for your data entry.
+
+## Data Entry Command and Modal
+
+In version 1.2.0, a new command was added: "Life Tracker: Capture Properties".
+That command behaves differently depending on where you invoke it from:
+
+- If you invoke the command from a note that contains known properties (i.e., properties with property definitions in the plugin settings), it enables editing those properties one by one with a dedicated modal (carousel) that lets you fill-in the data and navigate between properties using the arrows
+- If you invoke the command from one of the custom base views (Life Tracker or Life Tracking Grid), then it shows the same modal, but also lets you navigate between all the files included in the base view (aka bulk edit mode)
+
+TIP: When working with a set of files (aka bulk edit mode), you can filter the files in the carousel to only include those that have missing required properties through the dropdown on the top.
 
 ## Visualization presets
 
