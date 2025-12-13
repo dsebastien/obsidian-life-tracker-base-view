@@ -61,7 +61,14 @@ export {
     validateTags,
     parseListValue,
     parseTagsValue,
-    coerceValue
+    coerceValue,
+    // Input blocking utilities
+    isValidNumberKeystroke,
+    clampToRange,
+    sanitizeNumberPaste,
+    isInAllowedValues,
+    isTagAllowed,
+    setupNumberInputBlocking
 } from './validation.utils'
 
 // Value extraction utilities

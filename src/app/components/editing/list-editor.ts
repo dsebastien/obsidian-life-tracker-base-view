@@ -1,5 +1,12 @@
 import type { ValidationResult, PropertyEditorConfig } from '../../types'
-import { validateList, validateTags, parseListValue, parseTagsValue } from '../../../utils'
+import {
+    validateList,
+    validateTags,
+    parseListValue,
+    parseTagsValue,
+    isInAllowedValues,
+    isTagAllowed
+} from '../../../utils'
 import { BasePropertyEditor } from './base-editor'
 
 /**
@@ -76,6 +83,25 @@ export class ListEditor extends BasePropertyEditor {
                 }
             } else if (e.key === 'Escape') {
                 this.hideSuggestions()
+            }
+        })
+
+        // Handle paste - validate and add each pasted value
+        this.inputEl.addEventListener('paste', (e) => {
+            const pastedText = e.clipboardData?.getData('text') ?? ''
+            if (!pastedText) return
+
+            e.preventDefault()
+
+            // Split pasted text by common delimiters
+            const values = pastedText
+                .split(/[,\n\r]+/)
+                .map((v) => v.trim())
+                .filter(Boolean)
+
+            // Try to add each value (addValue will block non-allowed values)
+            for (const value of values) {
+                this.addValue(value)
             }
         })
     }
@@ -179,6 +205,24 @@ export class ListEditor extends BasePropertyEditor {
         // For tags, ensure proper format
         if (this.config.definition.type === 'tags') {
             normalizedValue = normalizedValue.replace(/^#/, '')
+        }
+
+        // Block if not in allowed values (when allowed values are defined)
+        const allowedValues = this.config.definition.allowedValues
+        if (allowedValues.length > 0) {
+            const isAllowed =
+                this.config.definition.type === 'tags'
+                    ? isTagAllowed(normalizedValue, allowedValues)
+                    : isInAllowedValues(normalizedValue, allowedValues)
+
+            if (!isAllowed) {
+                // Clear input and don't add
+                if (this.inputEl) {
+                    this.inputEl.value = ''
+                }
+                this.hideSuggestions()
+                return
+            }
         }
 
         // Check if already exists

@@ -50,8 +50,8 @@ export class TextEditor extends BasePropertyEditor {
             })
         }
 
-        // Set current value
-        const currentValue = String(this.config.value ?? '')
+        // Set current value (handle null/undefined explicitly)
+        const currentValue = this.config.value == null ? '' : String(this.config.value)
         this.selectEl.value = currentValue
 
         // Event handlers
@@ -73,8 +73,8 @@ export class TextEditor extends BasePropertyEditor {
             placeholder: this.config.definition.description ?? this.getDisplayLabel()
         })
 
-        // Set current value
-        this.inputEl.value = String(this.config.value ?? '')
+        // Set current value (handle null/undefined explicitly)
+        this.inputEl.value = this.config.value == null ? '' : String(this.config.value)
 
         // Event handlers
         this.inputEl.addEventListener('input', () => {
@@ -100,7 +100,7 @@ export class TextEditor extends BasePropertyEditor {
     }
 
     setValue(value: unknown): void {
-        const strValue = String(value ?? '')
+        const strValue = value == null ? '' : String(value)
         if (this.selectEl) {
             this.selectEl.value = strValue
         } else if (this.inputEl) {

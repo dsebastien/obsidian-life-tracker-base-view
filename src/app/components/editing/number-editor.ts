@@ -1,5 +1,5 @@
 import type { ValidationResult, PropertyEditorConfig } from '../../types'
-import { validateNumber, isEmpty } from '../../../utils'
+import { validateNumber, isEmpty, setupNumberInputBlocking, clampToRange } from '../../../utils'
 import { BasePropertyEditor } from './base-editor'
 
 /**
@@ -9,6 +9,7 @@ import { BasePropertyEditor } from './base-editor'
 export class NumberEditor extends BasePropertyEditor {
     private inputEl: HTMLInputElement | null = null
     private sliderEl: HTMLInputElement | null = null
+    private cleanupInputBlocking: (() => void) | null = null
 
     constructor(config: PropertyEditorConfig) {
         super(config)
@@ -42,16 +43,31 @@ export class NumberEditor extends BasePropertyEditor {
         this.sliderEl.min = String(numberRange.min)
         this.sliderEl.max = String(numberRange.max)
         this.sliderEl.step = '1'
-        this.sliderEl.value = String(currentValue)
+        this.sliderEl.value = currentValue !== null ? String(currentValue) : String(numberRange.min)
 
-        // Number input
+        // Number input (use text type for better control over input blocking)
         this.inputEl = wrapper.createEl('input', {
             cls: 'lt-editor-input lt-editor-input--number',
-            type: 'number'
+            type: 'text',
+            attr: {
+                inputmode: 'numeric',
+                pattern: '[0-9]*'
+            }
         })
-        this.inputEl.min = String(numberRange.min)
-        this.inputEl.max = String(numberRange.max)
-        this.inputEl.value = String(currentValue)
+        this.inputEl.value = currentValue !== null ? String(currentValue) : ''
+
+        // Setup input blocking for the text input
+        this.cleanupInputBlocking = setupNumberInputBlocking(
+            this.inputEl,
+            numberRange,
+            (clampedValue) => {
+                // Update slider when value is clamped
+                if (this.sliderEl) {
+                    this.sliderEl.value = String(clampedValue)
+                }
+                this.notifyChange(clampedValue)
+            }
+        )
 
         // Sync slider and input
         this.sliderEl.addEventListener('input', () => {
@@ -71,35 +87,44 @@ export class NumberEditor extends BasePropertyEditor {
         })
 
         this.inputEl.addEventListener('blur', () => {
-            this.clampValue()
+            this.ensureValidValue()
             this.notifyCommit()
         })
 
         this.inputEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                this.clampValue()
+                this.ensureValidValue()
                 this.notifyCommit()
             }
         })
     }
 
     private renderInput(container: HTMLElement): void {
+        // Use text type for better control over input blocking
         this.inputEl = container.createEl('input', {
             cls: this.config.compact
                 ? 'lt-editor-input lt-editor-input--compact lt-editor-input--number'
                 : 'lt-editor-input lt-editor-input--number',
-            type: 'number',
-            placeholder: this.config.definition.description ?? this.getDisplayLabel()
+            type: 'text',
+            placeholder: this.config.definition.description ?? this.getDisplayLabel(),
+            attr: {
+                inputmode: 'numeric',
+                pattern: '[0-9]*'
+            }
         })
 
         const numberRange = this.config.definition.numberRange
-        if (numberRange) {
-            this.inputEl.min = String(numberRange.min)
-            this.inputEl.max = String(numberRange.max)
-        }
-
         const currentValue = this.parseValue(this.config.value)
         this.inputEl.value = currentValue !== null ? String(currentValue) : ''
+
+        // Setup input blocking
+        this.cleanupInputBlocking = setupNumberInputBlocking(
+            this.inputEl,
+            numberRange,
+            (clampedValue) => {
+                this.notifyChange(clampedValue)
+            }
+        )
 
         this.inputEl.addEventListener('input', () => {
             const val = this.inputEl?.value ?? ''
@@ -107,39 +132,50 @@ export class NumberEditor extends BasePropertyEditor {
         })
 
         this.inputEl.addEventListener('blur', () => {
-            this.clampValue()
+            this.ensureValidValue()
             this.notifyCommit()
         })
 
         this.inputEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                this.clampValue()
+                this.ensureValidValue()
                 this.notifyCommit()
             }
         })
     }
 
     /**
-     * Clamp the current input value to the min/max range if defined
+     * Ensure the current input value is valid and within range.
+     * Called on blur/enter to handle edge cases like empty or incomplete input.
      */
-    private clampValue(): void {
-        const numberRange = this.config.definition.numberRange
-        if (!numberRange || !this.inputEl) return
+    private ensureValidValue(): void {
+        if (!this.inputEl) return
 
-        const val = this.inputEl.value
-        if (val === '') return
+        const val = this.inputEl.value.trim()
 
-        const numVal = parseFloat(val)
-        if (isNaN(numVal)) return
-
-        let clamped = numVal
-        if (numVal < numberRange.min) {
-            clamped = numberRange.min
-        } else if (numVal > numberRange.max) {
-            clamped = numberRange.max
+        // If empty, leave it (will be handled by required validation)
+        if (val === '' || val === '-') {
+            if (val === '-') {
+                this.inputEl.value = ''
+            }
+            return
         }
 
-        if (clamped !== numVal) {
+        const numVal = parseFloat(val)
+        if (isNaN(numVal)) {
+            // Invalid number, clear the field
+            this.inputEl.value = ''
+            if (this.sliderEl) {
+                const range = this.config.definition.numberRange
+                this.sliderEl.value = String(range?.min ?? 0)
+            }
+            return
+        }
+
+        // Clamp to range if defined
+        const numberRange = this.config.definition.numberRange
+        const clamped = clampToRange(numVal, numberRange)
+        if (clamped !== null && clamped !== numVal) {
             this.inputEl.value = String(clamped)
             if (this.sliderEl) {
                 this.sliderEl.value = String(clamped)
@@ -194,6 +230,9 @@ export class NumberEditor extends BasePropertyEditor {
     }
 
     override destroy(): void {
+        // Clean up input blocking event listeners
+        this.cleanupInputBlocking?.()
+        this.cleanupInputBlocking = null
         this.inputEl = null
         this.sliderEl = null
         super.destroy()
