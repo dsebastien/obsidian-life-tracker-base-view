@@ -21,12 +21,22 @@ You can find more details and background information here: https://www.knowii.ne
 - **Scale configuration**: auto-detect or manual min/max for numeric visualizations
 - **Chart options**: toggle legend, grid lines, and more
 
+### Property Capture
+
+- **Property definitions**: configure trackable properties with types (text, number, checkbox, date, list, tags), defaults, and constraints
+- **Capture command**: quick dialog to fill properties for the active note or batch process multiple notes
+- **Carousel interface**: navigate through properties one at a time with progress tracking
+- **Batch mode**: process notes from Grid View or Life Tracker View with smart filtering (skip complete notes)
+- **Auto-save**: values saved automatically as you type with visual feedback
+- **Grid View**: card-based Base view type for editing properties across multiple notes
+
 ### User Experience
 
 - **Context menu**: right-click any card to change visualization, configure scale, maximize, or reset
 - **Maximize mode**: expand any visualization to full view (press Escape to exit)
 - **Persistent settings**: grid layout and card configurations saved per view
 - **Empty states**: helpful messages when data is missing or misconfigured
+- **Confetti celebration**: optional animation when completing property capture
 
 ## Screenshots
 
@@ -67,11 +77,7 @@ Configure animation duration and create visualization presets that auto-apply to
 
 ## Roadmap
 
-- Data capture UI: easily add/update data points for tracked properties
-- Summaries and target goals/thresholds
-- Custom time frame filtering per view
-- Seasons as time granularity
-- Improved per-property visualization settings UI
+See the issues & discussions in this repositories.
 
 ## News & support
 
