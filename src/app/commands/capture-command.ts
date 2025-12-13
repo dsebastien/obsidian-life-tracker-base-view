@@ -1,5 +1,6 @@
 import { Notice, type TFile } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
+import type { BatchFilterMode } from '../types/batch-filter-mode.intf'
 import { PropertyCaptureModal } from '../components/modals/property-capture-modal'
 
 /**
@@ -9,10 +10,12 @@ export interface CaptureContext {
     mode: 'single-note' | 'batch'
     /** Current file (single-note mode) */
     file?: TFile
-    /** All files with issues (batch mode) */
+    /** All files (batch mode) */
     files?: TFile[]
     /** Current index in batch (batch mode) */
     currentIndex?: number
+    /** Filter mode for batch - determines when a file is considered complete */
+    filterMode?: BatchFilterMode
 }
 
 /**
@@ -34,7 +37,7 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
             const context = detectContext(plugin)
 
             if (!context) {
-                new Notice('Please open a markdown file first')
+                new Notice('Please open a markdown file or a Life Tracker view first')
                 return
             }
 
@@ -56,6 +59,19 @@ function detectContext(plugin: LifeTrackerPlugin): CaptureContext | null {
         return {
             mode: 'single-note',
             file: activeFile
+        }
+    }
+
+    // Check for active file provider (Grid View or Life Tracker View)
+    const providerFiles = plugin.getActiveProviderFiles()
+    const filterMode = plugin.getActiveProviderFilterMode()
+
+    if (providerFiles && providerFiles.length > 0) {
+        return {
+            mode: 'batch',
+            files: providerFiles,
+            currentIndex: 0,
+            filterMode: filterMode ?? 'never'
         }
     }
 

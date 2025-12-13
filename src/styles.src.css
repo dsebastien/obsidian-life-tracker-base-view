@@ -1595,6 +1595,62 @@
     @apply flex flex-col p-8 overflow-hidden;
 }
 
+/* File navigation (batch mode) */
+.lt-carousel-file-nav {
+    @apply flex flex-col gap-3 mb-4 pb-4;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-carousel-file-nav-row {
+    @apply flex items-center justify-center gap-3;
+}
+
+.lt-carousel-file-nav-btn {
+    @apply w-7 h-7 flex items-center justify-center rounded-full cursor-pointer;
+    @apply transition-all duration-150 bg-transparent border;
+    color: var(--text-muted);
+    border-color: var(--background-modifier-border);
+}
+
+.lt-carousel-file-nav-btn:hover:not(:disabled) {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.lt-carousel-file-nav-btn:disabled {
+    @apply cursor-not-allowed opacity-30;
+}
+
+.lt-carousel-file-counter {
+    @apply flex flex-col items-center px-3;
+}
+
+.lt-carousel-file-position {
+    @apply text-sm font-medium;
+    color: var(--text-muted);
+}
+
+.lt-carousel-file-remaining {
+    @apply text-xs;
+    color: var(--text-accent);
+}
+
+.lt-carousel-filter-row {
+    @apply flex items-center justify-center gap-2;
+}
+
+.lt-carousel-filter-label {
+    @apply text-xs;
+    color: var(--text-muted);
+}
+
+.lt-carousel-filter-select {
+    @apply text-xs px-2 py-1 rounded;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
 /* Title with date/weekday */
 .lt-carousel-file-name {
     @apply text-xl font-bold text-center mb-6 tracking-tight;

@@ -1,6 +1,7 @@
-import { Plugin } from 'obsidian'
+import { Plugin, type TFile } from 'obsidian'
 import { DEFAULT_SETTINGS } from './types/plugin-settings.intf'
 import type { PluginSettings } from './types/plugin-settings.intf'
+import type { BatchFilterMode } from './types/batch-filter-mode.intf'
 import { LifeTrackerPluginSettingTab } from './settings/settings-tab'
 import { log } from '../utils/log'
 import { produce } from 'immer'
@@ -10,6 +11,14 @@ import { getLifeTrackerViewOptions } from './view/view-options'
 import { GridView, GRID_VIEW_TYPE } from './view/grid-view/grid-view'
 import { getGridViewOptions } from './view/grid-view/grid-view-options'
 import { registerCommands } from './commands'
+
+/**
+ * Interface for views that can provide files for batch capture
+ */
+export interface FileProvider {
+    getFiles(): TFile[]
+    getFilterMode(): BatchFilterMode
+}
 
 /**
  * Callback type for settings change listeners
@@ -26,6 +35,34 @@ export class LifeTrackerPlugin extends Plugin {
      * Listeners for settings changes
      */
     private settingsChangeListeners: Set<SettingsChangeCallback> = new Set()
+
+    /**
+     * Currently active file provider (base view that can provide files for batch capture)
+     */
+    private activeFileProvider: FileProvider | null = null
+
+    /**
+     * Register a file provider as active (called when view becomes visible)
+     */
+    setActiveFileProvider(provider: FileProvider | null): void {
+        this.activeFileProvider = provider
+    }
+
+    /**
+     * Get files from the active file provider (if any)
+     */
+    getActiveProviderFiles(): TFile[] | null {
+        if (!this.activeFileProvider) return null
+        return this.activeFileProvider.getFiles()
+    }
+
+    /**
+     * Get filter mode from the active file provider (if any)
+     */
+    getActiveProviderFilterMode(): BatchFilterMode | null {
+        if (!this.activeFileProvider) return null
+        return this.activeFileProvider.getFilterMode()
+    }
 
     /**
      * Executed as soon as the plugin loads

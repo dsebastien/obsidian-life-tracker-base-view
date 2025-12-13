@@ -9,7 +9,8 @@ import {
     ListValue,
     NullValue
 } from 'obsidian'
-import type { LifeTrackerPlugin } from '../../plugin'
+import type { LifeTrackerPlugin, FileProvider } from '../../plugin'
+import type { BatchFilterMode } from '../../types/batch-filter-mode.intf'
 import type { PropertyDefinition } from '../../types/property-definition.types'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
@@ -26,7 +27,7 @@ export const GRID_VIEW_TYPE = 'life-tracker-grid'
  * Grid View - Dense table-based editing for property values
  * Uses virtual scrolling for performance with large datasets
  */
-export class GridView extends BasesView {
+export class GridView extends BasesView implements FileProvider {
     type = GRID_VIEW_TYPE
 
     private plugin: LifeTrackerPlugin
@@ -104,7 +105,25 @@ export class GridView extends BasesView {
             this.onDataUpdated()
         })
 
+        // Register as active file provider for batch capture
+        this.plugin.setActiveFileProvider(this)
+
         log('GridView created', 'debug')
+    }
+
+    /**
+     * Get all files currently displayed in the grid (for batch capture)
+     */
+    getFiles(): TFile[] {
+        // Return filtered entries' files (what's currently displayed)
+        return this.filteredEntries.map((entry) => entry.file)
+    }
+
+    /**
+     * Get the current filter mode for batch capture
+     */
+    getFilterMode(): BatchFilterMode {
+        return (this.config.get('hideNotesWhen') as BatchFilterMode) ?? 'required'
     }
 
     /**
@@ -831,6 +850,9 @@ export class GridView extends BasesView {
      */
     override onunload(): void {
         log('GridView unloading', 'debug')
+
+        // Unregister as file provider
+        this.plugin.setActiveFileProvider(null)
 
         if (this.unsubscribeSettings) {
             this.unsubscribeSettings()

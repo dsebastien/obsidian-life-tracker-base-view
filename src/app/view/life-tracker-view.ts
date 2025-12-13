@@ -1,5 +1,6 @@
-import { BasesView, type BasesPropertyId, type QueryController } from 'obsidian'
-import type { LifeTrackerPlugin } from '../plugin'
+import { BasesView, type BasesPropertyId, type QueryController, type TFile } from 'obsidian'
+import type { LifeTrackerPlugin, FileProvider } from '../plugin'
+import { DEFAULT_BATCH_FILTER_MODE, type BatchFilterMode } from '../types/batch-filter-mode.intf'
 import { DateAnchorService } from '../services/date-anchor.service'
 import { DataAggregationService } from '../services/data-aggregation.service'
 import { VisualizationType } from '../types/visualization-type.intf'
@@ -37,7 +38,7 @@ export const LIFE_TRACKER_VIEW_TYPE = 'life-tracker'
 /**
  * Life Tracker Base View implementation
  */
-export class LifeTrackerView extends BasesView {
+export class LifeTrackerView extends BasesView implements FileProvider {
     type = LIFE_TRACKER_VIEW_TYPE
 
     private plugin: LifeTrackerPlugin
@@ -91,7 +92,24 @@ export class LifeTrackerView extends BasesView {
             this.onDataUpdated()
         })
 
+        // Register as active file provider for batch capture
+        this.plugin.setActiveFileProvider(this)
+
         log('LifeTrackerView created', 'debug')
+    }
+
+    /**
+     * Get all files currently in the view (for batch capture)
+     */
+    getFiles(): TFile[] {
+        return this.data.data.map((entry) => entry.file)
+    }
+
+    /**
+     * Get the filter mode for batch capture (Life Tracker view uses default)
+     */
+    getFilterMode(): BatchFilterMode {
+        return DEFAULT_BATCH_FILTER_MODE
     }
 
     /**
@@ -498,6 +516,9 @@ export class LifeTrackerView extends BasesView {
      */
     override onunload(): void {
         log('LifeTrackerView unloading', 'debug')
+
+        // Unregister as file provider
+        this.plugin.setActiveFileProvider(null)
 
         // Unsubscribe from settings changes
         if (this.unsubscribeSettings) {

@@ -3,6 +3,11 @@ import confetti from 'canvas-confetti'
 import type { LifeTrackerPlugin } from '../../plugin'
 import type { CaptureContext } from '../../commands/capture-command'
 import type { PropertyDefinition } from '../../types/property-definition.types'
+import {
+    BATCH_FILTER_MODE_OPTIONS,
+    DEFAULT_BATCH_FILTER_MODE,
+    type BatchFilterMode
+} from '../../types/batch-filter-mode.intf'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
 import { createPropertyEditor, type PropertyEditor } from '../editing/property-editor'
@@ -15,6 +20,7 @@ const AUTO_SAVE_DEBOUNCE_MS = 500
  * Modal for capturing/editing property values in a carousel-style interface.
  * Shows one property at a time with smooth navigation and progress tracking.
  * Values are auto-saved with debounce as they change.
+ * Supports batch mode for processing multiple files.
  */
 export class PropertyCaptureModal extends Modal {
     private plugin: LifeTrackerPlugin
@@ -24,10 +30,16 @@ export class PropertyCaptureModal extends Modal {
 
     // Property data
     private sortedDefinitions: PropertyDefinition[] = []
-    private currentIndex: number = 0
+    private currentPropertyIndex: number = 0
     private savedValues: Record<string, unknown> = {}
     private currentValue: unknown = undefined
     private currentEditor: PropertyEditor | null = null
+
+    // Batch mode: current file index
+    private currentFileIndex: number = 0
+
+    // Local filter mode (initialized from context, can be changed in modal)
+    private filterMode: BatchFilterMode = DEFAULT_BATCH_FILTER_MODE
 
     // Track which properties have been filled
     private filledProperties: Set<string> = new Set()
@@ -37,6 +49,7 @@ export class PropertyCaptureModal extends Modal {
 
     // DOM elements (named to avoid shadowing Modal's containerEl)
     private wrapperEl: HTMLElement | null = null
+    private fileNavEl: HTMLElement | null = null
     private progressEl: HTMLElement | null = null
     private cardEl: HTMLElement | null = null
 
@@ -44,6 +57,8 @@ export class PropertyCaptureModal extends Modal {
         super(plugin.app)
         this.plugin = plugin
         this.context = context
+        this.currentFileIndex = context.currentIndex ?? 0
+        this.filterMode = context.filterMode ?? DEFAULT_BATCH_FILTER_MODE
         this.frontmatterService = new FrontmatterService(plugin.app)
         this.recognitionService = new PropertyRecognitionService(plugin.app)
     }
@@ -75,7 +90,7 @@ export class PropertyCaptureModal extends Modal {
     }
 
     /**
-     * Load and sort property definitions.
+     * Load and sort property definitions for the current file.
      * Sort order: required (alphabetical), then optional (alphabetical)
      */
     private async loadProperties(): Promise<void> {
@@ -107,6 +122,9 @@ export class PropertyCaptureModal extends Modal {
             this.sortedDefinitions
         )
 
+        // Reset filled properties tracking for new file
+        this.filledProperties.clear()
+
         // Mark properties that already have values as filled
         for (const def of this.sortedDefinitions) {
             const value = this.savedValues[def.name]
@@ -116,7 +134,7 @@ export class PropertyCaptureModal extends Modal {
         }
 
         // Start at first property
-        this.currentIndex = 0
+        this.currentPropertyIndex = 0
         const firstDef = this.sortedDefinitions[0]
         this.currentValue = firstDef ? this.savedValues[firstDef.name] : undefined
     }
@@ -126,21 +144,104 @@ export class PropertyCaptureModal extends Modal {
             return this.context.file
         }
         if (this.context.mode === 'batch' && this.context.files) {
-            return this.context.files[this.context.currentIndex ?? 0]
+            return this.context.files[this.currentFileIndex]
         }
         return undefined
     }
 
+    private getTotalFiles(): number {
+        if (this.context.mode === 'batch' && this.context.files) {
+            return this.context.files.length
+        }
+        return 1
+    }
+
+    private isFirstFile(): boolean {
+        return this.currentFileIndex === 0
+    }
+
+    private isLastFile(): boolean {
+        if (this.context.mode === 'batch' && this.context.files) {
+            return this.currentFileIndex >= this.context.files.length - 1
+        }
+        return true
+    }
+
+    /**
+     * Check if a file at a given index is complete based on the filter mode.
+     * Returns true if the file should be skipped (all relevant properties are filled).
+     */
+    private isFileComplete(fileIndex: number): boolean {
+        if (this.context.mode !== 'batch' || !this.context.files) return false
+
+        if (this.filterMode === 'never') return false
+
+        const file = this.context.files[fileIndex]
+        if (!file) return false
+
+        const allDefinitions = this.plugin.settings.propertyDefinitions
+        const applicableDefinitions = this.recognitionService.getApplicableProperties(
+            file,
+            allDefinitions
+        )
+
+        if (applicableDefinitions.length === 0) return false
+
+        const frontmatter = this.frontmatterService.read(file)
+
+        if (this.filterMode === 'required') {
+            // Check if all required properties are filled
+            const requiredDefs = applicableDefinitions.filter((d) => d.required)
+            if (requiredDefs.length === 0) return false
+
+            return requiredDefs.every((def) => {
+                const value = frontmatter[def.name]
+                return value !== undefined && value !== null && value !== ''
+            })
+        } else if (this.filterMode === 'all') {
+            // Check if all properties are filled
+            return applicableDefinitions.every((def) => {
+                const value = frontmatter[def.name]
+                return value !== undefined && value !== null && value !== ''
+            })
+        }
+
+        return false
+    }
+
+    /**
+     * Find the next incomplete file index (wrapping around).
+     * Returns -1 if all files are complete.
+     */
+    private findNextIncompleteFile(startIndex: number, direction: 1 | -1): number {
+        const totalFiles = this.getTotalFiles()
+        let index = startIndex
+        let checked = 0
+
+        while (checked < totalFiles) {
+            if (!this.isFileComplete(index)) {
+                return index
+            }
+            // Move to next/prev with wrap
+            index =
+                direction === 1 ? (index + 1) % totalFiles : (index - 1 + totalFiles) % totalFiles
+            checked++
+        }
+
+        // All files are complete
+        return -1
+    }
+
     private getCurrentDefinition(): PropertyDefinition | undefined {
-        return this.sortedDefinitions[this.currentIndex]
+        return this.sortedDefinitions[this.currentPropertyIndex]
     }
 
     private isFirstProperty(): boolean {
-        return this.currentIndex === 0
+        return this.currentPropertyIndex === 0
     }
 
     private isLastProperty(): boolean {
-        return this.currentIndex === this.sortedDefinitions.length - 1
+        return this.currentPropertyIndex === this.sortedDefinitions.length - 1
     }
 
     private render(): void {
@@ -149,6 +250,12 @@ export class PropertyCaptureModal extends Modal {
 
         // Main container
         this.wrapperEl = contentEl.createDiv({ cls: 'lt-carousel-container' })
+
+        // File navigation (batch mode only)
+        if (this.context.mode === 'batch') {
+            this.fileNavEl = this.wrapperEl.createDiv({ cls: 'lt-carousel-file-nav' })
+            this.renderFileNav()
+        }
 
         // File name header (with weekday for YYYY-MM-DD format)
         const file = this.getCurrentFile()
@@ -165,6 +272,139 @@ export class PropertyCaptureModal extends Modal {
         // Progress bar at bottom
         this.progressEl = this.wrapperEl.createDiv({ cls: 'lt-carousel-progress' })
         this.renderProgress()
+    }
+
+    private renderFileNav(): void {
+        if (!this.fileNavEl) return
+        this.fileNavEl.empty()
+
+        // Top row: navigation
+        const navRow = this.fileNavEl.createDiv({ cls: 'lt-carousel-file-nav-row' })
+
+        // Previous file button (wraps around)
+        const prevBtn = navRow.createEl('button', {
+            cls: 'lt-carousel-file-nav-btn',
+            attr: { 'aria-label': 'Previous file' }
+        })
+        prevBtn.innerHTML =
+            '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>'
+        prevBtn.addEventListener('click', () => this.navigatePrevFile())
+
+        // File counter container
+        const counterContainer = navRow.createDiv({ cls: 'lt-carousel-file-counter' })
+
+        // When filter is active, show position among incomplete files
+        // When filter is 'never', show position among all files
+        if (this.filterMode !== 'never') {
+            const incompleteCount = this.countIncompleteFiles()
+            const positionAmongIncomplete = this.getPositionAmongIncomplete()
+
+            counterContainer.createSpan({
+                cls: 'lt-carousel-file-position',
+                text: `(${positionAmongIncomplete}/${incompleteCount})`
+            })
+
+            counterContainer.createSpan({
+                cls: 'lt-carousel-file-remaining',
+                text: `${incompleteCount} remaining`
+            })
+        } else {
+            counterContainer.createSpan({
+                cls: 'lt-carousel-file-position',
+                text: `(${this.currentFileIndex + 1}/${this.getTotalFiles()})`
+            })
+        }
+
+        // Next file button (wraps around)
+        const nextBtn = navRow.createEl('button', {
+            cls: 'lt-carousel-file-nav-btn',
+            attr: { 'aria-label': 'Next file' }
+        })
+        nextBtn.innerHTML =
+            '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>'
+        nextBtn.addEventListener('click', () => this.navigateNextFile())
+
+        // Bottom row: filter dropdown
+        const filterRow = this.fileNavEl.createDiv({ cls: 'lt-carousel-filter-row' })
+
+        filterRow.createSpan({
+            cls: 'lt-carousel-filter-label',
+            text: 'Skip notes when:'
+        })
+
+        const selectEl = filterRow.createEl('select', {
+            cls: 'lt-carousel-filter-select dropdown'
+        })
+
+        // Add options
+        for (const [value, label] of Object.entries(BATCH_FILTER_MODE_OPTIONS)) {
+            const option = selectEl.createEl('option', {
+                value,
+                text: label
+            })
+            if (value === this.filterMode) {
+                option.selected = true
+            }
+        }
+
+        // Handle filter mode change
+        selectEl.addEventListener('change', () => {
+            this.filterMode = selectEl.value as BatchFilterMode
+            this.handleFilterModeChange()
+        })
+    }
+
+    /**
+     * Count the number of incomplete files
+     */
+    private countIncompleteFiles(): number {
+        const totalFiles = this.getTotalFiles()
+        let count = 0
+        for (let i = 0; i < totalFiles; i++) {
+            if (!this.isFileComplete(i)) count++
+        }
+        return count
+    }
+
+    /**
+     * Get the 1-based position of the current file among incomplete files.
+     * For example, if files 0, 2, 5 are incomplete and current is 2, returns 2.
+     */
+    private getPositionAmongIncomplete(): number {
+        let position = 0
+        for (let i = 0; i <= this.currentFileIndex; i++) {
+            if (!this.isFileComplete(i)) position++
+        }
+        return position
+    }
+
+    /**
+     * Handle filter mode change from dropdown.
+     * Always navigates to the first incomplete file in the newly filtered list.
+     */
+    private async handleFilterModeChange(): Promise<void> {
+        // Check if all files are now complete
+        const incompleteCount = this.countIncompleteFiles()
+
+        if (incompleteCount === 0) {
+            // All files are complete - show message and close
+            this.handleAllFilesComplete()
+            return
+        }
+
+        // Always navigate to the first incomplete file when filter changes
+        const firstIncompleteIndex = this.findNextIncompleteFile(0, 1)
+        if (firstIncompleteIndex !== -1) {
+            this.currentFileIndex = firstIncompleteIndex
+            await this.loadProperties()
+
+            if (this.sortedDefinitions.length === 0) {
+                this.renderEmptyState()
+                return
+            }
+
+            this.render()
+        }
     }
 
     private renderCard(): void {
@@ -191,21 +431,31 @@ export class PropertyCaptureModal extends Modal {
         // Property counter
         navRow.createSpan({
             cls: 'lt-carousel-counter',
-            text: `${this.currentIndex + 1} / ${this.sortedDefinitions.length}`
+            text: `${this.currentPropertyIndex + 1} / ${this.sortedDefinitions.length}`
         })
 
-        // Next button (or Done on last property)
+        // Next button (or Done/Next File on last property)
+        const isLast = this.isLastProperty()
+        const isBatchMode = this.context.mode === 'batch'
         const nextBtn = navRow.createEl('button', {
-            cls: this.isLastProperty()
-                ? 'lt-carousel-nav-btn lt-carousel-nav-btn--done'
-                : 'lt-carousel-nav-btn',
-            attr: { 'aria-label': this.isLastProperty() ? 'Done' : 'Next property' }
+            cls: isLast ? 'lt-carousel-nav-btn lt-carousel-nav-btn--done' : 'lt-carousel-nav-btn',
+            attr: {
+                'aria-label': isLast ? (isBatchMode ? 'Next file' : 'Done') : 'Next property'
+            }
         })
 
-        if (this.isLastProperty()) {
-            nextBtn.innerHTML =
-                '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
-            nextBtn.addEventListener('click', () => this.handleDone())
+        if (isLast) {
+            if (isBatchMode) {
+                // In batch mode, always show "Next File" arrow (wraps around)
+                nextBtn.innerHTML =
+                    '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/></svg>'
+                nextBtn.addEventListener('click', () => this.handleNextFile())
+            } else {
+                // Single note mode: show checkmark for done
+                nextBtn.innerHTML =
+                    '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+                nextBtn.addEventListener('click', () => this.handleDone())
+            }
         } else {
             nextBtn.innerHTML =
                 '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>'
@@ -338,6 +588,15 @@ export class PropertyCaptureModal extends Modal {
             })
         }
 
+        // In batch mode, show navigation to skip to next file (wraps around)
+        if (this.context.mode === 'batch') {
+            const nextBtn = emptyEl.createEl('button', {
+                cls: 'lt-carousel-btn lt-carousel-btn--primary',
+                text: 'Next File'
+            })
+            nextBtn.addEventListener('click', () => this.handleNextFile())
+        }
+
         const closeBtn = emptyEl.createEl('button', {
             cls: 'lt-carousel-btn lt-carousel-btn--secondary',
             text: 'Close'
@@ -406,7 +665,7 @@ export class PropertyCaptureModal extends Modal {
             this.savedValues[currentDef.name] = this.currentValue
         }
 
-        this.currentIndex--
+        this.currentPropertyIndex--
         const newDef = this.getCurrentDefinition()
         this.currentValue = this.savedValues[newDef?.name ?? '']
 
@@ -428,11 +687,135 @@ export class PropertyCaptureModal extends Modal {
             this.savedValues[currentDef.name] = this.currentValue
         }
 
-        this.currentIndex++
+        this.currentPropertyIndex++
         const newDef = this.getCurrentDefinition()
         this.currentValue = this.savedValues[newDef?.name ?? '']
 
         this.renderCard()
+    }
+
+    /**
+     * Navigate to previous file (batch mode, wraps around, skips complete files)
+     */
+    private async navigatePrevFile(): Promise<void> {
+        // Save current property
+        if (this.saveDebounceTimer) {
+            clearTimeout(this.saveDebounceTimer)
+            this.saveCurrentPropertyImmediate()
+        }
+
+        // Start from previous file (wrap around)
+        const startIndex = this.isFirstFile() ? this.getTotalFiles() - 1 : this.currentFileIndex - 1
+
+        // Find next incomplete file going backwards
+        const nextIndex = this.findNextIncompleteFile(startIndex, -1)
+
+        if (nextIndex === -1) {
+            // All files are complete
+            this.handleAllFilesComplete()
+            return
+        }
+
+        this.currentFileIndex = nextIndex
+        await this.loadProperties()
+
+        // Check if new file has no applicable properties
+        if (this.sortedDefinitions.length === 0) {
+            this.renderEmptyState()
+            return
+        }
+
+        this.render()
+    }
+
+    /**
+     * Navigate to next file (batch mode, wraps around, skips complete files)
+     */
+    private async navigateNextFile(): Promise<void> {
+        // Save current property
+        if (this.saveDebounceTimer) {
+            clearTimeout(this.saveDebounceTimer)
+            this.saveCurrentPropertyImmediate()
+        }
+
+        // Start from next file (wrap around)
+        const startIndex = this.isLastFile() ? 0 : this.currentFileIndex + 1
+
+        // Find next incomplete file going forwards
+        const nextIndex = this.findNextIncompleteFile(startIndex, 1)
+
+        if (nextIndex === -1) {
+            // All files are complete
+            this.handleAllFilesComplete()
+            return
+        }
+
+        this.currentFileIndex = nextIndex
+        await this.loadProperties()
+
+        // Check if new file has no applicable properties
+        if (this.sortedDefinitions.length === 0) {
+            this.renderEmptyState()
+            return
+        }
+
+        this.render()
+    }
+
+    /**
+     * Handle "Next File" button on last property (batch mode, wraps around, skips complete files)
+     */
+    private async handleNextFile(): Promise<void> {
+        // Save current property
+        if (this.saveDebounceTimer) {
+            clearTimeout(this.saveDebounceTimer)
+            this.saveCurrentPropertyImmediate()
+        }
+
+        // Show mini confetti for file completion
+        if (this.plugin.settings.showConfettiOnCapture) {
+            this.showMiniConfetti()
+        }
+
+        // Start from next file (wrap around)
+        const startIndex = this.isLastFile() ? 0 : this.currentFileIndex + 1
+
+        // Find next incomplete file going forwards
+        const nextIndex = this.findNextIncompleteFile(startIndex, 1)
+
+        if (nextIndex === -1) {
+            // All files are complete - we're done!
+            this.handleAllFilesComplete()
+            return
+        }
+
+        this.currentFileIndex = nextIndex
+        await this.loadProperties()
+
+        // Check if new file has no applicable properties
+        if (this.sortedDefinitions.length === 0) {
+            this.renderEmptyState()
+            return
+        }
+
+        this.render()
+    }
+
+    /**
+     * Handle when all files in the batch are complete
+     */
+    private handleAllFilesComplete(): void {
+        // Show confetti if enabled
+        if (this.plugin.settings.showConfettiOnCapture) {
+            this.showConfetti()
+        }
+
+        new Notice(`All ${this.getTotalFiles()} files are complete!`)
+
+        // Close after a short delay
+        setTimeout(() => {
+            this.close()
+        }, 600)
     }
 
     /**
@@ -450,7 +833,12 @@ export class PropertyCaptureModal extends Modal {
             this.showConfetti()
         }
 
-        new Notice('Properties saved!')
+        const message =
+            this.context.mode === 'batch'
+                ? `All ${this.getTotalFiles()} files processed!`
+                : 'Properties saved!'
+
+        new Notice(message)
 
         // Small delay to let confetti show before closing
         setTimeout(() => {
@@ -490,6 +878,26 @@ export class PropertyCaptureModal extends Modal {
                 zIndex: 10000
             })
         }, 150)
+    }
+
+    /**
+     * Smaller confetti burst for file completion (batch mode)
+     */
+    private showMiniConfetti(): void {
+        const modalRect = this.contentEl.getBoundingClientRect()
+        const originX = (modalRect.left + modalRect.width / 2) / window.innerWidth
+        const originY = (modalRect.top + modalRect.height / 2) / window.innerHeight
+
+        confetti({
+            particleCount: 30,
+            spread: 50,
+            origin: { x: originX, y: originY },
+            colors: ['#4ecdc4', '#45b7d1', '#96ceb4'],
+            ticks: 100,
+            gravity: 1.5,
+            scalar: 0.8,
+            zIndex: 10000
+        })
     }
 
     private destroyEditor(): void {
