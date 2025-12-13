@@ -1,14 +1,18 @@
-import type { HeatmapConfig, HeatmapData, HeatmapCell } from '../../../types/visualization.types'
-import { TimeGranularity } from '../../../types/time-granularity.intf'
+import {
+    TimeGranularity,
+    type HeatmapConfig,
+    type HeatmapData,
+    type HeatmapCell
+} from '../../../types'
 import { compareAsc, format, getMonth, getYear } from 'date-fns'
 import {
     addDays,
     formatDateISO,
     getMonthName,
     getWeeksBetween,
-    isSameDay
-} from '../../../../utils/date-utils'
-import { getColorLevelForValue } from '../../../../utils/color-utils'
+    isSameDay,
+    getColorLevelForValue
+} from '../../../../utils'
 
 /**
  * Render the heatmap grid based on granularity

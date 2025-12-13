@@ -9,14 +9,12 @@ import {
     ListValue,
     NullValue
 } from 'obsidian'
-import type { LifeTrackerPlugin, FileProvider } from '../../plugin'
-import type { BatchFilterMode } from '../../types/batch-filter-mode.intf'
-import type { PropertyDefinition } from '../../types/property-definition.types'
+import type { LifeTrackerPlugin } from '../../plugin'
+import type { FileProvider, BatchFilterMode, PropertyDefinition, PropertyEditor } from '../../types'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
-import { createPropertyEditor, type PropertyEditor } from '../../components/editing/property-editor'
-import { log } from '../../../utils/log'
-import { formatFileTitleWithWeekday } from '../../../utils/date-utils'
+import { createPropertyEditor } from '../../components/editing/property-editor'
+import { log, DATA_ATTR_FULL, formatFileTitleWithWeekday } from '../../../utils'
 
 /**
  * View type identifier for Grid View
@@ -597,7 +595,10 @@ export class GridView extends BasesView implements FileProvider {
 
         const tr = createEl('tr', {
             cls: hasIssues ? 'lt-grid-view-tr lt-grid-view-tr--has-issues' : 'lt-grid-view-tr',
-            attr: { 'data-file-path': file.path, 'data-row-index': String(index) }
+            attr: {
+                [DATA_ATTR_FULL.FILE_PATH]: file.path,
+                [DATA_ATTR_FULL.ROW_INDEX]: String(index)
+            }
         })
 
         // Note name cell

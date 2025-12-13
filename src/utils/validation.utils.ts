@@ -1,4 +1,4 @@
-import type { PropertyDefinition, ValidationResult } from '../../types/property-definition.types'
+import type { PropertyDefinition, ValidationResult } from '../app/types'
 
 /**
  * Validate a value against a property definition

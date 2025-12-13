@@ -1,23 +1,11 @@
 import { setIcon } from 'obsidian'
-import type { VisualizationType } from '../../types/visualization-type.intf'
 import {
     CONFIG_CARD_VISUALIZATION_OPTIONS,
-    SCALE_PRESETS
-} from '../../types/visualization-options.intf'
-import { supportsScale, type ScaleConfig } from '../../types/column-config.types'
-
-/**
- * Configuration result from the config card
- */
-export interface ColumnConfigResult {
-    visualizationType: VisualizationType
-    scale?: ScaleConfig
-}
-
-/**
- * Callback when user completes configuration
- */
-export type ColumnConfigCallback = (result: ColumnConfigResult) => void
+    SCALE_PRESETS,
+    supportsScale,
+    type ScaleConfig,
+    type ColumnConfigCallback
+} from '../../types'
 
 /**
  * Creates a card prompting user to configure a column's visualization

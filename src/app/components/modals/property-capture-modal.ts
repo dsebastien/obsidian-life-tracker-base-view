@@ -2,16 +2,17 @@ import { Modal, Notice, type TFile } from 'obsidian'
 import confetti from 'canvas-confetti'
 import type { LifeTrackerPlugin } from '../../plugin'
 import type { CaptureContext } from '../../commands/capture-command'
-import type { PropertyDefinition } from '../../types/property-definition.types'
 import {
     BATCH_FILTER_MODE_OPTIONS,
     DEFAULT_BATCH_FILTER_MODE,
+    type PropertyDefinition,
+    type PropertyEditor,
     type BatchFilterMode
-} from '../../types/batch-filter-mode.intf'
+} from '../../types'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
-import { createPropertyEditor, type PropertyEditor } from '../editing/property-editor'
-import { formatFileTitleWithWeekday } from '../../../utils/date-utils'
+import { createPropertyEditor } from '../editing/property-editor'
+import { formatFileTitleWithWeekday } from '../../../utils'
 
 /** Debounce delay for auto-save in milliseconds */
 const AUTO_SAVE_DEBOUNCE_MS = 500

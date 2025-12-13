@@ -1,11 +1,6 @@
 import type { BasesEntry, BasesPropertyId, Value } from 'obsidian'
-import type {
-    DateAnchorConfig,
-    DateAnchorSource,
-    ResolvedDateAnchor
-} from '../types/date-anchor.types'
-import { parseDateFromFilename } from '../../utils/date-utils'
-import { extractDate, isDateLike } from '../../utils/value-extractors'
+import type { DateAnchorConfig, DateAnchorSource, ResolvedDateAnchor } from '../types'
+import { parseDateFromFilename, extractDate, isDateLike } from '../../utils'
 
 /**
  * Service for resolving date anchors from entries

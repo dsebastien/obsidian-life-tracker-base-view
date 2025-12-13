@@ -1,24 +1,12 @@
 import { Menu } from 'obsidian'
-import { VisualizationType } from '../../types/visualization-type.intf'
 import {
+    VisualizationType,
     CONTEXT_MENU_VISUALIZATION_OPTIONS,
-    SCALE_PRESETS
-} from '../../types/visualization-options.intf'
-import { supportsScale, type ScaleConfig } from '../../types/column-config.types'
-
-/**
- * Menu action types
- */
-export type CardMenuAction =
-    | { type: 'changeVisualization'; visualizationType: VisualizationType }
-    | { type: 'configureScale'; scale: ScaleConfig | undefined }
-    | { type: 'resetConfig' }
-    | { type: 'toggleMaximize' }
-
-/**
- * Callback when a menu action is selected
- */
-export type CardMenuCallback = (action: CardMenuAction) => void
+    SCALE_PRESETS,
+    supportsScale,
+    type ScaleConfig,
+    type CardMenuCallback
+} from '../../types'
 
 /**
  * Show context menu for a visualization card

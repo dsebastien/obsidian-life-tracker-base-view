@@ -1,16 +1,20 @@
 import { BasesView, type BasesPropertyId, type QueryController, type TFile } from 'obsidian'
-import type { LifeTrackerPlugin, FileProvider } from '../plugin'
-import { DEFAULT_BATCH_FILTER_MODE, type BatchFilterMode } from '../types/batch-filter-mode.intf'
+import type { LifeTrackerPlugin } from '../plugin'
+import {
+    DEFAULT_BATCH_FILTER_MODE,
+    VisualizationType,
+    type FileProvider,
+    type CardMenuAction,
+    type GridSettings,
+    type BatchFilterMode,
+    type ColumnVisualizationConfig,
+    type ChartConfig,
+    type HeatmapConfig,
+    type TagCloudConfig,
+    type VisualizationDataPoint
+} from '../types'
 import { DateAnchorService } from '../services/date-anchor.service'
 import { DataAggregationService } from '../services/data-aggregation.service'
-import { VisualizationType } from '../types/visualization-type.intf'
-import type { ColumnVisualizationConfig } from '../types/column-config.types'
-import type {
-    ChartConfig,
-    HeatmapConfig,
-    TagCloudConfig,
-    VisualizationDataPoint
-} from '../types/visualization.types'
 import { BaseVisualization } from '../components/visualizations/base-visualization'
 import { HeatmapVisualization } from '../components/visualizations/heatmap/heatmap-visualization'
 import { ChartVisualization } from '../components/visualizations/chart/chart-visualization'
@@ -18,14 +22,10 @@ import { TagCloudVisualization } from '../components/visualizations/tag-cloud/ta
 import { TimelineVisualization } from '../components/visualizations/timeline/timeline-visualization'
 import { createEmptyState, EMPTY_STATE_MESSAGES } from '../components/ui/empty-state'
 import { createColumnConfigCard } from '../components/ui/column-config-card'
-import { showCardContextMenu, type CardMenuAction } from '../components/ui/card-context-menu'
-import {
-    createGridControls,
-    DEFAULT_GRID_SETTINGS,
-    type GridSettings
-} from '../components/ui/grid-controls'
+import { showCardContextMenu } from '../components/ui/card-context-menu'
+import { createGridControls, DEFAULT_GRID_SETTINGS } from '../components/ui/grid-controls'
 import { DEFAULT_GRID_COLUMNS } from './view-options'
-import { log } from '../../utils/log'
+import { log, DATA_ATTR_FULL } from '../../utils'
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
 import { getVisualizationConfig } from './visualization-config.helper'
@@ -227,7 +227,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         const cardEl = this.gridEl.createDiv({
             cls: 'lt-card',
-            attr: { 'data-property-id': columnConfig.propertyId }
+            attr: { [DATA_ATTR_FULL.PROPERTY_ID]: columnConfig.propertyId }
         })
 
         // Add context menu and touch handlers

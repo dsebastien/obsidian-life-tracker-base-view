@@ -7,9 +7,9 @@ import type {
     PieChartData,
     ScatterChartData,
     VisualizationDataPoint
-} from '../../../types/visualization.types'
+} from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
-import { log } from '../../../../utils/log'
+import { log } from '../../../../utils'
 import type { ChartClickElement, ChartInstance } from './chart-types'
 import {
     initBubbleChart,

@@ -1,5 +1,5 @@
 import type { BasesPropertyId } from 'obsidian'
-import { VisualizationType } from './visualization-type.intf'
+import { VisualizationType } from '../visualization/visualization-type.intf'
 
 /**
  * Scale configuration for numeric visualizations

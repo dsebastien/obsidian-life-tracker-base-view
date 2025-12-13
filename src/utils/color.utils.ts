@@ -1,4 +1,4 @@
-import type { HeatmapColorScheme } from '../app/types/visualization.types'
+import type { HeatmapColorScheme } from '../app/types'
 
 /**
  * Default GitHub-style heatmap color scheme (green)

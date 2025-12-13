@@ -1,6 +1,6 @@
-import type { VisualizationType } from './visualization-type.intf'
-import type { ScaleConfig } from './column-config.types'
-import type { PropertyDefinition } from './property-definition.types'
+import type { VisualizationType } from '../visualization/visualization-type.intf'
+import type { ScaleConfig } from '../column/column-config.types'
+import type { PropertyDefinition } from '../property/property-definition.types'
 
 /**
  * Global preset for a property name pattern

@@ -6,7 +6,7 @@ import {
     isDateLike,
     normalizeValue,
     getColorLevel
-} from './value-extractors'
+} from './value.utils'
 
 // Mock Value type for testing
 class MockValue {

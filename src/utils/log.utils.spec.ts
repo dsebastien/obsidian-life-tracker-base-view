@@ -1,5 +1,6 @@
 import { describe, expect, test, spyOn, beforeEach, afterEach } from 'bun:test'
-import { log, LOG_PREFIX, LOG_SEPARATOR, type LogLevel } from './log'
+import type { LogLevel } from '../app/types'
+import { log, LOG_PREFIX, LOG_SEPARATOR } from './log.utils'
 
 describe('log', () => {
     let consoleDebugSpy: ReturnType<typeof spyOn>

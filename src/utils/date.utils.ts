@@ -18,11 +18,9 @@ import {
     isSameMonth as dateFnsIsSameMonth,
     isSameQuarter as dateFnsIsSameQuarter,
     isSameYear as dateFnsIsSameYear,
-    eachDayOfInterval,
     eachWeekOfInterval
 } from 'date-fns'
-import type { DatePattern } from '../app/types/date-anchor.types'
-import { TimeGranularity } from '../app/types/time-granularity.intf'
+import { TimeGranularity, type DatePattern } from '../app/types'
 
 /**
  * Supported date patterns for filename parsing
@@ -247,28 +245,6 @@ export function getWeeksBetween(startDate: Date, endDate: Date): Date[] {
 }
 
 /**
- * Get all days between two dates
- */
-export function getDaysBetween(startDate: Date, endDate: Date): Date[] {
-    return eachDayOfInterval({ start: startDate, end: endDate })
-}
-
-/**
- * Format date for display
- */
-export function formatDate(date: Date, formatType: 'short' | 'medium' | 'long' = 'medium'): string {
-    switch (formatType) {
-        case 'short':
-            return format(date, 'MMM d')
-        case 'long':
-            return format(date, 'EEEE, MMMM d, yyyy')
-        case 'medium':
-        default:
-            return format(date, 'MMM d, yyyy')
-    }
-}
-
-/**
  * Format date as ISO string (YYYY-MM-DD)
  */
 export function formatDateISO(date: Date): string {
@@ -304,13 +280,6 @@ export function formatDateByGranularity(date: Date, granularity: TimeGranularity
         default:
             return format(date, 'yyyy-MM-dd')
     }
-}
-
-/**
- * Get day of week name (short)
- */
-export function getDayName(date: Date, formatType: 'short' | 'long' = 'short'): string {
-    return format(date, formatType === 'short' ? 'EEE' : 'EEEE')
 }
 
 /**

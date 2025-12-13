@@ -1,22 +1,21 @@
 import type { BasesEntry, BasesPropertyId } from 'obsidian'
 import { compareAsc } from 'date-fns'
-import { TimeGranularity } from '../types/time-granularity.intf'
-import type {
-    BubbleChartData,
-    BubblePoint,
-    ChartData,
-    ChartDataset,
-    PieChartData,
-    ScatterChartData,
-    ScatterPoint,
-    TagCloudData,
-    TagCloudItem,
-    TimelineData,
-    TimelinePoint,
-    VisualizationDataPoint
-} from '../types/visualization.types'
-import { formatDateByGranularity } from '../../utils/date-utils'
-import { extractList } from '../../utils/value-extractors'
+import {
+    TimeGranularity,
+    type BubbleChartData,
+    type BubblePoint,
+    type ChartData,
+    type ChartDataset,
+    type PieChartData,
+    type ScatterChartData,
+    type ScatterPoint,
+    type TagCloudData,
+    type TagCloudItem,
+    type TimelineData,
+    type TimelinePoint,
+    type VisualizationDataPoint
+} from '../types'
+import { formatDateByGranularity, extractList } from '../../utils'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
 
 /**

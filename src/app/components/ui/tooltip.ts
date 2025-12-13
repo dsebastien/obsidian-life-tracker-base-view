@@ -1,5 +1,5 @@
-import { formatDateByGranularity } from '../../../utils/date-utils'
-import { TimeGranularity } from '../../types/time-granularity.intf'
+import { formatDateByGranularity } from '../../../utils'
+import { TimeGranularity } from '../../types'
 
 /**
  * Shared tooltip component for visualizations

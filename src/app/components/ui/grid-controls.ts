@@ -1,12 +1,5 @@
 import { setIcon } from 'obsidian'
-
-/**
- * Grid layout settings
- */
-export interface GridSettings {
-    columns: number
-    cardMinHeight: number
-}
+import type { GridSettings, GridSettingsChangeCallback } from '../../types'
 
 /**
  * Default grid settings
@@ -15,11 +8,6 @@ export const DEFAULT_GRID_SETTINGS: GridSettings = {
     columns: 2,
     cardMinHeight: 200
 }
-
-/**
- * Callback when grid settings change
- */
-export type GridSettingsChangeCallback = (settings: GridSettings) => void
 
 /**
  * Creates a control bar for adjusting grid layout

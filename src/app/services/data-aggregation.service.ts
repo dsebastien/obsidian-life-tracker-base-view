@@ -1,19 +1,19 @@
 import type { BasesEntry, BasesPropertyId } from 'obsidian'
-import { TimeGranularity } from '../types/time-granularity.intf'
-import type {
-    BubbleChartData,
-    ChartData,
-    HeatmapCell,
-    HeatmapData,
-    PieChartData,
-    ScatterChartData,
-    TagCloudData,
-    TimelineData,
-    VisualizationDataPoint
-} from '../types/visualization.types'
-import type { ResolvedDateAnchor } from '../types/date-anchor.types'
+import {
+    TimeGranularity,
+    type BubbleChartData,
+    type ChartData,
+    type HeatmapCell,
+    type HeatmapData,
+    type PieChartData,
+    type ScatterChartData,
+    type TagCloudData,
+    type TimelineData,
+    type VisualizationDataPoint,
+    type ResolvedDateAnchor
+} from '../types'
 import { compareAsc, min, max } from 'date-fns'
-import { extractNumber } from '../../utils/value-extractors'
+import { extractNumber } from '../../utils'
 import { getTimeKey, normalizeDate, generateEmptyCells } from './date-grouping.utils'
 import {
     aggregateForChart as chartAggregation,

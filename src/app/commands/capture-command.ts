@@ -1,6 +1,6 @@
 import { Notice, type TFile } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
-import type { BatchFilterMode } from '../types/batch-filter-mode.intf'
+import type { BatchFilterMode } from '../types'
 import { PropertyCaptureModal } from '../components/modals/property-capture-modal'
 
 /**

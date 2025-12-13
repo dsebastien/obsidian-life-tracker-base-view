@@ -1,9 +1,13 @@
 import { Plugin, type TFile } from 'obsidian'
-import { DEFAULT_SETTINGS } from './types/plugin-settings.intf'
-import type { PluginSettings } from './types/plugin-settings.intf'
-import type { BatchFilterMode } from './types/batch-filter-mode.intf'
+import {
+    DEFAULT_SETTINGS,
+    type PluginSettings,
+    type BatchFilterMode,
+    type FileProvider,
+    type SettingsChangeCallback
+} from './types'
 import { LifeTrackerPluginSettingTab } from './settings/settings-tab'
-import { log } from '../utils/log'
+import { log } from '../utils'
 import { produce } from 'immer'
 import type { Draft } from 'immer'
 import { LifeTrackerView, LIFE_TRACKER_VIEW_TYPE } from './view/life-tracker-view'
@@ -11,19 +15,6 @@ import { getLifeTrackerViewOptions } from './view/view-options'
 import { GridView, GRID_VIEW_TYPE } from './view/grid-view/grid-view'
 import { getGridViewOptions } from './view/grid-view/grid-view-options'
 import { registerCommands } from './commands'
-
-/**
- * Interface for views that can provide files for batch capture
- */
-export interface FileProvider {
-    getFiles(): TFile[]
-    getFilterMode(): BatchFilterMode
-}
-
-/**
- * Callback type for settings change listeners
- */
-export type SettingsChangeCallback = (settings: PluginSettings) => void
 
 export class LifeTrackerPlugin extends Plugin {
     /**

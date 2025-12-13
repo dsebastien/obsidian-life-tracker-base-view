@@ -10,7 +10,7 @@ import {
     getChartColor,
     getColorWithAlpha,
     generateGradient
-} from './color-utils'
+} from './color.utils'
 
 describe('color-utils', () => {
     describe('DEFAULT_HEATMAP_COLORS', () => {

@@ -1,9 +1,5 @@
 import type { App, TFile } from 'obsidian'
-import type {
-    PropertyDefinition,
-    ValidationResult,
-    PropertyIssue
-} from '../types/property-definition.types'
+import type { PropertyDefinition, ValidationResult, PropertyIssue } from '../types'
 
 /**
  * Service for reading and writing frontmatter properties

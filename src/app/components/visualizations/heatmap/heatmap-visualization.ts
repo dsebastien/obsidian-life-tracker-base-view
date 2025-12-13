@@ -1,15 +1,11 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
-import type {
-    HeatmapConfig,
-    HeatmapData,
-    VisualizationDataPoint
-} from '../../../types/visualization.types'
+import type { HeatmapConfig, HeatmapData, VisualizationDataPoint } from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
 import { renderHeatmapGrid } from './heatmap-renderer'
 import { parseISO, isSameDay } from 'date-fns'
-import { log } from '../../../../utils/log'
+import { log, CSS_SELECTOR } from '../../../../utils'
 
 /**
  * GitHub-contribution-style heatmap visualization
@@ -109,7 +105,7 @@ export class HeatmapVisualization extends BaseVisualization {
     private addEventListeners(): void {
         if (!this.gridEl || !this.heatmapData) return
 
-        const cells = this.gridEl.querySelectorAll('.lt-heatmap-cell')
+        const cells = this.gridEl.querySelectorAll(CSS_SELECTOR.HEATMAP_CELL)
 
         cells.forEach((cell) => {
             const cellEl = cell as HTMLElement

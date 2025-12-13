@@ -1,6 +1,6 @@
-import type { ValidationResult } from '../../types/property-definition.types'
-import { validateDate, validateDatetime, isEmpty } from './validation.utils'
-import { BasePropertyEditor, type PropertyEditorConfig } from './base-editor'
+import type { ValidationResult, PropertyEditorConfig } from '../../types'
+import { validateDate, validateDatetime, isEmpty } from '../../../utils'
+import { BasePropertyEditor } from './base-editor'
 
 /**
  * Date/datetime editor - renders native date/datetime-local input

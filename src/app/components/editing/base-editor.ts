@@ -1,38 +1,4 @@
-import type { PropertyDefinition, ValidationResult } from '../../types/property-definition.types'
-
-/**
- * Configuration for creating a property editor
- */
-export interface PropertyEditorConfig {
-    /** Property definition */
-    definition: PropertyDefinition
-    /** Current value */
-    value: unknown
-    /** Called when value changes */
-    onChange: (value: unknown) => void
-    /** Called when editing is committed (blur/enter) */
-    onCommit?: () => void
-    /** Compact mode for table cells */
-    compact?: boolean
-}
-
-/**
- * Interface for property editors
- */
-export interface PropertyEditor {
-    /** Render the editor into a container */
-    render(container: HTMLElement): void
-    /** Get current value */
-    getValue(): unknown
-    /** Set value programmatically */
-    setValue(value: unknown): void
-    /** Focus the editor */
-    focus(): void
-    /** Validate current value */
-    validate(): ValidationResult
-    /** Clean up resources */
-    destroy(): void
-}
+import type { ValidationResult, PropertyEditorConfig, PropertyEditor } from '../../types'
 
 /**
  * Base class for property editors with common functionality

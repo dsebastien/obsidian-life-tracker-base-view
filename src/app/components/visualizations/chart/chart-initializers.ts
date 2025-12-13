@@ -3,10 +3,7 @@ import type {
     ChartConfig,
     ChartData,
     PieChartData,
-    ScatterChartData
-} from '../../../types/visualization.types'
-import { CHART_COLORS_HEX, getColorWithAlpha } from '../../../../utils/color-utils'
-import type {
+    ScatterChartData,
     CartesianTooltipContext,
     ChartClickElement,
     ChartDatasetConfig,
@@ -14,7 +11,8 @@ import type {
     ChartType,
     PieTooltipContext,
     PointTooltipContext
-} from './chart-types'
+} from '../../../types'
+import { CHART_COLORS_HEX, getColorWithAlpha } from '../../../../utils'
 
 /**
  * Chart.js constructor type.

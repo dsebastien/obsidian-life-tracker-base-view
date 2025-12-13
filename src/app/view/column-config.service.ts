@@ -1,26 +1,19 @@
 import type { BasesPropertyId } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
-import type { PropertyVisualizationPreset } from '../types/plugin-settings.intf'
-import type {
-    ColumnConfigMap,
-    ColumnVisualizationConfig,
-    ScaleConfig
-} from '../types/column-config.types'
-import { VisualizationType } from '../types/visualization-type.intf'
-import { log } from '../../utils/log'
+import {
+    VisualizationType,
+    type PropertyVisualizationPreset,
+    type ColumnConfigMap,
+    type ColumnVisualizationConfig,
+    type ScaleConfig,
+    type EffectiveConfigResult
+} from '../types'
+import { log } from '../../utils'
 
 /**
  * Config key for storing column configurations in view config
  */
 export const COLUMN_CONFIGS_KEY = 'columnConfigs'
-
-/**
- * Result of getting effective configuration for a property
- */
-export interface EffectiveConfigResult {
-    config: ColumnVisualizationConfig
-    isFromPreset: boolean
-}
 
 /**
  * Service for managing column visualization configurations.

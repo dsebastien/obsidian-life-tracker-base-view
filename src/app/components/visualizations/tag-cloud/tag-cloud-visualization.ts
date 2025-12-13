@@ -1,13 +1,9 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
-import type {
-    TagCloudConfig,
-    TagCloudData,
-    VisualizationDataPoint
-} from '../../../types/visualization.types'
+import type { TagCloudConfig, TagCloudData, VisualizationDataPoint } from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatTagTooltip } from '../../ui/tooltip'
-import { log } from '../../../../utils/log'
+import { log } from '../../../../utils'
 
 /**
  * Tag cloud visualization for tags and lists

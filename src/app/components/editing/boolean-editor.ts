@@ -1,6 +1,6 @@
-import type { ValidationResult } from '../../types/property-definition.types'
-import { validateBoolean } from './validation.utils'
-import { BasePropertyEditor, type PropertyEditorConfig } from './base-editor'
+import type { ValidationResult, PropertyEditorConfig } from '../../types'
+import { validateBoolean } from '../../../utils'
+import { BasePropertyEditor } from './base-editor'
 
 /**
  * Boolean editor - renders as a toggle/checkbox

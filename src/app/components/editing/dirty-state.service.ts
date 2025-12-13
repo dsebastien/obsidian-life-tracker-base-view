@@ -1,3 +1,5 @@
+import type { DirtyChangeCallback } from '../../types'
+
 /**
  * State for a single tracked entry
  */
@@ -6,11 +8,6 @@ interface EntryState {
     originalValues: Record<string, unknown>
     currentValues: Record<string, unknown>
 }
-
-/**
- * Callback for dirty state changes
- */
-export type DirtyChangeCallback = (entryId: string, isDirty: boolean) => void
 
 /**
  * Service to track unsaved changes for entries (notes)

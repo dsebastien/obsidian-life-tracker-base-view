@@ -1,5 +1,5 @@
 import { type TFile, parseFrontMatterTags, type CachedMetadata, type App } from 'obsidian'
-import type { PropertyDefinition, Mapping } from '../types/property-definition.types'
+import type { PropertyDefinition, Mapping } from '../types'
 
 /**
  * Service responsible for determining which property definitions apply to a file.

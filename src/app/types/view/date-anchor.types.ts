@@ -1,5 +1,5 @@
 import type { BasesPropertyId } from 'obsidian'
-import type { TimeGranularity } from './time-granularity.intf'
+import type { TimeGranularity } from '../visualization/time-granularity.intf'
 
 /**
  * Source for date anchor extraction

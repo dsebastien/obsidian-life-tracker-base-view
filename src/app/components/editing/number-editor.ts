@@ -1,6 +1,6 @@
-import type { ValidationResult } from '../../types/property-definition.types'
-import { validateNumber, isEmpty } from './validation.utils'
-import { BasePropertyEditor, type PropertyEditorConfig } from './base-editor'
+import type { ValidationResult, PropertyEditorConfig } from '../../types'
+import { validateNumber, isEmpty } from '../../../utils'
+import { BasePropertyEditor } from './base-editor'
 
 /**
  * Number editor - renders as slider + input if range is defined,

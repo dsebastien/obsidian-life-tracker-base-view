@@ -1,19 +1,15 @@
-import type { ColumnVisualizationConfig } from '../types/column-config.types'
-import type {
-    ChartConfig,
-    HeatmapConfig,
-    TagCloudConfig,
-    VisualizationConfig
-} from '../types/visualization.types'
-import { TimeGranularity } from '../types/time-granularity.intf'
-import { VisualizationType } from '../types/visualization-type.intf'
-import { HEATMAP_PRESETS } from '../../utils/color-utils'
+import {
+    TimeGranularity,
+    VisualizationType,
+    type ColumnVisualizationConfig,
+    type ChartConfig,
+    type HeatmapConfig,
+    type TagCloudConfig,
+    type VisualizationConfig,
+    type ConfigGetter
+} from '../types'
+import { HEATMAP_PRESETS } from '../../utils'
 import { DEFAULT_CELL_SIZE, DEFAULT_EMBEDDED_HEIGHT } from './view-options'
-
-/**
- * Configuration getter function type
- */
-export type ConfigGetter = (key: string) => unknown
 
 /**
  * Get visualization configuration from view config

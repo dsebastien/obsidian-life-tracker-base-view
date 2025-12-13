@@ -1,5 +1,5 @@
 import { setIcon, type App, type BasesEntry, type BasesPropertyId } from 'obsidian'
-import type { VisualizationConfig, VisualizationDataPoint } from '../../types/visualization.types'
+import type { VisualizationConfig, VisualizationDataPoint } from '../../types'
 
 /**
  * Callback for maximize toggle

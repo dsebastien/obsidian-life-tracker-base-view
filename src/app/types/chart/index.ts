@@ -1,0 +1,7 @@
+export type { ChartType } from './chart-type.intf'
+export type { ChartDatasetConfig } from './chart-dataset-config.intf'
+export type { ChartInstance } from './chart-instance.intf'
+export type { ChartClickElement } from './chart-click-element.intf'
+export type { CartesianTooltipContext } from './cartesian-tooltip-context.intf'
+export type { PieTooltipContext } from './pie-tooltip-context.intf'
+export type { PointTooltipContext } from './point-tooltip-context.intf'

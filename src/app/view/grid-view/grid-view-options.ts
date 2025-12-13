@@ -1,8 +1,5 @@
 import type { ViewOption } from 'obsidian'
-import {
-    BATCH_FILTER_MODE_OPTIONS,
-    DEFAULT_BATCH_FILTER_MODE
-} from '../../types/batch-filter-mode.intf'
+import { BATCH_FILTER_MODE_OPTIONS, DEFAULT_BATCH_FILTER_MODE } from '../../types'
 
 /**
  * Get view options for Grid View configuration

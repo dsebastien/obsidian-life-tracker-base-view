@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(bun:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)"
     ]
   }
 }

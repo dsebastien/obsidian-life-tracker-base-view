@@ -1,6 +1,6 @@
-import type { ValidationResult } from '../../types/property-definition.types'
-import { validateText, isEmpty } from './validation.utils'
-import { BasePropertyEditor, type PropertyEditorConfig } from './base-editor'
+import type { ValidationResult, PropertyEditorConfig } from '../../types'
+import { validateText, isEmpty } from '../../../utils'
+import { BasePropertyEditor } from './base-editor'
 
 /**
  * Text editor - renders as dropdown if allowedValues are defined,

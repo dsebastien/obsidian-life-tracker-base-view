@@ -1,7 +1,7 @@
 import type { BasesEntry, BasesPropertyId } from 'obsidian'
 import type { TimeGranularity } from './time-granularity.intf'
-import type { ResolvedDateAnchor } from './date-anchor.types'
-import type { ScaleConfig } from './column-config.types'
+import type { ResolvedDateAnchor } from '../view/date-anchor.types'
+import type { ScaleConfig } from '../column/column-config.types'
 
 /**
  * A single data point for visualization

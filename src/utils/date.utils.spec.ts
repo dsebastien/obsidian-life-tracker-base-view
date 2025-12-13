@@ -19,15 +19,12 @@ import {
     startOfQuarter,
     startOfYear,
     getWeeksBetween,
-    getDaysBetween,
-    formatDate,
     formatDateISO,
     formatDateByGranularity,
-    getDayName,
     getMonthName,
     DATE_PATTERNS
-} from './date-utils'
-import { TimeGranularity } from '../app/types/time-granularity.intf'
+} from './date.utils'
+import { TimeGranularity } from '../app/types'
 
 describe('date-utils', () => {
     describe('isValidDate', () => {
@@ -396,43 +393,6 @@ describe('date-utils', () => {
         })
     })
 
-    describe('getDaysBetween', () => {
-        test('returns array of days', () => {
-            const start = new Date(2024, 0, 1)
-            const end = new Date(2024, 0, 5)
-            const result = getDaysBetween(start, end)
-            expect(result.length).toBe(5)
-        })
-
-        test('returns single day for same date', () => {
-            const date = new Date(2024, 0, 15)
-            const result = getDaysBetween(date, date)
-            expect(result.length).toBe(1)
-        })
-    })
-
-    describe('formatDate', () => {
-        test('formats short date', () => {
-            const date = new Date(2024, 0, 15)
-            const result = formatDate(date, 'short')
-            expect(result).toBe('Jan 15')
-        })
-
-        test('formats medium date (default)', () => {
-            const date = new Date(2024, 0, 15)
-            const result = formatDate(date)
-            expect(result).toBe('Jan 15, 2024')
-        })
-
-        test('formats long date', () => {
-            const date = new Date(2024, 0, 15)
-            const result = formatDate(date, 'long')
-            expect(result).toContain('2024')
-            expect(result).toContain('January')
-            expect(result).toContain('15')
-        })
-    })
-
     describe('formatDateISO', () => {
         test('formats as YYYY-MM-DD', () => {
             const date = new Date(2024, 0, 15)
@@ -467,23 +427,6 @@ describe('date-utils', () => {
 
         test('formats yearly as YYYY', () => {
             expect(formatDateByGranularity(date, TimeGranularity.Yearly)).toBe('2024')
-        })
-    })
-
-    describe('getDayName', () => {
-        test('returns short day name', () => {
-            const monday = new Date(2024, 0, 15) // Monday
-            expect(getDayName(monday, 'short')).toBe('Mon')
-        })
-
-        test('returns long day name', () => {
-            const monday = new Date(2024, 0, 15)
-            expect(getDayName(monday, 'long')).toBe('Monday')
-        })
-
-        test('defaults to short', () => {
-            const monday = new Date(2024, 0, 15)
-            expect(getDayName(monday)).toBe('Mon')
         })
     })
 

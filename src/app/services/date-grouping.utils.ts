@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { TimeGranularity } from '../types/time-granularity.intf'
+import { TimeGranularity, type HeatmapCell } from '../types'
 import {
     addDays,
     addMonths,
@@ -16,8 +16,7 @@ import {
     startOfQuarter,
     startOfWeek,
     startOfYear
-} from '../../utils/date-utils'
-import type { HeatmapCell } from '../types/visualization.types'
+} from '../../utils'
 
 /**
  * Get time key for grouping dates

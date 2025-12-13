@@ -1,25 +1,22 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import { FolderSuggest } from '../components/ui/folder-suggest'
-import { VisualizationType } from '../types/visualization-type.intf'
+import { CSS_CLASS, CSS_SELECTOR } from '../../utils'
 import {
+    VisualizationType,
     SETTINGS_TAB_VISUALIZATION_OPTIONS,
-    SCALE_PRESETS_RECORD
-} from '../types/visualization-options.intf'
-import type { PropertyVisualizationPreset } from '../types/plugin-settings.intf'
-import { supportsScale } from '../types/column-config.types'
-import type {
-    PropertyDefinition,
-    PropertyType,
-    MappingType
-} from '../types/property-definition.types'
-import {
+    SCALE_PRESETS_RECORD,
+    supportsScale,
     PROPERTY_TYPES,
     PROPERTY_TYPE_LABELS,
     MAPPING_TYPE_LABELS,
     createDefaultPropertyDefinition,
-    createDefaultMapping
-} from '../types/property-definition.types'
+    createDefaultMapping,
+    type PropertyVisualizationPreset,
+    type PropertyDefinition,
+    type PropertyType,
+    type MappingType
+} from '../types'
 
 type SettingsTab = 'properties' | 'visualizations' | 'about'
 
@@ -178,7 +175,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                     }
                     // Toggle details visibility without full re-render
                     const detailsEl = itemContainer.querySelector(
-                        '.lt-property-details'
+                        CSS_SELECTOR.PROPERTY_DETAILS
                     ) as HTMLElement
                     if (detailsEl) {
                         const nowExpanded = this.expandedDefinitions.has(definition.id)
@@ -262,7 +259,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
 
         // Collapsible details container
         const detailsContainer = itemContainer.createDiv({
-            cls: `lt-property-details${isExpanded ? '' : ' lt-hidden'}`
+            cls: `${CSS_CLASS.PROPERTY_DETAILS}${isExpanded ? '' : ` ${CSS_CLASS.HIDDEN}`}`
         })
 
         // Type-specific options

@@ -1,6 +1,6 @@
-import type { ValidationResult } from '../../types/property-definition.types'
-import { validateList, validateTags, parseListValue, parseTagsValue } from './validation.utils'
-import { BasePropertyEditor, type PropertyEditorConfig } from './base-editor'
+import type { ValidationResult, PropertyEditorConfig } from '../../types'
+import { validateList, validateTags, parseListValue, parseTagsValue } from '../../../utils'
+import { BasePropertyEditor } from './base-editor'
 
 /**
  * List/Tags editor - renders as a pill/chip editor with add/remove

@@ -1,12 +1,9 @@
+import type { PropertyEditor, PropertyEditorConfig } from '../../types'
 import { TextEditor } from './text-editor'
 import { NumberEditor } from './number-editor'
 import { BooleanEditor } from './boolean-editor'
 import { DateEditor } from './date-editor'
 import { ListEditor } from './list-editor'
-import type { PropertyEditor, PropertyEditorConfig } from './base-editor'
-
-// Re-export types from base-editor
-export type { PropertyEditorConfig, PropertyEditor } from './base-editor'
 export { BasePropertyEditor } from './base-editor'
 
 /**

@@ -1,15 +1,10 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
-import type {
-    TimelineData,
-    VisualizationConfig,
-    VisualizationDataPoint
-} from '../../../types/visualization.types'
+import type { TimelineData, VisualizationConfig, VisualizationDataPoint } from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip } from '../../ui/tooltip'
 import { differenceInMilliseconds, parseISO } from 'date-fns'
-import { formatDateByGranularity } from '../../../../utils/date-utils'
-import { log } from '../../../../utils/log'
+import { formatDateByGranularity, log } from '../../../../utils'
 
 /**
  * Timeline visualization for date-based data

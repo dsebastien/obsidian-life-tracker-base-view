@@ -1,11 +1,7 @@
 import type { BasesPropertyId } from 'obsidian'
 import type { BaseVisualization } from '../components/visualizations/base-visualization'
-import type { VisualizationDataPoint } from '../types/visualization.types'
-
-/**
- * Callback type for getting data points for re-render
- */
-export type GetDataPointsCallback = (propertyId: BasesPropertyId) => VisualizationDataPoint[]
+import type { GetDataPointsCallback } from '../types'
+import { CSS_SELECTOR, DATA_ATTR_FULL } from '../../utils'
 
 /**
  * Service for managing card maximize/minimize state.
@@ -80,9 +76,9 @@ export class MaximizeStateService {
         // Update card classes
         const gridEl = this.getGridEl()
         if (gridEl) {
-            const cards = gridEl.querySelectorAll('.lt-card')
+            const cards = gridEl.querySelectorAll(CSS_SELECTOR.CARD)
             cards.forEach((card) => {
-                const cardPropertyId = card.getAttribute('data-property-id')
+                const cardPropertyId = card.getAttribute(DATA_ATTR_FULL.PROPERTY_ID)
 
                 // Skip unconfigured cards (those without data-property-id) - they never participate in maximize state
                 if (!cardPropertyId) {
