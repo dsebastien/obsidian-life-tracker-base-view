@@ -21,15 +21,17 @@ import { getTimeKey, normalizeDate } from './date-grouping.utils'
 /**
  * Format a value for display as a timeline label.
  * Handles objects, arrays, and primitives properly.
+ * Returns empty string for null/undefined/empty values (never "null" string).
  */
-function formatTimelineLabel(value: unknown): string | null {
+function formatTimelineLabel(value: unknown): string {
     if (value === null || value === undefined) {
-        return null
+        return ''
     }
 
     // Handle arrays
     if (Array.isArray(value)) {
-        return value.join(', ')
+        const filtered = value.filter((v) => v !== null && v !== undefined && v !== 'null')
+        return filtered.join(', ')
     }
 
     // Handle objects (avoid [object Object])
@@ -37,8 +39,13 @@ function formatTimelineLabel(value: unknown): string | null {
         return JSON.stringify(value)
     }
 
-    // Primitives
-    return String(value)
+    // Primitives - check for "null" string
+    const strValue = String(value)
+    if (strValue === 'null' || strValue === 'undefined') {
+        return ''
+    }
+
+    return strValue
 }
 
 /**
@@ -100,6 +107,7 @@ export function aggregateForChart(
 /**
  * Aggregate data for pie/doughnut chart visualization
  * Groups values and counts their frequency
+ * Always filters out null/empty values - they are never shown as a category
  */
 export function aggregateForPieChart(
     dataPoints: VisualizationDataPoint[],
@@ -110,10 +118,12 @@ export function aggregateForPieChart(
     const valueGroups = new Map<string, { count: number; entries: BasesEntry[] }>()
 
     for (const point of dataPoints) {
+        // Skip null/undefined values
         if (point.value === null || point.value === undefined) continue
 
+        // Convert to string and skip empty or "null" strings
         const valueStr = String(point.value).trim()
-        if (!valueStr) continue
+        if (!valueStr || valueStr === 'null' || valueStr === 'undefined') continue
 
         if (!valueGroups.has(valueStr)) {
             valueGroups.set(valueStr, { count: 0, entries: [] })
@@ -246,6 +256,7 @@ export function aggregateForBubbleChart(
 
 /**
  * Aggregate data for tag cloud visualization
+ * Always filters out null/empty tags
  */
 export function aggregateForTagCloud(
     dataPoints: VisualizationDataPoint[],
@@ -261,7 +272,8 @@ export function aggregateForTagCloud(
         const tags = extractList(value)
 
         for (const tag of tags) {
-            if (!tag) continue
+            // Skip empty, null, or undefined tags
+            if (!tag || tag === 'null' || tag === 'undefined') continue
 
             if (!tagCounts.has(tag)) {
                 tagCounts.set(tag, { frequency: 0, entries: [] })
@@ -319,11 +331,14 @@ export function aggregateForTimeline(
     }
 
     // Create timeline points
-    const points: TimelinePoint[] = validPoints.map((p) => ({
-        date: p.dateAnchor!.date,
-        label: formatTimelineLabel(p.value) ?? p.entry.file.basename,
-        entries: [p.entry]
-    }))
+    const points: TimelinePoint[] = validPoints.map((p) => {
+        const label = formatTimelineLabel(p.value)
+        return {
+            date: p.dateAnchor!.date,
+            label: label || p.entry.file.basename,
+            entries: [p.entry]
+        }
+    })
 
     // Sort by date
     points.sort((a, b) => compareAsc(a.date, b.date))

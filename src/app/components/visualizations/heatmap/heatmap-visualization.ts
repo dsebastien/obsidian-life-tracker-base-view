@@ -41,7 +41,7 @@ export class HeatmapVisualization extends BaseVisualization {
             this.propertyId,
             this.displayName,
             this.heatmapConfig.granularity,
-            this.heatmapConfig.showEmptyDates
+            this.heatmapConfig.showEmptyValues
         )
 
         // Apply scale override if configured

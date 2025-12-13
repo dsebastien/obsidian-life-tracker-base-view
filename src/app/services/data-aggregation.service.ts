@@ -57,7 +57,7 @@ export class DataAggregationService {
         propertyId: BasesPropertyId,
         displayName: string,
         granularity: TimeGranularity,
-        showEmptyDates: boolean
+        showEmptyValues: boolean
     ): HeatmapData {
         // Filter points with valid date anchors
         const validPoints = dataPoints.filter((p) => p.dateAnchor !== null)
@@ -113,7 +113,7 @@ export class DataAggregationService {
         }
 
         // Add empty cells if requested
-        if (showEmptyDates) {
+        if (showEmptyValues) {
             const emptyCells = generateEmptyCells(minDate, maxDate, granularity, cellMap)
             cells.push(...emptyCells)
         }

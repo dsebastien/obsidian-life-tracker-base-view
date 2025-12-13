@@ -159,7 +159,8 @@ export interface HeatmapColorScheme {
  */
 export interface VisualizationConfig {
     granularity: TimeGranularity
-    showEmptyDates: boolean
+    /** Show empty values: includes dates with no entries AND dates where property value is null/empty */
+    showEmptyValues: boolean
     embeddedHeight: number
 }
 

@@ -71,7 +71,10 @@ export function initPieChart(
                     callbacks: {
                         label: (context: PieTooltipContext) => {
                             const label = context.label ?? ''
+                            // Skip if label is empty or "null"
+                            if (!label || label === 'null') return ''
                             const value = context.parsed
+                            if (value === null || value === undefined) return ''
                             const total = pieChartData.values.reduce((a, b) => a + b, 0) ?? 1
                             const percentage = ((value / total) * 100).toFixed(1)
                             return `${label}: ${value} (${percentage}%)`
@@ -199,7 +202,8 @@ export function initCartesianChart(
                         label: (context: CartesianTooltipContext) => {
                             const label = context.dataset.label ?? ''
                             const value = context.parsed.y
-                            if (value === null || value === undefined) return label
+                            // Return empty string for null/undefined values (not "null")
+                            if (value === null || value === undefined) return ''
                             return `${label}: ${value.toFixed(2)}`
                         }
                     }
@@ -269,9 +273,12 @@ export function initScatterChart(
                     enabled: true,
                     callbacks: {
                         label: (context: PointTooltipContext) => {
-                            const x = context.parsed.x?.toFixed(1) ?? 0
-                            const y = context.parsed.y?.toFixed(2) ?? 0
-                            return `Time: ${x}%, Value: ${y}`
+                            const x = context.parsed.x
+                            const y = context.parsed.y
+                            // Return empty string for null/undefined values
+                            if (x === null || x === undefined || y === null || y === undefined)
+                                return ''
+                            return `Time: ${x.toFixed(1)}%, Value: ${y.toFixed(2)}`
                         }
                     }
                 }
@@ -348,11 +355,13 @@ export function initBubbleChart(
                     enabled: true,
                     callbacks: {
                         label: (context: PointTooltipContext) => {
-                            const y = context.parsed.y?.toFixed(2) ?? 0
+                            const y = context.parsed.y
+                            // Return empty string for null/undefined values
+                            if (y === null || y === undefined) return ''
                             const r = context.raw?.r ?? 0
                             // Calculate count from radius (reverse the formula)
                             const count = Math.round(((r - 5) / 25) * 10) || 1
-                            return `Value: ${y}, Entries: ~${count}`
+                            return `Value: ${y.toFixed(2)}, Entries: ~${count}`
                         }
                     }
                 }

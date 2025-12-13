@@ -61,8 +61,8 @@ export function getLifeTrackerViewOptions(): ViewOption[] {
                 },
                 {
                     type: 'toggle',
-                    key: 'showEmptyDates',
-                    displayName: 'Show empty dates',
+                    key: 'showEmptyValues',
+                    displayName: 'Show empty values',
                     default: true
                 }
             ]
