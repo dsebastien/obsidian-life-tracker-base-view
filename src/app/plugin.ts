@@ -95,7 +95,7 @@ export class LifeTrackerPlugin extends Plugin {
         })
 
         if (gridRegistered) {
-            log('Grid view registered', 'debug')
+            log('Life Tracker Grid view registered', 'debug')
         }
 
         // Add a settings screen for the plugin
