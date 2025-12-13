@@ -1,3 +1,16 @@
+## [1.2.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.1.1...1.2.0) (2025-12-13)
+
+### Features
+
+* **all:** added batch mode support for the command and modal ([bb8eb22](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/bb8eb2272784dc3a5247c0088bbc4eda4f2d374a))
+* **all:** added capture command and a new grid base view type ([2b3ade0](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/2b3ade0bb65738780a48c8d3e584e21c3ff71b31))
+* **all:** enhanced handling of empty/null values in visualizations (new setting) ([a1c8fff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a1c8ffff5e928de812dc0cf914e04a02c32dc774))
+* **all:** improved navigation across properties with the modal ([a38ce9a](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a38ce9a64329578a1b16697d4ad3681cdfb16ecb))
+* **all:** improved validation in modal and grid. Only valid values may be entered now ([905c769](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/905c76912b4cd209a3ae09955340c5905abc951e))
+
+### Bug Fixes
+
+* **all:** fixed bug where the heatmap color did not changed according to the setting ([d94e746](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/d94e74671c13952339ee8b558df654f0551cb5fe))
 ## [1.1.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.1.0...1.1.1) (2025-12-12)
 
 ### Bug Fixes
