@@ -75,6 +75,30 @@ Expand any visualization to full view for detailed analysis. Press Escape to exi
 ![Global settings](documentation/screenshots/configure-global-settings-and-presets.png)
 Configure animation duration and create visualization presets that auto-apply to properties matching specific name patterns.
 
+## Property definitions
+
+Property definitions let you configure which frontmatter properties to track across your vault. Each definition specifies:
+
+- **Property name**: The frontmatter key to track (e.g., `mood`, `weight`, `exercise`)
+- **Type**: text, number, checkbox, date, datetime, list, or tags
+- **Constraints**: Optional min/max for numbers, allowed values for text/list/tags
+- **Default value**: Pre-filled when capturing new data
+- **Note filtering**: Apply the property only to specific notes by folder, tag, or regex pattern
+
+Configure property definitions in **Settings → Life Tracker → Property definitions**. These definitions power the capture command and determine which properties appear in the capture dialog.
+
+## Visualization presets
+
+Visualization presets automatically configure how properties are displayed based on their name. For example, you can set all properties containing "mood" to display as a heatmap with a 1-5 scale.
+
+Configure presets in **Settings → Life Tracker → Visualization presets** by specifying:
+
+- **Property name pattern**: The text to match against property names
+- **Visualization type**: Which visualization to use (heatmap, line chart, etc.)
+- **Scale**: Optional min/max range for numeric visualizations
+
+**How presets work with overrides**: When you add a property column to a Life Tracker Base View, the plugin checks for matching presets and applies them automatically. However, you can always override the preset configuration for that specific property in that specific view using the right-click context menu. Your per-view overrides take precedence over presets, giving you global defaults with local flexibility.
+
 ## Roadmap
 
 See the issues & discussions in this repositories.
