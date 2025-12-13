@@ -41,8 +41,7 @@ export function createColumnConfigCard(
     const optionsGrid = card.createDiv({ cls: 'lt-config-card-options' })
 
     // Scale config section (hidden initially)
-    const scaleSection = card.createDiv({ cls: 'lt-config-scale-section' })
-    scaleSection.style.display = 'none'
+    const scaleSection = card.createDiv({ cls: 'lt-config-scale-section lt-hidden' })
 
     for (const option of CONFIG_CARD_VISUALIZATION_OPTIONS) {
         const optionBtn = optionsGrid.createDiv({ cls: 'lt-config-option' })
@@ -61,12 +60,12 @@ export function createColumnConfigCard(
         const handleSelect = (): void => {
             if (supportsScale(option.type)) {
                 // Show scale configuration
-                optionsGrid.style.display = 'none'
+                optionsGrid.addClass('lt-hidden')
                 subtitle.setText('Configure scale (optional)')
                 renderScaleConfig(scaleSection, option.label, (scale) => {
                     onSelect({ visualizationType: option.type, scale })
                 })
-                scaleSection.style.display = 'block'
+                scaleSection.removeClass('lt-hidden')
             } else {
                 // No scale config needed, submit directly
                 onSelect({ visualizationType: option.type })

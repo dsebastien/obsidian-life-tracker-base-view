@@ -322,9 +322,8 @@ export class GridView extends BasesView implements FileProvider {
     private render(): void {
         // Create fixed header wrapper (hidden initially)
         this.fixedHeaderWrapperEl = this.containerEl.createDiv({
-            cls: 'lt-grid-view-fixed-header-wrapper'
+            cls: 'lt-grid-view-fixed-header-wrapper lt-hidden'
         })
-        this.fixedHeaderWrapperEl.style.display = 'none'
 
         // Create table wrapper for horizontal scroll
         this.tableWrapperEl = this.containerEl.createDiv({ cls: 'lt-grid-view-table-wrapper' })
@@ -432,7 +431,7 @@ export class GridView extends BasesView implements FileProvider {
 
         if (shouldShowFixed !== this.isFixedHeaderVisible) {
             this.isFixedHeaderVisible = shouldShowFixed
-            this.fixedHeaderWrapperEl.style.display = shouldShowFixed ? 'block' : 'none'
+            this.fixedHeaderWrapperEl.toggleClass('lt-hidden', !shouldShowFixed)
         }
 
         if (shouldShowFixed) {

@@ -71,10 +71,10 @@ describe('log', () => {
             expect(consoleErrorSpy.mock.calls[0]![0]).toContain('test message')
         })
 
-        test('uses console.log for undefined level', () => {
+        test('uses console.debug for undefined level', () => {
             log('test message')
-            expect(consoleLogSpy).toHaveBeenCalledTimes(1)
-            expect(consoleLogSpy.mock.calls[0]![0]).toContain('test message')
+            expect(consoleDebugSpy).toHaveBeenCalledTimes(1)
+            expect(consoleDebugSpy.mock.calls[0]![0]).toContain('test message')
         })
 
         test('prefixes message with LOG_PREFIX', () => {

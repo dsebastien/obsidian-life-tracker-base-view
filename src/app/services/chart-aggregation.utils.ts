@@ -20,6 +20,29 @@ import { extractList } from '../../utils/value-extractors'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
 
 /**
+ * Format a value for display as a timeline label.
+ * Handles objects, arrays, and primitives properly.
+ */
+function formatTimelineLabel(value: unknown): string | null {
+    if (value === null || value === undefined) {
+        return null
+    }
+
+    // Handle arrays
+    if (Array.isArray(value)) {
+        return value.join(', ')
+    }
+
+    // Handle objects (avoid [object Object])
+    if (typeof value === 'object') {
+        return JSON.stringify(value)
+    }
+
+    // Primitives
+    return String(value)
+}
+
+/**
  * Aggregate data for chart visualization (line, bar, area)
  */
 export function aggregateForChart(
@@ -299,7 +322,7 @@ export function aggregateForTimeline(
     // Create timeline points
     const points: TimelinePoint[] = validPoints.map((p) => ({
         date: p.dateAnchor!.date,
-        label: p.value?.toString() ?? p.entry.file.basename,
+        label: formatTimelineLabel(p.value) ?? p.entry.file.basename,
         entries: [p.entry]
     }))
 

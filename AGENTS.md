@@ -283,6 +283,18 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Avoid Node/Electron APIs if you want mobile compatibility; set `isDesktopOnly` accordingly.
 - Prefer `async/await` over promise chains; handle errors gracefully.
 
+### Obsidian Plugin Review Guidelines
+
+These rules ensure compliance with Obsidian's plugin review process:
+
+- **No inline styles**: Use CSS classes with `addClass`/`removeClass`/`toggleClass` instead of `element.style.*`
+- **Sentence case for UI text**: Use "Property definitions" not "Property Definitions" in headings, buttons, labels
+- **eslint-disable comments**: Always add explanatory comment when disabling rules (e.g., why `any` is necessary)
+- **No console.log**: Use `console.debug`/`info`/`warn`/`error` instead of `console.log`
+- **Explicit promise handling**: Use `void` keyword for intentional fire-and-forget async calls, or `.catch()` for error handling
+- **Object stringification**: Never rely on `.toString()` for objects - use `JSON.stringify()` or custom formatting to avoid `[object Object]`
+- **Dependencies**: Ensure all imports (like `globals` for ESLint) are listed in `package.json`
+
 ### TypeScript Configuration
 
 This project uses **super strict TypeScript configuration**. All code MUST respect the strict settings defined in `tsconfig.json`:

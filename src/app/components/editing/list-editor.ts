@@ -38,9 +38,8 @@ export class ListEditor extends BasePropertyEditor {
 
         // Suggestions dropdown
         this.suggestionsEl = this.wrapperEl.createDiv({
-            cls: 'lt-editor-list-suggestions'
+            cls: 'lt-editor-list-suggestions lt-hidden'
         })
-        this.suggestionsEl.style.display = 'none'
 
         this.setupEventHandlers()
     }
@@ -143,7 +142,7 @@ export class ListEditor extends BasePropertyEditor {
         }
 
         this.suggestionsEl.empty()
-        this.suggestionsEl.style.display = 'block'
+        this.suggestionsEl.removeClass('lt-hidden')
 
         for (const suggestion of availableSuggestions) {
             const item = this.suggestionsEl.createDiv({
@@ -160,7 +159,7 @@ export class ListEditor extends BasePropertyEditor {
 
     private hideSuggestions(): void {
         if (this.suggestionsEl) {
-            this.suggestionsEl.style.display = 'none'
+            this.suggestionsEl.addClass('lt-hidden')
         }
     }
 

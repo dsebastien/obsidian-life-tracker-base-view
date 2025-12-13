@@ -143,8 +143,8 @@ export class ChartVisualization extends BaseVisualization {
         // Create canvas with aspect ratio for natural sizing
         this.canvasEl = this.chartContainer.createEl('canvas', { cls: 'lt-chart-canvas' })
 
-        // Initialize chart
-        this.initChart()
+        // Initialize chart (async, errors handled internally)
+        void this.initChart()
     }
 
     /**

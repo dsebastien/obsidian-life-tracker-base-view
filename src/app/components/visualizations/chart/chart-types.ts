@@ -45,3 +45,27 @@ export interface ChartClickElement {
     index: number
     datasetIndex: number
 }
+
+/**
+ * Tooltip callback context for pie/doughnut charts
+ */
+export interface PieTooltipContext {
+    label: string
+    parsed: number
+}
+
+/**
+ * Tooltip callback context for cartesian charts (line/bar/area)
+ */
+export interface CartesianTooltipContext {
+    dataset: { label?: string }
+    parsed: { y: number | null }
+}
+
+/**
+ * Tooltip callback context for scatter/bubble charts
+ */
+export interface PointTooltipContext {
+    parsed: { x?: number; y?: number }
+    raw?: { r?: number }
+}

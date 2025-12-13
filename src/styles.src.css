@@ -1,6 +1,15 @@
 @import 'tailwindcss';
 
 /* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Visibility toggle - use instead of inline style.display */
+.lt-hidden {
+    display: none !important;
+}
+
+/* ========================================
    SUPPORT & UI SECTIONS
    ======================================== */
 
@@ -770,11 +779,11 @@
 }
 
 .lt-timeline-label--start {
-    left: 4px;
+    left: 0;
 }
 
 .lt-timeline-label--end {
-    right: 4px;
+    right: 0;
 }
 
 /* ========================================

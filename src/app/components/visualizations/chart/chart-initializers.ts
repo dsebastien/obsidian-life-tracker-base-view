@@ -6,14 +6,29 @@ import type {
     ScatterChartData
 } from '../../../types/visualization.types'
 import { CHART_COLORS_HEX, getColorWithAlpha } from '../../../../utils/color-utils'
-import type { ChartClickElement, ChartDatasetConfig, ChartInstance, ChartType } from './chart-types'
+import type {
+    CartesianTooltipContext,
+    ChartClickElement,
+    ChartDatasetConfig,
+    ChartInstance,
+    ChartType,
+    PieTooltipContext,
+    PointTooltipContext
+} from './chart-types'
+
+/**
+ * Chart.js constructor type.
+ * Uses 'any' because Chart.js is dynamically imported and its type system
+ * is extremely complex with many generic parameters that vary by chart type.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ChartClass = any
 
 /**
  * Initialize pie/doughnut/polarArea chart
  */
 export function initPieChart(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Chart: any,
+    Chart: ChartClass,
     ctx: CanvasRenderingContext2D,
     pieChartData: PieChartData,
     chartConfig: ChartConfig,
@@ -56,8 +71,7 @@ export function initPieChart(
                 tooltip: {
                     enabled: true,
                     callbacks: {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        label: (context: any) => {
+                        label: (context: PieTooltipContext) => {
                             const label = context.label ?? ''
                             const value = context.parsed
                             const total = pieChartData.values.reduce((a, b) => a + b, 0) ?? 1
@@ -78,8 +92,7 @@ export function initPieChart(
  * Initialize radar chart
  */
 export function initRadarChart(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Chart: any,
+    Chart: ChartClass,
     ctx: CanvasRenderingContext2D,
     chartData: ChartData,
     chartConfig: ChartConfig,
@@ -135,8 +148,7 @@ export function initRadarChart(
  * Initialize cartesian chart (line, bar, area)
  */
 export function initCartesianChart(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Chart: any,
+    Chart: ChartClass,
     ctx: CanvasRenderingContext2D,
     chartData: ChartData,
     chartConfig: ChartConfig,
@@ -186,8 +198,7 @@ export function initCartesianChart(
                 tooltip: {
                     enabled: true,
                     callbacks: {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        label: (context: any) => {
+                        label: (context: CartesianTooltipContext) => {
                             const label = context.dataset.label ?? ''
                             const value = context.parsed.y
                             if (value === null || value === undefined) return label
@@ -224,8 +235,7 @@ export function initCartesianChart(
  * Initialize scatter chart
  */
 export function initScatterChart(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Chart: any,
+    Chart: ChartClass,
     ctx: CanvasRenderingContext2D,
     scatterChartData: ScatterChartData,
     chartConfig: ChartConfig,
@@ -260,8 +270,7 @@ export function initScatterChart(
                 tooltip: {
                     enabled: true,
                     callbacks: {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        label: (context: any) => {
+                        label: (context: PointTooltipContext) => {
                             const x = context.parsed.x?.toFixed(1) ?? 0
                             const y = context.parsed.y?.toFixed(2) ?? 0
                             return `Time: ${x}%, Value: ${y}`
@@ -307,8 +316,7 @@ export function initScatterChart(
  * Initialize bubble chart
  */
 export function initBubbleChart(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Chart: any,
+    Chart: ChartClass,
     ctx: CanvasRenderingContext2D,
     bubbleChartData: BubbleChartData,
     chartConfig: ChartConfig,
@@ -341,8 +349,7 @@ export function initBubbleChart(
                 tooltip: {
                     enabled: true,
                     callbacks: {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        label: (context: any) => {
+                        label: (context: PointTooltipContext) => {
                             const y = context.parsed.y?.toFixed(2) ?? 0
                             const r = context.raw?.r ?? 0
                             // Calculate count from radius (reverse the formula)

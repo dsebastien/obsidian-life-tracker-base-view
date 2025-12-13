@@ -141,14 +141,12 @@ export class TimelineVisualization extends BaseVisualization {
             cls: 'lt-timeline-label lt-timeline-label--start'
         })
         startLabel.textContent = formatDateByGranularity(minDate, this.config.granularity)
-        startLabel.style.left = '0'
 
         // End label
         const endLabel = this.timelineEl.createDiv({
             cls: 'lt-timeline-label lt-timeline-label--end'
         })
         endLabel.textContent = formatDateByGranularity(maxDate, this.config.granularity)
-        endLabel.style.right = '0'
     }
 
     /**

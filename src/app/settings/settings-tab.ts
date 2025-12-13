@@ -63,7 +63,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         const navEl = containerEl.createDiv({ cls: 'lt-settings-nav' })
 
         const tabs: Array<{ id: SettingsTab; label: string }> = [
-            { id: 'properties', label: 'Property Definitions' },
+            { id: 'properties', label: 'Property definitions' },
             { id: 'visualizations', label: 'Visualizations' },
             { id: 'about', label: 'About' }
         ]
@@ -109,7 +109,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         containerEl.createEl('hr', { cls: 'lt-settings-separator' })
 
         // Property definitions header
-        containerEl.createEl('h3', { text: 'Property Definitions' })
+        containerEl.createEl('h3', { text: 'Property definitions' })
 
         // List existing definitions
         const definitionsContainer = containerEl.createDiv({
@@ -182,7 +182,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                     ) as HTMLElement
                     if (detailsEl) {
                         const nowExpanded = this.expandedDefinitions.has(definition.id)
-                        detailsEl.style.display = nowExpanded ? 'block' : 'none'
+                        detailsEl.toggleClass('lt-hidden', !nowExpanded)
                         button.setIcon(nowExpanded ? 'chevron-down' : 'chevron-right')
                         button.setTooltip(nowExpanded ? 'Collapse' : 'Expand')
                     }
@@ -261,8 +261,9 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         })
 
         // Collapsible details container
-        const detailsContainer = itemContainer.createDiv({ cls: 'lt-property-details' })
-        detailsContainer.style.display = isExpanded ? 'block' : 'none'
+        const detailsContainer = itemContainer.createDiv({
+            cls: `lt-property-details${isExpanded ? '' : ' lt-hidden'}`
+        })
 
         // Type-specific options
         this.renderPropertyTypeOptions(detailsContainer, definition)
