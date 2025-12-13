@@ -1,5 +1,6 @@
 import type { VisualizationType } from './visualization-type.intf'
 import type { ScaleConfig } from './column-config.types'
+import type { PropertyDefinition } from './property-definition.types'
 
 /**
  * Global preset for a property name pattern
@@ -28,9 +29,23 @@ export interface PluginSettings {
      * Controls how long visualization animations take to complete
      */
     animationDuration: number
+
+    /**
+     * Property definitions for capture/editing
+     * Defines trackable properties with types, defaults, and constraints
+     */
+    propertyDefinitions: PropertyDefinition[]
+
+    /**
+     * Show confetti animation when completing property capture
+     * Adds a fun celebration when all properties are saved
+     */
+    showConfettiOnCapture: boolean
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
     visualizationPresets: [],
-    animationDuration: 3000
+    animationDuration: 3000,
+    propertyDefinitions: [],
+    showConfettiOnCapture: true
 }

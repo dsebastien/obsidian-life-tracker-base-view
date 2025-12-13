@@ -7,6 +7,9 @@ import { produce } from 'immer'
 import type { Draft } from 'immer'
 import { LifeTrackerView, LIFE_TRACKER_VIEW_TYPE } from './view/life-tracker-view'
 import { getLifeTrackerViewOptions } from './view/view-options'
+import { GridView, GRID_VIEW_TYPE } from './view/grid-view/grid-view'
+import { getGridViewOptions } from './view/grid-view/grid-view-options'
+import { registerCommands } from './commands'
 
 /**
  * Callback type for settings change listeners
@@ -46,8 +49,23 @@ export class LifeTrackerPlugin extends Plugin {
             log('Life Tracker view registered', 'debug')
         }
 
+        // Register the Grid View
+        const gridRegistered = this.registerBasesView(GRID_VIEW_TYPE, {
+            name: 'Life Tracker Grid',
+            icon: 'layout-grid',
+            factory: (controller, containerEl) => new GridView(controller, containerEl, this),
+            options: getGridViewOptions
+        })
+
+        if (gridRegistered) {
+            log('Grid view registered', 'debug')
+        }
+
         // Add a settings screen for the plugin
         this.addSettingTab(new LifeTrackerPluginSettingTab(this.app, this))
+
+        // Register commands
+        registerCommands(this)
     }
 
     override onunload() {}
@@ -74,6 +92,16 @@ export class LifeTrackerPlugin extends Plugin {
             // Load animation duration
             if (typeof loadedSettings.animationDuration === 'number') {
                 draft.animationDuration = loadedSettings.animationDuration
+            }
+
+            // Load property definitions
+            if (Array.isArray(loadedSettings.propertyDefinitions)) {
+                draft.propertyDefinitions = loadedSettings.propertyDefinitions
+            }
+
+            // Load confetti setting
+            if (typeof loadedSettings.showConfettiOnCapture === 'boolean') {
+                draft.showConfettiOnCapture = loadedSettings.showConfettiOnCapture
             }
         })
 

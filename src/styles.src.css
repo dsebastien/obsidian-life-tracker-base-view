@@ -28,6 +28,40 @@
 }
 
 /* ========================================
+   SETTINGS - TABS
+   ======================================== */
+
+.lt-settings {
+    @apply flex flex-col;
+}
+
+.lt-settings-nav {
+    @apply flex gap-1 mb-4 pb-2;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-settings-nav-tab {
+    @apply px-4 py-2 rounded-t cursor-pointer;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+}
+
+.lt-settings-nav-tab:hover {
+    color: var(--text-normal);
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-settings-nav-tab--active {
+    color: var(--text-normal);
+    background-color: var(--background-secondary);
+    font-weight: 500;
+}
+
+.lt-settings-content {
+    @apply flex flex-col;
+}
+
+/* ========================================
    LIFE TRACKER VIEW
    ======================================== */
 
@@ -876,4 +910,936 @@
     .lt-timeline {
         @apply px-2;
     }
+}
+
+/* ========================================
+   PROPERTY DEFINITIONS (Settings Tab)
+   ======================================== */
+
+.lt-property-definitions-container {
+    @apply mb-4;
+}
+
+.lt-property-definitions-empty {
+    @apply text-sm py-4 px-3 rounded;
+    color: var(--text-muted);
+    background-color: var(--background-secondary);
+}
+
+.lt-property-definition-item {
+    @apply mb-4 pb-4;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-property-header {
+    @apply py-1;
+}
+
+.lt-property-header .setting-item-control {
+    @apply gap-2;
+}
+
+.lt-property-chevron {
+    @apply p-1;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.lt-property-chevron:hover {
+    background-color: var(--background-modifier-hover) !important;
+}
+
+.lt-property-name-input {
+    @apply w-40;
+}
+
+.lt-property-details {
+    @apply ml-8 mt-2 pl-4;
+    border-left: 2px solid var(--background-modifier-border);
+}
+
+.lt-property-type-options {
+    @apply mt-2;
+}
+
+.lt-constraint-input {
+    @apply w-20;
+}
+
+/* ========================================
+   PROPERTY MAPPINGS (Note Filtering)
+   ======================================== */
+
+.lt-mappings-container {
+    @apply mt-4 pt-4;
+    border-top: 1px dashed var(--background-modifier-border);
+}
+
+.lt-mappings-empty {
+    @apply text-xs py-2 px-3 rounded mt-2;
+    color: var(--text-muted);
+    background-color: var(--background-primary-alt);
+    font-style: italic;
+}
+
+.lt-mappings-list {
+    @apply mt-2;
+}
+
+.lt-mapping-item {
+    @apply py-1;
+}
+
+.lt-mapping-item .setting-item-control {
+    @apply gap-2;
+}
+
+.lt-mapping-value-input {
+    @apply w-40;
+}
+
+/* ========================================
+   PROPERTY EDITORS
+   ======================================== */
+
+.lt-editor-input {
+    @apply w-full px-2 py-1.5 rounded text-sm;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-editor-input:focus {
+    @apply outline-none;
+    border-color: var(--interactive-accent);
+}
+
+.lt-editor-input--compact {
+    @apply px-1.5 py-1;
+}
+
+.lt-editor-input--number {
+    @apply w-24;
+}
+
+.lt-editor-input--date {
+    @apply w-40;
+}
+
+.lt-editor-input--invalid {
+    border-color: var(--text-error);
+}
+
+.lt-editor-select {
+    @apply w-full px-2 py-1.5 rounded text-sm cursor-pointer;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-editor-select:focus {
+    @apply outline-none;
+    border-color: var(--interactive-accent);
+}
+
+.lt-editor-select--compact {
+    @apply px-1.5 py-1;
+}
+
+/* Number editor with slider */
+.lt-editor-number-wrapper {
+    @apply flex items-center gap-3;
+}
+
+.lt-editor-slider {
+    @apply flex-1 h-2 rounded-full cursor-pointer;
+    appearance: none;
+    background-color: var(--background-modifier-border);
+}
+
+.lt-editor-slider::-webkit-slider-thumb {
+    @apply w-4 h-4 rounded-full cursor-pointer;
+    appearance: none;
+    background-color: var(--interactive-accent);
+}
+
+.lt-editor-slider::-moz-range-thumb {
+    @apply w-4 h-4 rounded-full cursor-pointer border-0;
+    background-color: var(--interactive-accent);
+}
+
+/* Boolean toggle */
+.lt-editor-toggle {
+    @apply inline-flex items-center cursor-pointer rounded-full;
+    @apply transition-colors duration-200;
+    width: 44px;
+    height: 24px;
+    padding: 2px;
+    background-color: var(--background-modifier-border);
+}
+
+.lt-editor-toggle:focus {
+    @apply outline-none;
+    box-shadow: 0 0 0 2px var(--interactive-accent);
+}
+
+.lt-editor-toggle--on {
+    background-color: var(--interactive-accent);
+}
+
+.lt-editor-toggle-track {
+    @apply relative w-full h-full;
+}
+
+.lt-editor-toggle-thumb {
+    @apply absolute w-5 h-5 rounded-full;
+    @apply transition-transform duration-200;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.lt-editor-toggle--on .lt-editor-toggle-thumb {
+    transform: translateX(20px);
+}
+
+.lt-editor-checkbox-wrapper {
+    @apply flex items-center cursor-pointer;
+}
+
+.lt-editor-checkbox {
+    @apply w-4 h-4 cursor-pointer;
+}
+
+/* List/Tags editor */
+.lt-editor-list {
+    @apply flex flex-wrap items-center gap-1 p-1 rounded min-h-[32px];
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.lt-editor-list:focus-within {
+    border-color: var(--interactive-accent);
+}
+
+.lt-editor-list--compact {
+    @apply min-h-[28px] p-0.5;
+}
+
+.lt-editor-list-pills {
+    @apply flex flex-wrap gap-1;
+}
+
+.lt-editor-list-pill {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.lt-editor-list-pill-text {
+    @apply max-w-[100px] truncate;
+}
+
+.lt-editor-list-pill-remove {
+    @apply cursor-pointer opacity-70 hover:opacity-100 font-bold;
+}
+
+.lt-editor-list-input {
+    @apply flex-1 min-w-[60px] px-1 py-0.5 text-sm bg-transparent border-none;
+    color: var(--text-normal);
+}
+
+.lt-editor-list-input:focus {
+    @apply outline-none;
+}
+
+.lt-editor-list-suggestions {
+    @apply absolute z-50 mt-1 rounded-lg shadow-lg overflow-hidden max-h-40 overflow-y-auto;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    min-width: 120px;
+}
+
+.lt-editor-list-suggestion {
+    @apply px-3 py-2 text-sm cursor-pointer;
+    color: var(--text-normal);
+}
+
+.lt-editor-list-suggestion:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+/* ========================================
+   CAPTURE MODAL
+   ======================================== */
+
+.lt-capture-modal {
+    @apply flex flex-col gap-4;
+    max-width: 500px;
+}
+
+.lt-capture-header {
+    @apply flex items-center justify-between pb-3;
+    @apply transition-colors duration-300;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-capture-header--success {
+    background-color: rgba(0, 200, 100, 0.1);
+}
+
+.lt-capture-nav {
+    @apply flex items-center gap-2;
+}
+
+.lt-capture-nav-btn {
+    @apply w-8 h-8 flex items-center justify-center rounded cursor-pointer;
+    @apply transition-colors duration-150;
+    background-color: var(--background-modifier-hover);
+    color: var(--text-muted);
+    border: none;
+}
+
+.lt-capture-nav-btn:hover:not(:disabled) {
+    background-color: var(--interactive-hover);
+    color: var(--text-normal);
+}
+
+.lt-capture-nav-btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+.lt-capture-nav-count {
+    @apply text-sm px-2;
+    color: var(--text-muted);
+}
+
+.lt-capture-title {
+    @apply text-lg font-semibold;
+    color: var(--text-normal);
+}
+
+.lt-capture-form {
+    @apply flex flex-col gap-4;
+}
+
+.lt-capture-empty {
+    @apply text-sm py-4 text-center;
+    color: var(--text-muted);
+}
+
+.lt-capture-field {
+    @apply flex flex-col gap-1;
+}
+
+.lt-capture-field--invalid .lt-capture-editor {
+    border-color: var(--text-error);
+}
+
+.lt-capture-label {
+    @apply text-sm font-medium;
+    color: var(--text-normal);
+}
+
+.lt-capture-required {
+    color: var(--text-error);
+}
+
+.lt-capture-description {
+    @apply text-xs mb-1;
+    color: var(--text-muted);
+}
+
+.lt-capture-editor {
+    @apply relative;
+}
+
+.lt-capture-error {
+    @apply text-xs mt-1;
+    color: var(--text-error);
+}
+
+.lt-capture-actions {
+    @apply flex justify-end gap-3 pt-3;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.lt-capture-btn {
+    @apply px-4 py-2 rounded font-medium cursor-pointer;
+    @apply transition-colors duration-150;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.lt-capture-btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+.lt-capture-btn--primary {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-color: var(--interactive-accent);
+}
+
+.lt-capture-btn--primary:hover:not(:disabled) {
+    background-color: var(--interactive-accent-hover);
+}
+
+.lt-capture-btn--secondary {
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+}
+
+.lt-capture-btn--secondary:hover:not(:disabled) {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+/* ========================================
+   GRID VIEW (Editing)
+   ======================================== */
+
+.lt-edit-grid-container {
+    @apply p-4;
+}
+
+.lt-edit-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(var(--lt-grid-columns, 2), 1fr);
+}
+
+.lt-edit-card {
+    @apply rounded-lg overflow-hidden;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.lt-edit-card--dirty {
+    border-color: var(--interactive-accent);
+}
+
+.lt-edit-card-header {
+    @apply px-4 py-3;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-edit-card-title {
+    @apply text-base font-semibold cursor-pointer;
+    color: var(--text-accent);
+}
+
+.lt-edit-card-title:hover {
+    text-decoration: underline;
+}
+
+.lt-edit-card-body {
+    @apply p-4 flex flex-col gap-3;
+}
+
+.lt-edit-card-row {
+    @apply flex items-start gap-3;
+}
+
+.lt-edit-card-label {
+    @apply text-sm font-medium w-28 flex-shrink-0 pt-1.5;
+    color: var(--text-muted);
+}
+
+.lt-edit-card-value {
+    @apply flex-1;
+}
+
+.lt-edit-card-footer {
+    @apply px-4 py-3 flex justify-end gap-2;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+/* ========================================
+   GRID VIEW (BasesView) - Table Layout
+   ======================================== */
+
+.lt-grid-view-container {
+    @apply p-2 relative;
+}
+
+.lt-grid-view-table-wrapper {
+    overflow-x: auto;
+}
+
+/* Fixed header wrapper - positioned at top when scrolled */
+.lt-grid-view-fixed-header-wrapper {
+    @apply absolute left-0 right-0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 100;
+    /* Hide scrollbar since we sync with main table */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    pointer-events: none; /* Allow clicks to pass through to real header when visible */
+}
+
+.lt-grid-view-fixed-header-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.lt-grid-view-table--fixed {
+    pointer-events: auto; /* Re-enable clicks on the actual table */
+}
+
+.lt-grid-view-table {
+    @apply w-full border-collapse text-sm;
+    min-width: max-content;
+}
+
+.lt-grid-view-empty {
+    @apply text-sm py-8 px-4 text-center rounded;
+    color: var(--text-muted);
+    background-color: var(--background-secondary);
+}
+
+/* Table header */
+.lt-grid-view-table thead {
+    /* Sticky is handled via JS with fixed header clone */
+}
+
+.lt-grid-view-th {
+    @apply px-2 py-1.5 text-left text-xs font-semibold whitespace-nowrap;
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--background-modifier-border);
+}
+
+.lt-grid-view-th--note {
+    position: sticky;
+    left: 0;
+    z-index: 30;
+    background-color: var(--background-secondary);
+    min-width: 180px;
+    width: 180px;
+}
+
+.lt-grid-view-th-content {
+    @apply flex items-center gap-0.5;
+}
+
+.lt-grid-view-th-name {
+    @apply truncate;
+    max-width: 120px;
+}
+
+.lt-grid-view-th-required {
+    @apply text-xs;
+    color: var(--text-error);
+}
+
+.lt-grid-view-th--base {
+    position: sticky;
+    z-index: 25;
+    background-color: var(--background-primary-alt);
+    color: var(--text-faint);
+    font-style: italic;
+    min-width: 120px;
+    width: 120px;
+}
+
+/* Table rows - fixed height for virtual scrolling */
+.lt-grid-view-tr {
+    @apply transition-colors duration-100;
+    height: 32px;
+}
+
+.lt-grid-view-tr:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-grid-view-tr--has-issues {
+    background-color: rgba(255, 100, 100, 0.05);
+}
+
+.lt-grid-view-tr--has-issues:hover {
+    background-color: rgba(255, 100, 100, 0.1);
+}
+
+/* Virtual scrolling spacers */
+.lt-grid-view-spacer {
+    @apply p-0 border-0;
+}
+
+.lt-grid-view-spacer td {
+    @apply p-0 border-0;
+}
+
+/* Table cells */
+.lt-grid-view-td {
+    @apply px-2 py-1 align-middle;
+    border-bottom: 1px solid var(--background-modifier-border);
+    min-width: 100px;
+    max-width: 200px;
+}
+
+.lt-grid-view-td--note {
+    @apply font-medium;
+    position: sticky;
+    left: 0;
+    background-color: var(--background-primary);
+    z-index: 5;
+    min-width: 180px;
+    width: 180px;
+}
+
+.lt-grid-view-tr:hover .lt-grid-view-td--note {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-grid-view-td--na {
+    @apply text-center;
+}
+
+.lt-grid-view-td--invalid {
+    background-color: rgba(255, 100, 100, 0.1);
+}
+
+.lt-grid-view-td--base {
+    position: sticky;
+    z-index: 4;
+    background-color: var(--background-primary-alt);
+    min-width: 120px;
+    width: 120px;
+}
+
+.lt-grid-view-tr:hover .lt-grid-view-td--base {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-grid-view-td--empty {
+    @apply text-center;
+}
+
+.lt-grid-view-na {
+    @apply text-xs;
+    color: var(--text-faint);
+}
+
+.lt-grid-view-empty-value {
+    @apply text-xs;
+    color: var(--text-faint);
+}
+
+.lt-grid-view-readonly-value {
+    @apply text-xs truncate block;
+    color: var(--text-muted);
+    max-width: 180px;
+}
+
+.lt-grid-view-note-link {
+    @apply cursor-pointer truncate block;
+    color: var(--text-accent);
+    max-width: 160px;
+}
+
+.lt-grid-view-note-link:hover {
+    text-decoration: underline;
+}
+
+/* Compact editors in table cells */
+.lt-grid-view-td .lt-editor-input {
+    @apply px-1.5 py-0.5 text-xs;
+    min-height: 24px;
+}
+
+.lt-grid-view-td .lt-editor-select {
+    @apply px-1.5 py-0.5 text-xs;
+    min-height: 24px;
+}
+
+.lt-grid-view-td .lt-editor-toggle {
+    @apply scale-75;
+    transform-origin: left center;
+}
+
+.lt-grid-view-td .lt-editor-list {
+    @apply min-h-[24px] p-0.5;
+}
+
+.lt-grid-view-td .lt-editor-list-pill {
+    @apply text-[10px] px-1.5 py-0;
+}
+
+.lt-grid-view-td .lt-editor-list-input {
+    @apply text-xs min-w-[40px];
+}
+
+.lt-grid-view-td .lt-editor-number-wrapper {
+    @apply gap-1;
+}
+
+.lt-grid-view-td .lt-editor-slider {
+    @apply h-1;
+}
+
+.lt-grid-view-td .lt-editor-input--number {
+    @apply w-12 text-center;
+}
+
+/* ========================================
+   CAROUSEL MODAL (Property Capture)
+   ======================================== */
+
+.lt-carousel-modal {
+    @apply p-0 max-w-[520px] min-w-[420px] overflow-hidden;
+}
+
+.lt-carousel-modal .modal-content {
+    @apply p-0 overflow-hidden;
+}
+
+.lt-carousel-container {
+    @apply flex flex-col p-8 overflow-hidden;
+}
+
+/* Title with date/weekday */
+.lt-carousel-file-name {
+    @apply text-xl font-bold text-center mb-6 tracking-tight;
+    color: var(--text-normal);
+}
+
+/* Card (main content area) */
+.lt-carousel-card {
+    @apply flex flex-col rounded-xl p-6 mb-6 min-h-[220px] shadow-md;
+    background: linear-gradient(
+        145deg,
+        var(--background-secondary) 0%,
+        var(--background-primary-alt) 100%
+    );
+    border: 1px solid var(--background-modifier-border);
+}
+
+/* Navigation row */
+.lt-carousel-nav {
+    @apply flex items-center justify-between mb-5;
+}
+
+.lt-carousel-nav-btn {
+    @apply w-10 h-10 flex items-center justify-center rounded-full cursor-pointer;
+    @apply transition-all duration-200 bg-transparent border;
+    color: var(--text-muted);
+    border-color: var(--background-modifier-border);
+}
+
+.lt-carousel-nav-btn:hover:not(:disabled) {
+    @apply scale-105;
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+    border-color: var(--text-muted);
+}
+
+.lt-carousel-nav-btn:disabled {
+    @apply opacity-20 cursor-not-allowed scale-100;
+}
+
+.lt-carousel-nav-btn--done {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-color: var(--interactive-accent);
+}
+
+.lt-carousel-nav-btn--done:hover {
+    @apply scale-110;
+    background-color: var(--interactive-accent-hover, var(--interactive-accent));
+    border-color: var(--interactive-accent-hover, var(--interactive-accent));
+}
+
+.lt-carousel-nav-btn svg {
+    @apply w-5 h-5;
+}
+
+.lt-carousel-counter {
+    @apply text-sm font-semibold px-4 py-1.5 rounded-full border;
+    background-color: var(--background-primary);
+    color: var(--text-muted);
+    border-color: var(--background-modifier-border);
+}
+
+/* Property label */
+.lt-carousel-label {
+    @apply flex items-center gap-3 mb-3;
+}
+
+.lt-carousel-property-name {
+    @apply text-xl font-bold tracking-tight;
+    color: var(--text-normal);
+}
+
+.lt-carousel-required-badge {
+    @apply px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide text-[10px];
+    background-color: rgba(255, 100, 100, 0.12);
+    color: var(--text-error);
+}
+
+.lt-carousel-optional-badge {
+    @apply px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide text-[10px] border;
+    background-color: var(--background-primary);
+    color: var(--text-muted);
+    border-color: var(--background-modifier-border);
+}
+
+/* Description */
+.lt-carousel-description {
+    @apply text-sm mb-5 leading-relaxed;
+    color: var(--text-muted);
+}
+
+/* Editor container */
+.lt-carousel-editor {
+    @apply flex-1 mt-3;
+}
+
+/* Enhanced editor inputs within carousel */
+.lt-carousel-editor .lt-editor-input {
+    @apply px-4 py-3 text-base rounded-lg border-2 transition-all duration-200;
+    background-color: var(--background-primary);
+    border-color: var(--background-modifier-border);
+}
+
+.lt-carousel-editor .lt-editor-input:focus {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.15);
+}
+
+.lt-carousel-editor .lt-editor-number-wrapper {
+    @apply flex items-center gap-3;
+}
+
+.lt-carousel-editor .lt-editor-slider {
+    @apply flex-1 h-1.5 rounded-full cursor-pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--background-modifier-border);
+}
+
+.lt-carousel-editor .lt-editor-slider::-webkit-slider-runnable-track {
+    @apply h-1.5 rounded-full;
+    background-color: var(--background-modifier-border);
+}
+
+.lt-carousel-editor .lt-editor-slider::-webkit-slider-thumb {
+    @apply w-4 h-4 rounded-full cursor-pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--interactive-accent);
+    margin-top: -5px;
+    transition: transform 0.15s ease;
+}
+
+.lt-carousel-editor .lt-editor-slider:hover::-webkit-slider-thumb {
+    @apply scale-110;
+}
+
+.lt-carousel-editor .lt-editor-slider::-moz-range-track {
+    @apply h-1.5 rounded-full;
+    background-color: var(--background-modifier-border);
+}
+
+.lt-carousel-editor .lt-editor-slider::-moz-range-thumb {
+    @apply w-4 h-4 rounded-full cursor-pointer border-0;
+    background-color: var(--interactive-accent);
+}
+
+.lt-carousel-editor .lt-editor-slider:hover::-moz-range-thumb {
+    @apply scale-110;
+}
+
+.lt-carousel-editor .lt-editor-input--number {
+    @apply w-16 text-center py-2 px-2 text-sm;
+}
+
+/* Button for empty state */
+.lt-carousel-btn {
+    @apply px-6 py-3 rounded-xl font-semibold cursor-pointer text-sm;
+    @apply transition-all duration-200 border-2 text-center;
+    border-color: var(--background-modifier-border);
+}
+
+.lt-carousel-btn:hover {
+    @apply -translate-y-0.5 shadow-lg;
+}
+
+.lt-carousel-btn--secondary {
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+}
+
+.lt-carousel-btn--secondary:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+/* Progress section */
+.lt-carousel-progress {
+    @apply mt-6 pt-5 border-t;
+    border-color: var(--background-modifier-border);
+}
+
+.lt-carousel-progress-bar {
+    @apply h-2.5 rounded-full overflow-hidden;
+    background-color: var(--background-modifier-border);
+}
+
+.lt-carousel-progress-fill {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+    background: linear-gradient(
+        90deg,
+        var(--interactive-accent) 0%,
+        var(--interactive-accent-hover, var(--interactive-accent)) 50%,
+        var(--interactive-accent) 100%
+    );
+    background-size: 200% 100%;
+    animation: lt-progress-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes lt-progress-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.lt-carousel-progress-text {
+    @apply text-xs text-center mt-3 font-medium;
+    color: var(--text-muted);
+}
+
+/* Empty state */
+.lt-carousel-empty {
+    @apply flex flex-col items-center justify-center py-12 px-8 text-center;
+}
+
+.lt-carousel-empty-icon {
+    @apply text-6xl mb-5 grayscale-[0.3];
+}
+
+.lt-carousel-empty-title {
+    @apply text-xl font-bold mb-3;
+    color: var(--text-normal);
+}
+
+.lt-carousel-empty-text {
+    @apply text-sm mb-8 max-w-sm leading-relaxed;
+    color: var(--text-muted);
+}
+
+/* Animation for card transitions */
+@keyframes lt-carousel-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.lt-carousel-card {
+    animation: lt-carousel-slide-in 0.25s ease-out;
 }

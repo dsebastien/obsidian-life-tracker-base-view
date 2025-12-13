@@ -67,6 +67,7 @@
         "@eslint/js": "^9.36.0",
         "@tailwindcss/cli": "4.1.17",
         "@types/bun": "latest",
+        "@types/canvas-confetti": "1.9.0",
         "commitizen": "^4.3.1",
         "conventional-changelog-cli": "5.0.0",
         "conventional-changelog-conventionalcommits": "9.1.0",
@@ -82,6 +83,7 @@
         "typescript-eslint": "8.49.0"
     },
     "dependencies": {
+        "canvas-confetti": "1.9.4",
         "chart.js": "4.5.1",
         "date-fns": "4.1.0",
         "immer": "11.0.1"

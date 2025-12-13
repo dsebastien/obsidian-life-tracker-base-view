@@ -319,3 +319,22 @@ export function getDayName(date: Date, formatType: 'short' | 'long' = 'short'): 
 export function getMonthName(date: Date, formatType: 'short' | 'long' = 'short'): string {
     return format(date, formatType === 'short' ? 'MMM' : 'MMMM')
 }
+
+/**
+ * Format file title, adding weekday for YYYY-MM-DD formatted names
+ * Example: "2025-01-15" becomes "2025-01-15 (Wednesday)"
+ */
+export function formatFileTitleWithWeekday(basename: string): string {
+    const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(basename)
+    if (dateMatch && dateMatch[1] && dateMatch[2] && dateMatch[3]) {
+        const year = parseInt(dateMatch[1])
+        const month = parseInt(dateMatch[2]) - 1
+        const day = parseInt(dateMatch[3])
+        const date = new Date(year, month, day)
+        if (!isNaN(date.getTime())) {
+            const weekday = format(date, 'EEEE')
+            return `${basename} (${weekday})`
+        }
+    }
+    return basename
+}
