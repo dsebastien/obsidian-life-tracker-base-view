@@ -13,7 +13,7 @@ import {
     type ResolvedDateAnchor
 } from '../types'
 import { compareAsc, min, max } from 'date-fns'
-import { extractNumber } from '../../utils'
+import { extractNumber, formatValueForDisplay } from '../../utils'
 import { getTimeKey, normalizeDate, generateEmptyCells } from './date-grouping.utils'
 import {
     aggregateForChart as chartAggregation,
@@ -43,7 +43,7 @@ export class DataAggregationService {
             return {
                 entry,
                 dateAnchor,
-                value: value?.toString() ?? null,
+                value: formatValueForDisplay(value),
                 normalizedValue: extractNumber(value)
             }
         })

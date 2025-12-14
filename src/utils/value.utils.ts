@@ -162,3 +162,21 @@ export function getColorLevel(normalizedValue: number): 0 | 1 | 2 | 3 | 4 {
     if (normalizedValue <= 0.75) return 3
     return 4
 }
+
+/**
+ * Format a value for display in visualizations.
+ * Capitalizes boolean values (true -> True, false -> False).
+ */
+export function formatValueForDisplay(value: unknown): string | null {
+    if (value === null || value === undefined) {
+        return null
+    }
+
+    const str = String(value)
+
+    // Capitalize boolean values
+    if (str === 'true') return 'True'
+    if (str === 'false') return 'False'
+
+    return str
+}

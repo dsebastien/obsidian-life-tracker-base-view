@@ -84,5 +84,6 @@ export {
     isDateLike,
     normalizeValue,
     getColorLevel,
-    parseDateString
+    parseDateString,
+    formatValueForDisplay
 } from './value.utils'

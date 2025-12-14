@@ -6,7 +6,8 @@ import {
     isDateLike,
     normalizeValue,
     getColorLevel,
-    parseDateString
+    parseDateString,
+    formatValueForDisplay
 } from './value.utils'
 
 // Mock Value type for testing
@@ -368,6 +369,39 @@ describe('value-extractors', () => {
             expect(getColorLevel(0.8)).toBe(4)
             expect(getColorLevel(1)).toBe(4)
             expect(getColorLevel(1.5)).toBe(4)
+        })
+    })
+
+    describe('formatValueForDisplay', () => {
+        test('returns null for null input', () => {
+            expect(formatValueForDisplay(null)).toBeNull()
+        })
+
+        test('returns null for undefined input', () => {
+            expect(formatValueForDisplay(undefined)).toBeNull()
+        })
+
+        test('capitalizes "true" to "True"', () => {
+            expect(formatValueForDisplay('true')).toBe('True')
+        })
+
+        test('capitalizes "false" to "False"', () => {
+            expect(formatValueForDisplay('false')).toBe('False')
+        })
+
+        test('returns string representation for numbers', () => {
+            expect(formatValueForDisplay(42)).toBe('42')
+            expect(formatValueForDisplay(3.14)).toBe('3.14')
+        })
+
+        test('returns string as-is for non-boolean strings', () => {
+            expect(formatValueForDisplay('hello')).toBe('hello')
+            expect(formatValueForDisplay('some value')).toBe('some value')
+        })
+
+        test('handles boolean primitives', () => {
+            expect(formatValueForDisplay(true)).toBe('True')
+            expect(formatValueForDisplay(false)).toBe('False')
         })
     })
 })
