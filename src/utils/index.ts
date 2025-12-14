@@ -83,5 +83,6 @@ export {
     extractList,
     isDateLike,
     normalizeValue,
-    getColorLevel
+    getColorLevel,
+    parseDateString
 } from './value.utils'

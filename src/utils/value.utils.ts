@@ -1,5 +1,31 @@
 import { Value } from 'obsidian'
-import { parseISO, isValid } from 'date-fns'
+import { parseISO, isValid, parse } from 'date-fns'
+
+/**
+ * Common date formats to try when parsing dates.
+ * Order matters - more specific/common formats first.
+ */
+const DATE_FORMATS = [
+    // ISO-like formats (most common in Obsidian)
+    'yyyy-MM-dd',
+    'yyyy/MM/dd',
+    // European formats (day first)
+    'dd-MM-yyyy',
+    'dd/MM/yyyy',
+    'dd.MM.yyyy',
+    // US formats (month first)
+    'MM-dd-yyyy',
+    'MM/dd/yyyy',
+    // With time
+    'yyyy-MM-dd HH:mm:ss',
+    'yyyy-MM-dd HH:mm',
+    "yyyy-MM-dd'T'HH:mm:ss",
+    "yyyy-MM-dd'T'HH:mm",
+    'dd-MM-yyyy HH:mm:ss',
+    'dd/MM/yyyy HH:mm:ss',
+    'MM-dd-yyyy HH:mm:ss',
+    'MM/dd/yyyy HH:mm:ss'
+]
 
 /**
  * Extract number value from Obsidian Value type
@@ -24,20 +50,44 @@ export function extractNumber(value: Value | null): number | null {
 }
 
 /**
+ * Parse a date string using multiple format attempts.
+ * Returns the parsed Date or null if no format matches.
+ */
+export function parseDateString(str: string): Date | null {
+    // Trim whitespace
+    const trimmed = str.trim()
+    if (!trimmed) return null
+
+    // Try ISO parsing first (handles full ISO 8601 with timezone)
+    const isoDate = parseISO(trimmed)
+    if (isValid(isoDate)) {
+        return isoDate
+    }
+
+    // Try each format in order
+    const referenceDate = new Date()
+    for (const format of DATE_FORMATS) {
+        try {
+            const parsed = parse(trimmed, format, referenceDate)
+            if (isValid(parsed)) {
+                return parsed
+            }
+        } catch {
+            // Format didn't match, continue to next
+        }
+    }
+
+    return null
+}
+
+/**
  * Extract date value from Obsidian Value type
  */
 export function extractDate(value: Value | null): Date | null {
     if (!value) return null
 
     const str = value.toString()
-
-    // Try to parse as ISO date first
-    const date = parseISO(str)
-    if (isValid(date)) {
-        return date
-    }
-
-    return null
+    return parseDateString(str)
 }
 
 /**
@@ -83,12 +133,15 @@ export function isDateLike(value: Value | null): boolean {
 
     const str = value.toString()
 
-    // ISO date format
-    if (/^\d{4}-\d{2}-\d{2}/.test(str)) return true
+    // Quick regex check for common date patterns before expensive parsing
+    // Matches: YYYY-MM-DD, DD-MM-YYYY, MM-DD-YYYY, DD/MM/YYYY, etc.
+    if (/^\d{2,4}[-/.]\d{2}[-/.]\d{2,4}/.test(str)) {
+        // Looks like a date, try parsing
+        return parseDateString(str) !== null
+    }
 
-    // Try parsing as ISO
-    const date = parseISO(str)
-    return isValid(date)
+    // Try parsing anyway for other formats
+    return parseDateString(str) !== null
 }
 
 /**

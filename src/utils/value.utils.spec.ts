@@ -5,7 +5,8 @@ import {
     extractList,
     isDateLike,
     normalizeValue,
-    getColorLevel
+    getColorLevel,
+    parseDateString
 } from './value.utils'
 
 // Mock Value type for testing
@@ -64,6 +65,109 @@ describe('value-extractors', () => {
         })
     })
 
+    describe('parseDateString', () => {
+        test('returns null for empty string', () => {
+            expect(parseDateString('')).toBeNull()
+            expect(parseDateString('   ')).toBeNull()
+        })
+
+        test('returns null for non-date strings', () => {
+            expect(parseDateString('hello')).toBeNull()
+            expect(parseDateString('not a date')).toBeNull()
+        })
+
+        // ISO formats
+        test('parses ISO date YYYY-MM-DD', () => {
+            const result = parseDateString('2024-01-15')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getMonth()).toBe(0) // January
+            expect(result!.getDate()).toBe(15)
+        })
+
+        test('parses ISO datetime YYYY-MM-DDTHH:mm:ss', () => {
+            const result = parseDateString('2024-01-15T10:30:00')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getHours()).toBe(10)
+            expect(result!.getMinutes()).toBe(30)
+        })
+
+        test('parses YYYY/MM/DD format', () => {
+            const result = parseDateString('2024/01/15')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getMonth()).toBe(0)
+            expect(result!.getDate()).toBe(15)
+        })
+
+        // European formats (day first)
+        test('parses DD-MM-YYYY format', () => {
+            const result = parseDateString('15-01-2024')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getMonth()).toBe(0) // January
+            expect(result!.getDate()).toBe(15)
+        })
+
+        test('parses DD/MM/YYYY format', () => {
+            const result = parseDateString('15/01/2024')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getMonth()).toBe(0)
+            expect(result!.getDate()).toBe(15)
+        })
+
+        test('parses DD.MM.YYYY format', () => {
+            const result = parseDateString('15.01.2024')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getMonth()).toBe(0)
+            expect(result!.getDate()).toBe(15)
+        })
+
+        // US formats (month first)
+        test('parses MM-DD-YYYY format', () => {
+            const result = parseDateString('01-15-2024')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getMonth()).toBe(0) // January
+            expect(result!.getDate()).toBe(15)
+        })
+
+        test('parses MM/DD/YYYY format', () => {
+            const result = parseDateString('01/15/2024')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getMonth()).toBe(0)
+            expect(result!.getDate()).toBe(15)
+        })
+
+        // With time
+        test('parses YYYY-MM-DD HH:mm:ss format', () => {
+            const result = parseDateString('2024-01-15 10:30:45')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getHours()).toBe(10)
+            expect(result!.getMinutes()).toBe(30)
+            expect(result!.getSeconds()).toBe(45)
+        })
+
+        test('parses YYYY-MM-DD HH:mm format', () => {
+            const result = parseDateString('2024-01-15 10:30')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getHours()).toBe(10)
+            expect(result!.getMinutes()).toBe(30)
+        })
+
+        test('handles whitespace trimming', () => {
+            const result = parseDateString('  2024-01-15  ')
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+        })
+    })
+
     describe('extractDate', () => {
         test('returns null for null input', () => {
             expect(extractDate(null)).toBeNull()
@@ -81,6 +185,22 @@ describe('value-extractors', () => {
             const result = extractDate(new MockValue('2024-01-15T10:30:00') as never)
             expect(result).not.toBeNull()
             expect(result!.getFullYear()).toBe(2024)
+        })
+
+        test('extracts European DD/MM/YYYY format', () => {
+            const result = extractDate(new MockValue('15/01/2024') as never)
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getMonth()).toBe(0)
+            expect(result!.getDate()).toBe(15)
+        })
+
+        test('extracts DD-MM-YYYY format', () => {
+            const result = extractDate(new MockValue('15-01-2024') as never)
+            expect(result).not.toBeNull()
+            expect(result!.getFullYear()).toBe(2024)
+            expect(result!.getMonth()).toBe(0)
+            expect(result!.getDate()).toBe(15)
         })
 
         test('returns null for invalid date', () => {
@@ -156,6 +276,23 @@ describe('value-extractors', () => {
 
         test('returns true for ISO datetime format', () => {
             expect(isDateLike(new MockValue('2024-01-15T10:30:00') as never)).toBe(true)
+        })
+
+        test('returns true for European DD/MM/YYYY format', () => {
+            expect(isDateLike(new MockValue('15/01/2024') as never)).toBe(true)
+            expect(isDateLike(new MockValue('31/12/2024') as never)).toBe(true)
+        })
+
+        test('returns true for DD-MM-YYYY format', () => {
+            expect(isDateLike(new MockValue('15-01-2024') as never)).toBe(true)
+        })
+
+        test('returns true for DD.MM.YYYY format', () => {
+            expect(isDateLike(new MockValue('15.01.2024') as never)).toBe(true)
+        })
+
+        test('returns true for YYYY/MM/DD format', () => {
+            expect(isDateLike(new MockValue('2024/01/15') as never)).toBe(true)
         })
 
         test('returns false for non-date strings', () => {

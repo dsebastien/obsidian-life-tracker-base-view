@@ -19,7 +19,8 @@ import {
     type TagCloudConfig,
     type VisualizationDataPoint,
     type SettingsChangeInfo,
-    type ResolvedDateAnchor
+    type ResolvedDateAnchor,
+    type DateAnchorConfig
 } from '../types'
 import { DateAnchorService } from '../services/date-anchor.service'
 import { DataAggregationService } from '../services/data-aggregation.service'
@@ -134,6 +135,31 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     }
 
     /**
+     * Build date anchor config based on view settings.
+     * If dateAnchorProperty is set, prioritize that property.
+     */
+    private getDateAnchorConfig(): DateAnchorConfig[] | undefined {
+        const dateAnchorProperty = this.config.get('dateAnchorProperty') as
+            | BasesPropertyId
+            | undefined
+
+        if (!dateAnchorProperty) {
+            // No custom property set, use default behavior
+            return undefined
+        }
+
+        // Build config that prioritizes the selected property
+        return [
+            // User-selected property gets highest priority
+            this.dateAnchorService.createPropertyConfig(dateAnchorProperty, 0),
+            // Then fall back to filename
+            this.dateAnchorService.createFilenameConfig(1),
+            // Then file creation time as last resort
+            this.dateAnchorService.createMetadataConfig('ctime', 2)
+        ]
+    }
+
+    /**
      * Get data points for a specific property (with caching)
      */
     private getDataPointsForProperty(propertyId: BasesPropertyId): VisualizationDataPoint[] {
@@ -148,7 +174,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Get or compute date anchors
         let dateAnchors = this.cacheService.getDateAnchors()
         if (!dateAnchors) {
-            dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
+            const anchorConfig = this.getDateAnchorConfig()
+            dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
             this.cacheService.setDateAnchors(dateAnchors)
         }
 
@@ -240,7 +267,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.applyGridSettings()
 
         // Resolve date anchors for all entries (cache them for reuse)
-        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
+        const anchorConfig = this.getDateAnchorConfig()
+        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
         this.cacheService.setDateAnchors(dateAnchors)
 
         // Filter properties to render (skip file properties)
@@ -285,7 +313,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Get date anchors (use cache)
         let dateAnchors = this.cacheService.getDateAnchors()
         if (!dateAnchors) {
-            dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
+            const anchorConfig = this.getDateAnchorConfig()
+            dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
             this.cacheService.setDateAnchors(dateAnchors)
         }
 
@@ -762,7 +791,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Refresh each affected visualization
         const entries = this.data.data
-        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
+        const anchorConfig = this.getDateAnchorConfig()
+        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
 
         for (const propertyId of propertyIdsToRefresh) {
             this.refreshSingleVisualization(propertyId, entries, dateAnchors)
