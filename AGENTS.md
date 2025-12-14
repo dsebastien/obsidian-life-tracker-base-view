@@ -53,6 +53,14 @@ Read the Business Rules document at the start of each session to understand the 
 
 **MUST READ** TypeScript type definitions you can find in the Obsidian dependency now.
 
+### Chart.js Documentation
+
+**MANDATORY**: Before modifying any chart or visualization code (files in `src/app/components/visualizations/chart/`), you MUST read the relevant Chart.js documentation:
+
+- Documentation source: https://github.com/chartjs/Chart.js/tree/master/docs
+- This includes changes to chart configuration, datasets, scales, plugins, animations, or any Chart.js API usage
+- Understand the current Chart.js patterns in the codebase before making changes
+
 ## Environment & tooling
 
 - **[Bun](https://bun.com/)**: a fast all-in-one JavaScript runtime.
