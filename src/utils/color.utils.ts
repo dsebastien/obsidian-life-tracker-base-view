@@ -96,6 +96,35 @@ export const CHART_COLORS_HEX: string[] = [
 ]
 
 /**
+ * Semantic colors for boolean values.
+ * Used to ensure consistent coloring in pie/doughnut charts
+ * regardless of which value has more occurrences.
+ */
+export const BOOLEAN_COLORS = {
+    true: '#34a853', // green - positive/yes
+    false: '#ea4335' // red - negative/no
+} as const
+
+/**
+ * Check if labels represent boolean data (only "true" and/or "false")
+ */
+export function isBooleanData(labels: string[]): boolean {
+    if (labels.length === 0 || labels.length > 2) return false
+    const booleanValues = new Set(['true', 'false'])
+    return labels.every((label) => booleanValues.has(label.toLowerCase()))
+}
+
+/**
+ * Get semantic color for a boolean value
+ */
+export function getBooleanColor(value: string): string {
+    const normalized = value.toLowerCase()
+    if (normalized === 'true') return BOOLEAN_COLORS.true
+    if (normalized === 'false') return BOOLEAN_COLORS.false
+    return CHART_COLORS_HEX[0]! // fallback to first color
+}
+
+/**
  * Get chart color by index (cycles through palette)
  */
 export function getChartColor(index: number, useHex = false): string {

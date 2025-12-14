@@ -8,12 +8,15 @@ export {
     getColorLevelForValue,
     DEFAULT_CHART_COLORS,
     CHART_COLORS_HEX,
+    BOOLEAN_COLORS,
     getChartColor,
     getColorWithAlpha,
     generateGradient,
     isDarkTheme,
     getThemeAwareHeatmapColors,
-    applyHeatmapColorScheme
+    applyHeatmapColorScheme,
+    isBooleanData,
+    getBooleanColor
 } from './color.utils'
 
 // Date utilities

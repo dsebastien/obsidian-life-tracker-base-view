@@ -12,7 +12,12 @@ import type {
     PieTooltipContext,
     PointTooltipContext
 } from '../../../types'
-import { CHART_COLORS_HEX, getColorWithAlpha } from '../../../../utils'
+import {
+    CHART_COLORS_HEX,
+    getColorWithAlpha,
+    isBooleanData,
+    getBooleanColor
+} from '../../../../utils'
 
 /**
  * Chart.js constructor type.
@@ -33,14 +38,23 @@ export function initPieChart(
     displayName: string,
     onClick: (elements: ChartClickElement[]) => void
 ): ChartInstance {
+    // Check if this is boolean data for consistent coloring
+    const isBoolean = isBooleanData(pieChartData.labels)
+
     // Generate colors for each segment
-    const backgroundColors = pieChartData.labels.map((_, index) => {
-        const color = CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+    // For boolean data, use semantic colors (green for true, red for false)
+    // For other data, use index-based colors from palette
+    const backgroundColors = pieChartData.labels.map((label, index) => {
+        const color = isBoolean
+            ? getBooleanColor(label)
+            : CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
         return getColorWithAlpha(color, 0.7)
     })
 
-    const borderColors = pieChartData.labels.map((_, index) => {
-        return CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+    const borderColors = pieChartData.labels.map((label, index) => {
+        return isBoolean
+            ? getBooleanColor(label)
+            : CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
     })
 
     return new Chart(ctx, {
