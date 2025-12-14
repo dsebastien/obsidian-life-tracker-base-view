@@ -1,3 +1,14 @@
+## [1.3.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.2.0...1.3.0) (2025-12-14)
+
+### Features
+
+* **all:** assigned colors based on value for boolean data ([87b1108](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/87b11086086447f9588197381251867d9068b291)), closes [#32](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/32)
+* **all:** improved performances by limiting re-rendering ([1693b09](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1693b09fc641373dd921e228dad54189b34e72e0))
+* **all:** improved rendering of line charts ([09ccb15](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/09ccb15320e3501cd0d0a30237472a38f278e3f4))
+
+### Bug Fixes
+
+* **all:** improved rendering of heatmap visualizations (fixed misalignment) ([4cf4841](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4cf48419cb2532f905703dd42b9c067d5c49c9f4))
 ## [1.2.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.1.1...1.2.0) (2025-12-13)
 
 ### Features
