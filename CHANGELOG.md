@@ -1,3 +1,8 @@
+## [1.5.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.4.0...1.5.0) (2025-12-14)
+
+### Features
+
+* **all:** added mobile support for the data entry modal ([fb9ceef](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/fb9ceefc8053cef60eb1c83ab52a41c1d250fc24))
 ## [1.4.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.3.0...1.4.0) (2025-12-14)
 
 ### Features
