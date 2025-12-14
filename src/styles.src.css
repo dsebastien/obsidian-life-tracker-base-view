@@ -1750,7 +1750,8 @@
 }
 
 .lt-carousel-editor .lt-editor-slider {
-    @apply flex-1 h-1.5 rounded-full cursor-pointer appearance-none;
+    @apply h-1.5 rounded-full cursor-pointer appearance-none;
+    flex: 3; /* 75% of available space */
     background-color: var(--background-modifier-border);
 }
 
@@ -1784,7 +1785,9 @@
 }
 
 .lt-carousel-editor .lt-editor-input--number {
-    @apply w-16 text-center py-2 px-2 text-sm;
+    @apply text-center py-2 px-2 text-sm;
+    flex: 1; /* 25% of available space */
+    min-width: 60px; /* Ensure minimum readability */
 }
 
 /* Button for empty state */
