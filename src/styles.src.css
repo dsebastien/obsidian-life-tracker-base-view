@@ -1882,3 +1882,240 @@
 .lt-carousel-card {
     animation: lt-carousel-slide-in 0.25s ease-out;
 }
+
+/* ========================================
+   CAROUSEL MODAL - RESPONSIVE STYLES
+   ======================================== */
+
+/* Tablet adjustments (medium screens) */
+@media (max-width: 768px) {
+    .lt-carousel-modal {
+        @apply min-w-[320px] max-w-[90vw];
+    }
+
+    .lt-carousel-container {
+        @apply p-6;
+    }
+
+    .lt-carousel-file-name {
+        @apply text-lg mb-4;
+    }
+
+    .lt-carousel-card {
+        @apply p-5 mb-4 min-h-[200px];
+    }
+
+    .lt-carousel-nav-btn {
+        @apply w-9 h-9;
+    }
+
+    .lt-carousel-nav-btn svg {
+        @apply w-4 h-4;
+    }
+
+    .lt-carousel-property-name {
+        @apply text-lg;
+    }
+
+    .lt-carousel-counter {
+        @apply text-xs px-3 py-1;
+    }
+
+    .lt-carousel-progress {
+        @apply mt-4 pt-4;
+    }
+}
+
+/* Mobile adjustments (small screens) - fullscreen modal */
+@media (max-width: 480px) {
+    .lt-carousel-modal {
+        @apply fixed inset-0 min-w-0 max-w-none rounded-none z-[1000];
+        width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background-color: var(--background-primary) !important;
+    }
+
+    .lt-carousel-modal .modal-close-button {
+        @apply top-3 right-3 z-[1001];
+    }
+
+    .lt-carousel-modal .modal-content {
+        @apply h-full w-full overflow-y-auto p-0;
+        background-color: var(--background-primary);
+    }
+
+    .lt-carousel-container {
+        @apply p-4 pb-8 min-h-full flex flex-col;
+        background-color: var(--background-primary);
+    }
+
+    .lt-carousel-card {
+        @apply flex-1;
+    }
+
+    /* File navigation - stack filter below nav */
+    .lt-carousel-file-nav {
+        @apply gap-2 mb-3 pb-3;
+    }
+
+    .lt-carousel-file-nav-row {
+        @apply gap-2;
+    }
+
+    .lt-carousel-file-nav-btn {
+        @apply w-6 h-6;
+    }
+
+    .lt-carousel-file-nav-btn svg {
+        @apply w-3 h-3;
+    }
+
+    .lt-carousel-file-counter {
+        @apply px-2;
+    }
+
+    .lt-carousel-file-position {
+        @apply text-xs;
+    }
+
+    .lt-carousel-file-remaining {
+        @apply text-[10px];
+    }
+
+    .lt-carousel-filter-row {
+        @apply flex-wrap justify-center;
+    }
+
+    .lt-carousel-filter-label {
+        @apply text-[10px];
+    }
+
+    .lt-carousel-filter-select {
+        @apply text-[10px] px-1.5 py-0.5;
+    }
+
+    /* Title */
+    .lt-carousel-file-name {
+        @apply text-base mb-3;
+    }
+
+    /* Card */
+    .lt-carousel-card {
+        @apply p-4 mb-3 min-h-[180px] rounded-lg;
+    }
+
+    /* Navigation */
+    .lt-carousel-nav {
+        @apply mb-3;
+    }
+
+    .lt-carousel-nav-btn {
+        @apply w-8 h-8;
+    }
+
+    .lt-carousel-nav-btn svg {
+        @apply w-4 h-4;
+    }
+
+    .lt-carousel-counter {
+        @apply text-[10px] px-2 py-1;
+    }
+
+    /* Property label */
+    .lt-carousel-label {
+        @apply flex-wrap gap-2 mb-2;
+    }
+
+    .lt-carousel-property-name {
+        @apply text-base;
+    }
+
+    .lt-carousel-required-badge,
+    .lt-carousel-optional-badge {
+        @apply text-[8px] px-2 py-0.5;
+    }
+
+    /* Description */
+    .lt-carousel-description {
+        @apply text-xs mb-3;
+    }
+
+    /* Editor */
+    .lt-carousel-editor {
+        @apply mt-2;
+    }
+
+    .lt-carousel-editor .lt-editor-input {
+        @apply px-3 py-2 text-sm;
+    }
+
+    .lt-carousel-editor .lt-editor-number-wrapper {
+        @apply gap-2 flex-wrap;
+    }
+
+    .lt-carousel-editor .lt-editor-slider {
+        @apply w-full;
+        flex: none;
+        order: 1;
+    }
+
+    .lt-carousel-editor .lt-editor-input--number {
+        @apply w-full text-center py-1.5 text-sm;
+        flex: none;
+        order: 2;
+    }
+
+    .lt-carousel-editor .lt-editor-select {
+        @apply text-sm py-2;
+    }
+
+    .lt-carousel-editor .lt-editor-toggle {
+        @apply scale-90;
+    }
+
+    .lt-carousel-editor .lt-editor-list {
+        @apply text-xs;
+    }
+
+    .lt-carousel-editor .lt-editor-list-pill {
+        @apply text-[10px] px-1.5;
+    }
+
+    /* Progress */
+    .lt-carousel-progress {
+        @apply mt-3 pt-3;
+    }
+
+    .lt-carousel-progress-bar {
+        @apply h-2;
+    }
+
+    .lt-carousel-progress-text {
+        @apply text-[10px] mt-2;
+    }
+
+    /* Empty state */
+    .lt-carousel-empty {
+        @apply py-8 px-4;
+    }
+
+    .lt-carousel-empty-icon {
+        @apply text-4xl mb-3;
+    }
+
+    .lt-carousel-empty-title {
+        @apply text-lg mb-2;
+    }
+
+    .lt-carousel-empty-text {
+        @apply text-xs mb-6;
+    }
+
+    .lt-carousel-btn {
+        @apply px-4 py-2 text-xs;
+    }
+}
