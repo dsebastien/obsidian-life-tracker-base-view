@@ -1,3 +1,14 @@
+## [1.4.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.3.0...1.4.0) (2025-12-14)
+
+### Features
+
+* **all:** better handle the date anchor setting and add support for more date/time formats ([b8b4c6a](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/b8b4c6acbc4c2c8bccc6329ed39ddb428d003332))
+* **all:** display boolean values more nicely (True|False instead of true|false) ([b4ab3bc](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/b4ab3bc2f71e879c8c68f0ca70725542478ed907))
+* **all:** improved performances of the Life Tracker view ([546256e](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/546256e523d2ec34f938e0797c2c35e99538d5cc))
+
+### Bug Fixes
+
+* **all:** fixed rendering of the property edition modal (space for slider vs space for input) ([a946f3a](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a946f3ab25006f5a66efe47576798cb46ce9972e))
 ## [1.3.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.2.0...1.3.0) (2025-12-14)
 
 ### Features
