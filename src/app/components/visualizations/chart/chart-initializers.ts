@@ -188,6 +188,12 @@ export function initCartesianChart(
             responsive: true,
             maintainAspectRatio: true,
             aspectRatio: 2.5,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 60 // Extra space for last x-axis labels
+                }
+            },
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -212,8 +218,18 @@ export function initCartesianChart(
             scales: {
                 x: {
                     display: true,
+                    offset: true, // Add space at edges for first/last bars
+                    bounds: 'ticks', // Ensure edge ticks remain visible
                     grid: {
-                        display: chartConfig.showGrid
+                        display: chartConfig.showGrid,
+                        offset: true
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                        autoSkipPadding: 10,
+                        includeBounds: true, // Include first/last labels
+                        align: 'center'
                     }
                 },
                 y: {
