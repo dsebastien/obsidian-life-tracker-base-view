@@ -8,11 +8,15 @@ import { parseISO, isSameDay } from 'date-fns'
 import { log, CSS_SELECTOR, applyHeatmapColorScheme } from '../../../../utils'
 
 /**
+ * Shared aggregation service instance for all heatmap visualizations
+ */
+const sharedAggregationService = new DataAggregationService()
+
+/**
  * GitHub-contribution-style heatmap visualization
  */
 export class HeatmapVisualization extends BaseVisualization {
     private heatmapConfig: HeatmapConfig
-    private aggregationService: DataAggregationService
     private tooltip: Tooltip | null = null
     private gridEl: HTMLElement | null = null
     private heatmapData: HeatmapData | null = null
@@ -26,7 +30,6 @@ export class HeatmapVisualization extends BaseVisualization {
     ) {
         super(containerEl, app, propertyId, displayName, config)
         this.heatmapConfig = config
-        this.aggregationService = new DataAggregationService()
     }
 
     /**
@@ -35,8 +38,8 @@ export class HeatmapVisualization extends BaseVisualization {
     override render(data: VisualizationDataPoint[]): void {
         log(`Rendering heatmap for ${this.displayName}`, 'debug')
 
-        // Aggregate data
-        this.heatmapData = this.aggregationService.aggregateForHeatmap(
+        // Aggregate data (use shared service)
+        this.heatmapData = sharedAggregationService.aggregateForHeatmap(
             data,
             this.propertyId,
             this.displayName,

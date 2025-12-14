@@ -9,6 +9,7 @@ import type {
     VisualizationDataPoint
 } from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
+import { ChartLoaderService } from '../../../services/chart-loader.service'
 import { log } from '../../../../utils'
 import type { ChartClickElement, ChartInstance } from './chart-types'
 import {
@@ -20,11 +21,15 @@ import {
 } from './chart-initializers'
 
 /**
+ * Shared aggregation service instance for all chart visualizations
+ */
+const sharedAggregationService = new DataAggregationService()
+
+/**
  * Chart.js-based visualization for line and bar charts
  */
 export class ChartVisualization extends BaseVisualization {
     private chartConfig: ChartConfig
-    private aggregationService: DataAggregationService
     private chart: ChartInstance | null = null
     private canvasEl: HTMLCanvasElement | null = null
     private chartData: ChartData | null = null
@@ -46,7 +51,6 @@ export class ChartVisualization extends BaseVisualization {
     ) {
         super(containerEl, app, propertyId, displayName, config)
         this.chartConfig = config
-        this.aggregationService = new DataAggregationService()
     }
 
     /**
@@ -82,9 +86,9 @@ export class ChartVisualization extends BaseVisualization {
         this.scatterChartData = null
         this.bubbleChartData = null
 
-        // Aggregate data based on chart type
+        // Aggregate data based on chart type (use shared service)
         if (this.isPieType()) {
-            this.pieChartData = this.aggregationService.aggregateForPieChart(
+            this.pieChartData = sharedAggregationService.aggregateForPieChart(
                 data,
                 this.propertyId,
                 this.displayName
@@ -95,7 +99,7 @@ export class ChartVisualization extends BaseVisualization {
                 return
             }
         } else if (this.isScatterType()) {
-            this.scatterChartData = this.aggregationService.aggregateForScatterChart(
+            this.scatterChartData = sharedAggregationService.aggregateForScatterChart(
                 data,
                 this.propertyId,
                 this.displayName
@@ -106,7 +110,7 @@ export class ChartVisualization extends BaseVisualization {
                 return
             }
         } else if (this.isBubbleType()) {
-            this.bubbleChartData = this.aggregationService.aggregateForBubbleChart(
+            this.bubbleChartData = sharedAggregationService.aggregateForBubbleChart(
                 data,
                 this.propertyId,
                 this.displayName,
@@ -118,7 +122,7 @@ export class ChartVisualization extends BaseVisualization {
                 return
             }
         } else {
-            this.chartData = this.aggregationService.aggregateForChart(
+            this.chartData = sharedAggregationService.aggregateForChart(
                 data,
                 this.propertyId,
                 this.displayName,
@@ -161,9 +165,8 @@ export class ChartVisualization extends BaseVisualization {
             return
 
         try {
-            // Dynamically import Chart.js
-            const { Chart, registerables } = await import('chart.js')
-            Chart.register(...registerables)
+            // Use ChartLoaderService for efficient loading (registers only once)
+            const { Chart } = await ChartLoaderService.getChartJs()
 
             const ctx = this.canvasEl.getContext('2d')
             if (!ctx) return
@@ -251,10 +254,51 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
-     * Update the chart with new data
+     * Update the chart with new data using Chart.js incremental update when possible
      */
     override update(data: VisualizationDataPoint[]): void {
-        // Re-render for simplicity
+        // If no chart exists, do a full render
+        if (!this.chart) {
+            this.render(data)
+            return
+        }
+
+        // Try incremental update for cartesian charts (line, bar, area)
+        if (!this.isPieType() && !this.isScatterType() && !this.isBubbleType()) {
+            const newChartData = sharedAggregationService.aggregateForChart(
+                data,
+                this.propertyId,
+                this.displayName,
+                this.chartConfig.granularity
+            )
+
+            if (newChartData.labels.length === 0) {
+                // No data - do full render to show empty state
+                this.destroy()
+                this.render(data)
+                return
+            }
+
+            // Update chart data in place
+            this.chartData = newChartData
+            this.chart.data.labels = newChartData.labels
+            const firstDataset = newChartData.datasets[0]
+            const chartDataset = this.chart.data.datasets[0]
+            if (firstDataset && chartDataset) {
+                chartDataset.data = firstDataset.data
+            }
+
+            // Clear animation state since data changed
+            this.originalData = []
+
+            // Use Chart.js update with animation
+            this.chart.update()
+            log('Chart updated incrementally', 'debug')
+            return
+        }
+
+        // For pie/scatter/bubble charts, do full re-render
+        // (their data structures are more complex to update incrementally)
         this.destroy()
         this.render(data)
     }

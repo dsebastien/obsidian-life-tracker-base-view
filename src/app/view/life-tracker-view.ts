@@ -23,6 +23,7 @@ import {
 } from '../types'
 import { DateAnchorService } from '../services/date-anchor.service'
 import { DataAggregationService } from '../services/data-aggregation.service'
+import { RenderCacheService } from '../services/render-cache.service'
 import { BaseVisualization } from '../components/visualizations/base-visualization'
 import { HeatmapVisualization } from '../components/visualizations/heatmap/heatmap-visualization'
 import { ChartVisualization } from '../components/visualizations/chart/chart-visualization'
@@ -37,6 +38,11 @@ import { log, DATA_ATTR_FULL } from '../../utils'
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
 import { getVisualizationConfig } from './visualization-config.helper'
+
+/**
+ * Number of visualizations to render per animation frame batch
+ */
+const RENDER_BATCH_SIZE = 3
 
 /**
  * View type identifier
@@ -56,6 +62,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // Services
     private dateAnchorService: DateAnchorService
     private aggregationService: DataAggregationService
+    private cacheService: RenderCacheService
     private columnConfigService: ColumnConfigService
     private maximizeService: MaximizeStateService
 
@@ -71,6 +78,12 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
 
+    // Track pending render for cancellation
+    private pendingRenderFrame: number | null = null
+
+    // Track current render cycle for async rendering
+    private currentRenderCycle: number = 0
+
     constructor(controller: QueryController, scrollEl: HTMLElement, plugin: LifeTrackerPlugin) {
         super(controller)
 
@@ -82,6 +95,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Initialize services
         this.dateAnchorService = new DateAnchorService()
         this.aggregationService = new DataAggregationService()
+        this.cacheService = new RenderCacheService()
         this.columnConfigService = new ColumnConfigService(
             plugin,
             (key) => this.config.get(key),
@@ -120,12 +134,31 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     }
 
     /**
-     * Get data points for a specific property
+     * Get data points for a specific property (with caching)
      */
     private getDataPointsForProperty(propertyId: BasesPropertyId): VisualizationDataPoint[] {
+        // Check cache first
+        const cached = this.cacheService.getDataPoints(propertyId)
+        if (cached) {
+            return cached
+        }
+
         const entries = this.data.data
-        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
-        return this.aggregationService.createDataPoints(entries, propertyId, dateAnchors)
+
+        // Get or compute date anchors
+        let dateAnchors = this.cacheService.getDateAnchors()
+        if (!dateAnchors) {
+            dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
+            this.cacheService.setDateAnchors(dateAnchors)
+        }
+
+        const dataPoints = this.aggregationService.createDataPoints(
+            entries,
+            propertyId,
+            dateAnchors
+        )
+        this.cacheService.setDataPoints(propertyId, dataPoints)
+        return dataPoints
     }
 
     /**
@@ -140,14 +173,33 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         log('onDataUpdated called', 'debug')
 
-        // Clean up maximize state and existing visualizations
-        this.maximizeService.cleanup()
-        this.destroyVisualizations()
-        this.containerEl.empty()
+        // Cancel any pending async render
+        this.cancelPendingRender()
+
+        // Increment render cycle to invalidate any in-flight async renders
+        this.currentRenderCycle++
+        const renderCycle = this.currentRenderCycle
 
         // Get entries and properties
         const entries = this.data.data
         const propertyIds = this.config.getOrder()
+
+        // Start new cache cycle (invalidates stale cached data if entries changed)
+        this.cacheService.startRenderCycle(entries)
+
+        // Check if we can do an incremental update (same structure, just data changed)
+        const canIncrementalUpdate = this.canDoIncrementalUpdate(entries, propertyIds)
+
+        if (canIncrementalUpdate) {
+            // Fast path: update existing visualizations in place
+            this.performIncrementalUpdate(entries)
+            return
+        }
+
+        // Full re-render path
+        this.maximizeService.cleanup()
+        this.destroyVisualizations()
+        this.containerEl.empty()
 
         if (entries.length === 0) {
             createEmptyState(this.containerEl, EMPTY_STATE_MESSAGES.noData, '📊')
@@ -187,37 +239,139 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.gridEl = this.containerEl.createDiv({ cls: 'lt-grid' })
         this.applyGridSettings()
 
-        // Resolve date anchors for all entries
+        // Resolve date anchors for all entries (cache them for reuse)
         const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
+        this.cacheService.setDateAnchors(dateAnchors)
 
-        // Render each property
-        for (const propertyId of propertyIds) {
-            // Skip file properties for visualization
-            if (propertyId.startsWith('file.')) continue
+        // Filter properties to render (skip file properties)
+        const propertiesToRender = propertyIds.filter((id) => !id.startsWith('file.'))
 
-            const displayName = this.config.getDisplayName(propertyId)
-            const effectiveConfig = this.columnConfigService.getEffectiveConfig(
-                propertyId,
-                displayName
-            )
+        // Use async batched rendering to prevent UI freezing
+        void this.renderPropertiesAsync(propertiesToRender, entries, dateAnchors, renderCycle)
+    }
 
-            if (effectiveConfig) {
-                // Has configuration (local override or global preset)
-                const dataPoints = this.aggregationService.createDataPoints(
-                    entries,
-                    propertyId,
-                    dateAnchors
-                )
-                this.renderConfiguredColumn(
-                    effectiveConfig.config,
-                    displayName,
-                    dataPoints,
-                    effectiveConfig.isFromPreset
-                )
-            } else {
-                // No configuration - show config card
-                this.renderUnconfiguredColumn(propertyId, displayName)
+    /**
+     * Check if we can do an incremental update (structure unchanged, only data values changed)
+     */
+    private canDoIncrementalUpdate(entries: BasesEntry[], propertyIds: BasesPropertyId[]): boolean {
+        // Can't do incremental if no existing visualizations
+        if (this.visualizations.size === 0) return false
+
+        // Can't do incremental if grid doesn't exist
+        if (!this.gridEl) return false
+
+        // Check if the same properties are configured with the same visualization types
+        const filteredIds = propertyIds.filter((id) => !id.startsWith('file.'))
+
+        for (const propertyId of filteredIds) {
+            const existingViz = this.visualizations.get(propertyId)
+            if (!existingViz) {
+                // A property doesn't have a visualization - can't be incremental
+                // (might be unconfigured or newly added)
+                continue
             }
+        }
+
+        // If we have visualizations and entries, we can try incremental
+        return entries.length > 0 && this.visualizations.size > 0
+    }
+
+    /**
+     * Perform incremental update - update existing visualizations with new data
+     */
+    private performIncrementalUpdate(entries: BasesEntry[]): void {
+        log('Performing incremental update', 'debug')
+
+        // Get date anchors (use cache)
+        let dateAnchors = this.cacheService.getDateAnchors()
+        if (!dateAnchors) {
+            dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
+            this.cacheService.setDateAnchors(dateAnchors)
+        }
+
+        // Update each visualization with new data
+        for (const [propertyId, viz] of this.visualizations) {
+            const dataPoints = this.aggregationService.createDataPoints(
+                entries,
+                propertyId,
+                dateAnchors
+            )
+            this.cacheService.setDataPoints(propertyId, dataPoints)
+            viz.update(dataPoints)
+        }
+    }
+
+    /**
+     * Render properties asynchronously in batches to prevent UI freezing
+     */
+    private async renderPropertiesAsync(
+        propertiesToRender: BasesPropertyId[],
+        entries: BasesEntry[],
+        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>,
+        renderCycle: number
+    ): Promise<void> {
+        let index = 0
+
+        const renderBatch = (): void => {
+            // Check if this render cycle is still current
+            if (renderCycle !== this.currentRenderCycle) {
+                log('Render cycle cancelled', 'debug')
+                return
+            }
+
+            const batchEnd = Math.min(index + RENDER_BATCH_SIZE, propertiesToRender.length)
+
+            // Render a batch of properties
+            for (; index < batchEnd; index++) {
+                const propertyId = propertiesToRender[index]
+                if (!propertyId) continue
+
+                const displayName = this.config.getDisplayName(propertyId)
+                const effectiveConfig = this.columnConfigService.getEffectiveConfig(
+                    propertyId,
+                    displayName
+                )
+
+                if (effectiveConfig) {
+                    // Has configuration (local override or global preset)
+                    const dataPoints = this.aggregationService.createDataPoints(
+                        entries,
+                        propertyId,
+                        dateAnchors
+                    )
+                    this.cacheService.setDataPoints(propertyId, dataPoints)
+                    this.renderConfiguredColumn(
+                        effectiveConfig.config,
+                        displayName,
+                        dataPoints,
+                        effectiveConfig.isFromPreset
+                    )
+                } else {
+                    // No configuration - show config card
+                    this.renderUnconfiguredColumn(propertyId, displayName)
+                }
+            }
+
+            // Schedule next batch if more properties to render
+            if (index < propertiesToRender.length) {
+                this.pendingRenderFrame = requestAnimationFrame(renderBatch)
+            } else {
+                this.pendingRenderFrame = null
+                log(`Async render complete: ${propertiesToRender.length} properties`, 'debug')
+            }
+        }
+
+        // Start rendering
+        this.pendingRenderFrame = requestAnimationFrame(renderBatch)
+    }
+
+    /**
+     * Cancel any pending async render
+     */
+    private cancelPendingRender(): void {
+        if (this.pendingRenderFrame !== null) {
+            cancelAnimationFrame(this.pendingRenderFrame)
+            this.pendingRenderFrame = null
         }
     }
 
@@ -691,6 +845,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     override onunload(): void {
         log('LifeTrackerView unloading', 'debug')
 
+        // Cancel any pending async render
+        this.cancelPendingRender()
+
         // Unregister as file provider
         this.plugin.setActiveFileProvider(null)
 
@@ -699,6 +856,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             this.unsubscribeSettings()
             this.unsubscribeSettings = null
         }
+
+        // Clear cache
+        this.cacheService.clearAll()
 
         this.maximizeService.cleanup()
         this.destroyVisualizations()

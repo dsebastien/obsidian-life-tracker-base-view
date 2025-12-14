@@ -7,10 +7,14 @@ import { differenceInMilliseconds, parseISO } from 'date-fns'
 import { formatDateByGranularity, log } from '../../../../utils'
 
 /**
+ * Shared aggregation service instance for all timeline visualizations
+ */
+const sharedAggregationService = new DataAggregationService()
+
+/**
  * Timeline visualization for date-based data
  */
 export class TimelineVisualization extends BaseVisualization {
-    private aggregationService: DataAggregationService
     private tooltip: Tooltip | null = null
     private timelineEl: HTMLElement | null = null
     private timelineData: TimelineData | null = null
@@ -23,7 +27,6 @@ export class TimelineVisualization extends BaseVisualization {
         config: VisualizationConfig
     ) {
         super(containerEl, app, propertyId, displayName, config)
-        this.aggregationService = new DataAggregationService()
     }
 
     /**
@@ -32,8 +35,8 @@ export class TimelineVisualization extends BaseVisualization {
     override render(data: VisualizationDataPoint[]): void {
         log(`Rendering timeline for ${this.displayName}`, 'debug')
 
-        // Aggregate data
-        this.timelineData = this.aggregationService.aggregateForTimeline(
+        // Aggregate data (use shared service)
+        this.timelineData = sharedAggregationService.aggregateForTimeline(
             data,
             this.propertyId,
             this.displayName

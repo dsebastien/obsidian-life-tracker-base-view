@@ -10,9 +10,21 @@ import {
     formatDateISO,
     getMonthName,
     getWeeksBetween,
-    isSameDay,
     getColorLevelForValue
 } from '../../../../utils'
+
+/**
+ * Build a Map for O(1) cell lookup by date string
+ */
+function buildCellMap(cells: HeatmapCell[]): Map<string, HeatmapCell> {
+    const map = new Map<string, HeatmapCell>()
+    for (const cell of cells) {
+        // Use ISO date string as key for consistent lookup
+        const key = formatDateISO(cell.date)
+        map.set(key, cell)
+    }
+    return map
+}
 
 /**
  * Render the heatmap grid based on granularity
@@ -53,6 +65,9 @@ function renderDailyHeatmap(
 ): HTMLElement {
     const wrapper = container.createDiv({ cls: 'lt-heatmap-wrapper' })
 
+    // Build cell lookup map for O(1) access (instead of O(n) per cell)
+    const cellMap = buildCellMap(data.cells)
+
     // Day labels column
     if (config.showDayLabels) {
         const dayLabels = wrapper.createDiv({ cls: 'lt-heatmap-days' })
@@ -82,7 +97,8 @@ function renderDailyHeatmap(
         // Render 7 days (Monday to Sunday)
         for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
             const date = addDays(weekStart, dayOffset)
-            const cell = findCellForDate(data.cells, date)
+            const dateKey = formatDateISO(date)
+            const cell = cellMap.get(dateKey)
 
             const cellEl = weekCol.createDiv({ cls: 'lt-heatmap-cell' })
             cellEl.style.width = `${config.cellSize}px`
@@ -93,7 +109,7 @@ function renderDailyHeatmap(
             cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
 
             // Store data attributes
-            cellEl.dataset['date'] = formatDateISO(date)
+            cellEl.dataset['date'] = dateKey
             if (cell) {
                 if (cell.value !== null) {
                     cellEl.dataset['value'] = String(cell.value)
@@ -334,11 +350,4 @@ function renderYearlyHeatmap(
     }
 
     return gridEl
-}
-
-/**
- * Find cell for a specific date
- */
-function findCellForDate(cells: HeatmapCell[], date: Date): HeatmapCell | undefined {
-    return cells.find((c) => isSameDay(c.date, date))
 }

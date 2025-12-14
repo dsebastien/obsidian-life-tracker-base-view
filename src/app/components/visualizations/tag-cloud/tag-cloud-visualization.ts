@@ -6,11 +6,15 @@ import { Tooltip, formatTagTooltip } from '../../ui/tooltip'
 import { log } from '../../../../utils'
 
 /**
+ * Shared aggregation service instance for all tag cloud visualizations
+ */
+const sharedAggregationService = new DataAggregationService()
+
+/**
  * Tag cloud visualization for tags and lists
  */
 export class TagCloudVisualization extends BaseVisualization {
     private tagCloudConfig: TagCloudConfig
-    private aggregationService: DataAggregationService
     private tooltip: Tooltip | null = null
     private cloudEl: HTMLElement | null = null
     private tagCloudData: TagCloudData | null = null
@@ -24,7 +28,6 @@ export class TagCloudVisualization extends BaseVisualization {
     ) {
         super(containerEl, app, propertyId, displayName, config)
         this.tagCloudConfig = config
-        this.aggregationService = new DataAggregationService()
     }
 
     /**
@@ -33,8 +36,8 @@ export class TagCloudVisualization extends BaseVisualization {
     override render(data: VisualizationDataPoint[]): void {
         log(`Rendering tag cloud for ${this.displayName}`, 'debug')
 
-        // Aggregate data
-        this.tagCloudData = this.aggregationService.aggregateForTagCloud(
+        // Aggregate data (use shared service)
+        this.tagCloudData = sharedAggregationService.aggregateForTagCloud(
             data,
             this.propertyId,
             this.displayName
