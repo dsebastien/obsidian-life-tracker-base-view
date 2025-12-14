@@ -629,8 +629,19 @@
 
 /* Heatmap labels */
 .lt-heatmap-months {
-    @apply flex text-xs gap-1;
+    @apply flex items-center text-xs mb-1;
     color: var(--text-muted);
+}
+
+.lt-heatmap-month-labels {
+    /* Gap is set dynamically in JS to match config.cellGap */
+    @apply flex;
+}
+
+.lt-heatmap-month-slot {
+    /* Width is set dynamically in JS to match config.cellSize */
+    /* Allow text to overflow into adjacent empty slots */
+    @apply flex-shrink-0 overflow-visible;
 }
 
 .lt-heatmap-month-label {
@@ -643,7 +654,8 @@
 }
 
 .lt-heatmap-days {
-    @apply flex flex-col gap-0.5 text-xs pr-1;
+    /* Gap is set dynamically in JS to match config.cellGap */
+    @apply flex flex-col text-xs pr-1;
     color: var(--text-muted);
 }
 

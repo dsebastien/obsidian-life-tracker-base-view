@@ -56,6 +56,8 @@ function renderDailyHeatmap(
     // Day labels column
     if (config.showDayLabels) {
         const dayLabels = wrapper.createDiv({ cls: 'lt-heatmap-days' })
+        // Set gap dynamically to match the grid cell gap
+        dayLabels.style.gap = `${config.cellGap}px`
         const dayNames = ['Mon', '', 'Wed', '', 'Fri', '', '']
         for (const name of dayNames) {
             const labelEl = dayLabels.createDiv({ cls: 'lt-heatmap-day-label' })
@@ -72,21 +74,10 @@ function renderDailyHeatmap(
     // Get weeks to render
     const weeks = getWeeksBetween(data.minDate, data.maxDate)
 
-    // Month labels
-    let currentMonth = -1
-    const monthLabels: { week: number; name: string }[] = []
-
     // Render each week as a column
-    weeks.forEach((weekStart, weekIndex) => {
+    weeks.forEach((weekStart, _weekIndex) => {
         const weekCol = gridEl.createDiv({ cls: 'lt-heatmap-week' })
         weekCol.style.gap = `${config.cellGap}px`
-
-        // Track month changes for labels
-        const monthNum = getMonth(weekStart)
-        if (monthNum !== currentMonth) {
-            monthLabels.push({ week: weekIndex, name: getMonthName(weekStart) })
-            currentMonth = monthNum
-        }
 
         // Render 7 days (Monday to Sunday)
         for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
@@ -116,23 +107,39 @@ function renderDailyHeatmap(
     })
 
     // Add month labels above grid
-    if (config.showMonthLabels && monthLabels.length > 0) {
+    if (config.showMonthLabels) {
         const monthRow = container.createDiv({ cls: 'lt-heatmap-months' })
 
-        // Add offset for day labels
+        // Add spacer for day labels column with matching width
         if (config.showDayLabels) {
-            monthRow.createDiv({ cls: 'lt-heatmap-month-spacer' })
+            const dayLabelsSpacer = monthRow.createDiv({ cls: 'lt-heatmap-month-spacer' })
+            // Match the day labels column width (approx 24px for "Mon" + padding)
+            dayLabelsSpacer.style.width = '28px'
+            dayLabelsSpacer.style.flexShrink = '0'
         }
 
-        let lastWeek = 0
-        for (const { week, name } of monthLabels) {
-            // Add spacer for gap
-            if (week > lastWeek) {
-                const spacer = monthRow.createDiv({ cls: 'lt-heatmap-month-spacer' })
-                spacer.style.width = `${(week - lastWeek) * (config.cellSize + config.cellGap)}px`
+        // Create a flex container for month label slots that matches the grid structure
+        const monthLabelsContainer = monthRow.createDiv({ cls: 'lt-heatmap-month-labels' })
+        monthLabelsContainer.style.display = 'flex'
+        monthLabelsContainer.style.gap = `${config.cellGap}px`
+
+        // Create a slot for each week - only fill in month name when month changes
+        let currentMonthForLabels = -1
+        for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
+            const weekStart = weeks[weekIndex]
+            if (!weekStart) continue
+
+            const monthNum = getMonth(weekStart)
+            const slot = monthLabelsContainer.createDiv({ cls: 'lt-heatmap-month-slot' })
+            slot.style.width = `${config.cellSize}px`
+            slot.style.flexShrink = '0'
+
+            // Only show month name at the start of a new month
+            if (monthNum !== currentMonthForLabels) {
+                slot.textContent = getMonthName(weekStart)
+                slot.classList.add('lt-heatmap-month-label')
+                currentMonthForLabels = monthNum
             }
-            monthRow.createSpan({ cls: 'lt-heatmap-month-label', text: name })
-            lastWeek = week + 1
         }
 
         // Insert month row before wrapper
