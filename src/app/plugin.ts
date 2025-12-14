@@ -4,7 +4,8 @@ import {
     type PluginSettings,
     type BatchFilterMode,
     type FileProvider,
-    type SettingsChangeCallback
+    type SettingsChangeCallback,
+    type SettingsChangeInfo
 } from './types'
 import { LifeTrackerPluginSettingTab } from './settings/settings-tab'
 import { log } from '../utils'
@@ -148,11 +149,34 @@ export class LifeTrackerPlugin extends Plugin {
     /**
      * Update settings immutably using immer
      * @param updater Function that receives a draft and can mutate it
+     * @param changeInfo Information about what changed (for targeted updates)
      */
-    async updateSettings(updater: (draft: Draft<PluginSettings>) => void): Promise<void> {
+    async updateSettings(
+        updater: (draft: Draft<PluginSettings>) => void,
+        changeInfo: SettingsChangeInfo = { type: 'full' }
+    ): Promise<void> {
         this.settings = produce(this.settings, updater)
         await this.saveSettings()
-        this.notifySettingsChanged()
+        this.notifySettingsChanged(changeInfo)
+    }
+
+    /**
+     * Update a specific visualization preset
+     * Triggers a targeted update for views that use this preset
+     */
+    async updatePreset(
+        presetId: string,
+        updater: (preset: Draft<PluginSettings['visualizationPresets'][number]>) => void
+    ): Promise<void> {
+        await this.updateSettings(
+            (draft) => {
+                const preset = draft.visualizationPresets.find((p) => p.id === presetId)
+                if (preset) {
+                    updater(preset)
+                }
+            },
+            { type: 'preset-updated', presetId }
+        )
     }
 
     /**
@@ -169,11 +193,12 @@ export class LifeTrackerPlugin extends Plugin {
 
     /**
      * Notify all listeners that settings have changed
+     * @param changeInfo Information about what changed
      */
-    private notifySettingsChanged(): void {
+    private notifySettingsChanged(changeInfo: SettingsChangeInfo): void {
         for (const listener of this.settingsChangeListeners) {
             try {
-                listener(this.settings)
+                listener(this.settings, changeInfo)
             } catch (error) {
                 log('Error in settings change listener', 'error', error)
             }

@@ -1,6 +1,7 @@
 export { DEFAULT_SETTINGS } from './plugin-settings.intf'
 export type { PluginSettings, PropertyVisualizationPreset } from './plugin-settings.intf'
 export type { SettingsChangeCallback } from './settings-change-callback.intf'
+export type { SettingsChangeInfo } from './settings-change-info.intf'
 export type { FileProvider } from './file-provider.intf'
 export { DEFAULT_BATCH_FILTER_MODE, BATCH_FILTER_MODE_OPTIONS } from './batch-filter-mode.intf'
 export type { BatchFilterMode } from './batch-filter-mode.intf'

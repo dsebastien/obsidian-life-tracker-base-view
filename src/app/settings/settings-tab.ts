@@ -768,11 +768,8 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             text.setPlaceholder('Property name')
                 .setValue(preset.propertyNamePattern)
                 .onChange(async (value) => {
-                    await this.plugin.updateSettings((draft) => {
-                        const p = draft.visualizationPresets.find((p) => p.id === preset.id)
-                        if (p) {
-                            p.propertyNamePattern = value
-                        }
+                    await this.plugin.updatePreset(preset.id, (p) => {
+                        p.propertyNamePattern = value
                     })
                 })
             text.inputEl.classList.add('lt-preset-name-input')
@@ -784,13 +781,10 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                 .addOptions(SETTINGS_TAB_VISUALIZATION_OPTIONS)
                 .setValue(preset.visualizationType)
                 .onChange(async (value) => {
-                    await this.plugin.updateSettings((draft) => {
-                        const p = draft.visualizationPresets.find((p) => p.id === preset.id)
-                        if (p) {
-                            p.visualizationType = value as VisualizationType
-                            if (!supportsScale(p.visualizationType)) {
-                                p.scale = undefined
-                            }
+                    await this.plugin.updatePreset(preset.id, (p) => {
+                        p.visualizationType = value as VisualizationType
+                        if (!supportsScale(p.visualizationType)) {
+                            p.scale = undefined
                         }
                     })
                     this.display()
@@ -825,13 +819,10 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                     .setValue(currentValue)
                     .onChange(async (value) => {
                         const scaleValue = SCALE_PRESETS_RECORD[value]
-                        await this.plugin.updateSettings((draft) => {
-                            const p = draft.visualizationPresets.find((p) => p.id === preset.id)
-                            if (p) {
-                                p.scale = scaleValue
-                                    ? { min: scaleValue.min, max: scaleValue.max }
-                                    : undefined
-                            }
+                        await this.plugin.updatePreset(preset.id, (p) => {
+                            p.scale = scaleValue
+                                ? { min: scaleValue.min, max: scaleValue.max }
+                                : undefined
                         })
                     })
             })
@@ -855,15 +846,21 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             propertyNamePattern: '',
             visualizationType: VisualizationType.Heatmap
         }
-        await this.plugin.updateSettings((draft) => {
-            draft.visualizationPresets.push(newPreset)
-        })
+        await this.plugin.updateSettings(
+            (draft) => {
+                draft.visualizationPresets.push(newPreset)
+            },
+            { type: 'preset-added', presetId: newPreset.id }
+        )
     }
 
     private async deletePreset(id: string): Promise<void> {
-        await this.plugin.updateSettings((draft) => {
-            draft.visualizationPresets = draft.visualizationPresets.filter((p) => p.id !== id)
-        })
+        await this.plugin.updateSettings(
+            (draft) => {
+                draft.visualizationPresets = draft.visualizationPresets.filter((p) => p.id !== id)
+            },
+            { type: 'preset-deleted', presetId: id }
+        )
     }
 
     // ========================================

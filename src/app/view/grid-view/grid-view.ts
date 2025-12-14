@@ -10,7 +10,13 @@ import {
     NullValue
 } from 'obsidian'
 import type { LifeTrackerPlugin } from '../../plugin'
-import type { FileProvider, BatchFilterMode, PropertyDefinition, PropertyEditor } from '../../types'
+import type {
+    FileProvider,
+    BatchFilterMode,
+    PropertyDefinition,
+    PropertyEditor,
+    SettingsChangeInfo
+} from '../../types'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
 import { createPropertyEditor } from '../../components/editing/property-editor'
@@ -98,9 +104,8 @@ export class GridView extends BasesView implements FileProvider {
         this.recognitionService = new PropertyRecognitionService(plugin.app)
 
         // Subscribe to global settings changes
-        this.unsubscribeSettings = this.plugin.onSettingsChange(() => {
-            log('Settings changed, refreshing grid view', 'debug')
-            this.onDataUpdated()
+        this.unsubscribeSettings = this.plugin.onSettingsChange((_settings, changeInfo) => {
+            this.handleSettingsChange(changeInfo)
         })
 
         // Register as active file provider for batch capture
@@ -843,6 +848,29 @@ export class GridView extends BasesView implements FileProvider {
             editor.destroy()
         }
         this.editors.clear()
+    }
+
+    /**
+     * Handle settings changes - only refresh for property definition changes
+     */
+    private handleSettingsChange(changeInfo: SettingsChangeInfo): void {
+        log('GridView settings changed', 'debug', changeInfo)
+
+        switch (changeInfo.type) {
+            case 'property-definitions-changed':
+            case 'full':
+                // Property definitions affect the grid columns
+                this.onDataUpdated()
+                break
+
+            // These don't affect the grid view, no refresh needed
+            case 'preset-updated':
+            case 'preset-added':
+            case 'preset-deleted':
+            case 'animation-duration-changed':
+            case 'confetti-setting-changed':
+                break
+        }
     }
 
     /**

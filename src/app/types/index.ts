@@ -100,6 +100,7 @@ export type {
     PluginSettings,
     PropertyVisualizationPreset,
     SettingsChangeCallback,
+    SettingsChangeInfo,
     FileProvider,
     BatchFilterMode,
     CaptureContext

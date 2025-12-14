@@ -1,4 +1,10 @@
-import { BasesView, type BasesPropertyId, type QueryController, type TFile } from 'obsidian'
+import {
+    BasesView,
+    type BasesEntry,
+    type BasesPropertyId,
+    type QueryController,
+    type TFile
+} from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import {
     DEFAULT_BATCH_FILTER_MODE,
@@ -11,7 +17,9 @@ import {
     type ChartConfig,
     type HeatmapConfig,
     type TagCloudConfig,
-    type VisualizationDataPoint
+    type VisualizationDataPoint,
+    type SettingsChangeInfo,
+    type ResolvedDateAnchor
 } from '../types'
 import { DateAnchorService } from '../services/date-anchor.service'
 import { DataAggregationService } from '../services/data-aggregation.service'
@@ -87,9 +95,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         )
 
         // Subscribe to global settings changes
-        this.unsubscribeSettings = this.plugin.onSettingsChange(() => {
-            log('Global settings changed, refreshing view', 'debug')
-            this.onDataUpdated()
+        this.unsubscribeSettings = this.plugin.onSettingsChange((_settings, changeInfo) => {
+            this.handleSettingsChange(changeInfo)
         })
 
         // Register as active file provider for batch capture
@@ -509,6 +516,173 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             viz.destroy()
         }
         this.visualizations.clear()
+    }
+
+    /**
+     * Handle settings changes with targeted updates when possible
+     */
+    private handleSettingsChange(changeInfo: SettingsChangeInfo): void {
+        log('Settings changed', 'debug', changeInfo)
+
+        switch (changeInfo.type) {
+            case 'preset-updated':
+            case 'preset-deleted':
+                // Only refresh visualizations that use this preset
+                this.refreshVisualizationsForPreset(changeInfo.presetId)
+                break
+
+            case 'preset-added':
+                // New preset might match existing unconfigured properties
+                // Do a full refresh to show the new configuration
+                this.onDataUpdated()
+                break
+
+            case 'animation-duration-changed':
+                // Just update animation duration on existing visualizations
+                for (const viz of this.visualizations.values()) {
+                    viz.setAnimationDuration(this.plugin.settings.animationDuration)
+                }
+                break
+
+            case 'property-definitions-changed':
+            case 'confetti-setting-changed':
+                // These don't affect the visualization view, no refresh needed
+                break
+
+            case 'full':
+            default:
+                // Full refresh for unknown changes
+                this.onDataUpdated()
+                break
+        }
+    }
+
+    /**
+     * Refresh only the visualizations that use a specific preset
+     */
+    private refreshVisualizationsForPreset(presetId: string): void {
+        const preset = this.plugin.settings.visualizationPresets.find((p) => p.id === presetId)
+        const presetPattern = preset?.propertyNamePattern?.toLowerCase()
+
+        // Find which visualizations use this preset
+        const propertyIdsToRefresh: BasesPropertyId[] = []
+
+        for (const propertyId of this.visualizations.keys()) {
+            // Check if this property uses a preset (not local override)
+            const localConfig = this.columnConfigService.getColumnConfig(propertyId)
+            if (localConfig) {
+                // Has local override, not using preset
+                continue
+            }
+
+            // Extract raw property name to match against preset pattern
+            const rawPropertyName = propertyId.includes('.')
+                ? propertyId.substring(propertyId.indexOf('.') + 1)
+                : propertyId
+            const lowerRawName = rawPropertyName.toLowerCase()
+
+            // Check if this property was using the preset (either matches or previously matched)
+            // We need to refresh if the preset previously matched this property
+            if (presetPattern && lowerRawName === presetPattern) {
+                propertyIdsToRefresh.push(propertyId)
+            } else {
+                // Also check if this property might have matched a previous pattern
+                // We need to re-evaluate all properties that don't have local config
+                // since we don't know what the old pattern was
+                propertyIdsToRefresh.push(propertyId)
+            }
+        }
+
+        // Also check for unconfigured cards that might now match
+        if (!this.gridEl) return
+
+        if (propertyIdsToRefresh.length === 0) {
+            log('No visualizations affected by preset change', 'debug')
+            return
+        }
+
+        log('Refreshing visualizations for preset', 'debug', {
+            presetId,
+            propertyIds: propertyIdsToRefresh
+        })
+
+        // Refresh each affected visualization
+        const entries = this.data.data
+        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries)
+
+        for (const propertyId of propertyIdsToRefresh) {
+            this.refreshSingleVisualization(propertyId, entries, dateAnchors)
+        }
+    }
+
+    /**
+     * Refresh a single visualization in place
+     */
+    private refreshSingleVisualization(
+        propertyId: BasesPropertyId,
+        entries: BasesEntry[],
+        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>
+    ): void {
+        if (!this.gridEl) return
+
+        // Get the existing visualization and its card element
+        const existingViz = this.visualizations.get(propertyId)
+        if (!existingViz) {
+            log('No existing visualization to refresh', 'debug', propertyId)
+            return
+        }
+
+        // Find the card element for this visualization
+        const cardEl = this.gridEl.querySelector(
+            `[data-property-id="${propertyId}"]`
+        ) as HTMLElement | null
+        if (!cardEl) {
+            log('No card element found for visualization', 'debug', propertyId)
+            return
+        }
+
+        // Get the display name
+        const displayName = this.config.getDisplayName(propertyId)
+
+        // Get the new effective config
+        const effectiveConfig = this.columnConfigService.getEffectiveConfig(propertyId, displayName)
+
+        if (!effectiveConfig) {
+            // No longer has a config - property should become unconfigured
+            // For simplicity, do a full refresh in this case
+            this.onDataUpdated()
+            return
+        }
+
+        // Destroy the old visualization
+        existingViz.destroy()
+        this.visualizations.delete(propertyId)
+
+        // Clear the card element
+        cardEl.empty()
+
+        // Create the new visualization in the same card
+        const dataPoints = this.aggregationService.createDataPoints(
+            entries,
+            propertyId,
+            dateAnchors
+        )
+
+        const visualization = this.createVisualization(cardEl, effectiveConfig.config, displayName)
+
+        // Wire up maximize callback
+        visualization.setMaximizeCallback((propId, maximize) => {
+            this.maximizeService.handleMaximizeToggle(propId, maximize)
+        })
+
+        // Set animation duration
+        visualization.setAnimationDuration(this.plugin.settings.animationDuration)
+
+        // Render and store
+        visualization.render(dataPoints)
+        this.visualizations.set(propertyId, visualization)
+
+        log('Refreshed single visualization', 'debug', propertyId)
     }
 
     /**
