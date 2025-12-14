@@ -50,8 +50,14 @@ export class TextEditor extends BasePropertyEditor {
             })
         }
 
-        // Set current value (handle null/undefined explicitly)
-        const currentValue = this.config.value == null ? '' : String(this.config.value)
+        // Set current value (handle null/undefined/object explicitly)
+        let currentValue = ''
+        if (this.config.value != null) {
+            currentValue =
+                typeof this.config.value === 'object'
+                    ? JSON.stringify(this.config.value)
+                    : String(this.config.value)
+        }
         this.selectEl.value = currentValue
 
         // Event handlers
@@ -79,8 +85,14 @@ export class TextEditor extends BasePropertyEditor {
             placeholder: this.config.definition.description ?? this.getDisplayLabel()
         })
 
-        // Set current value (handle null/undefined explicitly)
-        this.inputEl.value = this.config.value == null ? '' : String(this.config.value)
+        // Set current value (handle null/undefined/object explicitly)
+        if (this.config.value == null) {
+            this.inputEl.value = ''
+        } else if (typeof this.config.value === 'object') {
+            this.inputEl.value = JSON.stringify(this.config.value)
+        } else {
+            this.inputEl.value = String(this.config.value)
+        }
 
         // Event handlers
         this.inputEl.addEventListener('input', () => {
@@ -106,7 +118,10 @@ export class TextEditor extends BasePropertyEditor {
     }
 
     setValue(value: unknown): void {
-        const strValue = value == null ? '' : String(value)
+        let strValue = ''
+        if (value != null) {
+            strValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
+        }
         if (this.selectEl) {
             this.selectEl.value = strValue
         } else if (this.inputEl) {

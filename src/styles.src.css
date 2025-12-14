@@ -9,6 +9,29 @@
     display: none !important;
 }
 
+/* Layout utilities - use instead of inline style.display */
+.lt-flex {
+    @apply flex;
+}
+
+.lt-grid {
+    @apply grid;
+}
+
+/* Grid templates for heatmap */
+.lt-grid-cols-12 {
+    grid-template-columns: repeat(12, 1fr);
+}
+
+.lt-grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* Flex utilities */
+.lt-flex-shrink-0 {
+    flex-shrink: 0;
+}
+
 /* ========================================
    SUPPORT & UI SECTIONS
    ======================================== */

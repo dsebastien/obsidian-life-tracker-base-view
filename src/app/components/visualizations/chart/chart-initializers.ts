@@ -23,8 +23,10 @@ import {
  * Chart.js constructor type.
  * Uses 'any' because Chart.js is dynamically imported and its type system
  * is extremely complex with many generic parameters that vary by chart type.
+ * The Chart constructor accepts different configurations depending on chart type,
+ * making a precise type definition impractical.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js has complex generic types that vary by chart type, making precise typing impractical
 type ChartClass = any
 
 /**

@@ -48,7 +48,7 @@ export {
 } from './date.utils'
 
 // DOM utilities
-export { CSS_CLASS, CSS_SELECTOR, DATA_ATTR, DATA_ATTR_FULL } from './dom.utils'
+export { CSS_CLASS, CSS_SELECTOR, DATA_ATTR, DATA_ATTR_FULL, setCssProps } from './dom.utils'
 
 // Logging utilities
 export { LOG_SEPARATOR, LOG_PREFIX, log } from './log.utils'

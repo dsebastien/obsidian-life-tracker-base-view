@@ -166,15 +166,26 @@ export function getColorLevel(normalizedValue: number): 0 | 1 | 2 | 3 | 4 {
 /**
  * Format a value for display in visualizations.
  * Capitalizes boolean values (true -> True, false -> False).
+ * Handles objects by stringifying them with JSON.stringify.
  */
 export function formatValueForDisplay(value: unknown): string | null {
     if (value === null || value === undefined) {
         return null
     }
 
+    // Handle booleans first (before type checks)
+    if (typeof value === 'boolean') {
+        return value ? 'True' : 'False'
+    }
+
+    // Handle objects (excluding arrays which stringify nicely)
+    if (typeof value === 'object' && !Array.isArray(value)) {
+        return JSON.stringify(value)
+    }
+
     const str = String(value)
 
-    // Capitalize boolean values
+    // Capitalize boolean string values
     if (str === 'true') return 'True'
     if (str === 'false') return 'False'
 

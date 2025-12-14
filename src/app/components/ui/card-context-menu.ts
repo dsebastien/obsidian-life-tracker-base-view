@@ -134,7 +134,7 @@ function showCustomScaleModal(
     const modal = overlay.createDiv({ cls: 'lt-scale-modal' })
 
     // Header
-    modal.createDiv({ cls: 'lt-scale-modal-header', text: 'Configure Scale' })
+    modal.createDiv({ cls: 'lt-scale-modal-header', text: 'Configure scale' })
 
     // Form
     const form = modal.createDiv({ cls: 'lt-scale-modal-form' })

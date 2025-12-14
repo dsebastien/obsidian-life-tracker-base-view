@@ -1,4 +1,4 @@
-import { Modal, Notice, type TFile } from 'obsidian'
+import { Modal, Notice, setIcon, type TFile } from 'obsidian'
 import confetti from 'canvas-confetti'
 import type { LifeTrackerPlugin } from '../../plugin'
 import type { CaptureContext } from '../../commands/capture-command'
@@ -69,7 +69,7 @@ export class PropertyCaptureModal extends Modal {
         contentEl.empty()
         contentEl.addClass('lt-carousel-modal')
 
-        await this.loadProperties()
+        this.loadProperties()
 
         if (this.sortedDefinitions.length === 0) {
             this.renderEmptyState()
@@ -94,7 +94,7 @@ export class PropertyCaptureModal extends Modal {
      * Load and sort property definitions for the current file.
      * Sort order: required (alphabetical), then optional (alphabetical)
      */
-    private async loadProperties(): Promise<void> {
+    private loadProperties(): void {
         const file = this.getCurrentFile()
         if (!file) return
 
@@ -287,8 +287,7 @@ export class PropertyCaptureModal extends Modal {
             cls: 'lt-carousel-file-nav-btn',
             attr: { 'aria-label': 'Previous file' }
         })
-        prevBtn.innerHTML =
-            '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>'
+        setIcon(prevBtn, 'chevron-left')
         prevBtn.addEventListener('click', () => this.navigatePrevFile())
 
         // File counter container
@@ -321,8 +320,7 @@ export class PropertyCaptureModal extends Modal {
             cls: 'lt-carousel-file-nav-btn',
             attr: { 'aria-label': 'Next file' }
         })
-        nextBtn.innerHTML =
-            '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>'
+        setIcon(nextBtn, 'chevron-right')
         nextBtn.addEventListener('click', () => this.navigateNextFile())
 
         // Bottom row: filter dropdown
@@ -383,7 +381,7 @@ export class PropertyCaptureModal extends Modal {
      * Handle filter mode change from dropdown.
      * Always navigates to the first incomplete file in the newly filtered list.
      */
-    private async handleFilterModeChange(): Promise<void> {
+    private handleFilterModeChange(): void {
         // Check if all files are now complete
         const incompleteCount = this.countIncompleteFiles()
 
@@ -397,7 +395,7 @@ export class PropertyCaptureModal extends Modal {
         const firstIncompleteIndex = this.findNextIncompleteFile(0, 1)
         if (firstIncompleteIndex !== -1) {
             this.currentFileIndex = firstIncompleteIndex
-            await this.loadProperties()
+            this.loadProperties()
 
             if (this.sortedDefinitions.length === 0) {
                 this.renderEmptyState()
@@ -424,8 +422,7 @@ export class PropertyCaptureModal extends Modal {
             cls: 'lt-carousel-nav-btn',
             attr: { 'aria-label': 'Previous property' }
         })
-        prevBtn.innerHTML =
-            '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>'
+        setIcon(prevBtn, 'chevron-left')
         prevBtn.disabled = this.isFirstProperty()
         prevBtn.addEventListener('click', () => this.navigatePrev())
 
@@ -448,18 +445,15 @@ export class PropertyCaptureModal extends Modal {
         if (isLast) {
             if (isBatchMode) {
                 // In batch mode, always show "Next File" arrow (wraps around)
-                nextBtn.innerHTML =
-                    '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/></svg>'
+                setIcon(nextBtn, 'skip-forward')
                 nextBtn.addEventListener('click', () => this.handleNextFile())
             } else {
                 // Single note mode: show checkmark for done
-                nextBtn.innerHTML =
-                    '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+                setIcon(nextBtn, 'check')
                 nextBtn.addEventListener('click', () => this.handleDone())
             }
         } else {
-            nextBtn.innerHTML =
-                '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>'
+            setIcon(nextBtn, 'chevron-right')
             nextBtn.addEventListener('click', () => this.navigateNext())
         }
 
@@ -572,7 +566,7 @@ export class PropertyCaptureModal extends Modal {
             })
             emptyEl.createDiv({
                 cls: 'lt-carousel-empty-title',
-                text: 'No Property Definitions'
+                text: 'No property definitions'
             })
             emptyEl.createDiv({
                 cls: 'lt-carousel-empty-text',
@@ -585,7 +579,7 @@ export class PropertyCaptureModal extends Modal {
             })
             emptyEl.createDiv({
                 cls: 'lt-carousel-empty-title',
-                text: 'No Matching Properties'
+                text: 'No matching properties'
             })
             emptyEl.createDiv({
                 cls: 'lt-carousel-empty-text',
@@ -597,7 +591,7 @@ export class PropertyCaptureModal extends Modal {
         if (this.context.mode === 'batch') {
             const nextBtn = emptyEl.createEl('button', {
                 cls: 'lt-carousel-btn lt-carousel-btn--primary',
-                text: 'Next File'
+                text: 'Next file'
             })
             nextBtn.addEventListener('click', () => this.handleNextFile())
         }
@@ -645,12 +639,12 @@ export class PropertyCaptureModal extends Modal {
         }
 
         // Write to frontmatter (fire and forget, but log errors)
-        this.frontmatterService
+        void this.frontmatterService
             .write(file, { [definition.name]: this.currentValue })
             .then(() => {
                 this.renderProgress()
             })
-            .catch((error) => {
+            .catch((error: unknown) => {
                 console.error('Failed to save property:', error)
             })
     }
@@ -747,7 +741,7 @@ export class PropertyCaptureModal extends Modal {
     /**
      * Navigate to previous file (batch mode, wraps around, skips complete files)
      */
-    private async navigatePrevFile(): Promise<void> {
+    private navigatePrevFile(): void {
         // Save current property
         if (this.saveDebounceTimer) {
             clearTimeout(this.saveDebounceTimer)
@@ -767,7 +761,7 @@ export class PropertyCaptureModal extends Modal {
         }
 
         this.currentFileIndex = nextIndex
-        await this.loadProperties()
+        this.loadProperties()
 
         // Check if new file has no applicable properties
         if (this.sortedDefinitions.length === 0) {
@@ -781,7 +775,7 @@ export class PropertyCaptureModal extends Modal {
     /**
      * Navigate to next file (batch mode, wraps around, skips complete files)
      */
-    private async navigateNextFile(): Promise<void> {
+    private navigateNextFile(): void {
         // Save current property
         if (this.saveDebounceTimer) {
             clearTimeout(this.saveDebounceTimer)
@@ -801,7 +795,7 @@ export class PropertyCaptureModal extends Modal {
         }
 
         this.currentFileIndex = nextIndex
-        await this.loadProperties()
+        this.loadProperties()
 
         // Check if new file has no applicable properties
         if (this.sortedDefinitions.length === 0) {
@@ -815,7 +809,7 @@ export class PropertyCaptureModal extends Modal {
     /**
      * Handle "Next File" button on last property (batch mode, wraps around, skips complete files)
      */
-    private async handleNextFile(): Promise<void> {
+    private handleNextFile(): void {
         // Save current property
         if (this.saveDebounceTimer) {
             clearTimeout(this.saveDebounceTimer)
@@ -840,7 +834,7 @@ export class PropertyCaptureModal extends Modal {
         }
 
         this.currentFileIndex = nextIndex
-        await this.loadProperties()
+        this.loadProperties()
 
         // Check if new file has no applicable properties
         if (this.sortedDefinitions.length === 0) {

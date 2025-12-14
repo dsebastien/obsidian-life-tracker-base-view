@@ -122,7 +122,11 @@ export function aggregateForPieChart(
         if (point.value === null || point.value === undefined) continue
 
         // Convert to string and skip empty or "null" strings
-        const valueStr = String(point.value).trim()
+        // Handle objects by stringifying to avoid [object Object]
+        const valueStr =
+            typeof point.value === 'object'
+                ? JSON.stringify(point.value).trim()
+                : String(point.value).trim()
         if (!valueStr || valueStr === 'null' || valueStr === 'undefined') continue
 
         if (!valueGroups.has(valueStr)) {

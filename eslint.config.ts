@@ -3,6 +3,7 @@ import tseslint from 'typescript-eslint'
 import eslintConfigPrettier from 'eslint-config-prettier'
 import globals from 'globals'
 
+// Note: tseslint.config is deprecated but defineConfig is not yet exported in this version
 export default tseslint.config(
     eslint.configs.recommended,
     ...tseslint.configs.recommended,

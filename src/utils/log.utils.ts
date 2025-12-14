@@ -14,10 +14,9 @@ export const log = (message: string, level?: LogLevel, ...data: unknown[]): void
     const logMessage = `${LOG_PREFIX} ${message}`
     switch (level) {
         case 'debug':
-            console.debug(logMessage, data)
-            break
         case 'info':
-            console.info(logMessage, data)
+            // Use debug for both debug and info levels (console.info is not allowed)
+            console.debug(logMessage, data)
             break
         case 'warn':
             console.warn(logMessage, data)

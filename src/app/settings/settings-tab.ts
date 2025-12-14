@@ -14,7 +14,7 @@ import {
     createDefaultMapping,
     type PropertyVisualizationPreset,
     type PropertyDefinition,
-    type PropertyType,
+    type ObsidianPropertyType,
     type MappingType
 } from '../types'
 
@@ -106,7 +106,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         containerEl.createEl('hr', { cls: 'lt-settings-separator' })
 
         // Property definitions header
-        containerEl.createEl('h3', { text: 'Property definitions' })
+        new Setting(containerEl).setName('Property definitions').setHeading()
 
         // List existing definitions
         const definitionsContainer = containerEl.createDiv({
@@ -214,7 +214,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                     await this.plugin.updateSettings((draft) => {
                         const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
                         if (d) {
-                            d.type = value as PropertyType
+                            d.type = value as ObsidianPropertyType
                             // Clear type-specific constraints when type changes
                             if (value !== 'number') {
                                 d.numberRange = null

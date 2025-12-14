@@ -40,3 +40,17 @@ export const DATA_ATTR_FULL = {
     FILE_PATH: 'data-file-path',
     ROW_INDEX: 'data-row-index'
 } as const
+
+/**
+ * Set CSS properties on an element using setProperty for dynamic values.
+ * This is preferred over direct element.style.* assignment for maintainability.
+ * Use CSS classes where possible; use this function only for truly dynamic values
+ * like computed dimensions, gaps, or other config-driven styles.
+ */
+export function setCssProps(el: HTMLElement, props: Record<string, string | number>): void {
+    for (const [key, value] of Object.entries(props)) {
+        // Convert camelCase to kebab-case for CSS property names
+        const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
+        el.style.setProperty(cssKey, typeof value === 'number' ? `${value}px` : value)
+    }
+}

@@ -10,7 +10,8 @@ import {
     formatDateISO,
     getMonthName,
     getWeeksBetween,
-    getColorLevelForValue
+    getColorLevelForValue,
+    setCssProps
 } from '../../../../utils'
 
 /**
@@ -72,19 +73,18 @@ function renderDailyHeatmap(
     if (config.showDayLabels) {
         const dayLabels = wrapper.createDiv({ cls: 'lt-heatmap-days' })
         // Set gap dynamically to match the grid cell gap
-        dayLabels.style.gap = `${config.cellGap}px`
+        setCssProps(dayLabels, { gap: config.cellGap })
         const dayNames = ['Mon', '', 'Wed', '', 'Fri', '', '']
         for (const name of dayNames) {
             const labelEl = dayLabels.createDiv({ cls: 'lt-heatmap-day-label' })
-            labelEl.style.height = `${config.cellSize}px`
-            labelEl.style.lineHeight = `${config.cellSize}px`
+            setCssProps(labelEl, { height: config.cellSize, lineHeight: `${config.cellSize}px` })
             labelEl.textContent = name
         }
     }
 
     // Grid container
     const gridEl = wrapper.createDiv({ cls: 'lt-heatmap-grid' })
-    gridEl.style.gap = `${config.cellGap}px`
+    setCssProps(gridEl, { gap: config.cellGap })
 
     // Get weeks to render
     const weeks = getWeeksBetween(data.minDate, data.maxDate)
@@ -92,7 +92,7 @@ function renderDailyHeatmap(
     // Render each week as a column
     weeks.forEach((weekStart, _weekIndex) => {
         const weekCol = gridEl.createDiv({ cls: 'lt-heatmap-week' })
-        weekCol.style.gap = `${config.cellGap}px`
+        setCssProps(weekCol, { gap: config.cellGap })
 
         // Render 7 days (Monday to Sunday)
         for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
@@ -101,8 +101,7 @@ function renderDailyHeatmap(
             const cell = cellMap.get(dateKey)
 
             const cellEl = weekCol.createDiv({ cls: 'lt-heatmap-cell' })
-            cellEl.style.width = `${config.cellSize}px`
-            cellEl.style.height = `${config.cellSize}px`
+            setCssProps(cellEl, { width: config.cellSize, height: config.cellSize })
 
             // Set color level
             const level = getColorLevelForValue(cell?.value ?? null, data.minValue, data.maxValue)
@@ -130,14 +129,13 @@ function renderDailyHeatmap(
         if (config.showDayLabels) {
             const dayLabelsSpacer = monthRow.createDiv({ cls: 'lt-heatmap-month-spacer' })
             // Match the day labels column width (approx 24px for "Mon" + padding)
-            dayLabelsSpacer.style.width = '28px'
-            dayLabelsSpacer.style.flexShrink = '0'
+            dayLabelsSpacer.addClass('lt-flex-shrink-0')
+            setCssProps(dayLabelsSpacer, { width: 28 })
         }
 
         // Create a flex container for month label slots that matches the grid structure
-        const monthLabelsContainer = monthRow.createDiv({ cls: 'lt-heatmap-month-labels' })
-        monthLabelsContainer.style.display = 'flex'
-        monthLabelsContainer.style.gap = `${config.cellGap}px`
+        const monthLabelsContainer = monthRow.createDiv({ cls: 'lt-heatmap-month-labels lt-flex' })
+        setCssProps(monthLabelsContainer, { gap: config.cellGap })
 
         // Create a slot for each week - only fill in month name when month changes
         let currentMonthForLabels = -1
@@ -146,9 +144,10 @@ function renderDailyHeatmap(
             if (!weekStart) continue
 
             const monthNum = getMonth(weekStart)
-            const slot = monthLabelsContainer.createDiv({ cls: 'lt-heatmap-month-slot' })
-            slot.style.width = `${config.cellSize}px`
-            slot.style.flexShrink = '0'
+            const slot = monthLabelsContainer.createDiv({
+                cls: 'lt-heatmap-month-slot lt-flex-shrink-0'
+            })
+            setCssProps(slot, { width: config.cellSize })
 
             // Only show month name at the start of a new month
             if (monthNum !== currentMonthForLabels) {
@@ -175,15 +174,14 @@ function renderWeeklyHeatmap(
 ): HTMLElement {
     const wrapper = container.createDiv({ cls: 'lt-heatmap-wrapper lt-heatmap-wrapper--weekly' })
     const gridEl = wrapper.createDiv({ cls: 'lt-heatmap-grid lt-heatmap-grid--weekly' })
-    gridEl.style.gap = `${config.cellGap}px`
+    setCssProps(gridEl, { gap: config.cellGap })
 
     // Sort cells by date
     const sortedCells = [...data.cells].sort((a, b) => compareAsc(a.date, b.date))
 
     for (const cell of sortedCells) {
         const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
-        cellEl.style.width = `${config.cellSize * 2}px`
-        cellEl.style.height = `${config.cellSize}px`
+        setCssProps(cellEl, { width: config.cellSize * 2, height: config.cellSize })
 
         const level = getColorLevelForValue(cell.value, data.minValue, data.maxValue)
         cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
@@ -219,10 +217,10 @@ function renderMonthlyHeatmap(
         byMonth.set(key, cell)
     }
 
-    const gridEl = wrapper.createDiv({ cls: 'lt-heatmap-grid lt-heatmap-grid--monthly' })
-    gridEl.style.gap = `${config.cellGap}px`
-    gridEl.style.display = 'grid'
-    gridEl.style.gridTemplateColumns = 'repeat(12, 1fr)'
+    const gridEl = wrapper.createDiv({
+        cls: 'lt-heatmap-grid lt-heatmap-grid--monthly lt-grid lt-grid-cols-12'
+    })
+    setCssProps(gridEl, { gap: config.cellGap })
 
     // Month labels
     if (config.showMonthLabels) {
@@ -242,8 +240,7 @@ function renderMonthlyHeatmap(
             const cell = byMonth.get(key)
 
             const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
-            cellEl.style.width = `${config.cellSize * 1.5}px`
-            cellEl.style.height = `${config.cellSize}px`
+            setCssProps(cellEl, { width: config.cellSize * 1.5, height: config.cellSize })
 
             const level = getColorLevelForValue(cell?.value ?? null, data.minValue, data.maxValue)
             cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
@@ -275,10 +272,10 @@ function renderQuarterlyHeatmap(
     config: HeatmapConfig
 ): HTMLElement {
     const wrapper = container.createDiv({ cls: 'lt-heatmap-wrapper lt-heatmap-wrapper--quarterly' })
-    const gridEl = wrapper.createDiv({ cls: 'lt-heatmap-grid lt-heatmap-grid--quarterly' })
-    gridEl.style.gap = `${config.cellGap}px`
-    gridEl.style.display = 'grid'
-    gridEl.style.gridTemplateColumns = 'repeat(4, 1fr)'
+    const gridEl = wrapper.createDiv({
+        cls: 'lt-heatmap-grid lt-heatmap-grid--quarterly lt-grid lt-grid-cols-4'
+    })
+    setCssProps(gridEl, { gap: config.cellGap })
 
     // Quarter labels
     if (config.showMonthLabels) {
@@ -292,8 +289,7 @@ function renderQuarterlyHeatmap(
 
     for (const cell of sortedCells) {
         const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
-        cellEl.style.width = `${config.cellSize * 2}px`
-        cellEl.style.height = `${config.cellSize}px`
+        setCssProps(cellEl, { width: config.cellSize * 2, height: config.cellSize })
 
         const level = getColorLevelForValue(cell.value, data.minValue, data.maxValue)
         cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
@@ -322,15 +318,14 @@ function renderYearlyHeatmap(
 ): HTMLElement {
     const wrapper = container.createDiv({ cls: 'lt-heatmap-wrapper lt-heatmap-wrapper--yearly' })
     const gridEl = wrapper.createDiv({ cls: 'lt-heatmap-grid lt-heatmap-grid--yearly' })
-    gridEl.style.gap = `${config.cellGap}px`
+    setCssProps(gridEl, { gap: config.cellGap })
 
     // Sort cells and render
     const sortedCells = [...data.cells].sort((a, b) => compareAsc(a.date, b.date))
 
     for (const cell of sortedCells) {
         const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
-        cellEl.style.width = `${config.cellSize * 3}px`
-        cellEl.style.height = `${config.cellSize}px`
+        setCssProps(cellEl, { width: config.cellSize * 3, height: config.cellSize })
 
         const level = getColorLevelForValue(cell.value, data.minValue, data.maxValue)
         cellEl.classList.add(`lt-heatmap-cell--level-${level}`)

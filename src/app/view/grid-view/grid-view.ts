@@ -728,6 +728,9 @@ export class GridView extends BasesView implements FileProvider {
             displayValue = value.join(', ')
         } else if (typeof value === 'boolean') {
             displayValue = value ? '✓' : '✗'
+        } else if (typeof value === 'object') {
+            // Handle objects by stringifying to avoid [object Object]
+            displayValue = JSON.stringify(value)
         } else {
             displayValue = String(value)
         }
@@ -808,7 +811,7 @@ export class GridView extends BasesView implements FileProvider {
             return
         }
 
-        this.frontmatterService
+        void this.frontmatterService
             .write(file, { [definition.name]: value })
             .then(() => {
                 log(`Saved ${definition.name} for ${file.basename}`, 'debug')
@@ -817,7 +820,7 @@ export class GridView extends BasesView implements FileProvider {
                 original[definition.name] = value
                 this.originalValues.set(file.path, original)
             })
-            .catch((error) => {
+            .catch((error: unknown) => {
                 log('Failed to save frontmatter', 'error', error)
             })
     }
