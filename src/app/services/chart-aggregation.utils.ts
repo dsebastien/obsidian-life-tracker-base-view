@@ -33,33 +33,71 @@ function isObsidianValue(
     )
 }
 
+/** Max recursion depth for extractDisplayLabel to prevent infinite loops */
+const MAX_LABEL_DEPTH = 10
+
 /**
- * Format a value for display as a timeline label.
- * Handles objects, arrays, and primitives properly.
- * Returns empty string for null/undefined/empty values (never "null" string).
+ * Options for extractDisplayLabel function
  */
-function formatTimelineLabel(value: unknown): string {
+interface ExtractLabelOptions {
+    /** Capitalize boolean values ("true" -> "True", "false" -> "False"). Default: false */
+    capitalizeBoolean?: boolean
+    /** What to return for icon-only objects with no displayable value. Default: null */
+    unknownFallback?: string | null
+}
+
+/**
+ * Extract a display label from any value (Obsidian Value, object, array, primitive).
+ * Unified function for all chart types.
+ *
+ * @param value - The value to extract a label from
+ * @param options - Options for label extraction
+ * @param depth - Current recursion depth (internal use)
+ * @returns Display label string, or null if the value should be skipped
+ */
+function extractDisplayLabel(
+    value: unknown,
+    options: ExtractLabelOptions = {},
+    depth: number = 0
+): string | null {
+    const { capitalizeBoolean = false, unknownFallback = null } = options
+
+    // Prevent infinite recursion
+    if (depth > MAX_LABEL_DEPTH) {
+        return null
+    }
+
     if (value === null || value === undefined) {
-        return ''
+        return null
     }
 
     // Handle Obsidian Value types first - use isTruthy() to check for actual data
     if (isObsidianValue(value)) {
         // If the Value is not truthy, it has no data
         if (!value.isTruthy()) {
-            return ''
+            return null
         }
         // Get the string representation
         const strValue = value.toString().trim()
         if (!strValue || strValue === 'null' || strValue === 'undefined') {
-            return ''
+            return null
+        }
+        // Handle boolean capitalization
+        if (capitalizeBoolean) {
+            if (strValue === 'true') return 'True'
+            if (strValue === 'false') return 'False'
         }
         return strValue
     }
 
     // Handle arrays
     if (Array.isArray(value)) {
-        const filtered = value.map((v) => formatTimelineLabel(v)).filter((v) => v !== '')
+        const filtered = value
+            .map((v) => extractDisplayLabel(v, options, depth + 1))
+            .filter((v): v is string => v !== null && v.length > 0)
+        if (filtered.length === 0) {
+            return null
+        }
         return filtered.join(', ')
     }
 
@@ -78,30 +116,53 @@ function formatTimelineLabel(value: unknown): string {
             obj['text'] ??
             obj['data']
         if (displayValue !== undefined && displayValue !== null) {
-            return formatTimelineLabel(displayValue)
+            return extractDisplayLabel(displayValue, options, depth + 1)
         }
 
         // If this is an internal Obsidian object with only metadata (icon, subpath, etc.)
-        // and no displayable value, return empty string
+        // and no displayable value, try path as fallback
         if ('icon' in obj || 'subpath' in obj) {
-            // Try path as last resort for links
             if ('path' in obj && typeof obj['path'] === 'string') {
                 const path = obj['path'] as string
                 const filename = path.split('/').pop() ?? path
                 return filename.replace(/\.md$/, '')
             }
-            // No displayable value found - treat as empty
-            return ''
+            // No displayable value found - use unknownFallback
+            return unknownFallback
         }
 
         // For other objects, stringify them (shouldn't normally happen)
         return JSON.stringify(value)
     }
 
-    // Primitives - check for "null" string
+    // Primitives - convert to string
     const strValue = String(value).trim()
     if (!strValue || strValue === 'null' || strValue === 'undefined') {
-        return ''
+        return null
+    }
+
+    // Handle boolean capitalization for primitive strings
+    if (capitalizeBoolean) {
+        if (strValue === 'true') return 'True'
+        if (strValue === 'false') return 'False'
+    }
+
+    // Check if this is a stringified internal Obsidian object (like links with icons)
+    if (strValue.startsWith('{') && strValue.endsWith('}')) {
+        if (
+            strValue.includes('"icon"') ||
+            strValue.includes('"subpath"') ||
+            (strValue.includes('"type"') && strValue.includes('"path"'))
+        ) {
+            try {
+                const parsed = JSON.parse(strValue)
+                if (typeof parsed === 'object' && parsed !== null) {
+                    return extractDisplayLabel(parsed, options, depth + 1)
+                }
+            } catch {
+                // Not valid JSON, return as-is
+            }
+        }
     }
 
     return strValue
@@ -163,109 +224,10 @@ export function aggregateForChart(
     }
 }
 
-/** Max recursion depth for valueToLabel to prevent infinite loops */
-const MAX_VALUE_DEPTH = 10
-
-/**
- * Convert a value to a display string for pie chart labels.
- * Returns null if the value should be skipped (internal objects, empty, etc.)
- */
-function valueToLabel(value: unknown, depth: number = 0): string | null {
-    // Prevent infinite recursion
-    if (depth > MAX_VALUE_DEPTH) {
-        return null
-    }
-
-    if (value === null || value === undefined) {
-        return null
-    }
-
-    // Handle arrays - join items, skip if empty
-    if (Array.isArray(value)) {
-        const filtered = value
-            .filter((v) => v !== null && v !== undefined && v !== 'null')
-            .map((v) => valueToLabel(v, depth + 1))
-            .filter((v): v is string => v !== null && v.length > 0)
-        if (filtered.length === 0) {
-            return null
-        }
-        return filtered.join(', ')
-    }
-
-    // Handle objects (including Obsidian's Value type)
-    if (typeof value === 'object') {
-        const obj = value as Record<string, unknown>
-
-        // First, try calling toString() - Obsidian's Value type has a meaningful toString()
-        // that returns the actual value (e.g., "true", "false", "1", "some text")
-        if (typeof obj['toString'] === 'function') {
-            const strValue = String(value).trim()
-            // If toString() returns something meaningful (not [object Object]), use it
-            if (strValue && strValue !== '[object Object]' && !strValue.startsWith('[object ')) {
-                // Capitalize boolean values
-                if (strValue === 'true') return 'True'
-                if (strValue === 'false') return 'False'
-                // Skip null/undefined strings
-                if (strValue === 'null' || strValue === 'undefined') return null
-                return strValue
-            }
-        }
-
-        // For plain objects, try to extract meaningful display value
-        // This handles Obsidian links which have 'display' property
-        // Priority: display > value > name > label > text
-        const displayValue =
-            obj['display'] ?? obj['value'] ?? obj['name'] ?? obj['label'] ?? obj['text']
-        if (displayValue !== undefined && displayValue !== null) {
-            return valueToLabel(displayValue, depth + 1)
-        }
-
-        // If this is an internal Obsidian object with only metadata (icon, subpath, etc.)
-        // and no displayable value, try path as fallback
-        if ('icon' in obj || 'subpath' in obj) {
-            if ('path' in obj && typeof obj['path'] === 'string') {
-                // Extract filename from path
-                const path = obj['path'] as string
-                const filename = path.split('/').pop() ?? path
-                // Remove .md extension if present
-                return filename.replace(/\.md$/, '')
-            }
-            // For icon-only objects (broken links, unresolved references), return "Unknown"
-            // so they are still counted in pie charts rather than being skipped entirely
-            return 'Unknown'
-        }
-
-        // For other objects, stringify them
-        return JSON.stringify(value)
-    }
-
-    // Primitives - convert to string
-    const str = String(value).trim()
-
-    if (!str || str === 'null' || str === 'undefined') {
-        return null
-    }
-
-    // Check if this is a stringified internal Obsidian object (like links with icons)
-    if (str.startsWith('{') && str.endsWith('}')) {
-        if (
-            str.includes('"icon"') ||
-            str.includes('"subpath"') ||
-            (str.includes('"type"') && str.includes('"path"'))
-        ) {
-            try {
-                const parsed = JSON.parse(str)
-                if (typeof parsed === 'object' && parsed !== null) {
-                    // Recursively process the parsed object
-                    return valueToLabel(parsed, depth + 1)
-                }
-            } catch {
-                // Not valid JSON, return as-is
-            }
-        }
-    }
-
-    return str
+/** Options for pie chart labels: capitalize booleans, show "Unknown" for icon-only objects */
+const PIE_CHART_LABEL_OPTIONS: ExtractLabelOptions = {
+    capitalizeBoolean: true,
+    unknownFallback: 'Unknown'
 }
 
 /**
@@ -286,7 +248,7 @@ export function aggregateForPieChart(
         const rawValue = point.value
 
         // Convert raw value to display label, skip if not displayable
-        const valueStr = valueToLabel(rawValue)
+        const valueStr = extractDisplayLabel(rawValue, PIE_CHART_LABEL_OPTIONS)
         if (!valueStr) {
             continue
         }
@@ -499,10 +461,10 @@ export function aggregateForTimeline(
 
     // Create timeline points
     const points: TimelinePoint[] = validPoints.map((p) => {
-        const label = formatTimelineLabel(p.value)
+        // Use unified extractDisplayLabel - null/empty means "No data" in tooltip
+        const label = extractDisplayLabel(p.value) ?? ''
         return {
             date: p.dateAnchor!.date,
-            // Don't fall back to file basename - empty label means "No data" in tooltip
             label,
             value: p.normalizedValue,
             entries: [p.entry]
