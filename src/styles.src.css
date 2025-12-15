@@ -1990,6 +1990,46 @@
     @apply flex-1 mt-3;
 }
 
+/* Input + "Use default" button wrapper (unified container) */
+.lt-carousel-input-with-default {
+    @apply flex items-center rounded-lg border-2 transition-all duration-200 overflow-hidden;
+    background-color: var(--background-primary);
+    border-color: var(--background-modifier-border);
+}
+
+.lt-carousel-input-with-default:focus-within {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.15);
+}
+
+/* Input inside the unified container - remove its own border */
+.lt-carousel-input-with-default .lt-editor-input {
+    @apply border-0 rounded-none flex-1;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.lt-carousel-input-with-default .lt-editor-input:focus {
+    border-color: transparent;
+    box-shadow: none;
+}
+
+/* "Use default" button as integrated suffix */
+.lt-carousel-default-btn {
+    @apply text-xs px-3 py-2 cursor-pointer whitespace-nowrap;
+    @apply transition-all duration-150 flex-shrink-0 self-stretch;
+    @apply flex items-center;
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+    border: none;
+    border-left: 1px solid var(--background-modifier-border);
+}
+
+.lt-carousel-default-btn:hover {
+    background-color: var(--interactive-hover);
+    color: var(--text-normal);
+}
+
 /* Enhanced editor inputs within carousel */
 .lt-carousel-editor .lt-editor-input {
     @apply px-4 py-3 text-base rounded-lg border-2 transition-all duration-200;
@@ -2008,7 +2048,7 @@
 
 .lt-carousel-editor .lt-editor-slider {
     @apply h-4 rounded-full cursor-pointer appearance-none;
-    flex: 3; /* 75% of available space */
+    flex: 3; /* More space for slider */
     /* Use a gradient to create a thin track line centered in the element */
     background: linear-gradient(
         to bottom,
@@ -2039,8 +2079,21 @@
 
 .lt-carousel-editor .lt-editor-input--number {
     @apply text-center py-2 px-2 text-sm;
-    flex: 1; /* 25% of available space */
+    flex: 1;
     min-width: 60px; /* Ensure minimum readability */
+}
+
+/* When input is inside the default button wrapper - constrain width */
+.lt-carousel-editor .lt-carousel-input-with-default .lt-editor-input--number {
+    @apply flex-none;
+    width: 60px;
+    min-width: auto;
+}
+
+/* Input + button wrapper inside number wrapper - constrain width */
+.lt-carousel-editor .lt-editor-number-wrapper .lt-carousel-input-with-default {
+    @apply flex-shrink-0;
+    max-width: 180px;
 }
 
 /* Button for empty state */
@@ -2248,7 +2301,7 @@
     }
 
     .lt-carousel-filter-select {
-        @apply text-[10px] px-1.5 py-0.5;
+        @apply text-[10px] pl-1.5 pr-5 py-0.5;
     }
 
     /* Title */
@@ -2302,6 +2355,16 @@
         @apply mt-2;
     }
 
+    /* Input with default button wrapper on mobile */
+    .lt-carousel-input-with-default {
+        @apply rounded;
+    }
+
+    /* "Use default" button on mobile */
+    .lt-carousel-default-btn {
+        @apply text-[10px] px-2 py-1;
+    }
+
     .lt-carousel-editor .lt-editor-input {
         @apply px-3 py-2 text-sm;
     }
@@ -2319,6 +2382,12 @@
     .lt-carousel-editor .lt-editor-input--number {
         @apply w-full text-center py-1.5 text-sm;
         flex: none;
+        order: 2;
+    }
+
+    /* On mobile, the input-with-default in number wrapper should be full width */
+    .lt-carousel-editor .lt-editor-number-wrapper .lt-carousel-input-with-default {
+        @apply w-full;
         order: 2;
     }
 

@@ -499,6 +499,11 @@ export class PropertyCaptureModal extends Modal {
 
         this.currentEditor.render(editorContainer)
 
+        // "Use default" button integrated into the input (only if default value is configured)
+        if (definition.defaultValue !== null) {
+            this.injectDefaultButton(editorContainer, definition)
+        }
+
         // Focus the editor
         setTimeout(() => {
             this.currentEditor?.focus()
@@ -681,6 +686,55 @@ export class PropertyCaptureModal extends Modal {
         this.currentValue = this.savedValues[newDef?.name ?? '']
 
         this.renderCard()
+    }
+
+    /**
+     * Inject the "Use default" button into the editor's input container.
+     * For number editors with slider: button goes inside number wrapper after input.
+     * For other editors: button wraps with input in a unified container.
+     */
+    private injectDefaultButton(
+        editorContainer: HTMLElement,
+        definition: PropertyDefinition
+    ): void {
+        // Find the number wrapper (for number editors with slider)
+        const numberWrapper = editorContainer.querySelector('.lt-editor-number-wrapper')
+
+        if (numberWrapper) {
+            // Number editor with slider: add button inside the wrapper, after the input
+            const inputWrapper = numberWrapper.createDiv({ cls: 'lt-carousel-input-with-default' })
+            const numberInput = numberWrapper.querySelector('.lt-editor-input--number')
+            if (numberInput) {
+                inputWrapper.appendChild(numberInput)
+            }
+            const btn = inputWrapper.createEl('button', {
+                cls: 'lt-carousel-default-btn',
+                text: 'Use default'
+            })
+            btn.addEventListener('click', () => {
+                this.currentValue = definition.defaultValue
+                this.validateAndNavigateNext()
+            })
+        } else {
+            // Other editors: wrap input with button
+            const input = editorContainer.querySelector(
+                '.lt-editor-input, .lt-editor-select, .lt-editor-toggle, .lt-editor-list'
+            )
+            if (input) {
+                const inputWrapper = document.createElement('div')
+                inputWrapper.className = 'lt-carousel-input-with-default'
+                input.parentNode?.insertBefore(inputWrapper, input)
+                inputWrapper.appendChild(input)
+                const btn = inputWrapper.createEl('button', {
+                    cls: 'lt-carousel-default-btn',
+                    text: 'Use default'
+                })
+                btn.addEventListener('click', () => {
+                    this.currentValue = definition.defaultValue
+                    this.validateAndNavigateNext()
+                })
+            }
+        }
     }
 
     /**

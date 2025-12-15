@@ -609,7 +609,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     private renderDefaultValue(container: HTMLElement, definition: PropertyDefinition): void {
         const setting = new Setting(container)
             .setName('Default value')
-            .setDesc('Value used when creating or resetting')
+            .setDesc('Click "Use default" in capture dialog to apply this value and advance')
 
         switch (definition.type) {
             case 'checkbox':
