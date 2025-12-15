@@ -40,6 +40,17 @@ Priority order for resolving an entry's date:
 - Unconfigured cards are hidden when another card is maximized, but never receive maximize state
 - Escape key minimizes the currently maximized card
 
+## Property Types in Visualizations
+
+Supported property types for visualization rendering:
+
+- `note.*` - frontmatter properties from notes (e.g., `note.energy_level`)
+- `formula.*` - computed formula columns in Bases (e.g., `formula.weekly_average`)
+
+Excluded property types:
+
+- `file.*` - file metadata (path, ctime, mtime) - not suitable for visualizations
+
 ## Release Tags
 
 - Tags MUST NOT have 'v' prefix per Obsidian plugin spec (e.g., `1.0.0` not `v1.0.0`)

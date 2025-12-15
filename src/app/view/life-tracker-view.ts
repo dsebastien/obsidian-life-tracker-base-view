@@ -46,6 +46,25 @@ import { getVisualizationConfig } from './visualization-config.helper'
 const RENDER_BATCH_SIZE = 3
 
 /**
+ * Property prefixes that should NOT be rendered as visualizations.
+ * - file.* properties are Obsidian file metadata (path, ctime, mtime, etc.)
+ *
+ * Properties that ARE rendered:
+ * - note.* properties (frontmatter properties from notes)
+ * - formula.* properties (computed formula columns in Bases)
+ * - Any other custom property types
+ */
+const EXCLUDED_PROPERTY_PREFIXES = ['file.']
+
+/**
+ * Check if a property should be rendered as a visualization.
+ * Includes note properties, formula properties, and any other non-excluded types.
+ */
+function shouldRenderProperty(propertyId: BasesPropertyId): boolean {
+    return !EXCLUDED_PROPERTY_PREFIXES.some((prefix) => propertyId.startsWith(prefix))
+}
+
+/**
  * View type identifier
  */
 export const LIFE_TRACKER_VIEW_TYPE = 'life-tracker'
@@ -270,8 +289,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
         this.cacheService.setDateAnchors(dateAnchors)
 
-        // Filter properties to render (skip file properties)
-        const propertiesToRender = propertyIds.filter((id) => !id.startsWith('file.'))
+        // Filter properties to render (includes note.*, formula.*, excludes file.*)
+        const propertiesToRender = propertyIds.filter(shouldRenderProperty)
 
         // Use async batched rendering to prevent UI freezing
         void this.renderPropertiesAsync(propertiesToRender, entries, dateAnchors, renderCycle)
@@ -287,8 +306,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Can't do incremental if grid doesn't exist
         if (!this.gridEl) return false
 
-        // Filter to renderable properties (not file.* properties)
-        const filteredIds = propertyIds.filter((id) => !id.startsWith('file.'))
+        // Filter to renderable properties (includes note.*, formula.*, excludes file.*)
+        const filteredIds = propertyIds.filter(shouldRenderProperty)
 
         // Check if any existing visualization is for a property no longer in the list
         // (property was removed from the view)
@@ -303,20 +322,20 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // or if visualization type has changed
         for (const propertyId of filteredIds) {
             const existingViz = this.visualizations.get(propertyId)
+
+            if (!existingViz) {
+                // New property added - need full refresh to create its card
+                // (whether it has a config or not - unconfigured shows config card)
+                return false
+            }
+
+            // Check if visualization type has changed for existing visualizations
             const displayName = this.config.getDisplayName(propertyId)
             const effectiveConfig = this.columnConfigService.getEffectiveConfig(
                 propertyId,
                 displayName
             )
-
-            if (!existingViz) {
-                // Check if this property now has a config (new preset match, etc.)
-                if (effectiveConfig) {
-                    // Property now has config but no visualization - need full refresh
-                    return false
-                }
-            } else if (effectiveConfig) {
-                // Check if visualization type has changed
+            if (effectiveConfig) {
                 const currentType = this.visualizationTypes.get(propertyId)
                 if (currentType && currentType !== effectiveConfig.config.visualizationType) {
                     return false
