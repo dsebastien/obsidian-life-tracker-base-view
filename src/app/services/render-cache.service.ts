@@ -12,35 +12,59 @@ import type { ResolvedDateAnchor, VisualizationDataPoint } from '../types'
 export class RenderCacheService {
     private dateAnchorsCache: Map<BasesEntry, ResolvedDateAnchor | null> | null = null
     private dataPointsCache: Map<BasesPropertyId, VisualizationDataPoint[]> = new Map()
-    private entriesHash: string = ''
+    private cachedEntries: WeakRef<BasesEntry>[] = []
 
     /**
      * Start a new render cycle. Invalidates caches if data changed.
      * Must be called at the beginning of each onDataUpdated().
+     *
+     * The dateAnchors cache uses BasesEntry objects as Map keys.
+     * When Obsidian updates data, it may provide new BasesEntry objects
+     * even for the same files. We must detect this to avoid stale lookups.
      */
     startRenderCycle(entries: BasesEntry[]): void {
-        // Compute a simple hash of entries to detect data changes
-        const newHash = this.computeEntriesHash(entries)
+        // Check if the entry objects themselves changed (not just the data)
+        // This is critical because dateAnchors Map uses BasesEntry as keys
+        const entriesChanged = this.haveEntriesChanged(entries)
 
-        // Only clear caches if entries actually changed
-        if (newHash !== this.entriesHash) {
+        if (entriesChanged) {
+            // Entry objects changed - must invalidate dateAnchors cache
+            // (Map lookup would fail with new entry objects)
             this.dateAnchorsCache = null
             this.dataPointsCache.clear()
-            this.entriesHash = newHash
+            this.updateCachedEntries(entries)
         }
     }
 
     /**
-     * Compute a hash of entries for change detection
+     * Check if entry objects have changed (new object references)
      */
-    private computeEntriesHash(entries: BasesEntry[]): string {
-        // Use entry count and first/last file paths as a quick hash
-        // This is fast and catches most changes
-        if (entries.length === 0) return 'empty'
+    private haveEntriesChanged(entries: BasesEntry[]): boolean {
+        // Different count = definitely changed
+        if (entries.length !== this.cachedEntries.length) {
+            return true
+        }
 
-        const first = entries[0]
-        const last = entries[entries.length - 1]
-        return `${entries.length}:${first?.file.path ?? ''}:${last?.file.path ?? ''}`
+        // Check if all entries are the same object references
+        for (let i = 0; i < entries.length; i++) {
+            const cachedRef = this.cachedEntries[i]
+            const cachedEntry = cachedRef?.deref()
+            const currentEntry = entries[i]
+
+            // If cached entry was garbage collected or doesn't match, entries changed
+            if (!cachedEntry || cachedEntry !== currentEntry) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Update cached entry references
+     */
+    private updateCachedEntries(entries: BasesEntry[]): void {
+        this.cachedEntries = entries.map((entry) => new WeakRef(entry))
     }
 
     /**
@@ -77,6 +101,6 @@ export class RenderCacheService {
     clearAll(): void {
         this.dateAnchorsCache = null
         this.dataPointsCache.clear()
-        this.entriesHash = ''
+        this.cachedEntries = []
     }
 }
