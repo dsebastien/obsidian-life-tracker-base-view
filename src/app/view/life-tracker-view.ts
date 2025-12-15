@@ -46,22 +46,15 @@ import { getVisualizationConfig } from './visualization-config.helper'
 const RENDER_BATCH_SIZE = 3
 
 /**
- * Property prefixes that should NOT be rendered as visualizations.
- * - file.* properties are Obsidian file metadata (path, ctime, mtime, etc.)
- *
- * Properties that ARE rendered:
+ * Check if a property should be rendered as a visualization.
+ * All property types are supported:
  * - note.* properties (frontmatter properties from notes)
  * - formula.* properties (computed formula columns in Bases)
- * - Any other custom property types
+ * - file.* properties (file metadata: ctime, mtime, size, path, etc.)
  */
-const EXCLUDED_PROPERTY_PREFIXES = ['file.']
-
-/**
- * Check if a property should be rendered as a visualization.
- * Includes note properties, formula properties, and any other non-excluded types.
- */
-function shouldRenderProperty(propertyId: BasesPropertyId): boolean {
-    return !EXCLUDED_PROPERTY_PREFIXES.some((prefix) => propertyId.startsWith(prefix))
+function shouldRenderProperty(_propertyId: BasesPropertyId): boolean {
+    // All properties are now supported for visualization
+    return true
 }
 
 /**

@@ -42,14 +42,11 @@ Priority order for resolving an entry's date:
 
 ## Property Types in Visualizations
 
-Supported property types for visualization rendering:
+All property types are supported for visualization rendering:
 
 - `note.*` - frontmatter properties from notes (e.g., `note.energy_level`)
 - `formula.*` - computed formula columns in Bases (e.g., `formula.weekly_average`)
-
-Excluded property types:
-
-- `file.*` - file metadata (path, ctime, mtime) - not suitable for visualizations
+- `file.*` - file metadata (e.g., `file.ctime`, `file.mtime`, `file.size`)
 
 ## Release Tags
 
