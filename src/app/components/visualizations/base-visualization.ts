@@ -111,6 +111,15 @@ export abstract class BaseVisualization {
     }
 
     /**
+     * Stop animation if one is currently playing
+     */
+    stopAnimationIfPlaying(): void {
+        if (this.animationState === 'playing') {
+            this.stopAnimation()
+        }
+    }
+
+    /**
      * Update the play button icon based on animation state
      */
     protected updatePlayButtonIcon(): void {
@@ -252,6 +261,9 @@ export abstract class BaseVisualization {
      * Trigger maximize toggle with current state
      */
     protected triggerMaximizeToggle(): void {
+        // Stop any ongoing animation before maximize/minimize
+        this.stopAnimationIfPlaying()
+
         if (this.onMaximizeToggle) {
             this.onMaximizeToggle(this.propertyId, !this.isMaximized)
         }

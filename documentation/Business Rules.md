@@ -48,6 +48,10 @@ All property types are supported for visualization rendering:
 - `formula.*` - computed formula columns in Bases (e.g., `formula.weekly_average`)
 - `file.*` - file metadata (e.g., `file.ctime`, `file.mtime`, `file.size`)
 
+## Animation and State Transitions
+
+- Ongoing animations must be stopped before maximizing or minimizing a visualization
+
 ## Release Tags
 
 - Tags MUST NOT have 'v' prefix per Obsidian plugin spec (e.g., `1.0.0` not `v1.0.0`)
