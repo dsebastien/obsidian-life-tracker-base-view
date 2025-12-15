@@ -3,5 +3,4 @@
  */
 export interface GridSettings {
     columns: number
-    cardMinHeight: number
 }

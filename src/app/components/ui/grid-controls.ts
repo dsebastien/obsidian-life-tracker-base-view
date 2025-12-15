@@ -5,8 +5,7 @@ import type { GridSettings, GridSettingsChangeCallback } from '../../types'
  * Default grid settings
  */
 export const DEFAULT_GRID_SETTINGS: GridSettings = {
-    columns: 2,
-    cardMinHeight: 200
+    columns: 2
 }
 
 /**
@@ -29,21 +28,6 @@ export function createGridControls(
 
     // Columns control
     createColumnsControl(controlsRight, settings, onChange)
-
-    // Height control
-    createSliderControl(
-        controlsRight,
-        'Height',
-        'arrow-up-down',
-        settings.cardMinHeight,
-        100,
-        400,
-        50,
-        (value) => {
-            settings.cardMinHeight = value
-            onChange(settings)
-        }
-    )
 
     return controlBar
 }
@@ -90,40 +74,5 @@ function createColumnsControl(
             valueEl.textContent = String(settings.columns)
             onChange(settings)
         }
-    })
-}
-
-/**
- * Creates a slider control with icon and label
- */
-function createSliderControl(
-    container: HTMLElement,
-    _label: string,
-    icon: string,
-    initialValue: number,
-    min: number,
-    max: number,
-    step: number,
-    onUpdate: (value: number) => void
-): void {
-    const group = container.createDiv({ cls: 'lt-control-group' })
-
-    // Icon
-    const iconEl = group.createDiv({ cls: 'lt-control-icon' })
-    setIcon(iconEl, icon)
-
-    // Slider
-    const slider = group.createEl('input', {
-        cls: 'lt-control-slider',
-        type: 'range'
-    })
-    slider.min = String(min)
-    slider.max = String(max)
-    slider.step = String(step)
-    slider.value = String(initialValue)
-
-    // Event handler
-    slider.addEventListener('input', () => {
-        onUpdate(parseInt(slider.value, 10))
     })
 }

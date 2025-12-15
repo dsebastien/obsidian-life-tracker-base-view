@@ -24,7 +24,6 @@ Configured via Obsidian's view options UI.
 | `showMonthLabels`    | boolean         | `true`  | Show month labels on heatmaps |
 | `heatmapColorScheme` | string          | `green` | Heatmap color preset          |
 | `gridColumns`        | number          | `3`     | Grid columns (1-6)            |
-| `cardMinHeight`      | number          | `300`   | Card minimum height (px)      |
 | `showLegend`         | boolean         | `true`  | Show chart legends            |
 
 ## Per-Column Config (Per-View)

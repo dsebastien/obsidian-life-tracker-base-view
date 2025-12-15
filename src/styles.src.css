@@ -174,9 +174,8 @@
 
 .lt-grid {
     @apply grid gap-4;
-    /* CSS custom properties set by JS */
+    /* CSS custom property set by JS */
     --lt-grid-columns: 2;
-    --lt-card-min-height: 200px;
     grid-template-columns: repeat(var(--lt-grid-columns), 1fr);
 }
 
@@ -188,7 +187,7 @@
     @apply rounded-lg p-4 overflow-hidden;
     background-color: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
-    min-height: var(--lt-card-min-height, 200px);
+    min-height: 200px;
 }
 
 .lt-card:hover {

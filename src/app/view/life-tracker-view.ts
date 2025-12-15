@@ -251,9 +251,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Load grid settings from config
         const savedColumns = this.config.get('gridColumns') as number | undefined
-        const savedCardHeight = this.config.get('cardMinHeight') as number | undefined
         this.gridSettings.columns = savedColumns ?? DEFAULT_GRID_COLUMNS
-        this.gridSettings.cardMinHeight = savedCardHeight ?? DEFAULT_GRID_SETTINGS.cardMinHeight
 
         // Create control bar at the top
         createGridControls(this.containerEl, this.gridSettings, (settings) => {
@@ -264,7 +262,6 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
             // Persist grid settings to view config
             this.config.set('gridColumns', settings.columns)
-            this.config.set('cardMinHeight', settings.cardMinHeight)
 
             // Reset flag after config updates
             this.isUpdatingGridSettings = false
@@ -720,11 +717,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private applyGridSettings(): void {
         if (!this.gridEl) return
 
-        const { columns, cardMinHeight } = this.gridSettings
+        const { columns } = this.gridSettings
 
         // Set CSS custom properties for grid layout
         this.gridEl.style.setProperty('--lt-grid-columns', String(columns))
-        this.gridEl.style.setProperty('--lt-card-min-height', `${cardMinHeight}px`)
     }
 
     /**
