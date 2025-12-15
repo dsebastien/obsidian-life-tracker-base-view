@@ -83,8 +83,14 @@ export class GridView extends BasesView implements FileProvider {
     private scrollHandler: (() => void) | null = null
     private resizeObserver: ResizeObserver | null = null
 
+    /** Timestamp of last save operation (used to ignore data updates during cooldown) */
+    private lastSaveTimestamp: number = 0
+
     /** Debounce delay for auto-save in milliseconds */
     private static readonly AUTO_SAVE_DEBOUNCE_MS = 500
+
+    /** Time to ignore data updates after saving (prevents focus loss) */
+    private static readonly SAVE_COOLDOWN_MS = 1000
 
     /** Row height in pixels (must match CSS) */
     private static readonly ROW_HEIGHT = 32
@@ -216,6 +222,13 @@ export class GridView extends BasesView implements FileProvider {
      */
     override onDataUpdated(): void {
         log('GridView onDataUpdated', 'debug')
+
+        // Skip re-render during save cooldown to prevent focus loss
+        const timeSinceLastSave = Date.now() - this.lastSaveTimestamp
+        if (timeSinceLastSave < GridView.SAVE_COOLDOWN_MS) {
+            log('Skipping re-render during save cooldown', 'debug')
+            return
+        }
 
         // Clean up existing editors and timers
         this.destroyEditors()
@@ -795,6 +808,9 @@ export class GridView extends BasesView implements FileProvider {
             log(`Skipping save for ${definition.name}: ${validation.error}`, 'debug')
             return
         }
+
+        // Track save time to prevent re-renders during cooldown
+        this.lastSaveTimestamp = Date.now()
 
         void this.frontmatterService
             .write(file, { [definition.name]: value })
