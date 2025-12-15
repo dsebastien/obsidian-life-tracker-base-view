@@ -106,7 +106,10 @@ export class TimelineVisualization extends BaseVisualization {
         if (!this.timelineEl || !this.timelineData) return
 
         const pointEl = this.timelineEl.createDiv({ cls: 'lt-timeline-point' })
-        pointEl.style.left = `${positionPercent}%`
+        // Position within the line area (line has 1rem offset on each side)
+        // At 0%: left = 1rem, at 100%: left = calc(100% - 1rem)
+        const paddingOffset = positionPercent * 0.02
+        pointEl.style.left = `calc(${positionPercent}% + 1rem - ${paddingOffset}rem)`
 
         // Scale point size by entry count
         const baseSize = 12

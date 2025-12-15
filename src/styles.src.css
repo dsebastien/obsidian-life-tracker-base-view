@@ -803,11 +803,11 @@
 }
 
 .lt-timeline-label--start {
-    left: 0;
+    left: 1rem;
 }
 
 .lt-timeline-label--end {
-    right: 0;
+    right: 1rem;
 }
 
 /* ========================================
@@ -816,7 +816,7 @@
 
 /* Tooltip */
 .lt-tooltip {
-    @apply absolute z-50 px-3 py-2 rounded-lg shadow-lg;
+    @apply fixed z-50 px-3 py-2 rounded-lg shadow-lg;
     @apply text-sm pointer-events-none;
     @apply opacity-0 transition-opacity duration-150;
     transform: translate(-50%, -100%);
