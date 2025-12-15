@@ -1,3 +1,24 @@
+## [1.6.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.5.0...1.6.0) (2025-12-15)
+
+### Features
+
+* **all:** added support for rendering visualizations for formulas ([a313a66](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a313a661c5d84e0206244f6964a23f941eed0ad6))
+* **all:** added support for rendering visualizing properties (eg file tags as a cloud) ([0c860ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/0c860ff6805cf7f9dd9abeb0a5dca0ff3f78fd6f))
+* **all:** better handled different chart types and fixed rendering ([3f2294e](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/3f2294ed45c4514931588bc69accb4ba9358146f))
+* **all:** enabled reordering property definitions ([c0e3607](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c0e3607e7eb8451df947fd95c9d4bf6769407caf))
+* **all:** harmonized label generation across all chart types ([0901709](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/0901709d92bf37cd9ceefaf4194ad0218b12f60a))
+* **all:** normalized chart sizes ([5b02b7d](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/5b02b7dd52f288f0148be24c592b107da585165e))
+* **all:** reduced the number of visualization re-renders after configuration or data changes ([1d1771c](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1d1771c5cc717f3839805c6f00859bc2e7a1fd4c))
+* **all:** removed the card height setting in the Life Tracker Base view ([07a13ea](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/07a13eafdcae278a90fbae5bdc1c9cdfd453f1b8))
+
+### Bug Fixes
+
+* **all:** added some delay to validations in the grid to avoid losing input focus too quickly ([928c998](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/928c9982a359bba509e994da6da581a3c66fb15b))
+* **all:** fixed issue where the visualization context menu did not reflect the current state ([457fe92](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/457fe925f0635f1024f8b9611ec3e8f8ca0dda09)), closes [#38](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/38)
+* **all:** fixed label positioning for timeline chart ([a46ab1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a46ab1f35e2b74403432bf96b49d0dec4025a8c0))
+* **all:** fixed labels for timeline charts ([bacce60](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/bacce60578df992e84104aabc6f908f045b19b77))
+* **all:** stop animations when maximizing/minimizing charts ([56e9a61](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/56e9a61037bfb1082085e9e1e902d41f00a53c31))
+* **all:** the cached data is now updated correctly when base data changes ([3d25480](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/3d25480687c9ffa6c7d8fdecc870bb13b5060c38))
 ## [1.5.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.4.0...1.5.0) (2025-12-14)
 
 ### Features
