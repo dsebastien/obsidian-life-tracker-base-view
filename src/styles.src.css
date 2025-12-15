@@ -1120,8 +1120,15 @@
 }
 
 .lt-editor-slider {
-    @apply flex-1 h-2 rounded-full cursor-pointer appearance-none;
-    background-color: var(--background-modifier-border);
+    @apply flex-1 h-4 rounded-full cursor-pointer appearance-none;
+    /* Use a gradient to create a thin track line centered in the element */
+    background: linear-gradient(
+        to bottom,
+        transparent calc(50% - 4px),
+        var(--background-modifier-border) calc(50% - 4px),
+        var(--background-modifier-border) calc(50% + 4px),
+        transparent calc(50% + 4px)
+    );
 }
 
 .lt-editor-slider::-webkit-slider-thumb {
@@ -1617,11 +1624,201 @@
 }
 
 .lt-grid-view-td .lt-editor-slider {
-    @apply h-1;
+    @apply h-3;
+    background: linear-gradient(
+        to bottom,
+        transparent calc(50% - 2px),
+        var(--background-modifier-border) calc(50% - 2px),
+        var(--background-modifier-border) calc(50% + 2px),
+        transparent calc(50% + 2px)
+    );
+}
+
+.lt-grid-view-td .lt-editor-slider::-webkit-slider-thumb {
+    @apply w-3 h-3;
+}
+
+.lt-grid-view-td .lt-editor-slider::-moz-range-thumb {
+    @apply w-3 h-3;
 }
 
 .lt-grid-view-td .lt-editor-input--number {
     @apply w-12 text-center;
+}
+
+/* ========================================
+   GRID VIEW - MOBILE CARD LAYOUT
+   ======================================== */
+
+/* Mobile: transform table into card-based layout */
+@media (max-width: 640px) {
+    .lt-grid-view-container {
+        @apply p-2;
+    }
+
+    /* Hide the table on mobile */
+    .lt-grid-view-table-wrapper,
+    .lt-grid-view-fixed-header-wrapper {
+        @apply hidden;
+    }
+
+    /* Show the mobile card container */
+    .lt-grid-view-mobile-container {
+        @apply flex flex-col gap-3;
+    }
+}
+
+/* Desktop: hide mobile container */
+.lt-grid-view-mobile-container {
+    @apply hidden;
+}
+
+@media (max-width: 640px) {
+    .lt-grid-view-mobile-container {
+        @apply flex;
+    }
+}
+
+/* Mobile card styles */
+.lt-grid-view-card {
+    @apply rounded-lg overflow-hidden;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.lt-grid-view-card--has-issues {
+    border-color: rgba(255, 100, 100, 0.3);
+    background-color: rgba(255, 100, 100, 0.02);
+}
+
+.lt-grid-view-card-header {
+    @apply flex items-center justify-between px-3 py-2;
+    background-color: var(--background-primary-alt);
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-grid-view-card-title {
+    @apply text-sm font-semibold truncate cursor-pointer;
+    color: var(--text-accent);
+    max-width: calc(100% - 40px);
+}
+
+.lt-grid-view-card-title:active {
+    @apply underline;
+}
+
+.lt-grid-view-card-toggle {
+    @apply w-7 h-7 flex items-center justify-center rounded cursor-pointer;
+    @apply transition-transform duration-200;
+    color: var(--text-muted);
+}
+
+.lt-grid-view-card-toggle:active {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-grid-view-card-toggle--collapsed {
+    transform: rotate(-90deg);
+}
+
+.lt-grid-view-card-body {
+    @apply flex flex-col;
+}
+
+.lt-grid-view-card-body--collapsed {
+    @apply hidden;
+}
+
+.lt-grid-view-card-row {
+    @apply flex flex-col gap-1 px-3 py-2;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-grid-view-card-row:last-child {
+    border-bottom: none;
+}
+
+.lt-grid-view-card-row--na {
+    @apply opacity-50;
+}
+
+.lt-grid-view-card-label {
+    @apply flex items-center gap-1 text-xs font-medium;
+    color: var(--text-muted);
+}
+
+.lt-grid-view-card-label-required {
+    color: var(--text-error);
+}
+
+.lt-grid-view-card-value {
+    @apply mt-1;
+}
+
+.lt-grid-view-card-na {
+    @apply text-xs italic;
+    color: var(--text-faint);
+}
+
+/* Mobile card editors - larger touch targets */
+.lt-grid-view-card-value .lt-editor-input {
+    @apply w-full px-3 py-2 text-sm;
+    min-height: 40px;
+}
+
+.lt-grid-view-card-value .lt-editor-select {
+    @apply w-full px-3 py-2 text-sm;
+    min-height: 40px;
+}
+
+.lt-grid-view-card-value .lt-editor-toggle {
+    @apply scale-100;
+}
+
+.lt-grid-view-card-value .lt-editor-list {
+    @apply min-h-[40px] p-1.5;
+}
+
+.lt-grid-view-card-value .lt-editor-list-pill {
+    @apply text-xs px-2 py-0.5;
+}
+
+.lt-grid-view-card-value .lt-editor-list-input {
+    @apply text-sm min-w-[80px];
+}
+
+.lt-grid-view-card-value .lt-editor-number-wrapper {
+    @apply flex-col gap-2;
+}
+
+.lt-grid-view-card-value .lt-editor-slider {
+    @apply h-5 w-full;
+    background: linear-gradient(
+        to bottom,
+        transparent calc(50% - 3px),
+        var(--background-modifier-border) calc(50% - 3px),
+        var(--background-modifier-border) calc(50% + 3px),
+        transparent calc(50% + 3px)
+    );
+}
+
+.lt-grid-view-card-value .lt-editor-slider::-webkit-slider-thumb {
+    @apply w-5 h-5;
+}
+
+.lt-grid-view-card-value .lt-editor-slider::-moz-range-thumb {
+    @apply w-5 h-5;
+}
+
+.lt-grid-view-card-value .lt-editor-input--number {
+    @apply w-full text-center;
+}
+
+/* Mobile empty state */
+.lt-grid-view-mobile-empty {
+    @apply text-sm py-8 px-4 text-center rounded;
+    color: var(--text-muted);
+    background-color: var(--background-secondary);
 }
 
 /* ========================================
@@ -1810,29 +2007,25 @@
 }
 
 .lt-carousel-editor .lt-editor-slider {
-    @apply h-1.5 rounded-full cursor-pointer appearance-none;
+    @apply h-4 rounded-full cursor-pointer appearance-none;
     flex: 3; /* 75% of available space */
-    background-color: var(--background-modifier-border);
-}
-
-.lt-carousel-editor .lt-editor-slider::-webkit-slider-runnable-track {
-    @apply h-1.5 rounded-full;
-    background-color: var(--background-modifier-border);
+    /* Use a gradient to create a thin track line centered in the element */
+    background: linear-gradient(
+        to bottom,
+        transparent calc(50% - 3px),
+        var(--background-modifier-border) calc(50% - 3px),
+        var(--background-modifier-border) calc(50% + 3px),
+        transparent calc(50% + 3px)
+    );
 }
 
 .lt-carousel-editor .lt-editor-slider::-webkit-slider-thumb {
     @apply w-4 h-4 rounded-full cursor-pointer appearance-none transition-transform duration-150;
     background-color: var(--interactive-accent);
-    margin-top: -5px;
 }
 
 .lt-carousel-editor .lt-editor-slider:hover::-webkit-slider-thumb {
     @apply scale-110;
-}
-
-.lt-carousel-editor .lt-editor-slider::-moz-range-track {
-    @apply h-1.5 rounded-full;
-    background-color: var(--background-modifier-border);
 }
 
 .lt-carousel-editor .lt-editor-slider::-moz-range-thumb {

@@ -7,7 +7,8 @@ import {
     BooleanValue,
     NumberValue,
     ListValue,
-    NullValue
+    NullValue,
+    setIcon
 } from 'obsidian'
 import type { LifeTrackerPlugin } from '../../plugin'
 import type {
@@ -86,6 +87,23 @@ export class GridView extends BasesView implements FileProvider {
     /** Timestamp of last save operation (used to ignore data updates during cooldown) */
     private lastSaveTimestamp: number = 0
 
+    // Mobile view state
+    private mobileContainerEl: HTMLElement | null = null
+    private isMobileView: boolean = false
+    private collapsedCards: Set<string> = new Set() // Track collapsed card file paths
+
+    // Mobile virtual scrolling state
+    private mobileSpacerTopEl: HTMLElement | null = null
+    private mobileSpacerBottomEl: HTMLElement | null = null
+    private mobileCardElements: Map<number, HTMLElement> = new Map()
+    private mobileVisibleStartIndex: number = -1
+    private mobileVisibleEndIndex: number = -1
+    private mobileRenderedIndices: Set<number> = new Set()
+    private mobileScrollHandler: (() => void) | null = null
+
+    // Viewport observer cleanup
+    private viewportCleanup: (() => void) | null = null
+
     /** Debounce delay for auto-save in milliseconds */
     private static readonly AUTO_SAVE_DEBOUNCE_MS = 500
 
@@ -97,6 +115,15 @@ export class GridView extends BasesView implements FileProvider {
 
     /** Number of rows to render above/below viewport as buffer */
     private static readonly BUFFER_ROWS = 5
+
+    /** Mobile breakpoint in pixels (matches CSS media query) */
+    private static readonly MOBILE_BREAKPOINT = 640
+
+    /** Estimated card height for mobile virtual scrolling (collapsed) */
+    private static readonly CARD_HEIGHT_COLLAPSED = 44
+
+    /** Estimated card height per property row */
+    private static readonly CARD_ROW_HEIGHT = 72
 
     constructor(controller: QueryController, scrollEl: HTMLElement, plugin: LifeTrackerPlugin) {
         super(controller)
@@ -318,9 +345,80 @@ export class GridView extends BasesView implements FileProvider {
     }
 
     /**
-     * Render the table with virtual scrolling
+     * Check if current viewport is mobile-sized
+     */
+    private checkMobileView(): boolean {
+        return window.innerWidth < GridView.MOBILE_BREAKPOINT
+    }
+
+    /**
+     * Render the appropriate view based on viewport size
      */
     private render(): void {
+        this.isMobileView = this.checkMobileView()
+
+        if (this.isMobileView) {
+            this.renderMobileView()
+        } else {
+            this.renderDesktopView()
+        }
+
+        // Setup resize observer to switch between views
+        this.setupViewportObserver()
+    }
+
+    /**
+     * Setup observer to detect viewport size changes
+     */
+    private setupViewportObserver(): void {
+        // Use matchMedia for efficient viewport detection
+        const mediaQuery = window.matchMedia(`(max-width: ${GridView.MOBILE_BREAKPOINT - 1}px)`)
+
+        const handleChange = (e: MediaQueryListEvent | MediaQueryList): void => {
+            const newIsMobile = e.matches
+            if (newIsMobile !== this.isMobileView) {
+                this.isMobileView = newIsMobile
+                // Re-render with new layout
+                this.destroyEditors()
+                this.cleanupVirtualScrolling()
+                this.containerEl.empty()
+                this.mobileContainerEl = null
+                this.tableWrapperEl = null
+                this.tableEl = null
+                this.theadEl = null
+                this.tbodyEl = null
+                this.fixedHeaderWrapperEl = null
+                this.spacerTopEl = null
+                this.spacerBottomEl = null
+                this.rowElements.clear()
+                this.renderedRowIndices.clear()
+                // Reset visible indices to force re-render
+                this.visibleStartIndex = -1
+                this.visibleEndIndex = -1
+
+                if (this.isMobileView) {
+                    this.renderMobileView()
+                } else {
+                    this.renderDesktopView()
+                }
+            }
+        }
+
+        // Initial check is already done in render()
+        // Add listener for changes
+        mediaQuery.addEventListener('change', handleChange)
+
+        // Store cleanup function separately (not in cleanupVirtualScrolling)
+        // so view switches don't remove the listener
+        this.viewportCleanup = (): void => {
+            mediaQuery.removeEventListener('change', handleChange)
+        }
+    }
+
+    /**
+     * Render the desktop table view with virtual scrolling
+     */
+    private renderDesktopView(): void {
         // Create fixed header wrapper (hidden initially)
         this.fixedHeaderWrapperEl = this.containerEl.createDiv({
             cls: 'lt-grid-view-fixed-header-wrapper lt-hidden'
@@ -354,6 +452,379 @@ export class GridView extends BasesView implements FileProvider {
 
         // Initial render
         this.updateVisibleRows()
+    }
+
+    /**
+     * Render the mobile card-based view with virtual scrolling
+     */
+    private renderMobileView(): void {
+        // Create mobile container
+        this.mobileContainerEl = this.containerEl.createDiv({
+            cls: 'lt-grid-view-mobile-container'
+        })
+
+        // Top spacer for virtual scrolling
+        this.mobileSpacerTopEl = this.mobileContainerEl.createDiv({
+            cls: 'lt-grid-view-mobile-spacer'
+        })
+
+        // Bottom spacer for virtual scrolling
+        this.mobileSpacerBottomEl = this.mobileContainerEl.createDiv({
+            cls: 'lt-grid-view-mobile-spacer'
+        })
+
+        // Setup virtual scrolling
+        this.setupMobileVirtualScrolling()
+
+        // Initial render
+        this.updateVisibleMobileCards()
+    }
+
+    /**
+     * Setup virtual scrolling for mobile cards
+     */
+    private setupMobileVirtualScrolling(): void {
+        const scrollContainer = this.scrollEl
+
+        let ticking = false
+        this.mobileScrollHandler = (): void => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    this.updateVisibleMobileCards()
+                    ticking = false
+                })
+                ticking = true
+            }
+        }
+
+        scrollContainer.addEventListener('scroll', this.mobileScrollHandler, { passive: true })
+    }
+
+    /**
+     * Estimate card height based on collapsed state and property count
+     */
+    private estimateCardHeight(filePath: string): number {
+        if (this.collapsedCards.has(filePath)) {
+            return GridView.CARD_HEIGHT_COLLAPSED
+        }
+        // Header + properties
+        return (
+            GridView.CARD_HEIGHT_COLLAPSED +
+            this.activeDefinitions.length * GridView.CARD_ROW_HEIGHT
+        )
+    }
+
+    /**
+     * Update which mobile cards are visible and render them
+     */
+    private updateVisibleMobileCards(): void {
+        if (!this.mobileContainerEl || !this.mobileSpacerTopEl || !this.mobileSpacerBottomEl) return
+
+        const totalCards = this.filteredEntries.length
+        if (totalCards === 0) return
+
+        const scrollContainer = this.scrollEl
+        const scrollTop = scrollContainer.scrollTop
+        const viewportHeight = scrollContainer.clientHeight
+        const bufferCards = GridView.BUFFER_ROWS
+
+        // Calculate cumulative heights to find visible range
+        let cumulativeHeight = 0
+        let startIndex = 0
+        let endIndex = totalCards - 1
+
+        // Find start index
+        for (let i = 0; i < totalCards; i++) {
+            const entry = this.filteredEntries[i]
+            if (!entry) continue
+            const cardHeight = this.estimateCardHeight(entry.file.path)
+            if (cumulativeHeight + cardHeight >= scrollTop) {
+                startIndex = Math.max(0, i - bufferCards)
+                break
+            }
+            cumulativeHeight += cardHeight
+        }
+
+        // Find end index
+        cumulativeHeight = 0
+        for (let i = 0; i < totalCards; i++) {
+            const entry = this.filteredEntries[i]
+            if (!entry) continue
+            cumulativeHeight += this.estimateCardHeight(entry.file.path)
+            if (cumulativeHeight >= scrollTop + viewportHeight) {
+                endIndex = Math.min(totalCards - 1, i + bufferCards)
+                break
+            }
+        }
+
+        // Skip if range hasn't changed
+        if (
+            startIndex === this.mobileVisibleStartIndex &&
+            endIndex === this.mobileVisibleEndIndex
+        ) {
+            return
+        }
+
+        this.mobileVisibleStartIndex = startIndex
+        this.mobileVisibleEndIndex = endIndex
+
+        // Calculate spacer heights
+        let topSpacerHeight = 0
+        for (let i = 0; i < startIndex; i++) {
+            const entry = this.filteredEntries[i]
+            if (entry) {
+                topSpacerHeight += this.estimateCardHeight(entry.file.path)
+            }
+        }
+
+        let bottomSpacerHeight = 0
+        for (let i = endIndex + 1; i < totalCards; i++) {
+            const entry = this.filteredEntries[i]
+            if (entry) {
+                bottomSpacerHeight += this.estimateCardHeight(entry.file.path)
+            }
+        }
+
+        this.mobileSpacerTopEl.style.height = `${topSpacerHeight}px`
+        this.mobileSpacerBottomEl.style.height = `${bottomSpacerHeight}px`
+
+        // Determine which cards need to be added/removed
+        const newVisibleIndices = new Set<number>()
+        for (let i = startIndex; i <= endIndex; i++) {
+            newVisibleIndices.add(i)
+        }
+
+        // Remove cards that are no longer visible
+        for (const index of this.mobileRenderedIndices) {
+            if (!newVisibleIndices.has(index)) {
+                const cardEl = this.mobileCardElements.get(index)
+                if (cardEl) {
+                    // Destroy editors for this card
+                    this.destroyMobileCardEditors(index)
+                    cardEl.remove()
+                    this.mobileCardElements.delete(index)
+                }
+            }
+        }
+
+        // Add cards that are now visible
+        for (let i = startIndex; i <= endIndex; i++) {
+            if (!this.mobileRenderedIndices.has(i)) {
+                const entry = this.filteredEntries[i]
+                if (entry) {
+                    this.renderMobileCardAtIndex(i, entry)
+                }
+            }
+        }
+
+        // Update rendered indices
+        this.mobileRenderedIndices = newVisibleIndices
+
+        // Ensure cards are in correct order
+        this.reorderMobileCards()
+    }
+
+    /**
+     * Destroy editors for a specific mobile card
+     */
+    private destroyMobileCardEditors(index: number): void {
+        const entry = this.filteredEntries[index]
+        if (!entry) return
+
+        const filePath = entry.file.path
+        for (const def of this.activeDefinitions) {
+            const editorKey = `${filePath}:${def.name}`
+            const editor = this.editors.get(editorKey)
+            if (editor) {
+                editor.destroy()
+                this.editors.delete(editorKey)
+            }
+        }
+    }
+
+    /**
+     * Reorder mobile card elements in the DOM
+     */
+    private reorderMobileCards(): void {
+        if (!this.mobileContainerEl || !this.mobileSpacerBottomEl) return
+
+        const sortedIndices = [...this.mobileRenderedIndices].sort((a, b) => a - b)
+
+        for (const index of sortedIndices) {
+            const cardEl = this.mobileCardElements.get(index)
+            if (cardEl) {
+                this.mobileContainerEl.insertBefore(cardEl, this.mobileSpacerBottomEl)
+            }
+        }
+    }
+
+    /**
+     * Render a mobile card at a specific index
+     */
+    private renderMobileCardAtIndex(index: number, entry: BasesEntry): void {
+        if (!this.mobileContainerEl || !this.mobileSpacerBottomEl) return
+
+        const cardEl = this.renderMobileCard(entry)
+        if (cardEl) {
+            this.mobileCardElements.set(index, cardEl)
+        }
+    }
+
+    /**
+     * Render a single mobile card for an entry
+     * Returns the card element for virtual scrolling management
+     */
+    private renderMobileCard(entry: BasesEntry): HTMLElement | null {
+        if (!this.mobileContainerEl) return null
+
+        const file = entry.file
+
+        // Filter to only applicable properties for this file
+        const applicableDefinitions = this.recognitionService.getApplicableProperties(
+            file,
+            this.activeDefinitions
+        )
+        const applicableNames = new Set(applicableDefinitions.map((d) => d.name))
+
+        // Check for issues
+        const values = this.originalValues.get(file.path) ?? {}
+        const hasIssues = this.frontmatterService.hasIssues(values, applicableDefinitions)
+
+        // Create card container (not attached to DOM yet for virtual scrolling)
+        const card = createDiv({
+            cls: hasIssues
+                ? 'lt-grid-view-card lt-grid-view-card--has-issues'
+                : 'lt-grid-view-card',
+            attr: { [DATA_ATTR_FULL.FILE_PATH]: file.path }
+        })
+
+        // Card header with title and collapse toggle
+        const header = card.createDiv({ cls: 'lt-grid-view-card-header' })
+
+        const title = header.createEl('a', {
+            cls: 'lt-grid-view-card-title',
+            text: formatFileTitleWithWeekday(file.basename),
+            href: '#'
+        })
+        title.addEventListener('click', (e) => {
+            e.preventDefault()
+            this.plugin.app.workspace.getLeaf().openFile(file)
+        })
+
+        // Collapse toggle
+        const isCollapsed = this.collapsedCards.has(file.path)
+        const toggle = header.createDiv({
+            cls: isCollapsed
+                ? 'lt-grid-view-card-toggle lt-grid-view-card-toggle--collapsed'
+                : 'lt-grid-view-card-toggle'
+        })
+        setIcon(toggle, 'chevron-down')
+        toggle.addEventListener('click', () => {
+            this.toggleCardCollapse(file.path, card)
+        })
+
+        // Card body with property rows
+        const body = card.createDiv({
+            cls: isCollapsed
+                ? 'lt-grid-view-card-body lt-grid-view-card-body--collapsed'
+                : 'lt-grid-view-card-body'
+        })
+
+        // Render each property
+        for (const def of this.activeDefinitions) {
+            const isApplicable = applicableNames.has(def.name)
+            this.renderMobileCardRow(body, file, def, isApplicable)
+        }
+
+        return card
+    }
+
+    /**
+     * Render a single property row in a mobile card
+     */
+    private renderMobileCardRow(
+        container: HTMLElement,
+        file: TFile,
+        definition: PropertyDefinition,
+        isApplicable: boolean
+    ): void {
+        const row = container.createDiv({
+            cls: isApplicable
+                ? 'lt-grid-view-card-row'
+                : 'lt-grid-view-card-row lt-grid-view-card-row--na'
+        })
+
+        // Label
+        const label = row.createDiv({ cls: 'lt-grid-view-card-label' })
+        label.createSpan({ text: definition.displayName || definition.name })
+        if (definition.required) {
+            label.createSpan({ cls: 'lt-grid-view-card-label-required', text: '*' })
+        }
+
+        // Value
+        const valueContainer = row.createDiv({ cls: 'lt-grid-view-card-value' })
+
+        if (!isApplicable) {
+            valueContainer.createSpan({ cls: 'lt-grid-view-card-na', text: 'Not applicable' })
+            return
+        }
+
+        // Render editor for this property
+        const values = this.currentValues.get(file.path) ?? {}
+        const value = values[definition.name]
+
+        // Initial validation styling
+        const validation = this.frontmatterService.validate(value, definition)
+        if (!validation.valid) {
+            row.addClass('lt-grid-view-card-row--invalid')
+        }
+
+        const editorKey = `${file.path}:${definition.name}`
+        const editor = createPropertyEditor({
+            definition,
+            value,
+            compact: false, // Use full-size editors on mobile
+            onChange: (newValue) => {
+                const vals = this.currentValues.get(file.path) ?? {}
+                vals[definition.name] = newValue
+                this.currentValues.set(file.path, vals)
+                // Auto-save with debounce
+                this.debouncedSave(file, definition, newValue)
+            },
+            onCommit: () => {
+                const vals = this.currentValues.get(file.path) ?? {}
+                this.savePropertyImmediate(file, definition, vals[definition.name])
+            }
+        })
+
+        editor.render(valueContainer)
+        this.editors.set(editorKey, editor)
+    }
+
+    /**
+     * Toggle card collapse state
+     */
+    private toggleCardCollapse(filePath: string, cardEl: HTMLElement): void {
+        const body = cardEl.querySelector('.lt-grid-view-card-body')
+        const toggle = cardEl.querySelector('.lt-grid-view-card-toggle')
+
+        if (this.collapsedCards.has(filePath)) {
+            // Expand
+            this.collapsedCards.delete(filePath)
+            body?.removeClass('lt-grid-view-card-body--collapsed')
+            toggle?.removeClass('lt-grid-view-card-toggle--collapsed')
+        } else {
+            // Collapse
+            this.collapsedCards.add(filePath)
+            body?.addClass('lt-grid-view-card-body--collapsed')
+            toggle?.addClass('lt-grid-view-card-toggle--collapsed')
+        }
+
+        // Reset visible indices to force recalculation of spacers
+        // (card height changed due to collapse/expand)
+        this.mobileVisibleStartIndex = -1
+        this.mobileVisibleEndIndex = -1
+        this.updateVisibleMobileCards()
     }
 
     /**
@@ -462,6 +933,7 @@ export class GridView extends BasesView implements FileProvider {
      * Clean up virtual scrolling listeners
      */
     private cleanupVirtualScrolling(): void {
+        // Desktop cleanup
         if (this.scrollHandler) {
             this.scrollEl.removeEventListener('scroll', this.scrollHandler)
             this.scrollHandler = null
@@ -477,6 +949,19 @@ export class GridView extends BasesView implements FileProvider {
         this.fixedHeaderTableEl = null
         this.theadEl = null
         this.isFixedHeaderVisible = false
+
+        // Mobile cleanup
+        if (this.mobileScrollHandler) {
+            this.scrollEl.removeEventListener('scroll', this.mobileScrollHandler)
+            this.mobileScrollHandler = null
+        }
+
+        this.mobileSpacerTopEl = null
+        this.mobileSpacerBottomEl = null
+        this.mobileCardElements.clear()
+        this.mobileRenderedIndices.clear()
+        this.mobileVisibleStartIndex = -1
+        this.mobileVisibleEndIndex = -1
     }
 
     /**
@@ -889,6 +1374,12 @@ export class GridView extends BasesView implements FileProvider {
         if (this.unsubscribeSettings) {
             this.unsubscribeSettings()
             this.unsubscribeSettings = null
+        }
+
+        // Clean up viewport observer
+        if (this.viewportCleanup) {
+            this.viewportCleanup()
+            this.viewportCleanup = null
         }
 
         this.cleanupVirtualScrolling()
