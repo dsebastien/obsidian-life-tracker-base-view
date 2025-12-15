@@ -1887,7 +1887,7 @@
 }
 
 .lt-carousel-filter-select {
-    @apply text-xs px-2 py-1 rounded;
+    @apply text-xs pl-2 pr-6 py-1 rounded;
     background-color: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
     color: var(--text-normal);
