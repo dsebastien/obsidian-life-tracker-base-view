@@ -390,12 +390,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         dateAnchors
                     )
                     this.cacheService.setDataPoints(propertyId, dataPoints)
-                    this.renderConfiguredColumn(
-                        effectiveConfig.config,
-                        displayName,
-                        dataPoints,
-                        effectiveConfig.isFromPreset
-                    )
+                    this.renderConfiguredColumn(effectiveConfig.config, displayName, dataPoints)
                 } else {
                     // No configuration - show config card
                     this.renderUnconfiguredColumn(propertyId, displayName)
@@ -430,8 +425,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private renderConfiguredColumn(
         columnConfig: ColumnVisualizationConfig,
         displayName: string,
-        dataPoints: VisualizationDataPoint[],
-        isFromPreset: boolean = false
+        dataPoints: VisualizationDataPoint[]
     ): void {
         if (!this.gridEl) return
 
@@ -440,8 +434,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             attr: { [DATA_ATTR_FULL.PROPERTY_ID]: columnConfig.propertyId }
         })
 
-        // Add context menu and touch handlers
-        this.setupCardEventHandlers(cardEl, columnConfig, displayName, isFromPreset)
+        // Add context menu and touch handlers (only pass propertyId to avoid stale config)
+        this.setupCardEventHandlers(cardEl, columnConfig.propertyId, displayName)
 
         // Create visualization
         const visualization = this.createVisualization(cardEl, columnConfig, displayName)
@@ -462,17 +456,17 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
     /**
      * Setup event handlers for card (context menu, touch)
+     * Only passes propertyId to avoid stale config references - config is fetched fresh when menu opens
      */
     private setupCardEventHandlers(
         cardEl: HTMLElement,
-        columnConfig: ColumnVisualizationConfig,
-        displayName: string,
-        isFromPreset: boolean
+        propertyId: BasesPropertyId,
+        displayName: string
     ): void {
         // Add context menu handler (right-click)
         cardEl.addEventListener('contextmenu', (event) => {
             event.preventDefault()
-            this.handleCardContextMenu(event, columnConfig, displayName, isFromPreset)
+            this.handleCardContextMenu(event, propertyId, displayName)
         })
 
         // Add long-touch support for context menu
@@ -485,7 +479,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 touchStartPos = { x: touch.clientX, y: touch.clientY }
                 longTouchTimer = setTimeout(() => {
                     event.preventDefault()
-                    this.handleCardContextMenu(event, columnConfig, displayName, isFromPreset)
+                    this.handleCardContextMenu(event, propertyId, displayName)
                 }, 500) // 500ms long press
             }
         })
@@ -595,87 +589,96 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
     /**
      * Handle context menu on a card
+     * Fetches fresh config from service to ensure menu shows current state
      */
     private handleCardContextMenu(
         event: MouseEvent | TouchEvent,
-        columnConfig: ColumnVisualizationConfig,
-        displayName: string,
-        isFromPreset: boolean
+        propertyId: BasesPropertyId,
+        displayName: string
     ): void {
-        const isMaximized = this.maximizeService.isMaximized(columnConfig.propertyId)
+        // Fetch current config from service to ensure we show latest state
+        const effectiveConfig = this.columnConfigService.getEffectiveConfig(propertyId, displayName)
+        if (!effectiveConfig) {
+            // No config found - shouldn't happen for configured columns
+            return
+        }
+
+        const { config, isFromPreset } = effectiveConfig
+        const isMaximized = this.maximizeService.isMaximized(propertyId)
+
         showCardContextMenu(
             event,
-            columnConfig.visualizationType,
-            columnConfig.scale,
+            config.visualizationType,
+            config.scale,
             isFromPreset,
             isMaximized,
             (action: CardMenuAction) => {
-                this.handleCardMenuAction(action, columnConfig, displayName, isFromPreset)
+                this.handleCardMenuAction(action, propertyId, displayName)
             }
         )
     }
 
     /**
      * Handle menu action from context menu
+     * Fetches fresh config from service to ensure actions use current state
      */
     private handleCardMenuAction(
         action: CardMenuAction,
-        columnConfig: ColumnVisualizationConfig,
-        displayName: string,
-        isFromPreset: boolean
+        propertyId: BasesPropertyId,
+        displayName: string
     ): void {
+        // Fetch current config from service
+        const effectiveConfig = this.columnConfigService.getEffectiveConfig(propertyId, displayName)
+        const currentConfig = effectiveConfig?.config
+        const isFromPreset = effectiveConfig?.isFromPreset ?? false
+
         switch (action.type) {
             case 'changeVisualization':
                 if (isFromPreset) {
                     // Create local override from preset with new visualization type
                     this.columnConfigService.saveColumnConfig(
-                        columnConfig.propertyId,
+                        propertyId,
                         action.visualizationType,
                         displayName,
                         undefined // Clear scale for new type
                     )
                 } else {
-                    this.columnConfigService.updateColumnConfig(columnConfig.propertyId, {
+                    this.columnConfigService.updateColumnConfig(propertyId, {
                         visualizationType: action.visualizationType,
                         scale: undefined
                     })
                 }
                 // Only refresh this specific visualization
-                this.refreshVisualization(columnConfig.propertyId)
+                this.refreshVisualization(propertyId)
                 break
 
             case 'configureScale':
-                if (isFromPreset) {
+                if (isFromPreset && currentConfig) {
                     // Create local override from preset with new scale
                     this.columnConfigService.saveColumnConfig(
-                        columnConfig.propertyId,
-                        columnConfig.visualizationType,
+                        propertyId,
+                        currentConfig.visualizationType,
                         displayName,
                         action.scale
                     )
                 } else {
-                    this.columnConfigService.updateColumnConfig(columnConfig.propertyId, {
+                    this.columnConfigService.updateColumnConfig(propertyId, {
                         scale: action.scale
                     })
                 }
                 // Only refresh this specific visualization
-                this.refreshVisualization(columnConfig.propertyId)
+                this.refreshVisualization(propertyId)
                 break
 
             case 'resetConfig':
-                this.columnConfigService.deleteColumnConfig(columnConfig.propertyId)
+                this.columnConfigService.deleteColumnConfig(propertyId)
                 // Only refresh this specific visualization
-                this.refreshVisualization(columnConfig.propertyId)
+                this.refreshVisualization(propertyId)
                 break
 
             case 'toggleMaximize': {
-                const isCurrentlyMaximized = this.maximizeService.isMaximized(
-                    columnConfig.propertyId
-                )
-                this.maximizeService.handleMaximizeToggle(
-                    columnConfig.propertyId,
-                    !isCurrentlyMaximized
-                )
+                const isCurrentlyMaximized = this.maximizeService.isMaximized(propertyId)
+                this.maximizeService.handleMaximizeToggle(propertyId, !isCurrentlyMaximized)
                 break
             }
         }
