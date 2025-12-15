@@ -197,7 +197,7 @@
 
 /* Card content should fill available space */
 .lt-card > .lt-section {
-    @apply h-full flex flex-col;
+    @apply h-full flex flex-col min-h-0;
 }
 
 /* ========================================
@@ -709,8 +709,8 @@
    ======================================== */
 
 .lt-chart {
-    @apply w-full;
-    /* Auto-height based on aspect ratio */
+    @apply w-full flex-1;
+    min-height: 0; /* Required for flex shrinking */
 }
 
 .lt-chart-header {
@@ -724,6 +724,7 @@
 
 .lt-chart-canvas {
     @apply w-full;
+    max-height: 100%;
 }
 
 /* ========================================

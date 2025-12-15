@@ -76,7 +76,7 @@ export function initPieChart(
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            aspectRatio: 1.5,
+            aspectRatio: 2,
             plugins: {
                 legend: {
                     display: chartConfig.showLegend,
@@ -145,7 +145,7 @@ export function initRadarChart(
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            aspectRatio: 1.5,
+            aspectRatio: 2,
             plugins: {
                 legend: {
                     display: chartConfig.showLegend
@@ -211,7 +211,7 @@ export function initCartesianChart(
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            aspectRatio: 2.5,
+            aspectRatio: 2,
             layout: {
                 padding: {
                     left: 10,
