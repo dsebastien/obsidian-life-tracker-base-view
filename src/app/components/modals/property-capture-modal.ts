@@ -91,8 +91,8 @@ export class PropertyCaptureModal extends Modal {
     }
 
     /**
-     * Load and sort property definitions for the current file.
-     * Sort order: required (alphabetical), then optional (alphabetical)
+     * Load property definitions for the current file.
+     * Definitions are already ordered as configured in settings.
      */
     private loadProperties(): void {
         const file = this.getCurrentFile()
@@ -101,21 +101,11 @@ export class PropertyCaptureModal extends Modal {
         const allDefinitions = this.plugin.settings.propertyDefinitions
 
         // Filter to only applicable definitions for this file
-        const applicableDefinitions = this.recognitionService.getApplicableProperties(
+        // Order is preserved from the settings array
+        this.sortedDefinitions = this.recognitionService.getApplicableProperties(
             file,
             allDefinitions
         )
-
-        // Sort: required first (alphabetical), then optional (alphabetical)
-        this.sortedDefinitions = [...applicableDefinitions].sort((a, b) => {
-            // Required properties first
-            if (a.required && !b.required) return -1
-            if (!a.required && b.required) return 1
-            // Then alphabetical by display name or name
-            const nameA = (a.displayName || a.name).toLowerCase()
-            const nameB = (b.displayName || b.name).toLowerCase()
-            return nameA.localeCompare(nameB)
-        })
 
         // Load existing values from frontmatter (synchronous - uses metadata cache)
         this.savedValues = this.frontmatterService.readDefinedProperties(

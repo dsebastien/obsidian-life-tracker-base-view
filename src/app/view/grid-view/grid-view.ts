@@ -212,21 +212,6 @@ export class GridView extends BasesView implements FileProvider {
     }
 
     /**
-     * Sort definitions: required first (alphabetically), then optional (alphabetically)
-     */
-    private sortDefinitions(definitions: PropertyDefinition[]): PropertyDefinition[] {
-        return [...definitions].sort((a, b) => {
-            // Required properties first
-            if (a.required && !b.required) return -1
-            if (!a.required && b.required) return 1
-            // Then alphabetical by display name or name
-            const nameA = (a.displayName || a.name).toLowerCase()
-            const nameB = (b.displayName || b.name).toLowerCase()
-            return nameA.localeCompare(nameB)
-        })
-    }
-
-    /**
      * Called when data changes - main render logic
      */
     override onDataUpdated(): void {
@@ -261,8 +246,8 @@ export class GridView extends BasesView implements FileProvider {
             return
         }
 
-        // Sort definitions: required first (a-z), then optional (a-z)
-        this.activeDefinitions = this.sortDefinitions(allDefinitions)
+        // Definitions are already ordered as configured in settings
+        this.activeDefinitions = allDefinitions
 
         // Get base-selected properties that don't match any property definition
         const definitionNames = new Set(allDefinitions.map((d) => d.name))

@@ -25,6 +25,8 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     private activeTab: SettingsTab = 'properties'
     // Track which property definitions are expanded (by id)
     private expandedDefinitions: Set<string> = new Set()
+    // Drag and drop state
+    private draggedDefinitionId: string | null = null
 
     constructor(app: App, plugin: LifeTrackerPlugin) {
         super(app, plugin)
@@ -152,14 +154,74 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         definition: PropertyDefinition,
         isNew: boolean = false
     ): void {
-        const itemContainer = container.createDiv({ cls: 'lt-property-definition-item' })
+        const itemContainer = container.createDiv({
+            cls: 'lt-property-definition-item',
+            attr: {
+                'draggable': 'true',
+                'data-definition-id': definition.id
+            }
+        })
+
+        // Drag and drop event handlers
+        itemContainer.addEventListener('dragstart', (e) => {
+            this.draggedDefinitionId = definition.id
+            itemContainer.addClass('lt-property-definition-item--dragging')
+            if (e.dataTransfer) {
+                e.dataTransfer.effectAllowed = 'move'
+                e.dataTransfer.setData('text/plain', definition.id)
+            }
+        })
+
+        itemContainer.addEventListener('dragend', () => {
+            this.draggedDefinitionId = null
+            itemContainer.removeClass('lt-property-definition-item--dragging')
+            // Remove drag-over class from all items
+            container
+                .querySelectorAll('.lt-property-definition-item--drag-over')
+                .forEach((el) => el.removeClass('lt-property-definition-item--drag-over'))
+        })
+
+        itemContainer.addEventListener('dragover', (e) => {
+            e.preventDefault()
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = 'move'
+            }
+            // Only show drag-over state if dragging a different item
+            if (this.draggedDefinitionId && this.draggedDefinitionId !== definition.id) {
+                itemContainer.addClass('lt-property-definition-item--drag-over')
+            }
+        })
+
+        itemContainer.addEventListener('dragleave', () => {
+            itemContainer.removeClass('lt-property-definition-item--drag-over')
+        })
+
+        itemContainer.addEventListener('drop', (e) => {
+            e.preventDefault()
+            itemContainer.removeClass('lt-property-definition-item--drag-over')
+
+            if (!this.draggedDefinitionId || this.draggedDefinitionId === definition.id) {
+                return
+            }
+
+            // Perform the reorder
+            void this.reorderDefinitions(this.draggedDefinitionId, definition.id)
+        })
 
         // Check if expanded (new items start expanded, others start collapsed)
         const isExpanded = isNew || this.expandedDefinitions.has(definition.id)
 
-        // Main row with chevron, name, type, and delete button
+        // Main row with drag handle, chevron, name, type, and delete button
         const mainSetting = new Setting(itemContainer)
         mainSetting.settingEl.classList.add('lt-property-header')
+
+        // Drag handle (grip icon)
+        mainSetting.addButton((button) => {
+            button
+                .setIcon('grip-vertical')
+                .setTooltip('Drag to reorder')
+                .setClass('lt-property-drag-handle')
+        })
 
         // Chevron toggle button
         mainSetting.addButton((button) => {
@@ -692,6 +754,40 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         await this.plugin.updateSettings((draft) => {
             draft.propertyDefinitions = draft.propertyDefinitions.filter((d) => d.id !== id)
         })
+    }
+
+    /**
+     * Reorder property definitions by moving the dragged item to the position of the target item.
+     * Updates the order field for all affected items to maintain consistent ordering.
+     */
+    private async reorderDefinitions(draggedId: string, targetId: string): Promise<void> {
+        await this.plugin.updateSettings(
+            (draft) => {
+                const definitions = draft.propertyDefinitions
+
+                // Find the indices
+                const draggedIndex = definitions.findIndex((d) => d.id === draggedId)
+                const targetIndex = definitions.findIndex((d) => d.id === targetId)
+
+                if (draggedIndex === -1 || targetIndex === -1) return
+
+                // Remove the dragged item
+                const [draggedItem] = definitions.splice(draggedIndex, 1)
+                if (!draggedItem) return
+
+                // Insert at the target position
+                definitions.splice(targetIndex, 0, draggedItem)
+
+                // Update all order values to reflect new positions
+                definitions.forEach((def, index) => {
+                    def.order = index
+                })
+            },
+            { type: 'property-definitions-changed' }
+        )
+
+        // Re-render to show new order
+        this.display()
     }
 
     // ========================================

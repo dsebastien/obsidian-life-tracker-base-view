@@ -970,8 +970,18 @@
 }
 
 .lt-property-definition-item {
-    @apply mb-4 pb-4;
+    @apply mb-4 pb-4 rounded cursor-grab transition-all duration-150;
     border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-property-definition-item--dragging {
+    @apply opacity-50 cursor-grabbing;
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-property-definition-item--drag-over {
+    @apply border-t-2;
+    border-top-color: var(--interactive-accent);
 }
 
 .lt-property-header {
@@ -980,6 +990,22 @@
 
 .lt-property-header .setting-item-control {
     @apply gap-2;
+}
+
+.lt-property-drag-handle {
+    @apply p-1 cursor-grab;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--text-faint);
+}
+
+.lt-property-drag-handle:hover {
+    color: var(--text-muted);
+    background-color: var(--background-modifier-hover) !important;
+}
+
+.lt-property-drag-handle:active {
+    @apply cursor-grabbing;
 }
 
 .lt-property-chevron {
