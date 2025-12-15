@@ -19,6 +19,21 @@ import { formatDateByGranularity, extractList } from '../../utils'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
 
 /**
+ * Check if a value is an Obsidian Value type (has isTruthy method).
+ * Obsidian's Value abstract class has isTruthy() and toString() methods.
+ */
+function isObsidianValue(
+    value: unknown
+): value is { isTruthy: () => boolean; toString: () => string } {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        typeof (value as Record<string, unknown>)['isTruthy'] === 'function' &&
+        typeof (value as Record<string, unknown>)['toString'] === 'function'
+    )
+}
+
+/**
  * Format a value for display as a timeline label.
  * Handles objects, arrays, and primitives properly.
  * Returns empty string for null/undefined/empty values (never "null" string).
@@ -28,20 +43,64 @@ function formatTimelineLabel(value: unknown): string {
         return ''
     }
 
+    // Handle Obsidian Value types first - use isTruthy() to check for actual data
+    if (isObsidianValue(value)) {
+        // If the Value is not truthy, it has no data
+        if (!value.isTruthy()) {
+            return ''
+        }
+        // Get the string representation
+        const strValue = value.toString().trim()
+        if (!strValue || strValue === 'null' || strValue === 'undefined') {
+            return ''
+        }
+        return strValue
+    }
+
     // Handle arrays
     if (Array.isArray(value)) {
-        const filtered = value.filter((v) => v !== null && v !== undefined && v !== 'null')
+        const filtered = value.map((v) => formatTimelineLabel(v)).filter((v) => v !== '')
         return filtered.join(', ')
     }
 
-    // Handle objects (avoid [object Object])
+    // Handle plain objects (non-Value objects)
     if (typeof value === 'object') {
+        const obj = value as Record<string, unknown>
+
+        // For plain objects, try to extract meaningful display value
+        // This handles Obsidian links which have 'display' property
+        // Priority: display > value > name > label > text > data
+        const displayValue =
+            obj['display'] ??
+            obj['value'] ??
+            obj['name'] ??
+            obj['label'] ??
+            obj['text'] ??
+            obj['data']
+        if (displayValue !== undefined && displayValue !== null) {
+            return formatTimelineLabel(displayValue)
+        }
+
+        // If this is an internal Obsidian object with only metadata (icon, subpath, etc.)
+        // and no displayable value, return empty string
+        if ('icon' in obj || 'subpath' in obj) {
+            // Try path as last resort for links
+            if ('path' in obj && typeof obj['path'] === 'string') {
+                const path = obj['path'] as string
+                const filename = path.split('/').pop() ?? path
+                return filename.replace(/\.md$/, '')
+            }
+            // No displayable value found - treat as empty
+            return ''
+        }
+
+        // For other objects, stringify them (shouldn't normally happen)
         return JSON.stringify(value)
     }
 
     // Primitives - check for "null" string
-    const strValue = String(value)
-    if (strValue === 'null' || strValue === 'undefined') {
+    const strValue = String(value).trim()
+    if (!strValue || strValue === 'null' || strValue === 'undefined') {
         return ''
     }
 
@@ -443,7 +502,9 @@ export function aggregateForTimeline(
         const label = formatTimelineLabel(p.value)
         return {
             date: p.dateAnchor!.date,
-            label: label || p.entry.file.basename,
+            // Don't fall back to file basename - empty label means "No data" in tooltip
+            label,
+            value: p.normalizedValue,
             entries: [p.entry]
         }
     })

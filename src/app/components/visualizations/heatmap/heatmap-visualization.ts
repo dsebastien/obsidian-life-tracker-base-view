@@ -44,6 +44,8 @@ export class HeatmapVisualization extends BaseVisualization {
     override render(data: VisualizationDataPoint[]): void {
         log(`Rendering heatmap for ${this.displayName}`, 'debug')
 
+        log('Heatmap data', 'debug', data)
+
         // Aggregate data (use shared service)
         this.heatmapData = sharedAggregationService.aggregateForHeatmap(
             data,

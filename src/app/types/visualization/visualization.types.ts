@@ -143,6 +143,7 @@ export interface TimelineData {
 export interface TimelinePoint {
     date: Date
     label: string
+    value: number | null
     entries: BasesEntry[]
 }
 

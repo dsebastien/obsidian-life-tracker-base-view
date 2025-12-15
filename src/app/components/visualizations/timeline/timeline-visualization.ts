@@ -82,7 +82,7 @@ export class TimelineVisualization extends BaseVisualization {
             // Single point - center it
             const point = points[0]
             if (point) {
-                this.renderPoint(point.date, point.label, point.entries.length, 50)
+                this.renderPoint(point.date, point.value, point.label, point.entries.length, 50)
             }
             return
         }
@@ -90,7 +90,7 @@ export class TimelineVisualization extends BaseVisualization {
         for (const point of points) {
             const elapsed = differenceInMilliseconds(point.date, minDate)
             const position = (elapsed / timeRange) * 100
-            this.renderPoint(point.date, point.label, point.entries.length, position)
+            this.renderPoint(point.date, point.value, point.label, point.entries.length, position)
         }
     }
 
@@ -99,6 +99,7 @@ export class TimelineVisualization extends BaseVisualization {
      */
     private renderPoint(
         date: Date,
+        value: number | null,
         label: string,
         entryCount: number,
         positionPercent: number
@@ -120,6 +121,9 @@ export class TimelineVisualization extends BaseVisualization {
 
         // Store data
         pointEl.dataset['date'] = date.toISOString()
+        if (value !== null) {
+            pointEl.dataset['value'] = String(value)
+        }
         pointEl.dataset['label'] = label
         pointEl.dataset['count'] = String(entryCount)
 
@@ -175,7 +179,8 @@ export class TimelineVisualization extends BaseVisualization {
         if (!this.tooltip) return
 
         const dateStr = pointEl.dataset['date']
-        const label = pointEl.dataset['label'] ?? ''
+        const valueStr = pointEl.dataset['value']
+        const labelStr = pointEl.dataset['label']
         const countStr = pointEl.dataset['count']
         const count = countStr ? parseInt(countStr, 10) : 0
 
@@ -183,11 +188,21 @@ export class TimelineVisualization extends BaseVisualization {
 
         const date = parseISO(dateStr)
         const title = formatDateByGranularity(date, this.config.granularity)
-        const value = label
+        // Format value like other charts: "PropertyName: value"
+        // Use numeric value if available, otherwise fall back to text label
+        const numValue = valueStr ? parseFloat(valueStr) : null
+        let valueDisplay: string
+        if (numValue !== null) {
+            valueDisplay = `${this.displayName}: ${numValue.toFixed(2)}`
+        } else if (labelStr) {
+            valueDisplay = `${this.displayName}: ${labelStr}`
+        } else {
+            valueDisplay = `${this.displayName}: No data`
+        }
         const subtitle = count > 0 ? `${count} ${count === 1 ? 'entry' : 'entries'}` : ''
 
         const rect = pointEl.getBoundingClientRect()
-        this.tooltip.show(rect.left + rect.width / 2, rect.top - 10, title, value, subtitle)
+        this.tooltip.show(rect.left + rect.width / 2, rect.top - 10, title, valueDisplay, subtitle)
     }
 
     /**
