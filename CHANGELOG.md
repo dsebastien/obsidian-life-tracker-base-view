@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.6.0...1.7.0) (2025-12-15)
+
+### Features
+
+* **all:** enabled using default values in the data entry modal ([f103c41](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/f103c410facc7ec36a35736a18dfd246b981c75a))
+* **all:** made the grid responsive (becomes a cards view on mobile) ([d73b435](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/d73b435176b0dd3442524877ff1958f6a5f9bb6b))
 ## [1.6.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.5.0...1.6.0) (2025-12-15)
 
 ### Features
