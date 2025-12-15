@@ -10,13 +10,7 @@ import type {
 } from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { ChartLoaderService } from '../../../services/chart-loader.service'
-import {
-    log,
-    isBooleanData,
-    getBooleanColor,
-    CHART_COLORS_HEX,
-    getColorWithAlpha
-} from '../../../../utils'
+import { log, getBooleanColor, CHART_COLORS_HEX, getColorWithAlpha } from '../../../../utils'
 import type { ChartClickElement, ChartInstance } from './chart-types'
 import {
     initBubbleChart,
@@ -323,7 +317,7 @@ export class ChartVisualization extends BaseVisualization {
 
             // Regenerate colors for new labels
             // Chart.js dataset colors can be arrays, but types may not reflect this
-            const isBoolean = isBooleanData(newPieData.labels)
+            const isBoolean = newPieData.isBooleanData
             const backgroundColors = newPieData.labels.map((label, index) => {
                 const color = isBoolean
                     ? getBooleanColor(label)
@@ -568,7 +562,7 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
-     * Handle chart click - open related entries
+     * Handle chart click - open related files
      */
     private handleChartClick(elements: ChartClickElement[]): void {
         if (!this.chartData || elements.length === 0) return
@@ -579,14 +573,14 @@ export class ChartVisualization extends BaseVisualization {
         const dataset = this.chartData.datasets[element.datasetIndex]
         if (!dataset) return
 
-        const entries = dataset.entries[element.index]
-        if (entries && entries.length > 0) {
-            this.openEntries(entries)
+        const filePaths = dataset.filePaths[element.index]
+        if (filePaths && filePaths.length > 0) {
+            this.openFilePaths(filePaths)
         }
     }
 
     /**
-     * Handle pie chart click - open related entries for the segment
+     * Handle pie chart click - open related files for the segment
      */
     private handlePieChartClick(elements: ChartClickElement[]): void {
         if (!this.pieChartData || elements.length === 0) return
@@ -594,14 +588,14 @@ export class ChartVisualization extends BaseVisualization {
         const element = elements[0]
         if (!element) return
 
-        const entries = this.pieChartData.entries[element.index]
-        if (entries && entries.length > 0) {
-            this.openEntries(entries)
+        const filePaths = this.pieChartData.filePaths[element.index]
+        if (filePaths && filePaths.length > 0) {
+            this.openFilePaths(filePaths)
         }
     }
 
     /**
-     * Handle scatter chart click - open related entry for the point
+     * Handle scatter chart click - open related file for the point
      */
     private handleScatterChartClick(elements: ChartClickElement[]): void {
         if (!this.scatterChartData || elements.length === 0) return
@@ -609,14 +603,14 @@ export class ChartVisualization extends BaseVisualization {
         const element = elements[0]
         if (!element) return
 
-        const entry = this.scatterChartData.entries[element.index]
-        if (entry) {
-            this.openFile(entry)
+        const filePath = this.scatterChartData.filePaths[element.index]
+        if (filePath) {
+            this.openFileByPath(filePath)
         }
     }
 
     /**
-     * Handle bubble chart click - open related entries for the bubble
+     * Handle bubble chart click - open related files for the bubble
      */
     private handleBubbleChartClick(elements: ChartClickElement[]): void {
         if (!this.bubbleChartData || elements.length === 0) return
@@ -624,9 +618,9 @@ export class ChartVisualization extends BaseVisualization {
         const element = elements[0]
         if (!element) return
 
-        const entries = this.bubbleChartData.entries[element.index]
-        if (entries && entries.length > 0) {
-            this.openEntries(entries)
+        const filePaths = this.bubbleChartData.filePaths[element.index]
+        if (filePaths && filePaths.length > 0) {
+            this.openFilePaths(filePaths)
         }
     }
 }

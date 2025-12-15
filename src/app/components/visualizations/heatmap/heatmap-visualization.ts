@@ -47,12 +47,12 @@ export class HeatmapVisualization extends BaseVisualization {
         log('Heatmap data', 'debug', data)
 
         // Aggregate data (use shared service)
+        // Data is already pre-filtered based on showEmptyValues
         this.heatmapData = sharedAggregationService.aggregateForHeatmap(
             data,
             this.propertyId,
             this.displayName,
-            this.heatmapConfig.granularity,
-            this.heatmapConfig.showEmptyValues
+            this.heatmapConfig.granularity
         )
 
         // Apply scale override if configured
@@ -105,13 +105,12 @@ export class HeatmapVisualization extends BaseVisualization {
             return
         }
 
-        // Re-aggregate data
+        // Re-aggregate data (data is already pre-filtered based on showEmptyValues)
         const newData = sharedAggregationService.aggregateForHeatmap(
             data,
             this.propertyId,
             this.displayName,
-            this.heatmapConfig.granularity,
-            this.heatmapConfig.showEmptyValues
+            this.heatmapConfig.granularity
         )
 
         // Apply scale override if configured
@@ -300,7 +299,7 @@ export class HeatmapVisualization extends BaseVisualization {
     }
 
     /**
-     * Handle cell click - open related entries
+     * Handle cell click - open related files
      */
     private handleCellClick(cellEl: HTMLElement): void {
         if (!this.heatmapData) return
@@ -310,11 +309,11 @@ export class HeatmapVisualization extends BaseVisualization {
 
         const date = parseISO(dateStr)
 
-        // Find entries for this date
+        // Find file paths for this date
         const cell = this.heatmapData.cells.find((c) => isSameDay(c.date, date))
 
-        if (cell && cell.entries.length > 0) {
-            this.openEntries(cell.entries)
+        if (cell && cell.filePaths.length > 0) {
+            this.openFilePaths(cell.filePaths)
         }
     }
 

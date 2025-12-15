@@ -36,6 +36,7 @@ export class TimelineVisualization extends BaseVisualization {
         log(`Rendering timeline for ${this.displayName}`, 'debug')
 
         // Aggregate data (use shared service)
+        // Data is already pre-filtered based on showEmptyValues
         this.timelineData = sharedAggregationService.aggregateForTimeline(
             data,
             this.propertyId,
@@ -82,7 +83,7 @@ export class TimelineVisualization extends BaseVisualization {
             // Single point - center it
             const point = points[0]
             if (point) {
-                this.renderPoint(point.date, point.value, point.label, point.entries.length, 50)
+                this.renderPoint(point.date, point.value, point.label, point.filePaths.length, 50)
             }
             return
         }
@@ -90,7 +91,7 @@ export class TimelineVisualization extends BaseVisualization {
         for (const point of points) {
             const elapsed = differenceInMilliseconds(point.date, minDate)
             const position = (elapsed / timeRange) * 100
-            this.renderPoint(point.date, point.value, point.label, point.entries.length, position)
+            this.renderPoint(point.date, point.value, point.label, point.filePaths.length, position)
         }
     }
 
@@ -213,7 +214,7 @@ export class TimelineVisualization extends BaseVisualization {
     }
 
     /**
-     * Handle point click - open related entries
+     * Handle point click - open related files
      */
     private handlePointClick(date: Date): void {
         if (!this.timelineData) return
@@ -222,8 +223,8 @@ export class TimelineVisualization extends BaseVisualization {
             (p) => p.date.toDateString() === date.toDateString()
         )
 
-        if (point && point.entries.length > 0) {
-            this.openEntries(point.entries)
+        if (point && point.filePaths.length > 0) {
+            this.openFilePaths(point.filePaths)
         }
     }
 }

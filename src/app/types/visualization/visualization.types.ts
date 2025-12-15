@@ -1,16 +1,25 @@
-import type { BasesEntry, BasesPropertyId } from 'obsidian'
+import type { BasesPropertyId } from 'obsidian'
 import type { TimeGranularity } from './time-granularity.intf'
 import type { ResolvedDateAnchor } from '../view/date-anchor.types'
 import type { ScaleConfig } from '../column/column-config.types'
 
 /**
- * A single data point for visualization
+ * A single data point for visualization.
+ * All data is pre-extracted and cleaned - no raw Obsidian values or entries.
  */
 export interface VisualizationDataPoint {
-    entry: BasesEntry
+    /** File path for navigation (to open the source file) */
+    filePath: string
+    /** Resolved date anchor (null if no date could be determined) */
     dateAnchor: ResolvedDateAnchor | null
-    value: unknown
-    normalizedValue: number | null
+    /** Extracted numeric value (null if not numeric or empty) */
+    numericValue: number | null
+    /** Extracted boolean value (null if not a boolean) */
+    booleanValue: boolean | null
+    /** Extracted display label (null if empty/no data) */
+    displayLabel: string | null
+    /** Extracted list/tag values for tag cloud visualization (empty array if not a list) */
+    listValues: string[]
 }
 
 /**
@@ -34,7 +43,7 @@ export interface HeatmapCell {
     date: Date
     value: number | null
     count: number
-    entries: BasesEntry[]
+    filePaths: string[]
 }
 
 /**
@@ -53,7 +62,7 @@ export interface ChartData {
 export interface ChartDataset {
     label: string
     data: (number | null)[]
-    entries: BasesEntry[][]
+    filePaths: string[][]
 }
 
 /**
@@ -65,7 +74,9 @@ export interface PieChartData {
     displayName: string
     labels: string[]
     values: number[]
-    entries: BasesEntry[][]
+    filePaths: string[][]
+    /** Whether the data represents boolean values (for color coding) */
+    isBooleanData: boolean
 }
 
 /**
@@ -93,7 +104,7 @@ export interface ScatterChartData {
     propertyId: BasesPropertyId
     displayName: string
     points: ScatterPoint[]
-    entries: BasesEntry[]
+    filePaths: string[]
 }
 
 /**
@@ -104,7 +115,7 @@ export interface BubbleChartData {
     propertyId: BasesPropertyId
     displayName: string
     points: BubblePoint[]
-    entries: BasesEntry[][]
+    filePaths: string[][]
 }
 
 /**
@@ -123,7 +134,7 @@ export interface TagCloudData {
 export interface TagCloudItem {
     tag: string
     frequency: number
-    entries: BasesEntry[]
+    filePaths: string[]
 }
 
 /**
@@ -144,7 +155,7 @@ export interface TimelinePoint {
     date: Date
     label: string
     value: number | null
-    entries: BasesEntry[]
+    filePaths: string[]
 }
 
 /**

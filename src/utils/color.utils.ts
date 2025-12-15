@@ -3,7 +3,7 @@ import type { HeatmapColorScheme } from '../app/types'
 /**
  * Default GitHub-style heatmap color scheme (green)
  */
-export const DEFAULT_HEATMAP_COLORS: HeatmapColorScheme = {
+const DEFAULT_HEATMAP_COLORS: HeatmapColorScheme = {
     empty: 'var(--background-modifier-border)',
     levels: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39']
 }
@@ -11,7 +11,7 @@ export const DEFAULT_HEATMAP_COLORS: HeatmapColorScheme = {
 /**
  * Dark mode heatmap colors (inverted intensity)
  */
-export const DARK_HEATMAP_COLORS: HeatmapColorScheme = {
+const DARK_HEATMAP_COLORS: HeatmapColorScheme = {
     empty: 'var(--background-modifier-border)',
     levels: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353']
 }
@@ -104,15 +104,6 @@ export const BOOLEAN_COLORS = {
     true: '#34a853', // green - positive/yes
     false: '#ea4335' // red - negative/no
 } as const
-
-/**
- * Check if labels represent boolean data (only "true" and/or "false")
- */
-export function isBooleanData(labels: string[]): boolean {
-    if (labels.length === 0 || labels.length > 2) return false
-    const booleanValues = new Set(['true', 'false'])
-    return labels.every((label) => booleanValues.has(label.toLowerCase()))
-}
 
 /**
  * Get semantic color for a boolean value
@@ -210,7 +201,7 @@ export function isDarkTheme(): boolean {
 /**
  * CSS variable names for heatmap color scheme
  */
-export const HEATMAP_CSS_VARS = {
+const HEATMAP_CSS_VARS = {
     EMPTY: '--lt-heatmap-empty',
     LEVEL_0: '--lt-heatmap-level-0',
     LEVEL_1: '--lt-heatmap-level-1',

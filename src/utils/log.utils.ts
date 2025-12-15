@@ -1,8 +1,7 @@
 import * as pluginManifest from '../../manifest.json'
 import type { LogLevel } from '../app/types'
 
-export const LOG_SEPARATOR = '--------------------------------------------------------'
-export const LOG_PREFIX = `${pluginManifest.name}:`
+const LOG_PREFIX = `${pluginManifest.name}:`
 
 /**
  * Log a message

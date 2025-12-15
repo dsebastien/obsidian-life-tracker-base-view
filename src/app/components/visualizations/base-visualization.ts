@@ -1,4 +1,4 @@
-import { setIcon, type App, type BasesEntry, type BasesPropertyId } from 'obsidian'
+import { setIcon, type App, type BasesPropertyId } from 'obsidian'
 import type { VisualizationConfig, VisualizationDataPoint } from '../../types'
 
 /**
@@ -258,19 +258,19 @@ export abstract class BaseVisualization {
     }
 
     /**
-     * Open file in workspace
+     * Open file by path in workspace
      */
-    protected openFile(entry: BasesEntry, newLeaf = false): void {
-        void this.app.workspace.openLinkText(entry.file.path, '', newLeaf)
+    protected openFileByPath(filePath: string, newLeaf = false): void {
+        void this.app.workspace.openLinkText(filePath, '', newLeaf)
     }
 
     /**
-     * Open multiple files (first one, or show selection)
+     * Open first file from a list of file paths
      */
-    protected openEntries(entries: BasesEntry[]): void {
-        const first = entries[0]
+    protected openFilePaths(filePaths: string[]): void {
+        const first = filePaths[0]
         if (first) {
-            this.openFile(first)
+            this.openFileByPath(first)
         }
     }
 }

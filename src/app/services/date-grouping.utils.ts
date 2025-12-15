@@ -143,7 +143,7 @@ export function generateEmptyCells(
                 date: new Date(current),
                 value: null,
                 count: 0,
-                entries: []
+                filePaths: []
             })
         }
 

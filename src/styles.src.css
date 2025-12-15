@@ -14,19 +14,7 @@
     @apply flex;
 }
 
-/* Grid templates for heatmap - note: .lt-grid is defined in GRID LAYOUT section for card grid */
-.lt-heatmap-grid--monthly,
-.lt-heatmap-grid--quarterly {
-    @apply grid;
-}
-
-.lt-heatmap-grid--monthly {
-    grid-template-columns: repeat(12, 1fr);
-}
-
-.lt-heatmap-grid--quarterly {
-    grid-template-columns: repeat(4, 1fr);
-}
+/* Note: Grid templates for heatmap are defined in HEATMAP section after base .lt-heatmap-grid */
 
 /* Flex utilities */
 .lt-flex-shrink-0 {
@@ -592,6 +580,20 @@
     @apply flex gap-0.5;
 }
 
+/* Grid templates for monthly/quarterly heatmaps - must be after base .lt-heatmap-grid to override display */
+.lt-heatmap-grid--monthly,
+.lt-heatmap-grid--quarterly {
+    @apply grid;
+}
+
+.lt-heatmap-grid--monthly {
+    grid-template-columns: repeat(12, 1fr);
+}
+
+.lt-heatmap-grid--quarterly {
+    grid-template-columns: repeat(4, 1fr);
+}
+
 .lt-heatmap-week {
     @apply flex flex-col gap-0.5;
 }
@@ -606,6 +608,14 @@
     @apply ring-2 ring-offset-1;
     --tw-ring-color: var(--interactive-accent);
     --tw-ring-offset-color: var(--background-primary);
+}
+
+/* Placeholder cell for grid layout when showEmptyValues is false */
+/* Shows the grid background but is non-interactive (no hover, no tooltip) */
+.lt-heatmap-placeholder {
+    @apply block rounded-sm flex-shrink-0;
+    background-color: var(--lt-heatmap-empty, var(--background-modifier-border));
+    pointer-events: none;
 }
 
 .lt-heatmap-cell--has-data:hover {

@@ -25,7 +25,7 @@ import { TimeGranularity, type DatePattern } from '../app/types'
 /**
  * Supported date patterns for filename parsing
  */
-export const DATE_PATTERNS: DatePattern[] = [
+const DATE_PATTERNS: DatePattern[] = [
     {
         // Daily: YYYY-MM-DD
         regex: /^(\d{4})-(\d{2})-(\d{2})$/,

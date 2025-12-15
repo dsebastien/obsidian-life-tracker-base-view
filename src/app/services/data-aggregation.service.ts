@@ -13,8 +13,8 @@ import {
     type ResolvedDateAnchor
 } from '../types'
 import { compareAsc, min, max } from 'date-fns'
-import { extractNumber } from '../../utils'
-import { getTimeKey, normalizeDate, generateEmptyCells } from './date-grouping.utils'
+import { extractNumber, extractBoolean, extractDisplayLabel, extractList } from '../../utils'
+import { getTimeKey, normalizeDate } from './date-grouping.utils'
 import {
     aggregateForChart as chartAggregation,
     aggregateForPieChart as pieChartAggregation,
@@ -25,56 +25,99 @@ import {
 } from './chart-aggregation.utils'
 
 /**
+ * Check if a data point has any meaningful data
+ */
+function dataPointHasValue(point: VisualizationDataPoint): boolean {
+    return point.numericValue !== null || point.booleanValue !== null || point.listValues.length > 0
+}
+
+/**
  * Service for aggregating data for visualizations
  */
 export class DataAggregationService {
     /**
-     * Create visualization data points from entries
+     * Create visualization data points from entries.
+     * Extracts and cleans all values once - visualizations receive clean data with no raw Obsidian types.
+     * When showEmptyValues is false, filters out entries that have no meaningful data.
      */
     createDataPoints(
         entries: BasesEntry[],
         propertyId: BasesPropertyId,
-        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>
+        propertyDisplayName: string,
+        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>,
+        showEmptyValues: boolean = true
     ): VisualizationDataPoint[] {
         const dataPoints = entries.map((entry) => {
-            const rawValue = entry.getValue(propertyId)
             const dateAnchor = dateAnchors.get(entry) ?? null
 
+            const rawValue = entry.getValue(propertyId)
+
+            // Extract numeric value (excludes booleans)
+            let numericValue = extractNumber(rawValue)
+
+            // Extract boolean value
+            const booleanValue = extractBoolean(rawValue)
+            if (booleanValue !== null) {
+                numericValue = booleanValue ? 1 : 0
+            }
+
+            // Extract list values for tag cloud visualization
+            const listValues = extractList(rawValue).filter(
+                (v) => v && v !== 'null' && v !== 'undefined'
+            )
+
+            const displayLabel = extractDisplayLabel(
+                propertyDisplayName,
+                numericValue,
+                booleanValue,
+                listValues
+            )
+
+            // Extract file path for navigation
+            const filePath = entry.file.path
+
             return {
-                entry,
+                filePath,
                 dateAnchor,
-                value: rawValue, // Store RAW value, not formatted
-                normalizedValue: extractNumber(rawValue)
+                numericValue,
+                booleanValue,
+                displayLabel,
+                listValues
             }
         })
+
+        // Filter out empty data points when showEmptyValues is false
+        if (!showEmptyValues) {
+            return dataPoints.filter(dataPointHasValue)
+        }
 
         return dataPoints
     }
 
     /**
-     * Aggregate data for heatmap visualization
+     * Aggregate data for heatmap visualization.
+     * Data points should be pre-filtered based on showEmptyValues.
      */
     aggregateForHeatmap(
         dataPoints: VisualizationDataPoint[],
         propertyId: BasesPropertyId,
         displayName: string,
-        granularity: TimeGranularity,
-        showEmptyValues: boolean
+        granularity: TimeGranularity
     ): HeatmapData {
-        // Filter points with valid date anchors
+        // Filter to points with dates
         const validPoints = dataPoints.filter((p) => p.dateAnchor !== null)
 
         if (validPoints.length === 0) {
             return this.createEmptyHeatmapData(propertyId, displayName, granularity)
         }
 
-        // Get date range
+        // Get date range from valid points
         const dates = validPoints.map((p) => p.dateAnchor!.date)
         const minDate = min(dates)
         const maxDate = max(dates)
 
         // Group by time unit
-        const cellMap = new Map<string, { date: Date; values: number[]; entries: BasesEntry[] }>()
+        const cellMap = new Map<string, { date: Date; values: number[]; filePaths: string[] }>()
 
         for (const point of validPoints) {
             const date = point.dateAnchor!.date
@@ -82,14 +125,14 @@ export class DataAggregationService {
             const normDate = normalizeDate(date, granularity)
 
             if (!cellMap.has(key)) {
-                cellMap.set(key, { date: normDate, values: [], entries: [] })
+                cellMap.set(key, { date: normDate, values: [], filePaths: [] })
             }
 
             const cell = cellMap.get(key)!
-            if (point.normalizedValue !== null) {
-                cell.values.push(point.normalizedValue)
+            if (point.numericValue !== null) {
+                cell.values.push(point.numericValue)
             }
-            cell.entries.push(point.entry)
+            cell.filePaths.push(point.filePath)
         }
 
         // Calculate cells
@@ -97,7 +140,7 @@ export class DataAggregationService {
         let minValue = Infinity
         let maxValue = -Infinity
 
-        for (const { date, values, entries } of cellMap.values()) {
+        for (const { date, values, filePaths } of cellMap.values()) {
             const avgValue =
                 values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null
 
@@ -109,15 +152,9 @@ export class DataAggregationService {
             cells.push({
                 date,
                 value: avgValue,
-                count: entries.length,
-                entries
+                count: filePaths.length,
+                filePaths
             })
-        }
-
-        // Add empty cells if requested
-        if (showEmptyValues) {
-            const emptyCells = generateEmptyCells(minDate, maxDate, granularity, cellMap)
-            cells.push(...emptyCells)
         }
 
         // Sort cells by date
@@ -136,7 +173,7 @@ export class DataAggregationService {
     }
 
     /**
-     * Aggregate data for chart visualization
+     * Aggregate data for chart visualization (line, bar, area).
      */
     aggregateForChart(
         dataPoints: VisualizationDataPoint[],
@@ -148,8 +185,9 @@ export class DataAggregationService {
     }
 
     /**
-     * Aggregate data for pie/doughnut chart visualization
-     * Groups values and counts their frequency
+     * Aggregate data for pie/doughnut chart visualization.
+     * Groups values and counts their frequency.
+     * Entries without values are counted as "No data".
      */
     aggregateForPieChart(
         dataPoints: VisualizationDataPoint[],
@@ -160,8 +198,8 @@ export class DataAggregationService {
     }
 
     /**
-     * Aggregate data for radar chart visualization
-     * Groups numeric values by time period
+     * Aggregate data for radar chart visualization.
+     * Groups numeric values by time period.
      */
     aggregateForRadarChart(
         dataPoints: VisualizationDataPoint[],
@@ -169,14 +207,12 @@ export class DataAggregationService {
         displayName: string,
         granularity: TimeGranularity
     ): ChartData {
-        // For radar charts, we use the same aggregation as regular charts
-        // but the rendering will be different
         return this.aggregateForChart(dataPoints, propertyId, displayName, granularity)
     }
 
     /**
-     * Aggregate data for scatter chart visualization
-     * Each point shows time (x) vs value (y)
+     * Aggregate data for scatter chart visualization.
+     * Each point shows time (x) vs value (y).
      */
     aggregateForScatterChart(
         dataPoints: VisualizationDataPoint[],
@@ -187,8 +223,8 @@ export class DataAggregationService {
     }
 
     /**
-     * Aggregate data for bubble chart visualization
-     * Groups by time period, showing value (y) and count (radius)
+     * Aggregate data for bubble chart visualization.
+     * Groups by time period, showing value (y) and count (radius).
      */
     aggregateForBubbleChart(
         dataPoints: VisualizationDataPoint[],
@@ -200,7 +236,7 @@ export class DataAggregationService {
     }
 
     /**
-     * Aggregate data for tag cloud visualization
+     * Aggregate data for tag cloud visualization.
      */
     aggregateForTagCloud(
         dataPoints: VisualizationDataPoint[],
@@ -211,7 +247,8 @@ export class DataAggregationService {
     }
 
     /**
-     * Aggregate data for timeline visualization
+     * Aggregate data for timeline visualization.
+     * Data points should be pre-filtered based on showEmptyValues.
      */
     aggregateForTimeline(
         dataPoints: VisualizationDataPoint[],

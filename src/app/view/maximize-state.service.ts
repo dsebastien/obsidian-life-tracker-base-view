@@ -14,7 +14,10 @@ export class MaximizeStateService {
     constructor(
         private containerEl: HTMLElement,
         private getGridEl: () => HTMLElement | null,
-        private getVisualizations: () => Map<BasesPropertyId, BaseVisualization>,
+        private getVisualizations: () => Map<
+            BasesPropertyId,
+            { propertyDisplayName: string; visualization: BaseVisualization }
+        >,
         private getDataPoints: GetDataPointsCallback
     ) {}
 
@@ -70,7 +73,7 @@ export class MaximizeStateService {
         const visualizations = this.getVisualizations()
         for (const [id, viz] of visualizations) {
             const isMaximized = id === this.maximizedPropertyId
-            viz.setMaximized(isMaximized)
+            viz.visualization.setMaximized(isMaximized)
         }
 
         // Update card classes
@@ -109,16 +112,16 @@ export class MaximizeStateService {
         // Re-render the maximized visualization to fit new size
         if (maximize) {
             const viz = visualizations.get(propertyId)
-            if (viz) {
-                const dataPoints = this.getDataPoints(propertyId)
-                viz.update(dataPoints)
+            if (viz && viz.visualization) {
+                const dataPoints = this.getDataPoints(propertyId, viz.propertyDisplayName)
+                viz.visualization.update(dataPoints)
             }
         } else if (previousMaximized) {
             // Re-render the previously maximized visualization
             const viz = visualizations.get(previousMaximized)
-            if (viz) {
-                const dataPoints = this.getDataPoints(previousMaximized)
-                viz.update(dataPoints)
+            if (viz && viz.visualization) {
+                const dataPoints = this.getDataPoints(previousMaximized, viz.propertyDisplayName)
+                viz.visualization.update(dataPoints)
             }
         }
     }

@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
-    DEFAULT_HEATMAP_COLORS,
-    DARK_HEATMAP_COLORS,
     HEATMAP_PRESETS,
-    HEATMAP_CSS_VARS,
     getHeatmapColor,
     getColorLevelForValue,
     DEFAULT_CHART_COLORS,
@@ -31,29 +28,12 @@ function createMockElement(): HTMLElement & { appliedStyles: Map<string, string>
 }
 
 describe('color-utils', () => {
-    describe('DEFAULT_HEATMAP_COLORS', () => {
-        test('has empty color', () => {
-            expect(DEFAULT_HEATMAP_COLORS.empty).toBe('var(--background-modifier-border)')
-        })
-
-        test('has 5 level colors', () => {
-            expect(DEFAULT_HEATMAP_COLORS.levels.length).toBe(5)
-        })
-    })
-
-    describe('DARK_HEATMAP_COLORS', () => {
-        test('has empty color', () => {
-            expect(DARK_HEATMAP_COLORS.empty).toBe('var(--background-modifier-border)')
-        })
-
-        test('has 5 level colors', () => {
-            expect(DARK_HEATMAP_COLORS.levels.length).toBe(5)
-        })
-    })
-
     describe('HEATMAP_PRESETS', () => {
-        test('includes green preset', () => {
-            expect(HEATMAP_PRESETS['green']).toBeDefined()
+        test('includes green preset with correct structure', () => {
+            const green = HEATMAP_PRESETS['green']
+            expect(green).toBeDefined()
+            expect(green!.empty).toBe('var(--background-modifier-border)')
+            expect(green!.levels.length).toBe(5)
         })
 
         test('includes blue preset', () => {
@@ -75,32 +55,26 @@ describe('color-utils', () => {
     })
 
     describe('getHeatmapColor', () => {
+        const greenScheme = HEATMAP_PRESETS['green']!
+
         test('returns empty color for level 0', () => {
-            expect(getHeatmapColor(0, DEFAULT_HEATMAP_COLORS)).toBe(DEFAULT_HEATMAP_COLORS.empty)
+            expect(getHeatmapColor(0, greenScheme)).toBe(greenScheme.empty)
         })
 
         test('returns correct color for level 1', () => {
-            expect(getHeatmapColor(1, DEFAULT_HEATMAP_COLORS)).toBe(
-                DEFAULT_HEATMAP_COLORS.levels[1]
-            )
+            expect(getHeatmapColor(1, greenScheme)).toBe(greenScheme.levels[1])
         })
 
         test('returns correct color for level 2', () => {
-            expect(getHeatmapColor(2, DEFAULT_HEATMAP_COLORS)).toBe(
-                DEFAULT_HEATMAP_COLORS.levels[2]
-            )
+            expect(getHeatmapColor(2, greenScheme)).toBe(greenScheme.levels[2])
         })
 
         test('returns correct color for level 3', () => {
-            expect(getHeatmapColor(3, DEFAULT_HEATMAP_COLORS)).toBe(
-                DEFAULT_HEATMAP_COLORS.levels[3]
-            )
+            expect(getHeatmapColor(3, greenScheme)).toBe(greenScheme.levels[3])
         })
 
         test('returns correct color for level 4', () => {
-            expect(getHeatmapColor(4, DEFAULT_HEATMAP_COLORS)).toBe(
-                DEFAULT_HEATMAP_COLORS.levels[4]
-            )
+            expect(getHeatmapColor(4, greenScheme)).toBe(greenScheme.levels[4])
         })
     })
 
@@ -264,23 +238,6 @@ describe('color-utils', () => {
             expect(result.length).toBe(2)
             expect(result[0]).toBe('#ff0000')
             expect(result[1]).toBe('#0000ff')
-        })
-    })
-
-    describe('HEATMAP_CSS_VARS', () => {
-        test('has correct CSS variable names', () => {
-            expect(HEATMAP_CSS_VARS.EMPTY).toBe('--lt-heatmap-empty')
-            expect(HEATMAP_CSS_VARS.LEVEL_0).toBe('--lt-heatmap-level-0')
-            expect(HEATMAP_CSS_VARS.LEVEL_1).toBe('--lt-heatmap-level-1')
-            expect(HEATMAP_CSS_VARS.LEVEL_2).toBe('--lt-heatmap-level-2')
-            expect(HEATMAP_CSS_VARS.LEVEL_3).toBe('--lt-heatmap-level-3')
-            expect(HEATMAP_CSS_VARS.LEVEL_4).toBe('--lt-heatmap-level-4')
-        })
-
-        test('all variable names start with --lt-heatmap-', () => {
-            Object.values(HEATMAP_CSS_VARS).forEach((varName) => {
-                expect(varName.startsWith('--lt-heatmap-')).toBe(true)
-            })
         })
     })
 

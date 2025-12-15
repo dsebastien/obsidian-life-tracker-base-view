@@ -161,14 +161,14 @@ export class TagCloudVisualization extends BaseVisualization {
     }
 
     /**
-     * Handle tag click - open related entries
+     * Handle tag click - open related files
      */
     private handleTagClick(tag: string): void {
         if (!this.tagCloudData) return
 
         const tagItem = this.tagCloudData.tags.find((t) => t.tag === tag)
-        if (tagItem && tagItem.entries.length > 0) {
-            this.openEntries(tagItem.entries)
+        if (tagItem && tagItem.filePaths.length > 0) {
+            this.openFilePaths(tagItem.filePaths)
         }
     }
 }

@@ -1,9 +1,6 @@
 // Color utilities
 export {
-    DEFAULT_HEATMAP_COLORS,
-    DARK_HEATMAP_COLORS,
     HEATMAP_PRESETS,
-    HEATMAP_CSS_VARS,
     getHeatmapColor,
     getColorLevelForValue,
     DEFAULT_CHART_COLORS,
@@ -15,13 +12,11 @@ export {
     isDarkTheme,
     getThemeAwareHeatmapColors,
     applyHeatmapColorScheme,
-    isBooleanData,
     getBooleanColor
 } from './color.utils'
 
 // Date utilities
 export {
-    DATE_PATTERNS,
     isValidDate,
     parseDateFromFilename,
     getDateFromISOWeek,
@@ -51,11 +46,10 @@ export {
 export { CSS_CLASS, CSS_SELECTOR, DATA_ATTR, DATA_ATTR_FULL, setCssProps } from './dom.utils'
 
 // Logging utilities
-export { LOG_SEPARATOR, LOG_PREFIX, log } from './log.utils'
+export { log } from './log.utils'
 
 // Validation utilities
 export {
-    validateValue,
     isEmpty,
     validateText,
     validateNumber,
@@ -66,7 +60,6 @@ export {
     validateTags,
     parseListValue,
     parseTagsValue,
-    coerceValue,
     // Input blocking utilities
     isValidNumberKeystroke,
     clampToRange,
@@ -79,11 +72,9 @@ export {
 // Value extraction utilities
 export {
     extractNumber,
+    extractBoolean,
     extractDate,
+    extractDisplayLabel,
     extractList,
-    isDateLike,
-    normalizeValue,
-    getColorLevel,
-    parseDateString,
-    formatValueForDisplay
+    isDateLike
 } from './value.utils'

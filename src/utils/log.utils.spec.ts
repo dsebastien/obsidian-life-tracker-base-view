@@ -1,6 +1,6 @@
 import { describe, expect, test, spyOn, beforeEach, afterEach } from 'bun:test'
 import type { LogLevel } from '../app/types'
-import { log, LOG_PREFIX, LOG_SEPARATOR } from './log.utils'
+import { log } from './log.utils'
 
 describe('log', () => {
     let consoleDebugSpy: ReturnType<typeof spyOn>
@@ -23,28 +23,6 @@ describe('log', () => {
         consoleWarnSpy.mockRestore()
         consoleErrorSpy.mockRestore()
         consoleLogSpy.mockRestore()
-    })
-
-    describe('LOG_PREFIX', () => {
-        test('is defined', () => {
-            expect(LOG_PREFIX).toBeDefined()
-            expect(typeof LOG_PREFIX).toBe('string')
-        })
-
-        test('contains plugin name', () => {
-            expect(LOG_PREFIX).toContain(':')
-        })
-    })
-
-    describe('LOG_SEPARATOR', () => {
-        test('is defined', () => {
-            expect(LOG_SEPARATOR).toBeDefined()
-            expect(typeof LOG_SEPARATOR).toBe('string')
-        })
-
-        test('contains dashes', () => {
-            expect(LOG_SEPARATOR).toContain('-')
-        })
     })
 
     describe('log function', () => {
@@ -78,9 +56,10 @@ describe('log', () => {
             expect(consoleDebugSpy.mock.calls[0]![0]).toContain('test message')
         })
 
-        test('prefixes message with LOG_PREFIX', () => {
+        test('prefixes message with plugin name', () => {
             log('test message', 'debug')
-            expect(consoleDebugSpy.mock.calls[0]![0]).toContain(LOG_PREFIX)
+            // The message should contain the plugin name (ends with colon)
+            expect(consoleDebugSpy.mock.calls[0]![0]).toContain(':')
         })
 
         test('passes additional data to console', () => {

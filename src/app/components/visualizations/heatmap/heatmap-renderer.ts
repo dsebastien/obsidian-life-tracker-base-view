@@ -57,6 +57,13 @@ export function renderHeatmapGrid(
 }
 
 /**
+ * Check if a cell has actual data (not just an entry without value)
+ */
+function cellHasData(cell: HeatmapCell | undefined): boolean {
+    return cell !== undefined && cell.value !== null
+}
+
+/**
  * Render daily heatmap (GitHub-style: 7 rows × N weeks)
  */
 function renderDailyHeatmap(
@@ -99,6 +106,14 @@ function renderDailyHeatmap(
             const date = addDays(weekStart, dayOffset)
             const dateKey = formatDateISO(date)
             const cell = cellMap.get(dateKey)
+
+            // When showEmptyValues is false, skip cells without actual data
+            if (!config.showEmptyValues && !cellHasData(cell)) {
+                // Create placeholder for grid layout but make it invisible/non-interactive
+                const placeholderEl = weekCol.createDiv({ cls: 'lt-heatmap-placeholder' })
+                setCssProps(placeholderEl, { width: config.cellSize, height: config.cellSize })
+                continue
+            }
 
             const cellEl = weekCol.createDiv({ cls: 'lt-heatmap-cell' })
             setCssProps(cellEl, { width: config.cellSize, height: config.cellSize })
@@ -238,6 +253,17 @@ function renderMonthlyHeatmap(
         for (let month = 0; month < 12; month++) {
             const key = `${year}-${String(month + 1).padStart(2, '0')}`
             const cell = byMonth.get(key)
+
+            // When showEmptyValues is false, skip cells without actual data
+            if (!config.showEmptyValues && !cellHasData(cell)) {
+                // Create placeholder for grid layout but make it invisible/non-interactive
+                const placeholderEl = gridEl.createDiv({ cls: 'lt-heatmap-placeholder' })
+                setCssProps(placeholderEl, {
+                    width: config.cellSize * 1.5,
+                    height: config.cellSize
+                })
+                continue
+            }
 
             const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
             setCssProps(cellEl, { width: config.cellSize * 1.5, height: config.cellSize })

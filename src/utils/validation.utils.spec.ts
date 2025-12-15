@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 import {
-    validateValue,
     isEmpty,
     validateText,
     validateNumber,
@@ -11,7 +10,6 @@ import {
     validateTags,
     parseListValue,
     parseTagsValue,
-    coerceValue,
     isValidNumberKeystroke,
     clampToRange,
     sanitizeNumberPaste,
@@ -294,25 +292,6 @@ describe('validation.utils', () => {
         })
     })
 
-    describe('coerceValue', () => {
-        test('returns default value for empty', () => {
-            const def = createMockDefinition({ defaultValue: 'default' })
-            expect(coerceValue('', def)).toBe('default')
-        })
-
-        test('parses number string to number', () => {
-            const def = createMockDefinition({ type: 'number' })
-            expect(coerceValue('42', def)).toBe(42)
-        })
-
-        test('parses boolean strings', () => {
-            const def = createMockDefinition({ type: 'checkbox' })
-            expect(coerceValue('true', def)).toBe(true)
-            expect(coerceValue('false', def)).toBe(false)
-            expect(coerceValue('yes', def)).toBe(true)
-        })
-    })
-
     describe('validateBoolean', () => {
         test('returns valid for true/false', () => {
             expect(validateBoolean(true)).toEqual({ valid: true })
@@ -386,27 +365,6 @@ describe('validation.utils', () => {
             const result = validateTags(['#tag1', '#other'], def)
             expect(result.valid).toBe(false)
             expect(result.error).toContain('"#other" is not allowed')
-        })
-    })
-
-    describe('validateValue', () => {
-        test('validates required field', () => {
-            const def = createMockDefinition({ required: true })
-            const result = validateValue('', def)
-            expect(result.valid).toBe(false)
-            expect(result.error).toContain('required')
-        })
-
-        test('validates number type', () => {
-            const def = createMockDefinition({ type: 'number', numberRange: { min: 0, max: 10 } })
-            expect(validateValue(5, def).valid).toBe(true)
-            expect(validateValue(15, def).valid).toBe(false)
-        })
-
-        test('validates text type with allowed values', () => {
-            const def = createMockDefinition({ type: 'text', allowedValues: ['a', 'b'] })
-            expect(validateValue('a', def).valid).toBe(true)
-            expect(validateValue('c', def).valid).toBe(false)
         })
     })
 })

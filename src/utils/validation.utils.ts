@@ -226,41 +226,6 @@ export function setupNumberInputBlocking(
 }
 
 /**
- * Validate a value against a property definition
- * Can be used by editors for immediate feedback
- */
-export function validateValue(value: unknown, definition: PropertyDefinition): ValidationResult {
-    // Check required
-    if (definition.required && isEmpty(value)) {
-        return { valid: false, error: 'This field is required' }
-    }
-
-    // Skip validation for empty optional values
-    if (isEmpty(value)) {
-        return { valid: true }
-    }
-
-    switch (definition.type) {
-        case 'text':
-            return validateText(value, definition)
-        case 'number':
-            return validateNumber(value, definition)
-        case 'checkbox':
-            return validateBoolean(value)
-        case 'date':
-            return validateDate(value)
-        case 'datetime':
-            return validateDatetime(value)
-        case 'list':
-            return validateList(value, definition)
-        case 'tags':
-            return validateTags(value, definition)
-        default:
-            return { valid: true }
-    }
-}
-
-/**
  * Check if a value is empty (null, undefined, or empty string)
  */
 export function isEmpty(value: unknown): boolean {
@@ -436,29 +401,4 @@ export function parseTagsValue(value: unknown): string[] {
     return String(value)
         .split(/[,\s]+/)
         .filter(Boolean)
-}
-
-/**
- * Convert value to appropriate type for the property
- */
-export function coerceValue(value: unknown, definition: PropertyDefinition): unknown {
-    if (isEmpty(value)) {
-        return definition.defaultValue ?? undefined
-    }
-
-    switch (definition.type) {
-        case 'number':
-            return typeof value === 'number' ? value : parseFloat(String(value))
-        case 'checkbox': {
-            if (typeof value === 'boolean') return value
-            const strVal = String(value).toLowerCase()
-            return strVal === 'true' || strVal === 'yes' || strVal === '1'
-        }
-        case 'list':
-            return parseListValue(value)
-        case 'tags':
-            return parseTagsValue(value)
-        default:
-            return value
-    }
 }

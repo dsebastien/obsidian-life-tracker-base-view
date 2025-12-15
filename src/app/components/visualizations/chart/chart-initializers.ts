@@ -12,12 +12,7 @@ import type {
     PieTooltipContext,
     PointTooltipContext
 } from '../../../types'
-import {
-    CHART_COLORS_HEX,
-    getColorWithAlpha,
-    isBooleanData,
-    getBooleanColor
-} from '../../../../utils'
+import { CHART_COLORS_HEX, getColorWithAlpha, getBooleanColor } from '../../../../utils'
 
 /**
  * Chart.js constructor type.
@@ -40,8 +35,8 @@ export function initPieChart(
     displayName: string,
     onClick: (elements: ChartClickElement[]) => void
 ): ChartInstance {
-    // Check if this is boolean data for consistent coloring
-    const isBoolean = isBooleanData(pieChartData.labels)
+    // Use pre-computed isBooleanData flag for consistent coloring
+    const isBoolean = pieChartData.isBooleanData
 
     // Generate colors for each segment
     // For boolean data, use semantic colors (green for true, red for false)

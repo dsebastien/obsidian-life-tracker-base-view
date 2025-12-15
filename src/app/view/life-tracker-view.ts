@@ -46,18 +46,6 @@ import { getVisualizationConfig } from './visualization-config.helper'
 const RENDER_BATCH_SIZE = 3
 
 /**
- * Check if a property should be rendered as a visualization.
- * All property types are supported:
- * - note.* properties (frontmatter properties from notes)
- * - formula.* properties (computed formula columns in Bases)
- * - file.* properties (file metadata: ctime, mtime, size, path, etc.)
- */
-function shouldRenderProperty(_propertyId: BasesPropertyId): boolean {
-    // All properties are now supported for visualization
-    return true
-}
-
-/**
  * View type identifier
  */
 export const LIFE_TRACKER_VIEW_TYPE = 'life-tracker'
@@ -80,10 +68,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private maximizeService: MaximizeStateService
 
     // Active visualizations
-    private visualizations: Map<BasesPropertyId, BaseVisualization> = new Map()
+    private visualizations: Map<
+        BasesPropertyId,
+        { propertyDisplayName: string; visualization: BaseVisualization }
+    > = new Map()
 
     // Track visualization types for change detection
     private visualizationTypes: Map<BasesPropertyId, VisualizationType> = new Map()
+
+    // Track showEmptyValues setting for change detection
+    private visualizationShowEmptyValues: Map<BasesPropertyId, boolean> = new Map()
 
     // Grid settings (runtime state)
     private gridSettings: GridSettings = { ...DEFAULT_GRID_SETTINGS }
@@ -121,7 +115,15 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             this.containerEl,
             () => this.gridEl,
             () => this.visualizations,
-            (propertyId) => this.getDataPointsForProperty(propertyId)
+            (propertyId, propertyDisplayName) => {
+                // Get data points (already filtered based on showEmptyValues setting)
+                const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
+                return this.getDataPointsForProperty(
+                    propertyId,
+                    propertyDisplayName,
+                    showEmptyValues
+                )
+            }
         )
 
         // Subscribe to global settings changes
@@ -173,9 +175,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     }
 
     /**
-     * Get data points for a specific property (with caching)
+     * Get data points for a specific property (with caching).
+     * When showEmptyValues is false, filters out entries without meaningful data.
      */
-    private getDataPointsForProperty(propertyId: BasesPropertyId): VisualizationDataPoint[] {
+    private getDataPointsForProperty(
+        propertyId: BasesPropertyId,
+        propertyDisplayName: string,
+        showEmptyValues: boolean
+    ): VisualizationDataPoint[] {
         // Check cache first
         const cached = this.cacheService.getDataPoints(propertyId)
         if (cached) {
@@ -196,7 +203,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const dataPoints = this.aggregationService.createDataPoints(
             entries,
             propertyId,
-            dateAnchors
+            propertyDisplayName,
+            dateAnchors,
+            showEmptyValues
         )
         this.cacheService.setDataPoints(propertyId, dataPoints)
         return dataPoints
@@ -279,11 +288,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
         this.cacheService.setDateAnchors(dateAnchors)
 
-        // Filter properties to render (includes note.*, formula.*, excludes file.*)
-        const propertiesToRender = propertyIds.filter(shouldRenderProperty)
-
         // Use async batched rendering to prevent UI freezing
-        void this.renderPropertiesAsync(propertiesToRender, entries, dateAnchors, renderCycle)
+        void this.renderPropertiesAsync(propertyIds, entries, dateAnchors, renderCycle)
     }
 
     /**
@@ -296,21 +302,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Can't do incremental if grid doesn't exist
         if (!this.gridEl) return false
 
-        // Filter to renderable properties (includes note.*, formula.*, excludes file.*)
-        const filteredIds = propertyIds.filter(shouldRenderProperty)
-
-        // Check if any existing visualization is for a property no longer in the list
-        // (property was removed from the view)
-        for (const propertyId of this.visualizations.keys()) {
-            if (!filteredIds.includes(propertyId)) {
-                // A visualization exists for a property that's no longer in the view
-                return false
-            }
-        }
-
         // Check if there are new properties that don't have visualizations yet
         // or if visualization type has changed
-        for (const propertyId of filteredIds) {
+        for (const propertyId of propertyIds) {
             const existingViz = this.visualizations.get(propertyId)
 
             if (!existingViz) {
@@ -331,6 +325,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     return false
                 }
             }
+
+            // Check if showEmptyValues setting has changed
+            const currentShowEmptyValues = this.visualizationShowEmptyValues.get(propertyId)
+            const newShowEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
+            if (
+                currentShowEmptyValues !== undefined &&
+                currentShowEmptyValues !== newShowEmptyValues
+            ) {
+                return false
+            }
         }
 
         // If we have visualizations and entries, we can try incremental
@@ -349,16 +353,21 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             this.cacheService.setDateAnchors(dateAnchors)
         }
 
-        // Update each visualization with new data
-        for (const [propertyId, viz] of this.visualizations) {
+        // Get showEmptyValues setting
+        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
+
+        this.visualizations.forEach((value, key) => {
+            // Update each visualization with new data (already filtered based on showEmptyValues)
             const dataPoints = this.aggregationService.createDataPoints(
                 entries,
-                propertyId,
-                dateAnchors
+                key,
+                value.propertyDisplayName,
+                dateAnchors,
+                showEmptyValues
             )
-            this.cacheService.setDataPoints(propertyId, dataPoints)
-            viz.update(dataPoints)
-        }
+            this.cacheService.setDataPoints(key, dataPoints)
+            value.visualization.update(dataPoints)
+        })
     }
 
     /**
@@ -393,10 +402,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
                 if (effectiveConfig) {
                     // Has configuration (local override or global preset)
+                    const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
                     const dataPoints = this.aggregationService.createDataPoints(
                         entries,
                         propertyId,
-                        dateAnchors
+                        displayName,
+                        dateAnchors,
+                        showEmptyValues
                     )
                     this.cacheService.setDataPoints(propertyId, dataPoints)
                     this.renderConfiguredColumn(effectiveConfig.config, displayName, dataPoints)
@@ -457,10 +469,17 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Set animation duration from plugin settings
         visualization.setAnimationDuration(this.plugin.settings.animationDuration)
 
-        // Render and store
+        // Render and store (data points are already filtered based on showEmptyValues)
         visualization.render(dataPoints)
-        this.visualizations.set(columnConfig.propertyId, visualization)
+        this.visualizations.set(columnConfig.propertyId, {
+            propertyDisplayName: displayName,
+            visualization
+        })
         this.visualizationTypes.set(columnConfig.propertyId, columnConfig.visualizationType)
+        this.visualizationShowEmptyValues.set(
+            columnConfig.propertyId,
+            (this.config.get('showEmptyValues') as boolean) ?? true
+        )
     }
 
     /**
@@ -728,10 +747,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      */
     private destroyVisualizations(): void {
         for (const viz of this.visualizations.values()) {
-            viz.destroy()
+            viz.visualization.destroy()
         }
         this.visualizations.clear()
         this.visualizationTypes.clear()
+        this.visualizationShowEmptyValues.clear()
     }
 
     /**
@@ -754,7 +774,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             case 'animation-duration-changed':
                 // Just update animation duration on existing visualizations
                 for (const viz of this.visualizations.values()) {
-                    viz.setAnimationDuration(this.plugin.settings.animationDuration)
+                    viz.visualization.setAnimationDuration(this.plugin.settings.animationDuration)
                 }
                 break
 
@@ -876,18 +896,22 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         }
 
         // Destroy the old visualization
-        existingViz.destroy()
+        existingViz.visualization.destroy()
         this.visualizations.delete(propertyId)
         this.visualizationTypes.delete(propertyId)
+        this.visualizationShowEmptyValues.delete(propertyId)
 
         // Clear the card element
         cardEl.empty()
 
         // Create the new visualization in the same card
+        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
         const dataPoints = this.aggregationService.createDataPoints(
             entries,
             propertyId,
-            dateAnchors
+            displayName,
+            dateAnchors,
+            showEmptyValues
         )
         this.cacheService.setDataPoints(propertyId, dataPoints)
 
@@ -901,10 +925,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Set animation duration
         visualization.setAnimationDuration(this.plugin.settings.animationDuration)
 
-        // Render and store
+        // Render and store (data points are already filtered based on showEmptyValues)
         visualization.render(dataPoints)
-        this.visualizations.set(propertyId, visualization)
+        this.visualizations.set(propertyId, {
+            propertyDisplayName: displayName,
+            visualization: visualization
+        })
         this.visualizationTypes.set(propertyId, effectiveConfig.config.visualizationType)
+        this.visualizationShowEmptyValues.set(propertyId, showEmptyValues)
     }
 
     /**

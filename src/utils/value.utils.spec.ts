@@ -1,14 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import {
-    extractNumber,
-    extractDate,
-    extractList,
-    isDateLike,
-    normalizeValue,
-    getColorLevel,
-    parseDateString,
-    formatValueForDisplay
-} from './value.utils'
+import { extractNumber, extractBoolean, extractDate, extractList, isDateLike } from './value.utils'
 
 // Mock Value type for testing
 class MockValue {
@@ -36,24 +27,24 @@ describe('value-extractors', () => {
             expect(extractNumber(new MockValue('-10') as never)).toBe(-10)
         })
 
-        test('returns 1 for "true"', () => {
-            expect(extractNumber(new MockValue('true') as never)).toBe(1)
-            expect(extractNumber(new MockValue('TRUE') as never)).toBe(1)
+        test('returns null for "true" (boolean handled by extractBoolean)', () => {
+            expect(extractNumber(new MockValue('true') as never)).toBeNull()
+            expect(extractNumber(new MockValue('TRUE') as never)).toBeNull()
         })
 
-        test('returns 1 for "yes"', () => {
-            expect(extractNumber(new MockValue('yes') as never)).toBe(1)
-            expect(extractNumber(new MockValue('YES') as never)).toBe(1)
+        test('returns null for "yes" (boolean handled by extractBoolean)', () => {
+            expect(extractNumber(new MockValue('yes') as never)).toBeNull()
+            expect(extractNumber(new MockValue('YES') as never)).toBeNull()
         })
 
-        test('returns 0 for "false"', () => {
-            expect(extractNumber(new MockValue('false') as never)).toBe(0)
-            expect(extractNumber(new MockValue('FALSE') as never)).toBe(0)
+        test('returns null for "false" (boolean handled by extractBoolean)', () => {
+            expect(extractNumber(new MockValue('false') as never)).toBeNull()
+            expect(extractNumber(new MockValue('FALSE') as never)).toBeNull()
         })
 
-        test('returns 0 for "no"', () => {
-            expect(extractNumber(new MockValue('no') as never)).toBe(0)
-            expect(extractNumber(new MockValue('NO') as never)).toBe(0)
+        test('returns null for "no" (boolean handled by extractBoolean)', () => {
+            expect(extractNumber(new MockValue('no') as never)).toBeNull()
+            expect(extractNumber(new MockValue('NO') as never)).toBeNull()
         })
 
         test('returns null for non-numeric string', () => {
@@ -64,108 +55,85 @@ describe('value-extractors', () => {
         test('extracts number from string with leading number', () => {
             expect(extractNumber(new MockValue('123abc') as never)).toBe(123)
         })
+
+        test('returns null for actual boolean type', () => {
+            expect(extractNumber(true)).toBeNull()
+            expect(extractNumber(false)).toBeNull()
+        })
+
+        test('returns number for actual number type', () => {
+            expect(extractNumber(42)).toBe(42)
+            expect(extractNumber(3.14)).toBe(3.14)
+            expect(extractNumber(-10)).toBe(-10)
+        })
+
+        test('returns null for NaN', () => {
+            expect(extractNumber(NaN)).toBeNull()
+        })
     })
 
-    describe('parseDateString', () => {
+    describe('extractBoolean', () => {
+        test('returns null for null input', () => {
+            expect(extractBoolean(null)).toBeNull()
+        })
+
+        test('returns null for undefined input', () => {
+            expect(extractBoolean(undefined)).toBeNull()
+        })
+
+        test('returns true for boolean true', () => {
+            expect(extractBoolean(true)).toBe(true)
+        })
+
+        test('returns false for boolean false', () => {
+            expect(extractBoolean(false)).toBe(false)
+        })
+
+        test('returns true for "true" string', () => {
+            expect(extractBoolean(new MockValue('true') as never)).toBe(true)
+            expect(extractBoolean(new MockValue('TRUE') as never)).toBe(true)
+            expect(extractBoolean(new MockValue('True') as never)).toBe(true)
+        })
+
+        test('returns true for "yes" string', () => {
+            expect(extractBoolean(new MockValue('yes') as never)).toBe(true)
+            expect(extractBoolean(new MockValue('YES') as never)).toBe(true)
+            expect(extractBoolean(new MockValue('Yes') as never)).toBe(true)
+        })
+
+        test('returns false for "false" string', () => {
+            expect(extractBoolean(new MockValue('false') as never)).toBe(false)
+            expect(extractBoolean(new MockValue('FALSE') as never)).toBe(false)
+            expect(extractBoolean(new MockValue('False') as never)).toBe(false)
+        })
+
+        test('returns false for "no" string', () => {
+            expect(extractBoolean(new MockValue('no') as never)).toBe(false)
+            expect(extractBoolean(new MockValue('NO') as never)).toBe(false)
+            expect(extractBoolean(new MockValue('No') as never)).toBe(false)
+        })
+
+        test('returns null for non-boolean string', () => {
+            expect(extractBoolean(new MockValue('hello') as never)).toBeNull()
+            expect(extractBoolean(new MockValue('maybe') as never)).toBeNull()
+        })
+
+        test('returns null for numbers (handled by extractNumber)', () => {
+            expect(extractBoolean(42)).toBeNull()
+            expect(extractBoolean(0)).toBeNull()
+            expect(extractBoolean(1)).toBeNull()
+        })
+
         test('returns null for empty string', () => {
-            expect(parseDateString('')).toBeNull()
-            expect(parseDateString('   ')).toBeNull()
+            expect(extractBoolean(new MockValue('') as never)).toBeNull()
         })
 
-        test('returns null for non-date strings', () => {
-            expect(parseDateString('hello')).toBeNull()
-            expect(parseDateString('not a date')).toBeNull()
+        test('returns null for "null" string', () => {
+            expect(extractBoolean(new MockValue('null') as never)).toBeNull()
         })
 
-        // ISO formats
-        test('parses ISO date YYYY-MM-DD', () => {
-            const result = parseDateString('2024-01-15')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getMonth()).toBe(0) // January
-            expect(result!.getDate()).toBe(15)
-        })
-
-        test('parses ISO datetime YYYY-MM-DDTHH:mm:ss', () => {
-            const result = parseDateString('2024-01-15T10:30:00')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getHours()).toBe(10)
-            expect(result!.getMinutes()).toBe(30)
-        })
-
-        test('parses YYYY/MM/DD format', () => {
-            const result = parseDateString('2024/01/15')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getMonth()).toBe(0)
-            expect(result!.getDate()).toBe(15)
-        })
-
-        // European formats (day first)
-        test('parses DD-MM-YYYY format', () => {
-            const result = parseDateString('15-01-2024')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getMonth()).toBe(0) // January
-            expect(result!.getDate()).toBe(15)
-        })
-
-        test('parses DD/MM/YYYY format', () => {
-            const result = parseDateString('15/01/2024')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getMonth()).toBe(0)
-            expect(result!.getDate()).toBe(15)
-        })
-
-        test('parses DD.MM.YYYY format', () => {
-            const result = parseDateString('15.01.2024')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getMonth()).toBe(0)
-            expect(result!.getDate()).toBe(15)
-        })
-
-        // US formats (month first)
-        test('parses MM-DD-YYYY format', () => {
-            const result = parseDateString('01-15-2024')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getMonth()).toBe(0) // January
-            expect(result!.getDate()).toBe(15)
-        })
-
-        test('parses MM/DD/YYYY format', () => {
-            const result = parseDateString('01/15/2024')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getMonth()).toBe(0)
-            expect(result!.getDate()).toBe(15)
-        })
-
-        // With time
-        test('parses YYYY-MM-DD HH:mm:ss format', () => {
-            const result = parseDateString('2024-01-15 10:30:45')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getHours()).toBe(10)
-            expect(result!.getMinutes()).toBe(30)
-            expect(result!.getSeconds()).toBe(45)
-        })
-
-        test('parses YYYY-MM-DD HH:mm format', () => {
-            const result = parseDateString('2024-01-15 10:30')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
-            expect(result!.getHours()).toBe(10)
-            expect(result!.getMinutes()).toBe(30)
-        })
-
-        test('handles whitespace trimming', () => {
-            const result = parseDateString('  2024-01-15  ')
-            expect(result).not.toBeNull()
-            expect(result!.getFullYear()).toBe(2024)
+        test('returns null for "undefined" string', () => {
+            expect(extractBoolean(new MockValue('undefined') as never)).toBeNull()
         })
     })
 
@@ -307,191 +275,6 @@ describe('value-extractors', () => {
 
         test('returns false for empty string', () => {
             expect(isDateLike(new MockValue('') as never)).toBe(false)
-        })
-    })
-
-    describe('normalizeValue', () => {
-        test('normalizes value in range', () => {
-            expect(normalizeValue(50, 0, 100)).toBe(0.5)
-            expect(normalizeValue(25, 0, 100)).toBe(0.25)
-            expect(normalizeValue(75, 0, 100)).toBe(0.75)
-        })
-
-        test('returns 0 for min value', () => {
-            expect(normalizeValue(0, 0, 100)).toBe(0)
-        })
-
-        test('returns 1 for max value', () => {
-            expect(normalizeValue(100, 0, 100)).toBe(1)
-        })
-
-        test('clamps values below min to 0', () => {
-            expect(normalizeValue(-10, 0, 100)).toBe(0)
-        })
-
-        test('clamps values above max to 1', () => {
-            expect(normalizeValue(150, 0, 100)).toBe(1)
-        })
-
-        test('returns 0.5 when min equals max', () => {
-            expect(normalizeValue(50, 50, 50)).toBe(0.5)
-        })
-
-        test('handles negative ranges', () => {
-            expect(normalizeValue(0, -100, 100)).toBe(0.5)
-            expect(normalizeValue(-100, -100, 100)).toBe(0)
-            expect(normalizeValue(100, -100, 100)).toBe(1)
-        })
-    })
-
-    describe('getColorLevel', () => {
-        test('returns 0 for values <= 0', () => {
-            expect(getColorLevel(0)).toBe(0)
-            expect(getColorLevel(-0.5)).toBe(0)
-        })
-
-        test('returns 1 for values <= 0.25', () => {
-            expect(getColorLevel(0.1)).toBe(1)
-            expect(getColorLevel(0.25)).toBe(1)
-        })
-
-        test('returns 2 for values <= 0.5', () => {
-            expect(getColorLevel(0.3)).toBe(2)
-            expect(getColorLevel(0.5)).toBe(2)
-        })
-
-        test('returns 3 for values <= 0.75', () => {
-            expect(getColorLevel(0.6)).toBe(3)
-            expect(getColorLevel(0.75)).toBe(3)
-        })
-
-        test('returns 4 for values > 0.75', () => {
-            expect(getColorLevel(0.8)).toBe(4)
-            expect(getColorLevel(1)).toBe(4)
-            expect(getColorLevel(1.5)).toBe(4)
-        })
-    })
-
-    describe('formatValueForDisplay', () => {
-        test('returns null for null input', () => {
-            expect(formatValueForDisplay(null)).toBeNull()
-        })
-
-        test('returns null for undefined input', () => {
-            expect(formatValueForDisplay(undefined)).toBeNull()
-        })
-
-        test('capitalizes "true" to "True"', () => {
-            expect(formatValueForDisplay('true')).toBe('True')
-        })
-
-        test('capitalizes "false" to "False"', () => {
-            expect(formatValueForDisplay('false')).toBe('False')
-        })
-
-        test('returns string representation for numbers', () => {
-            expect(formatValueForDisplay(42)).toBe('42')
-            expect(formatValueForDisplay(3.14)).toBe('3.14')
-        })
-
-        test('returns string as-is for non-boolean strings', () => {
-            expect(formatValueForDisplay('hello')).toBe('hello')
-            expect(formatValueForDisplay('some value')).toBe('some value')
-        })
-
-        test('handles boolean primitives', () => {
-            expect(formatValueForDisplay(true)).toBe('True')
-            expect(formatValueForDisplay(false)).toBe('False')
-        })
-
-        test('returns null for "null" string', () => {
-            expect(formatValueForDisplay('null')).toBeNull()
-        })
-
-        test('returns null for "undefined" string', () => {
-            expect(formatValueForDisplay('undefined')).toBeNull()
-        })
-
-        test('joins array items with comma', () => {
-            expect(formatValueForDisplay(['a', 'b', 'c'])).toBe('a, b, c')
-        })
-
-        test('filters null/undefined from arrays', () => {
-            expect(formatValueForDisplay(['a', null, 'b', undefined, 'c'])).toBe('a, b, c')
-        })
-
-        test('returns null for empty arrays', () => {
-            expect(formatValueForDisplay([])).toBeNull()
-        })
-
-        test('returns Unknown for internal Obsidian objects with only icon', () => {
-            expect(formatValueForDisplay({ icon: 'lucide-star' })).toBe('Unknown')
-        })
-
-        test('extracts display from Obsidian link objects with icon', () => {
-            expect(
-                formatValueForDisplay({ icon: 'lucide-link', display: 'My Link', path: 'note.md' })
-            ).toBe('My Link')
-        })
-
-        test('extracts display property from objects', () => {
-            expect(formatValueForDisplay({ display: 'displayed' })).toBe('displayed')
-        })
-
-        test('falls back to filename from path for link objects', () => {
-            expect(formatValueForDisplay({ icon: 'lucide-link', path: 'folder/note.md' })).toBe(
-                'note'
-            )
-        })
-
-        test('extracts value property from objects', () => {
-            expect(formatValueForDisplay({ value: 'extracted' })).toBe('extracted')
-        })
-
-        test('extracts name property from objects', () => {
-            expect(formatValueForDisplay({ name: 'named' })).toBe('named')
-        })
-
-        test('extracts label property from objects', () => {
-            expect(formatValueForDisplay({ label: 'labeled' })).toBe('labeled')
-        })
-
-        test('extracts text property from objects', () => {
-            expect(formatValueForDisplay({ text: 'texted' })).toBe('texted')
-        })
-
-        test('stringifies unknown object structures', () => {
-            expect(formatValueForDisplay({ foo: 'bar' })).toBe('{"foo":"bar"}')
-        })
-
-        test('returns Unknown for stringified internal Obsidian objects with only icon', () => {
-            expect(formatValueForDisplay('{"icon":"lucide-star"}')).toBe('Unknown')
-        })
-
-        test('extracts display from stringified Obsidian link objects', () => {
-            expect(
-                formatValueForDisplay('{"icon":"lucide-link","display":"My Link","path":"note.md"}')
-            ).toBe('My Link')
-        })
-
-        test('falls back to filename from stringified link objects', () => {
-            expect(formatValueForDisplay('{"icon":"lucide-link","path":"folder/note.md"}')).toBe(
-                'note'
-            )
-        })
-
-        test('returns Unknown for stringified objects with subpath', () => {
-            expect(formatValueForDisplay('{"subpath":"#heading","type":"link"}')).toBe('Unknown')
-        })
-
-        test('returns Unknown for stringified objects with icon and spaces', () => {
-            expect(formatValueForDisplay('{ "icon": "lucide-star", "type": "link" }')).toBe(
-                'Unknown'
-            )
-        })
-
-        test('returns regular JSON objects without internal markers', () => {
-            expect(formatValueForDisplay('{"count":5}')).toBe('{"count":5}')
         })
     })
 })

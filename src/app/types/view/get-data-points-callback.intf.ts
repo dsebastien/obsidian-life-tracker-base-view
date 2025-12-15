@@ -4,4 +4,7 @@ import type { VisualizationDataPoint } from '../visualization/visualization.type
 /**
  * Callback type for getting data points for re-render
  */
-export type GetDataPointsCallback = (propertyId: BasesPropertyId) => VisualizationDataPoint[]
+export type GetDataPointsCallback = (
+    propertyId: BasesPropertyId,
+    propertyDisplayName: string
+) => VisualizationDataPoint[]

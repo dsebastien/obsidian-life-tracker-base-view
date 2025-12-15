@@ -63,7 +63,7 @@ export function getLifeTrackerViewOptions(): ViewOption[] {
                     type: 'toggle',
                     key: 'showEmptyValues',
                     displayName: 'Show empty values',
-                    default: true
+                    default: false
                 }
             ]
         },

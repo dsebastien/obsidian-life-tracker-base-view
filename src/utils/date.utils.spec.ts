@@ -21,8 +21,7 @@ import {
     getWeeksBetween,
     formatDateISO,
     formatDateByGranularity,
-    getMonthName,
-    DATE_PATTERNS
+    getMonthName
 } from './date.utils'
 import { TimeGranularity } from '../app/types'
 
@@ -38,47 +37,6 @@ describe('date-utils', () => {
 
         test('returns true for Date.now()', () => {
             expect(isValidDate(new Date())).toBe(true)
-        })
-    })
-
-    describe('DATE_PATTERNS', () => {
-        test('has 5 patterns', () => {
-            expect(DATE_PATTERNS.length).toBe(5)
-        })
-
-        test('daily pattern matches YYYY-MM-DD', () => {
-            const pattern = DATE_PATTERNS[0]!
-            expect(pattern.granularity).toBe(TimeGranularity.Daily)
-            expect('2024-01-15'.match(pattern.regex)).toBeTruthy()
-            expect('2024-1-15'.match(pattern.regex)).toBeFalsy()
-        })
-
-        test('weekly pattern matches YYYY-Www', () => {
-            const pattern = DATE_PATTERNS[1]!
-            expect(pattern.granularity).toBe(TimeGranularity.Weekly)
-            expect('2024-W01'.match(pattern.regex)).toBeTruthy()
-            expect('2024-W1'.match(pattern.regex)).toBeFalsy()
-        })
-
-        test('monthly pattern matches YYYY-MM', () => {
-            const pattern = DATE_PATTERNS[2]!
-            expect(pattern.granularity).toBe(TimeGranularity.Monthly)
-            expect('2024-01'.match(pattern.regex)).toBeTruthy()
-            expect('2024-1'.match(pattern.regex)).toBeFalsy()
-        })
-
-        test('quarterly pattern matches YYYY-Qq', () => {
-            const pattern = DATE_PATTERNS[3]!
-            expect(pattern.granularity).toBe(TimeGranularity.Quarterly)
-            expect('2024-Q1'.match(pattern.regex)).toBeTruthy()
-            expect('2024-Q5'.match(pattern.regex)).toBeFalsy()
-        })
-
-        test('yearly pattern matches YYYY', () => {
-            const pattern = DATE_PATTERNS[4]!
-            expect(pattern.granularity).toBe(TimeGranularity.Yearly)
-            expect('2024'.match(pattern.regex)).toBeTruthy()
-            expect('24'.match(pattern.regex)).toBeFalsy()
         })
     })
 
