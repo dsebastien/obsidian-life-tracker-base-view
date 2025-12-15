@@ -12,11 +12,12 @@ You can find more details and background information here: https://www.knowii.ne
 - **GitHub-style heatmaps** with 5 color schemes (green, blue, purple, orange, red)
 - **Animated charts** with configurable duration and play/pause controls
 - **Interactive elements**: click chart elements to open source notes, hover for detailed tooltips
+- **Supports all property types**: frontmatter properties, Bases formulas, and file metadata (e.g., tags as tag cloud)
 
 ### Customization
 
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
-- **Grid layout controls**: adjustable columns (1-6) and card height
+- **Grid layout controls**: adjustable columns (1-6)
 - **Visualization presets**: auto-apply settings to properties by name pattern
 - **Scale configuration**: auto-detect or manual min/max for numeric visualizations
 - **Chart options**: toggle legend, grid lines, and more
@@ -37,6 +38,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Persistent settings**: grid layout and card configurations saved per view
 - **Empty states**: helpful messages when data is missing or misconfigured
 - **Confetti celebration**: optional animation when completing property capture
+- **Mobile support**: responsive grid (becomes cards view on smaller screens), mobile-friendly data entry modal
 
 ## Screenshots
 
@@ -103,6 +105,7 @@ Property definitions let you configure which frontmatter properties to track acr
 - **Constraints**: Optional min/max for numbers, allowed values for text/list/tags
 - **Default value**: Pre-filled when capturing new data
 - **Note filtering**: Apply the property only to specific notes by folder, tag, or regex pattern
+- **Reordering**: Drag and drop to reorder property definitions (affects modal and grid order)
 
 Configure property definitions in **Settings → Life Tracker → Property definitions**. These definitions power the capture command and determine which properties appear in the capture dialog.
 
