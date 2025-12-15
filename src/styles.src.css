@@ -14,16 +14,17 @@
     @apply flex;
 }
 
-.lt-grid {
+/* Grid templates for heatmap - note: .lt-grid is defined in GRID LAYOUT section for card grid */
+.lt-heatmap-grid--monthly,
+.lt-heatmap-grid--quarterly {
     @apply grid;
 }
 
-/* Grid templates for heatmap */
-.lt-grid-cols-12 {
+.lt-heatmap-grid--monthly {
     grid-template-columns: repeat(12, 1fr);
 }
 
-.lt-grid-cols-4 {
+.lt-heatmap-grid--quarterly {
     grid-template-columns: repeat(4, 1fr);
 }
 

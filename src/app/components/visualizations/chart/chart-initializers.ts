@@ -16,7 +16,8 @@ import {
     CHART_COLORS_HEX,
     getColorWithAlpha,
     isBooleanData,
-    getBooleanColor
+    getBooleanColor,
+    log
 } from '../../../../utils'
 
 /**
@@ -89,9 +90,17 @@ export function initPieChart(
                             const label = context.label ?? ''
                             // Skip if label is empty or "null"
                             if (!label || label === 'null') return ''
-                            const value = context.parsed
+                            // For pie/doughnut, parsed is a number
+                            // For polarArea, parsed is an object { r: number }
+                            const parsed = context.parsed
+                            const value =
+                                typeof parsed === 'number'
+                                    ? parsed
+                                    : typeof parsed === 'object' && parsed !== null && 'r' in parsed
+                                      ? (parsed as { r: number }).r
+                                      : null
                             if (value === null || value === undefined) return ''
-                            const total = pieChartData.values.reduce((a, b) => a + b, 0) ?? 1
+                            const total = pieChartData.values.reduce((a, b) => a + b, 0) || 1
                             const percentage = ((value / total) * 100).toFixed(1)
                             return `${label}: ${value} (${percentage}%)`
                         }
@@ -171,8 +180,8 @@ export function initCartesianChart(
     chartConfig: ChartConfig,
     onClick: (elements: ChartClickElement[]) => void
 ): ChartInstance {
-    // Determine if this is an area chart (line with fill)
-    const isAreaChart = chartConfig.chartType === 'line' && chartConfig.tension > 0
+    // Use fill property from config (area charts have fill: true, line charts have fill: false)
+    const shouldFill = chartConfig.fill ?? false
 
     const datasets: ChartDatasetConfig[] = chartData.datasets.map((dataset, index) => {
         const color = CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
@@ -187,7 +196,7 @@ export function initCartesianChart(
             borderColor: color,
             borderWidth: 2,
             tension: chartConfig.tension,
-            fill: isAreaChart || chartConfig.chartType === 'line'
+            fill: shouldFill
         }
     })
 

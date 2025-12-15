@@ -218,7 +218,7 @@ function renderMonthlyHeatmap(
     }
 
     const gridEl = wrapper.createDiv({
-        cls: 'lt-heatmap-grid lt-heatmap-grid--monthly lt-grid lt-grid-cols-12'
+        cls: 'lt-heatmap-grid lt-heatmap-grid--monthly'
     })
     setCssProps(gridEl, { gap: config.cellGap })
 
@@ -273,7 +273,7 @@ function renderQuarterlyHeatmap(
 ): HTMLElement {
     const wrapper = container.createDiv({ cls: 'lt-heatmap-wrapper lt-heatmap-wrapper--quarterly' })
     const gridEl = wrapper.createDiv({
-        cls: 'lt-heatmap-grid lt-heatmap-grid--quarterly lt-grid lt-grid-cols-4'
+        cls: 'lt-heatmap-grid lt-heatmap-grid--quarterly'
     })
     setCssProps(gridEl, { gap: config.cellGap })
 

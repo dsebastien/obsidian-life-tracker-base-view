@@ -198,6 +198,8 @@ export interface ChartConfig extends VisualizationConfig {
     showLegend: boolean
     showGrid: boolean
     tension: number
+    /** Whether to fill area under line (for line/area charts) */
+    fill?: boolean
     /** Optional scale configuration for Y-axis */
     scale?: ScaleConfig
     /** For pie/doughnut: whether to aggregate by value distribution */

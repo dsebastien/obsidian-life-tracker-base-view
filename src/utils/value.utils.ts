@@ -166,7 +166,7 @@ export function getColorLevel(normalizedValue: number): 0 | 1 | 2 | 3 | 4 {
 /**
  * Format a value for display in visualizations.
  * Capitalizes boolean values (true -> True, false -> False).
- * Handles objects by stringifying them with JSON.stringify.
+ * Handles objects by extracting meaningful values or returning null for internal metadata.
  */
 export function formatValueForDisplay(value: unknown): string | null {
     if (value === null || value === undefined) {
@@ -178,8 +178,46 @@ export function formatValueForDisplay(value: unknown): string | null {
         return value ? 'True' : 'False'
     }
 
-    // Handle objects (excluding arrays which stringify nicely)
-    if (typeof value === 'object' && !Array.isArray(value)) {
+    // Handle arrays - join items
+    if (Array.isArray(value)) {
+        const filtered = value
+            .filter((v) => v !== null && v !== undefined && v !== 'null')
+            .map((v) => formatValueForDisplay(v))
+            .filter((v): v is string => v !== null && v.length > 0)
+        if (filtered.length === 0) return null
+        return filtered.join(', ')
+    }
+
+    // Handle objects (excluding arrays)
+    if (typeof value === 'object') {
+        const obj = value as Record<string, unknown>
+
+        // First, try to extract meaningful display value from objects
+        // This handles Obsidian links which have 'display' property
+        // Priority: display > value > name > label > text
+        const displayValue =
+            obj['display'] ?? obj['value'] ?? obj['name'] ?? obj['label'] ?? obj['text']
+        if (displayValue !== undefined && displayValue !== null) {
+            return formatValueForDisplay(displayValue)
+        }
+
+        // If this is an internal Obsidian object with only metadata (icon, subpath, etc.)
+        // and no displayable value, try path as fallback
+        if ('icon' in obj || 'subpath' in obj) {
+            // Try path as fallback for links
+            if ('path' in obj && typeof obj['path'] === 'string') {
+                // Extract filename from path
+                const path = obj['path'] as string
+                const filename = path.split('/').pop() ?? path
+                // Remove .md extension if present
+                return filename.replace(/\.md$/, '')
+            }
+            // For icon-only objects (broken links, unresolved references), return "Unknown"
+            return 'Unknown'
+        }
+
+        // Fall back to JSON stringification for unknown objects
+        // This preserves data visibility while avoiding [object Object]
         return JSON.stringify(value)
     }
 
@@ -188,6 +226,29 @@ export function formatValueForDisplay(value: unknown): string | null {
     // Capitalize boolean string values
     if (str === 'true') return 'True'
     if (str === 'false') return 'False'
+
+    // Skip "null" or "undefined" strings
+    if (str === 'null' || str === 'undefined') return null
+
+    // Check if this is a stringified internal Obsidian object (like links with icons)
+    if (str.startsWith('{') && str.endsWith('}')) {
+        // Check for common internal object patterns in the string
+        if (
+            str.includes('"icon"') ||
+            str.includes('"subpath"') ||
+            (str.includes('"type"') && str.includes('"path"'))
+        ) {
+            try {
+                const parsed = JSON.parse(str)
+                if (typeof parsed === 'object' && parsed !== null) {
+                    // Recursively process the parsed object
+                    return formatValueForDisplay(parsed)
+                }
+            } catch {
+                // Not valid JSON, return as-is
+            }
+        }
+    }
 
     return str
 }

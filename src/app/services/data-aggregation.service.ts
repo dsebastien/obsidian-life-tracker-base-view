@@ -13,7 +13,7 @@ import {
     type ResolvedDateAnchor
 } from '../types'
 import { compareAsc, min, max } from 'date-fns'
-import { extractNumber, formatValueForDisplay } from '../../utils'
+import { extractNumber, log } from '../../utils'
 import { getTimeKey, normalizeDate, generateEmptyCells } from './date-grouping.utils'
 import {
     aggregateForChart as chartAggregation,
@@ -36,17 +36,19 @@ export class DataAggregationService {
         propertyId: BasesPropertyId,
         dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>
     ): VisualizationDataPoint[] {
-        return entries.map((entry) => {
-            const value = entry.getValue(propertyId)
+        const dataPoints = entries.map((entry) => {
+            const rawValue = entry.getValue(propertyId)
             const dateAnchor = dateAnchors.get(entry) ?? null
 
             return {
                 entry,
                 dateAnchor,
-                value: formatValueForDisplay(value),
-                normalizedValue: extractNumber(value)
+                value: rawValue, // Store RAW value, not formatted
+                normalizedValue: extractNumber(rawValue)
             }
         })
+
+        return dataPoints
     }
 
     /**

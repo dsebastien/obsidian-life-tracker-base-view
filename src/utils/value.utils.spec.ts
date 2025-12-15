@@ -403,5 +403,95 @@ describe('value-extractors', () => {
             expect(formatValueForDisplay(true)).toBe('True')
             expect(formatValueForDisplay(false)).toBe('False')
         })
+
+        test('returns null for "null" string', () => {
+            expect(formatValueForDisplay('null')).toBeNull()
+        })
+
+        test('returns null for "undefined" string', () => {
+            expect(formatValueForDisplay('undefined')).toBeNull()
+        })
+
+        test('joins array items with comma', () => {
+            expect(formatValueForDisplay(['a', 'b', 'c'])).toBe('a, b, c')
+        })
+
+        test('filters null/undefined from arrays', () => {
+            expect(formatValueForDisplay(['a', null, 'b', undefined, 'c'])).toBe('a, b, c')
+        })
+
+        test('returns null for empty arrays', () => {
+            expect(formatValueForDisplay([])).toBeNull()
+        })
+
+        test('returns Unknown for internal Obsidian objects with only icon', () => {
+            expect(formatValueForDisplay({ icon: 'lucide-star' })).toBe('Unknown')
+        })
+
+        test('extracts display from Obsidian link objects with icon', () => {
+            expect(
+                formatValueForDisplay({ icon: 'lucide-link', display: 'My Link', path: 'note.md' })
+            ).toBe('My Link')
+        })
+
+        test('extracts display property from objects', () => {
+            expect(formatValueForDisplay({ display: 'displayed' })).toBe('displayed')
+        })
+
+        test('falls back to filename from path for link objects', () => {
+            expect(formatValueForDisplay({ icon: 'lucide-link', path: 'folder/note.md' })).toBe(
+                'note'
+            )
+        })
+
+        test('extracts value property from objects', () => {
+            expect(formatValueForDisplay({ value: 'extracted' })).toBe('extracted')
+        })
+
+        test('extracts name property from objects', () => {
+            expect(formatValueForDisplay({ name: 'named' })).toBe('named')
+        })
+
+        test('extracts label property from objects', () => {
+            expect(formatValueForDisplay({ label: 'labeled' })).toBe('labeled')
+        })
+
+        test('extracts text property from objects', () => {
+            expect(formatValueForDisplay({ text: 'texted' })).toBe('texted')
+        })
+
+        test('stringifies unknown object structures', () => {
+            expect(formatValueForDisplay({ foo: 'bar' })).toBe('{"foo":"bar"}')
+        })
+
+        test('returns Unknown for stringified internal Obsidian objects with only icon', () => {
+            expect(formatValueForDisplay('{"icon":"lucide-star"}')).toBe('Unknown')
+        })
+
+        test('extracts display from stringified Obsidian link objects', () => {
+            expect(
+                formatValueForDisplay('{"icon":"lucide-link","display":"My Link","path":"note.md"}')
+            ).toBe('My Link')
+        })
+
+        test('falls back to filename from stringified link objects', () => {
+            expect(formatValueForDisplay('{"icon":"lucide-link","path":"folder/note.md"}')).toBe(
+                'note'
+            )
+        })
+
+        test('returns Unknown for stringified objects with subpath', () => {
+            expect(formatValueForDisplay('{"subpath":"#heading","type":"link"}')).toBe('Unknown')
+        })
+
+        test('returns Unknown for stringified objects with icon and spaces', () => {
+            expect(formatValueForDisplay('{ "icon": "lucide-star", "type": "link" }')).toBe(
+                'Unknown'
+            )
+        })
+
+        test('returns regular JSON objects without internal markers', () => {
+            expect(formatValueForDisplay('{"count":5}')).toBe('{"count":5}')
+        })
     })
 })

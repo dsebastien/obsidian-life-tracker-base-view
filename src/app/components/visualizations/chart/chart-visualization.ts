@@ -78,8 +78,6 @@ export class ChartVisualization extends BaseVisualization {
      * Render the chart with data
      */
     override render(data: VisualizationDataPoint[]): void {
-        log(`Rendering chart for ${this.displayName}`, 'debug')
-
         // Reset all data
         this.chartData = null
         this.pieChartData = null

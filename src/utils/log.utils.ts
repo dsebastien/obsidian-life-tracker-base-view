@@ -15,7 +15,7 @@ export const log = (message: string, level?: LogLevel, ...data: unknown[]): void
     switch (level) {
         case 'debug':
         case 'info':
-            // Use debug for both debug and info levels (console.info is not allowed)
+            // Obsidian disallows console.log and console.info, use debug for both
             console.debug(logMessage, data)
             break
         case 'warn':

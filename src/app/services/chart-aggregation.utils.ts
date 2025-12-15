@@ -15,7 +15,7 @@ import {
     type TimelinePoint,
     type VisualizationDataPoint
 } from '../types'
-import { formatDateByGranularity, extractList } from '../../utils'
+import { formatDateByGranularity, extractList, log } from '../../utils'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
 
 /**
@@ -104,6 +104,111 @@ export function aggregateForChart(
     }
 }
 
+/** Max recursion depth for valueToLabel to prevent infinite loops */
+const MAX_VALUE_DEPTH = 10
+
+/**
+ * Convert a value to a display string for pie chart labels.
+ * Returns null if the value should be skipped (internal objects, empty, etc.)
+ */
+function valueToLabel(value: unknown, depth: number = 0): string | null {
+    // Prevent infinite recursion
+    if (depth > MAX_VALUE_DEPTH) {
+        return null
+    }
+
+    if (value === null || value === undefined) {
+        return null
+    }
+
+    // Handle arrays - join items, skip if empty
+    if (Array.isArray(value)) {
+        const filtered = value
+            .filter((v) => v !== null && v !== undefined && v !== 'null')
+            .map((v) => valueToLabel(v, depth + 1))
+            .filter((v): v is string => v !== null && v.length > 0)
+        if (filtered.length === 0) {
+            return null
+        }
+        return filtered.join(', ')
+    }
+
+    // Handle objects (including Obsidian's Value type)
+    if (typeof value === 'object') {
+        const obj = value as Record<string, unknown>
+
+        // First, try calling toString() - Obsidian's Value type has a meaningful toString()
+        // that returns the actual value (e.g., "true", "false", "1", "some text")
+        if (typeof obj['toString'] === 'function') {
+            const strValue = String(value).trim()
+            // If toString() returns something meaningful (not [object Object]), use it
+            if (strValue && strValue !== '[object Object]' && !strValue.startsWith('[object ')) {
+                // Capitalize boolean values
+                if (strValue === 'true') return 'True'
+                if (strValue === 'false') return 'False'
+                // Skip null/undefined strings
+                if (strValue === 'null' || strValue === 'undefined') return null
+                return strValue
+            }
+        }
+
+        // For plain objects, try to extract meaningful display value
+        // This handles Obsidian links which have 'display' property
+        // Priority: display > value > name > label > text
+        const displayValue =
+            obj['display'] ?? obj['value'] ?? obj['name'] ?? obj['label'] ?? obj['text']
+        if (displayValue !== undefined && displayValue !== null) {
+            return valueToLabel(displayValue, depth + 1)
+        }
+
+        // If this is an internal Obsidian object with only metadata (icon, subpath, etc.)
+        // and no displayable value, try path as fallback
+        if ('icon' in obj || 'subpath' in obj) {
+            if ('path' in obj && typeof obj['path'] === 'string') {
+                // Extract filename from path
+                const path = obj['path'] as string
+                const filename = path.split('/').pop() ?? path
+                // Remove .md extension if present
+                return filename.replace(/\.md$/, '')
+            }
+            // For icon-only objects (broken links, unresolved references), return "Unknown"
+            // so they are still counted in pie charts rather than being skipped entirely
+            return 'Unknown'
+        }
+
+        // For other objects, stringify them
+        return JSON.stringify(value)
+    }
+
+    // Primitives - convert to string
+    const str = String(value).trim()
+
+    if (!str || str === 'null' || str === 'undefined') {
+        return null
+    }
+
+    // Check if this is a stringified internal Obsidian object (like links with icons)
+    if (str.startsWith('{') && str.endsWith('}')) {
+        if (
+            str.includes('"icon"') ||
+            str.includes('"subpath"') ||
+            (str.includes('"type"') && str.includes('"path"'))
+        ) {
+            try {
+                const parsed = JSON.parse(str)
+                if (typeof parsed === 'object' && parsed !== null) {
+                    // Recursively process the parsed object
+                    return valueToLabel(parsed, depth + 1)
+                }
+            } catch {
+                // Not valid JSON, return as-is
+            }
+        }
+    }
+
+    return str
+}
+
 /**
  * Aggregate data for pie/doughnut chart visualization
  * Groups values and counts their frequency
@@ -116,18 +221,24 @@ export function aggregateForPieChart(
 ): PieChartData {
     // Group by value
     const valueGroups = new Map<string, { count: number; entries: BasesEntry[] }>()
+    let skippedCount = 0
+    const skippedReasons: string[] = []
 
     for (const point of dataPoints) {
-        // Skip null/undefined values
-        if (point.value === null || point.value === undefined) continue
+        // Use point.value which now contains the RAW value (not entry.getValue again)
+        const rawValue = point.value
 
-        // Convert to string and skip empty or "null" strings
-        // Handle objects by stringifying to avoid [object Object]
-        const valueStr =
-            typeof point.value === 'object'
-                ? JSON.stringify(point.value).trim()
-                : String(point.value).trim()
-        if (!valueStr || valueStr === 'null' || valueStr === 'undefined') continue
+        // Convert raw value to display label, skip if not displayable
+        const valueStr = valueToLabel(rawValue)
+        if (!valueStr) {
+            skippedCount++
+            if (skippedReasons.length < 5) {
+                skippedReasons.push(
+                    `rawValue=${JSON.stringify(rawValue)?.slice(0, 100)}, type=${typeof rawValue}`
+                )
+            }
+            continue
+        }
 
         if (!valueGroups.has(valueStr)) {
             valueGroups.set(valueStr, { count: 0, entries: [] })
@@ -272,6 +383,7 @@ export function aggregateForTagCloud(
     for (const point of dataPoints) {
         if (!point.value) continue
 
+        // Get raw value from entry for extractList (needs Obsidian's Value type)
         const value = point.entry.getValue(propertyId)
         const tags = extractList(value)
 

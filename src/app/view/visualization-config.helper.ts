@@ -49,8 +49,28 @@ export function getVisualizationConfig(
         }
 
         case VisualizationType.LineChart:
-        case VisualizationType.BarChart:
+            return {
+                ...baseConfig,
+                chartType: mapVisualizationTypeToChartType(vizType),
+                showLegend: (getConfig('chartShowLegend') as boolean) ?? false,
+                showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
+                tension: 0.3,
+                fill: false, // Line charts don't have fill
+                scale
+            } as ChartConfig
+
         case VisualizationType.AreaChart:
+            return {
+                ...baseConfig,
+                chartType: mapVisualizationTypeToChartType(vizType),
+                showLegend: (getConfig('chartShowLegend') as boolean) ?? false,
+                showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
+                tension: 0.3,
+                fill: true, // Area charts have fill
+                scale
+            } as ChartConfig
+
+        case VisualizationType.BarChart:
         case VisualizationType.PieChart:
         case VisualizationType.DoughnutChart:
         case VisualizationType.RadarChart:

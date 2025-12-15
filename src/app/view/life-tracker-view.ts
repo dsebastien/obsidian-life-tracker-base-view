@@ -70,6 +70,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // Active visualizations
     private visualizations: Map<BasesPropertyId, BaseVisualization> = new Map()
 
+    // Track visualization types for change detection
+    private visualizationTypes: Map<BasesPropertyId, VisualizationType> = new Map()
+
     // Grid settings (runtime state)
     private gridSettings: GridSettings = { ...DEFAULT_GRID_SETTINGS }
 
@@ -116,8 +119,6 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Register as active file provider for batch capture
         this.plugin.setActiveFileProvider(this)
-
-        log('LifeTrackerView created', 'debug')
     }
 
     /**
@@ -169,6 +170,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             return cached
         }
 
+        // TODO add support for groupings
         const entries = this.data.data
 
         // Get or compute date anchors
@@ -194,11 +196,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     override onDataUpdated(): void {
         // Skip full re-render if we're just updating grid settings
         if (this.isUpdatingGridSettings) {
-            log('onDataUpdated skipped (grid settings update only)', 'debug')
             return
         }
-
-        log('onDataUpdated called', 'debug')
 
         // Cancel any pending async render
         this.cancelPendingRender()
@@ -288,15 +287,40 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Can't do incremental if grid doesn't exist
         if (!this.gridEl) return false
 
-        // Check if the same properties are configured with the same visualization types
+        // Filter to renderable properties (not file.* properties)
         const filteredIds = propertyIds.filter((id) => !id.startsWith('file.'))
 
+        // Check if any existing visualization is for a property no longer in the list
+        // (property was removed from the view)
+        for (const propertyId of this.visualizations.keys()) {
+            if (!filteredIds.includes(propertyId)) {
+                // A visualization exists for a property that's no longer in the view
+                return false
+            }
+        }
+
+        // Check if there are new properties that don't have visualizations yet
+        // or if visualization type has changed
         for (const propertyId of filteredIds) {
             const existingViz = this.visualizations.get(propertyId)
+            const displayName = this.config.getDisplayName(propertyId)
+            const effectiveConfig = this.columnConfigService.getEffectiveConfig(
+                propertyId,
+                displayName
+            )
+
             if (!existingViz) {
-                // A property doesn't have a visualization - can't be incremental
-                // (might be unconfigured or newly added)
-                continue
+                // Check if this property now has a config (new preset match, etc.)
+                if (effectiveConfig) {
+                    // Property now has config but no visualization - need full refresh
+                    return false
+                }
+            } else if (effectiveConfig) {
+                // Check if visualization type has changed
+                const currentType = this.visualizationTypes.get(propertyId)
+                if (currentType && currentType !== effectiveConfig.config.visualizationType) {
+                    return false
+                }
             }
         }
 
@@ -308,8 +332,6 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      * Perform incremental update - update existing visualizations with new data
      */
     private performIncrementalUpdate(entries: BasesEntry[]): void {
-        log('Performing incremental update', 'debug')
-
         // Get date anchors (use cache)
         let dateAnchors = this.cacheService.getDateAnchors()
         if (!dateAnchors) {
@@ -344,7 +366,6 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const renderBatch = (): void => {
             // Check if this render cycle is still current
             if (renderCycle !== this.currentRenderCycle) {
-                log('Render cycle cancelled', 'debug')
                 return
             }
 
@@ -386,7 +407,6 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.pendingRenderFrame = requestAnimationFrame(renderBatch)
             } else {
                 this.pendingRenderFrame = null
-                log(`Async render complete: ${propertiesToRender.length} properties`, 'debug')
             }
         }
 
@@ -437,6 +457,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Render and store
         visualization.render(dataPoints)
         this.visualizations.set(columnConfig.propertyId, visualization)
+        this.visualizationTypes.set(columnConfig.propertyId, columnConfig.visualizationType)
     }
 
     /**
@@ -699,14 +720,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             viz.destroy()
         }
         this.visualizations.clear()
+        this.visualizationTypes.clear()
     }
 
     /**
      * Handle settings changes with targeted updates when possible
      */
     private handleSettingsChange(changeInfo: SettingsChangeInfo): void {
-        log('Settings changed', 'debug', changeInfo)
-
         switch (changeInfo.type) {
             case 'preset-updated':
             case 'preset-deleted':
@@ -780,14 +800,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         if (!this.gridEl) return
 
         if (propertyIdsToRefresh.length === 0) {
-            log('No visualizations affected by preset change', 'debug')
             return
         }
-
-        log('Refreshing visualizations for preset', 'debug', {
-            presetId,
-            propertyIds: propertyIdsToRefresh
-        })
 
         // Refresh each affected visualization
         const entries = this.data.data
@@ -812,7 +826,6 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Get the existing visualization and its card element
         const existingViz = this.visualizations.get(propertyId)
         if (!existingViz) {
-            log('No existing visualization to refresh', 'debug', propertyId)
             return
         }
 
@@ -821,7 +834,6 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             `[data-property-id="${propertyId}"]`
         ) as HTMLElement | null
         if (!cardEl) {
-            log('No card element found for visualization', 'debug', propertyId)
             return
         }
 
@@ -841,6 +853,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Destroy the old visualization
         existingViz.destroy()
         this.visualizations.delete(propertyId)
+        this.visualizationTypes.delete(propertyId)
 
         // Clear the card element
         cardEl.empty()
@@ -865,16 +878,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Render and store
         visualization.render(dataPoints)
         this.visualizations.set(propertyId, visualization)
-
-        log('Refreshed single visualization', 'debug', propertyId)
+        this.visualizationTypes.set(propertyId, effectiveConfig.config.visualizationType)
     }
 
     /**
      * Called when view is unloaded
      */
     override onunload(): void {
-        log('LifeTrackerView unloading', 'debug')
-
         // Cancel any pending async render
         this.cancelPendingRender()
 

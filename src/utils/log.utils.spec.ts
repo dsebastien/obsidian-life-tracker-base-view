@@ -54,10 +54,10 @@ describe('log', () => {
             expect(consoleDebugSpy.mock.calls[0]![0]).toContain('test message')
         })
 
-        test('uses console.info for info level', () => {
+        test('uses console.debug for info level (Obsidian disallows console.info)', () => {
             log('test message', 'info')
-            expect(consoleInfoSpy).toHaveBeenCalledTimes(1)
-            expect(consoleInfoSpy.mock.calls[0]![0]).toContain('test message')
+            expect(consoleDebugSpy).toHaveBeenCalledTimes(1)
+            expect(consoleDebugSpy.mock.calls[0]![0]).toContain('test message')
         })
 
         test('uses console.warn for warn level', () => {
@@ -79,21 +79,21 @@ describe('log', () => {
         })
 
         test('prefixes message with LOG_PREFIX', () => {
-            log('test message', 'info')
-            expect(consoleInfoSpy.mock.calls[0]![0]).toContain(LOG_PREFIX)
+            log('test message', 'debug')
+            expect(consoleDebugSpy.mock.calls[0]![0]).toContain(LOG_PREFIX)
         })
 
         test('passes additional data to console', () => {
             const extraData = { foo: 'bar' }
-            log('test message', 'info', extraData)
-            expect(consoleInfoSpy.mock.calls[0]![1]).toContain(extraData)
+            log('test message', 'debug', extraData)
+            expect(consoleDebugSpy.mock.calls[0]![1]).toContain(extraData)
         })
 
         test('passes multiple data arguments', () => {
-            log('test message', 'info', 'data1', 'data2', 'data3')
-            expect(consoleInfoSpy.mock.calls[0]![1]).toContain('data1')
-            expect(consoleInfoSpy.mock.calls[0]![1]).toContain('data2')
-            expect(consoleInfoSpy.mock.calls[0]![1]).toContain('data3')
+            log('test message', 'debug', 'data1', 'data2', 'data3')
+            expect(consoleDebugSpy.mock.calls[0]![1]).toContain('data1')
+            expect(consoleDebugSpy.mock.calls[0]![1]).toContain('data2')
+            expect(consoleDebugSpy.mock.calls[0]![1]).toContain('data3')
         })
     })
 
