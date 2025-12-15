@@ -4,8 +4,14 @@ import type { HeatmapConfig, HeatmapData, VisualizationDataPoint } from '../../.
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
 import { renderHeatmapGrid } from './heatmap-renderer'
-import { parseISO, isSameDay } from 'date-fns'
-import { log, CSS_SELECTOR, applyHeatmapColorScheme } from '../../../../utils'
+import { parseISO, isSameDay, isSameMonth, isSameYear } from 'date-fns'
+import {
+    log,
+    CSS_SELECTOR,
+    applyHeatmapColorScheme,
+    formatDateISO,
+    getColorLevelForValue
+} from '../../../../utils'
 
 /**
  * Shared aggregation service instance for all heatmap visualizations
@@ -88,11 +94,137 @@ export class HeatmapVisualization extends BaseVisualization {
     }
 
     /**
-     * Update the heatmap with new data
+     * Update the heatmap with new data using in-place cell updates when possible
      */
     override update(data: VisualizationDataPoint[]): void {
-        // Re-render for simplicity
-        this.render(data)
+        // If no grid exists, do a full render
+        if (!this.gridEl || !this.heatmapData) {
+            this.render(data)
+            return
+        }
+
+        // Re-aggregate data
+        const newData = sharedAggregationService.aggregateForHeatmap(
+            data,
+            this.propertyId,
+            this.displayName,
+            this.heatmapConfig.granularity,
+            this.heatmapConfig.showEmptyValues
+        )
+
+        // Apply scale override if configured
+        if (this.heatmapConfig.scale) {
+            if (this.heatmapConfig.scale.min !== null) {
+                newData.minValue = this.heatmapConfig.scale.min
+            }
+            if (this.heatmapConfig.scale.max !== null) {
+                newData.maxValue = this.heatmapConfig.scale.max
+            }
+        }
+
+        // If date range changed significantly, do a full re-render
+        if (!this.canUpdateInPlace(newData)) {
+            this.render(data)
+            return
+        }
+
+        // Update cells in place
+        this.updateCellsInPlace(newData)
+
+        // Update stored data
+        this.heatmapData = newData
+    }
+
+    /**
+     * Check if we can update cells in place without re-rendering the entire grid
+     * Returns false if date range changed (which would require structural changes)
+     */
+    private canUpdateInPlace(newData: HeatmapData): boolean {
+        if (!this.heatmapData) return false
+
+        // For daily/weekly granularity, check if the week range is the same
+        // For monthly/quarterly/yearly, check if the year range is the same
+        const oldMin = this.heatmapData.minDate
+        const oldMax = this.heatmapData.maxDate
+        const newMin = newData.minDate
+        const newMax = newData.maxDate
+
+        switch (this.heatmapConfig.granularity) {
+            case 'daily':
+            case 'weekly':
+                // Check if min/max are within same week range
+                return isSameMonth(oldMin, newMin) && isSameMonth(oldMax, newMax)
+            case 'monthly':
+            case 'quarterly':
+                // Check if within same year range
+                return isSameYear(oldMin, newMin) && isSameYear(oldMax, newMax)
+            case 'yearly':
+                // For yearly, only re-render if years changed
+                return (
+                    oldMin.getFullYear() === newMin.getFullYear() &&
+                    oldMax.getFullYear() === newMax.getFullYear()
+                )
+            default:
+                return false
+        }
+    }
+
+    /**
+     * Update existing cells in place with new data
+     */
+    private updateCellsInPlace(newData: HeatmapData): void {
+        if (!this.gridEl) return
+
+        // Build a map of new cell data by date string for O(1) lookup
+        const newCellMap = new Map<string, { value: number | null; count: number }>()
+        for (const cell of newData.cells) {
+            const key = formatDateISO(cell.date)
+            newCellMap.set(key, { value: cell.value, count: cell.count })
+        }
+
+        // Query all existing cells
+        const cells = this.gridEl.querySelectorAll(CSS_SELECTOR.HEATMAP_CELL)
+
+        cells.forEach((cell) => {
+            const cellEl = cell as HTMLElement
+            const dateStr = cellEl.dataset['date']
+            if (!dateStr) return
+
+            const newCellData = newCellMap.get(dateStr)
+
+            // Remove all level classes
+            for (let i = 0; i <= 4; i++) {
+                cellEl.classList.remove(`lt-heatmap-cell--level-${i}`)
+            }
+            cellEl.classList.remove('lt-heatmap-cell--has-data')
+
+            // Update cell data
+            if (newCellData) {
+                const level = getColorLevelForValue(
+                    newCellData.value,
+                    newData.minValue,
+                    newData.maxValue
+                )
+                cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
+
+                if (newCellData.value !== null) {
+                    cellEl.dataset['value'] = String(newCellData.value)
+                } else {
+                    delete cellEl.dataset['value']
+                }
+
+                cellEl.dataset['count'] = String(newCellData.count)
+
+                if (newCellData.count > 0) {
+                    cellEl.classList.add('lt-heatmap-cell--has-data')
+                }
+            } else {
+                // No data for this cell
+                cellEl.classList.add('lt-heatmap-cell--level-0')
+                delete cellEl.dataset['value']
+                cellEl.dataset['count'] = '0'
+            }
+        })
     }
 
     /**

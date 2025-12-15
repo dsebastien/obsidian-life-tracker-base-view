@@ -2,37 +2,23 @@ import type { BasesEntry, BasesPropertyId } from 'obsidian'
 import type { ResolvedDateAnchor, VisualizationDataPoint } from '../types'
 
 /**
- * Cache key for aggregated data
- */
-interface AggregationCacheKey {
-    propertyId: BasesPropertyId
-    type: string
-    granularity?: string
-}
-
-/**
  * Service for caching render-related data within a single render cycle.
  * Caches are automatically invalidated when a new render cycle starts.
  *
  * This improves performance by avoiding:
  * - Duplicate date anchor resolution
  * - Duplicate data point creation
- * - Duplicate aggregation computations
  */
 export class RenderCacheService {
-    private renderCycleId: number = 0
     private dateAnchorsCache: Map<BasesEntry, ResolvedDateAnchor | null> | null = null
     private dataPointsCache: Map<BasesPropertyId, VisualizationDataPoint[]> = new Map()
-    private aggregationCache: Map<string, unknown> = new Map()
     private entriesHash: string = ''
 
     /**
-     * Start a new render cycle. This invalidates all caches.
+     * Start a new render cycle. Invalidates caches if data changed.
      * Must be called at the beginning of each onDataUpdated().
      */
-    startRenderCycle(entries: BasesEntry[]): number {
-        this.renderCycleId++
-
+    startRenderCycle(entries: BasesEntry[]): void {
         // Compute a simple hash of entries to detect data changes
         const newHash = this.computeEntriesHash(entries)
 
@@ -40,11 +26,8 @@ export class RenderCacheService {
         if (newHash !== this.entriesHash) {
             this.dateAnchorsCache = null
             this.dataPointsCache.clear()
-            this.aggregationCache.clear()
             this.entriesHash = newHash
         }
-
-        return this.renderCycleId
     }
 
     /**
@@ -89,42 +72,11 @@ export class RenderCacheService {
     }
 
     /**
-     * Get cached aggregation result or null if not cached
-     */
-    getAggregation<T>(key: AggregationCacheKey): T | null {
-        const cacheKey = this.buildAggregationKey(key)
-        return (this.aggregationCache.get(cacheKey) as T) ?? null
-    }
-
-    /**
-     * Cache an aggregation result
-     */
-    setAggregation<T>(key: AggregationCacheKey, data: T): void {
-        const cacheKey = this.buildAggregationKey(key)
-        this.aggregationCache.set(cacheKey, data)
-    }
-
-    /**
-     * Build a string key for aggregation cache
-     */
-    private buildAggregationKey(key: AggregationCacheKey): string {
-        return `${key.propertyId}:${key.type}:${key.granularity ?? ''}`
-    }
-
-    /**
      * Clear all caches (useful for forced refresh)
      */
     clearAll(): void {
         this.dateAnchorsCache = null
         this.dataPointsCache.clear()
-        this.aggregationCache.clear()
         this.entriesHash = ''
-    }
-
-    /**
-     * Get current render cycle ID (for debugging)
-     */
-    getRenderCycleId(): number {
-        return this.renderCycleId
     }
 }

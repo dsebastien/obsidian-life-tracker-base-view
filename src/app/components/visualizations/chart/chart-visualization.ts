@@ -10,7 +10,13 @@ import type {
 } from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { ChartLoaderService } from '../../../services/chart-loader.service'
-import { log } from '../../../../utils'
+import {
+    log,
+    isBooleanData,
+    getBooleanColor,
+    CHART_COLORS_HEX,
+    getColorWithAlpha
+} from '../../../../utils'
 import type { ChartClickElement, ChartInstance } from './chart-types'
 import {
     initBubbleChart,
@@ -252,7 +258,7 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
-     * Update the chart with new data using Chart.js incremental update when possible
+     * Update the chart with new data using Chart.js incremental update
      */
     override update(data: VisualizationDataPoint[]): void {
         // If no chart exists, do a full render
@@ -261,44 +267,174 @@ export class ChartVisualization extends BaseVisualization {
             return
         }
 
-        // Try incremental update for cartesian charts (line, bar, area)
-        if (!this.isPieType() && !this.isScatterType() && !this.isBubbleType()) {
-            const newChartData = sharedAggregationService.aggregateForChart(
-                data,
-                this.propertyId,
-                this.displayName,
-                this.chartConfig.granularity
-            )
-
-            if (newChartData.labels.length === 0) {
-                // No data - do full render to show empty state
-                this.destroy()
-                this.render(data)
-                return
-            }
-
-            // Update chart data in place
-            this.chartData = newChartData
-            this.chart.data.labels = newChartData.labels
-            const firstDataset = newChartData.datasets[0]
-            const chartDataset = this.chart.data.datasets[0]
-            if (firstDataset && chartDataset) {
-                chartDataset.data = firstDataset.data
-            }
-
-            // Clear animation state since data changed
-            this.originalData = []
-
-            // Use Chart.js update with animation
-            this.chart.update()
-            log('Chart updated incrementally', 'debug')
+        // Handle pie/doughnut/polarArea charts
+        if (this.isPieType()) {
+            this.updatePieChart(data)
             return
         }
 
-        // For pie/scatter/bubble charts, do full re-render
-        // (their data structures are more complex to update incrementally)
-        this.destroy()
-        this.render(data)
+        // Handle scatter charts
+        if (this.isScatterType()) {
+            this.updateScatterChart(data)
+            return
+        }
+
+        // Handle bubble charts
+        if (this.isBubbleType()) {
+            this.updateBubbleChart(data)
+            return
+        }
+
+        // Handle radar charts (same structure as cartesian)
+        if (this.chartConfig.chartType === 'radar') {
+            this.updateCartesianChart(data)
+            return
+        }
+
+        // Handle cartesian charts (line, bar, area)
+        this.updateCartesianChart(data)
+    }
+
+    /**
+     * Incremental update for pie/doughnut/polarArea charts
+     */
+    private updatePieChart(data: VisualizationDataPoint[]): void {
+        const newPieData = sharedAggregationService.aggregateForPieChart(
+            data,
+            this.propertyId,
+            this.displayName
+        )
+
+        if (newPieData.labels.length === 0) {
+            this.destroy()
+            this.render(data)
+            return
+        }
+
+        // Update stored data
+        this.pieChartData = newPieData
+
+        // Update chart data in place
+        this.chart!.data.labels = newPieData.labels
+
+        const dataset = this.chart!.data.datasets[0]
+        if (dataset) {
+            dataset.data = newPieData.values
+
+            // Regenerate colors for new labels
+            // Chart.js dataset colors can be arrays, but types may not reflect this
+            const isBoolean = isBooleanData(newPieData.labels)
+            const backgroundColors = newPieData.labels.map((label, index) => {
+                const color = isBoolean
+                    ? getBooleanColor(label)
+                    : CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+                return getColorWithAlpha(color, 0.7)
+            })
+            const borderColors = newPieData.labels.map((label, index) => {
+                return isBoolean
+                    ? getBooleanColor(label)
+                    : CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+            })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js types don't fully reflect that colors can be arrays
+            ;(dataset as any).backgroundColor = backgroundColors
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js types don't fully reflect that colors can be arrays
+            ;(dataset as any).borderColor = borderColors
+        }
+
+        this.chart!.update()
+    }
+
+    /**
+     * Incremental update for scatter charts
+     */
+    private updateScatterChart(data: VisualizationDataPoint[]): void {
+        const newScatterData = sharedAggregationService.aggregateForScatterChart(
+            data,
+            this.propertyId,
+            this.displayName
+        )
+
+        if (newScatterData.points.length === 0) {
+            this.destroy()
+            this.render(data)
+            return
+        }
+
+        // Update stored data
+        this.scatterChartData = newScatterData
+
+        // Update chart data in place
+        const dataset = this.chart!.data.datasets[0]
+        if (dataset) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js scatter data type is different from cartesian
+            ;(dataset as any).data = newScatterData.points
+        }
+
+        this.chart!.update()
+    }
+
+    /**
+     * Incremental update for bubble charts
+     */
+    private updateBubbleChart(data: VisualizationDataPoint[]): void {
+        const newBubbleData = sharedAggregationService.aggregateForBubbleChart(
+            data,
+            this.propertyId,
+            this.displayName,
+            this.chartConfig.granularity
+        )
+
+        if (newBubbleData.points.length === 0) {
+            this.destroy()
+            this.render(data)
+            return
+        }
+
+        // Update stored data
+        this.bubbleChartData = newBubbleData
+
+        // Update chart data in place
+        const dataset = this.chart!.data.datasets[0]
+        if (dataset) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js bubble data type is different from cartesian
+            ;(dataset as any).data = newBubbleData.points
+        }
+
+        this.chart!.update()
+    }
+
+    /**
+     * Incremental update for cartesian and radar charts
+     */
+    private updateCartesianChart(data: VisualizationDataPoint[]): void {
+        const newChartData = sharedAggregationService.aggregateForChart(
+            data,
+            this.propertyId,
+            this.displayName,
+            this.chartConfig.granularity
+        )
+
+        if (newChartData.labels.length === 0) {
+            this.destroy()
+            this.render(data)
+            return
+        }
+
+        // Update stored data
+        this.chartData = newChartData
+
+        // Update chart data in place
+        this.chart!.data.labels = newChartData.labels
+        const firstDataset = newChartData.datasets[0]
+        const chartDataset = this.chart!.data.datasets[0]
+        if (firstDataset && chartDataset) {
+            chartDataset.data = firstDataset.data
+        }
+
+        // Clear animation state since data changed
+        this.originalData = []
+
+        this.chart!.update()
     }
 
     /**

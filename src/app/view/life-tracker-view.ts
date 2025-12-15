@@ -35,7 +35,7 @@ import { createColumnConfigCard } from '../components/ui/column-config-card'
 import { showCardContextMenu } from '../components/ui/card-context-menu'
 import { createGridControls, DEFAULT_GRID_SETTINGS } from '../components/ui/grid-controls'
 import { DEFAULT_GRID_COLUMNS } from './view-options'
-import { log, DATA_ATTR_FULL } from '../../utils'
+import { DATA_ATTR_FULL } from '../../utils'
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
 import { getVisualizationConfig } from './visualization-config.helper'
@@ -640,8 +640,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         scale: undefined
                     })
                 }
-                // Re-render the view
-                this.onDataUpdated()
+                // Only refresh this specific visualization
+                this.refreshVisualization(columnConfig.propertyId)
                 break
 
             case 'configureScale':
@@ -658,14 +658,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         scale: action.scale
                     })
                 }
-                // Re-render the view
-                this.onDataUpdated()
+                // Only refresh this specific visualization
+                this.refreshVisualization(columnConfig.propertyId)
                 break
 
             case 'resetConfig':
                 this.columnConfigService.deleteColumnConfig(columnConfig.propertyId)
-                // Re-render the view
-                this.onDataUpdated()
+                // Only refresh this specific visualization
+                this.refreshVisualization(columnConfig.propertyId)
                 break
 
             case 'toggleMaximize': {
@@ -761,62 +761,76 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     }
 
     /**
-     * Refresh only the visualizations that use a specific preset
+     * Refresh visualizations affected by a preset change.
+     * For preset-updated: only refreshes visualizations matching the preset pattern.
+     * For preset-deleted: refreshes all visualizations without local config.
      */
     private refreshVisualizationsForPreset(presetId: string): void {
+        if (!this.gridEl) return
+
+        // Try to find the preset (will exist for updates, not for deletes)
         const preset = this.plugin.settings.visualizationPresets.find((p) => p.id === presetId)
         const presetPattern = preset?.propertyNamePattern?.toLowerCase()
 
-        // Find which visualizations use this preset
+        // Collect properties to refresh
         const propertyIdsToRefresh: BasesPropertyId[] = []
-
         for (const propertyId of this.visualizations.keys()) {
-            // Check if this property uses a preset (not local override)
-            const localConfig = this.columnConfigService.getColumnConfig(propertyId)
-            if (localConfig) {
-                // Has local override, not using preset
+            // Skip properties with local config (they don't use presets)
+            if (this.columnConfigService.getColumnConfig(propertyId)) {
                 continue
             }
 
-            // Extract raw property name to match against preset pattern
-            const rawPropertyName = propertyId.includes('.')
-                ? propertyId.substring(propertyId.indexOf('.') + 1)
-                : propertyId
-            const lowerRawName = rawPropertyName.toLowerCase()
-
-            // Check if this property was using the preset (either matches or previously matched)
-            // We need to refresh if the preset previously matched this property
-            if (presetPattern && lowerRawName === presetPattern) {
-                propertyIdsToRefresh.push(propertyId)
+            if (presetPattern) {
+                // Preset exists (update case): only refresh if pattern matches
+                const rawPropertyName = propertyId.includes('.')
+                    ? propertyId.substring(propertyId.indexOf('.') + 1)
+                    : propertyId
+                if (rawPropertyName.toLowerCase() === presetPattern) {
+                    propertyIdsToRefresh.push(propertyId)
+                }
             } else {
-                // Also check if this property might have matched a previous pattern
-                // We need to re-evaluate all properties that don't have local config
-                // since we don't know what the old pattern was
+                // Preset deleted: refresh all without local config
                 propertyIdsToRefresh.push(propertyId)
             }
         }
 
-        // Also check for unconfigured cards that might now match
-        if (!this.gridEl) return
-
-        if (propertyIdsToRefresh.length === 0) {
-            return
-        }
+        if (propertyIdsToRefresh.length === 0) return
 
         // Refresh each affected visualization
         const entries = this.data.data
         const anchorConfig = this.getDateAnchorConfig()
         const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
+        this.cacheService.setDateAnchors(dateAnchors)
 
         for (const propertyId of propertyIdsToRefresh) {
-            this.refreshSingleVisualization(propertyId, entries, dateAnchors)
+            this.refreshSingleVisualizationWithData(propertyId, entries, dateAnchors)
         }
     }
 
     /**
-     * Refresh a single visualization in place
+     * Refresh a single visualization in place.
+     * Gets entries and date anchors from cache or computes them.
      */
-    private refreshSingleVisualization(
+    private refreshVisualization(propertyId: BasesPropertyId): void {
+        if (!this.gridEl) return
+
+        // Get entries and date anchors
+        const entries = this.data.data
+        let dateAnchors = this.cacheService.getDateAnchors()
+        if (!dateAnchors) {
+            const anchorConfig = this.getDateAnchorConfig()
+            dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
+            this.cacheService.setDateAnchors(dateAnchors)
+        }
+
+        this.refreshSingleVisualizationWithData(propertyId, entries, dateAnchors)
+    }
+
+    /**
+     * Refresh a single visualization in place with provided data.
+     * Used by refreshVisualization and refreshVisualizationsForPreset.
+     */
+    private refreshSingleVisualizationWithData(
         propertyId: BasesPropertyId,
         entries: BasesEntry[],
         dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>
@@ -864,6 +878,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             propertyId,
             dateAnchors
         )
+        this.cacheService.setDataPoints(propertyId, dataPoints)
 
         const visualization = this.createVisualization(cardEl, effectiveConfig.config, displayName)
 

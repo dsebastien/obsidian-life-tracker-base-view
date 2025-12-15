@@ -13,7 +13,7 @@ import {
     type ResolvedDateAnchor
 } from '../types'
 import { compareAsc, min, max } from 'date-fns'
-import { extractNumber, log } from '../../utils'
+import { extractNumber } from '../../utils'
 import { getTimeKey, normalizeDate, generateEmptyCells } from './date-grouping.utils'
 import {
     aggregateForChart as chartAggregation,

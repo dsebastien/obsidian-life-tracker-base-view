@@ -16,8 +16,7 @@ import {
     CHART_COLORS_HEX,
     getColorWithAlpha,
     isBooleanData,
-    getBooleanColor,
-    log
+    getBooleanColor
 } from '../../../../utils'
 
 /**

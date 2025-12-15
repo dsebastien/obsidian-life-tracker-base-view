@@ -15,7 +15,7 @@ import {
     type TimelinePoint,
     type VisualizationDataPoint
 } from '../types'
-import { formatDateByGranularity, extractList, log } from '../../utils'
+import { formatDateByGranularity, extractList } from '../../utils'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
 
 /**
@@ -221,8 +221,6 @@ export function aggregateForPieChart(
 ): PieChartData {
     // Group by value
     const valueGroups = new Map<string, { count: number; entries: BasesEntry[] }>()
-    let skippedCount = 0
-    const skippedReasons: string[] = []
 
     for (const point of dataPoints) {
         // Use point.value which now contains the RAW value (not entry.getValue again)
@@ -231,12 +229,6 @@ export function aggregateForPieChart(
         // Convert raw value to display label, skip if not displayable
         const valueStr = valueToLabel(rawValue)
         if (!valueStr) {
-            skippedCount++
-            if (skippedReasons.length < 5) {
-                skippedReasons.push(
-                    `rawValue=${JSON.stringify(rawValue)?.slice(0, 100)}, type=${typeof rawValue}`
-                )
-            }
             continue
         }
 
