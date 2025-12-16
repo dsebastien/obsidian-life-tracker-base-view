@@ -111,6 +111,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // Track previous time frame for change detection
     private previousTimeFrame: TimeFrame | null = null
 
+    // ResizeObserver for handling viewport changes
+    private resizeObserver: ResizeObserver | null = null
+    private resizeTimeout: ReturnType<typeof setTimeout> | null = null
+
     constructor(controller: QueryController, scrollEl: HTMLElement, plugin: LifeTrackerPlugin) {
         super(controller)
 
@@ -150,6 +154,43 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Register as active file provider for batch capture
         this.plugin.setActiveFileProvider(this)
+
+        // Set up ResizeObserver to handle viewport changes
+        this.setupResizeObserver()
+    }
+
+    /**
+     * Set up ResizeObserver to notify visualizations of size changes
+     */
+    private setupResizeObserver(): void {
+        this.resizeObserver = new ResizeObserver(() => {
+            // Debounce resize events to avoid excessive updates
+            if (this.resizeTimeout) {
+                clearTimeout(this.resizeTimeout)
+            }
+            this.resizeTimeout = setTimeout(() => {
+                // Notify all visualizations of size change
+                for (const viz of this.visualizations.values()) {
+                    viz.visualization.handleResize()
+                }
+                this.resizeTimeout = null
+            }, 100)
+        })
+        this.resizeObserver.observe(this.containerEl)
+    }
+
+    /**
+     * Clean up ResizeObserver
+     */
+    private cleanupResizeObserver(): void {
+        if (this.resizeTimeout) {
+            clearTimeout(this.resizeTimeout)
+            this.resizeTimeout = null
+        }
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect()
+            this.resizeObserver = null
+        }
     }
 
     /**
@@ -1194,6 +1235,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     override onunload(): void {
         // Cancel any pending async render
         this.cancelPendingRender()
+
+        // Clean up ResizeObserver
+        this.cleanupResizeObserver()
 
         // Unregister as file provider
         this.plugin.setActiveFileProvider(null)

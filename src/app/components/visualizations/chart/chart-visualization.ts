@@ -36,7 +36,6 @@ export class ChartVisualization extends BaseVisualization {
     private pieChartData: PieChartData | null = null
     private scatterChartData: ScatterChartData | null = null
     private bubbleChartData: BubbleChartData | null = null
-    private resizeObserver: ResizeObserver | null = null
     private chartContainer: HTMLElement | null = null
     private originalData: (number | null)[][] = []
     private animationInterval: ReturnType<typeof setInterval> | null = null
@@ -214,40 +213,9 @@ export class ChartVisualization extends BaseVisualization {
                     (elements) => this.handleChartClick(elements)
                 )
             }
-
-            // Set up ResizeObserver to handle container size changes
-            this.setupResizeObserver()
         } catch (error) {
             log('Failed to initialize Chart.js', 'error', error)
             this.showEmptyState('Failed to load chart library')
-        }
-    }
-
-    /**
-     * Set up ResizeObserver to handle container resize
-     */
-    private setupResizeObserver(): void {
-        if (!this.chartContainer || !this.chart) return
-
-        // Clean up any existing observer
-        this.cleanupResizeObserver()
-
-        this.resizeObserver = new ResizeObserver(() => {
-            if (this.chart) {
-                this.chart.resize()
-            }
-        })
-
-        this.resizeObserver.observe(this.chartContainer)
-    }
-
-    /**
-     * Clean up ResizeObserver
-     */
-    private cleanupResizeObserver(): void {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect()
-            this.resizeObserver = null
         }
     }
 
@@ -441,11 +409,31 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
+     * Handle container resize by resizing the chart
+     */
+    override handleResize(): void {
+        if (this.chart && this.canvasEl && this.chartContainer) {
+            // Clear explicit canvas dimensions (both styles and attributes)
+            // to allow Chart.js to properly recalculate size
+            this.canvasEl.style.width = ''
+            this.canvasEl.style.height = ''
+            this.canvasEl.removeAttribute('width')
+            this.canvasEl.removeAttribute('height')
+
+            // Use requestAnimationFrame to ensure layout is complete before resize
+            requestAnimationFrame(() => {
+                if (this.chart) {
+                    this.chart.resize()
+                }
+            })
+        }
+    }
+
+    /**
      * Clean up resources
      */
     override destroy(): void {
         this.stopAnimation()
-        this.cleanupResizeObserver()
         if (this.chart) {
             this.chart.destroy()
             this.chart = null

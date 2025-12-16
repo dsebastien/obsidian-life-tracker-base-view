@@ -149,6 +149,14 @@ export abstract class BaseVisualization {
     abstract update(data: VisualizationDataPoint[]): void
 
     /**
+     * Handle container resize - subclasses should override to handle resize
+     */
+    handleResize(): void {
+        // Default implementation does nothing
+        // Subclasses should override this to handle resize (e.g., redraw charts)
+    }
+
+    /**
      * Clean up resources
      */
     abstract destroy(): void

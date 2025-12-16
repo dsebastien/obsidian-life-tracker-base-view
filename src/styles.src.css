@@ -872,7 +872,7 @@
 
 .lt-chart {
     @apply w-full flex-1;
-    min-height: 0; /* Required for flex shrinking */
+    min-height: 150px; /* Minimum height for chart visibility */
 }
 
 .lt-chart-header {
