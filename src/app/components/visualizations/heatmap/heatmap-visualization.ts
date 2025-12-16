@@ -261,7 +261,7 @@ export class HeatmapVisualization extends BaseVisualization {
     /**
      * Handle cell hover - show tooltip
      */
-    private handleCellHover(_event: MouseEvent, cellEl: HTMLElement): void {
+    private handleCellHover(event: MouseEvent, cellEl: HTMLElement): void {
         if (!this.tooltip || !this.heatmapData) return
 
         const dateStr = cellEl.dataset['date']
@@ -286,9 +286,8 @@ export class HeatmapVisualization extends BaseVisualization {
             this.heatmapConfig.granularity
         )
 
-        // Position tooltip near cursor
-        const rect = cellEl.getBoundingClientRect()
-        this.tooltip.show(rect.left + rect.width / 2, rect.top - 10, title, tooltipValue, subtitle)
+        // Position tooltip above the mouse cursor
+        this.tooltip.show(event.clientX, event.clientY - 10, title, tooltipValue, subtitle)
     }
 
     /**

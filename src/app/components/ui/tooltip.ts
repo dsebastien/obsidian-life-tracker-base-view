@@ -3,13 +3,16 @@ import { TimeGranularity } from '../../types'
 
 /**
  * Shared tooltip component for visualizations
+ * Tooltip is appended to document.body to ensure correct fixed positioning
  */
 export class Tooltip {
     private el: HTMLElement
     private visible = false
 
-    constructor(container: HTMLElement) {
-        this.el = container.createDiv({ cls: 'lt-tooltip' })
+    constructor(_container: HTMLElement) {
+        // Create tooltip in document.body to avoid positioning issues
+        // with parent containers that have transforms or overflow
+        this.el = document.body.createDiv({ cls: 'lt-tooltip' })
     }
 
     /**
