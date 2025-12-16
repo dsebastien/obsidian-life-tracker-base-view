@@ -1,3 +1,12 @@
+## [2.0.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.9.0...2.0.0) (2025-12-16)
+
+### Features
+
+* **all:** enabled changing the time frame for the life tracking grid (base view options) ([39ab134](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/39ab134b1dc85bcbe97179479cf3c6b443c8f110))
+
+### Bug Fixes
+
+* **all:** filtered the dataset given to the bulk processing command ([1180217](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1180217c1fa355aa3f12d988c3e371d39cc4078a))
 ## [1.9.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.8.1...1.9.0) (2025-12-16)
 
 ### Features
