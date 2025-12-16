@@ -42,8 +42,11 @@ export {
     formatDateISO,
     formatDateByGranularity,
     getMonthName,
-    formatFileTitleWithWeekday
+    formatFileTitleWithWeekday,
+    getTimeFrameDateRange,
+    isDateInTimeFrame
 } from './date.utils'
+export type { TimeFrameDateRange } from './date.utils'
 
 // DOM utilities
 export { CSS_CLASS, CSS_SELECTOR, DATA_ATTR, DATA_ATTR_FULL, setCssProps } from './dom.utils'

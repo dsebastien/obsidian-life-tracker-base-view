@@ -2,10 +2,14 @@ import {
     addDays as dateFnsAddDays,
     addMonths as dateFnsAddMonths,
     addWeeks as dateFnsAddWeeks,
+    subDays as dateFnsSubDays,
+    subMonths as dateFnsSubMonths,
+    subYears as dateFnsSubYears,
     format,
     getISOWeek,
     getQuarter as dateFnsGetQuarter,
     isValid,
+    isWithinInterval,
     parse,
     setISOWeek,
     startOfDay as dateFnsStartOfDay,
@@ -13,6 +17,10 @@ import {
     startOfQuarter as dateFnsStartOfQuarter,
     startOfWeek as dateFnsStartOfWeek,
     startOfYear as dateFnsStartOfYear,
+    endOfDay as dateFnsEndOfDay,
+    endOfMonth as dateFnsEndOfMonth,
+    endOfWeek as dateFnsEndOfWeek,
+    endOfYear as dateFnsEndOfYear,
     isSameDay as dateFnsIsSameDay,
     isSameWeek as dateFnsIsSameWeek,
     isSameMonth as dateFnsIsSameMonth,
@@ -20,7 +28,7 @@ import {
     isSameYear as dateFnsIsSameYear,
     eachWeekOfInterval
 } from 'date-fns'
-import { TimeGranularity, type DatePattern } from '../app/types'
+import { TimeGranularity, TimeFrame, type DatePattern } from '../app/types'
 
 /**
  * Supported date patterns for filename parsing
@@ -306,4 +314,106 @@ export function formatFileTitleWithWeekday(basename: string): string {
         }
     }
     return basename
+}
+
+/**
+ * Date range representing a time frame filter
+ */
+export interface TimeFrameDateRange {
+    start: Date
+    end: Date
+}
+
+/**
+ * Get the date range for a given time frame.
+ * Returns null for AllTime (no filtering).
+ */
+export function getTimeFrameDateRange(timeFrame: TimeFrame): TimeFrameDateRange | null {
+    const now = new Date()
+    const today = dateFnsStartOfDay(now)
+
+    switch (timeFrame) {
+        case TimeFrame.AllTime:
+            return null
+
+        case TimeFrame.ThisYear:
+            return {
+                start: dateFnsStartOfYear(today),
+                end: dateFnsEndOfYear(today)
+            }
+
+        case TimeFrame.LastYear: {
+            const lastYear = dateFnsSubYears(today, 1)
+            return {
+                start: dateFnsStartOfYear(lastYear),
+                end: dateFnsEndOfYear(lastYear)
+            }
+        }
+
+        case TimeFrame.ThisMonth:
+            return {
+                start: dateFnsStartOfMonth(today),
+                end: dateFnsEndOfMonth(today)
+            }
+
+        case TimeFrame.LastMonth: {
+            const lastMonth = dateFnsSubMonths(today, 1)
+            return {
+                start: dateFnsStartOfMonth(lastMonth),
+                end: dateFnsEndOfMonth(lastMonth)
+            }
+        }
+
+        case TimeFrame.ThisWeek:
+            return {
+                start: dateFnsStartOfWeek(today, { weekStartsOn: 1 }),
+                end: dateFnsEndOfWeek(today, { weekStartsOn: 1 })
+            }
+
+        case TimeFrame.LastWeek: {
+            const lastWeek = dateFnsSubDays(today, 7)
+            return {
+                start: dateFnsStartOfWeek(lastWeek, { weekStartsOn: 1 }),
+                end: dateFnsEndOfWeek(lastWeek, { weekStartsOn: 1 })
+            }
+        }
+
+        case TimeFrame.Last7Days:
+            return {
+                start: dateFnsStartOfDay(dateFnsSubDays(today, 6)),
+                end: dateFnsEndOfDay(today)
+            }
+
+        case TimeFrame.Last30Days:
+            return {
+                start: dateFnsStartOfDay(dateFnsSubDays(today, 29)),
+                end: dateFnsEndOfDay(today)
+            }
+
+        case TimeFrame.Last90Days:
+            return {
+                start: dateFnsStartOfDay(dateFnsSubDays(today, 89)),
+                end: dateFnsEndOfDay(today)
+            }
+
+        case TimeFrame.Last365Days:
+            return {
+                start: dateFnsStartOfDay(dateFnsSubDays(today, 364)),
+                end: dateFnsEndOfDay(today)
+            }
+
+        default:
+            return null
+    }
+}
+
+/**
+ * Check if a date is within a time frame date range.
+ * Returns true if the date range is null (AllTime).
+ */
+export function isDateInTimeFrame(date: Date, dateRange: TimeFrameDateRange | null): boolean {
+    if (!dateRange) {
+        return true
+    }
+    return isWithinInterval(date, { start: dateRange.start, end: dateRange.end })
 }

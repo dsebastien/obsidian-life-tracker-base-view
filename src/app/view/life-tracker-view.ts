@@ -9,6 +9,7 @@ import type { LifeTrackerPlugin } from '../plugin'
 import {
     DEFAULT_BATCH_FILTER_MODE,
     VisualizationType,
+    TimeFrame,
     type FileProvider,
     type CardMenuAction,
     type GridSettings,
@@ -35,7 +36,12 @@ import { createColumnConfigCard } from '../components/ui/column-config-card'
 import { showCardContextMenu, type HeatmapMenuConfig } from '../components/ui/card-context-menu'
 import { createGridControls, DEFAULT_GRID_SETTINGS } from '../components/ui/grid-controls'
 import { DEFAULT_GRID_COLUMNS } from './view-options'
-import { DATA_ATTR_FULL } from '../../utils'
+import {
+    DATA_ATTR_FULL,
+    getTimeFrameDateRange,
+    isDateInTimeFrame,
+    type TimeFrameDateRange
+} from '../../utils'
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
 import { getVisualizationConfig } from './visualization-config.helper'
@@ -101,6 +107,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         showDayLabels: boolean | undefined
         colorScheme: string | undefined
     } | null = null
+
+    // Track previous time frame for change detection
+    private previousTimeFrame: TimeFrame | null = null
 
     constructor(controller: QueryController, scrollEl: HTMLElement, plugin: LifeTrackerPlugin) {
         super(controller)
@@ -263,6 +272,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Check if we can do an incremental update (same structure, just data changed)
         const canIncrementalUpdate = this.canDoIncrementalUpdate(entries, propertyIds)
 
+        // Get current time frame from config
+        const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+
         if (canIncrementalUpdate) {
             // Fast path: update existing visualizations in place
             this.performIncrementalUpdate(entries)
@@ -274,11 +286,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
             // Update tracking
             this.previousHeatmapSettings = currentHeatmapSettings
+            this.previousTimeFrame = currentTimeFrame
             return
         }
 
         // Update tracking for full re-render path
         this.previousHeatmapSettings = currentHeatmapSettings
+        this.previousTimeFrame = currentTimeFrame
 
         // Full re-render path
         this.maximizeService.cleanup()
@@ -297,10 +311,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Load grid settings from config
         const savedColumns = this.config.get('gridColumns') as number | undefined
+        const savedTimeFrame = this.config.get('timeFrame') as TimeFrame | undefined
         this.gridSettings.columns = savedColumns ?? DEFAULT_GRID_COLUMNS
+        this.gridSettings.timeFrame = savedTimeFrame ?? TimeFrame.AllTime
 
         // Create control bar at the top
         createGridControls(this.containerEl, this.gridSettings, (settings) => {
+            const timeFrameChanged = this.gridSettings.timeFrame !== settings.timeFrame
             this.gridSettings = settings
 
             // Set flag to prevent full re-render when config.set triggers onDataUpdated
@@ -308,12 +325,18 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
             // Persist grid settings to view config
             this.config.set('gridColumns', settings.columns)
+            this.config.set('timeFrame', settings.timeFrame)
 
             // Reset flag after config updates
             this.isUpdatingGridSettings = false
 
-            // Just apply CSS changes, no full re-render needed
-            this.applyGridSettings()
+            if (timeFrameChanged) {
+                // Time frame changed - need full re-render to filter data
+                this.onDataUpdated()
+            } else {
+                // Just columns changed - apply CSS changes, no full re-render needed
+                this.applyGridSettings()
+            }
         })
 
         // Create grid container
@@ -325,8 +348,45 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
         this.cacheService.setDateAnchors(dateAnchors)
 
+        // Filter entries based on time frame
+        const timeFrameDateRange = getTimeFrameDateRange(this.gridSettings.timeFrame)
+        const filteredEntries = this.filterEntriesByTimeFrame(
+            entries,
+            dateAnchors,
+            timeFrameDateRange
+        )
+
+        // Check if any entries remain after filtering
+        if (filteredEntries.length === 0) {
+            createEmptyState(this.gridEl, 'No data available for the selected time frame', '📅')
+            return
+        }
+
         // Use async batched rendering to prevent UI freezing
-        void this.renderPropertiesAsync(propertyIds, entries, dateAnchors, renderCycle)
+        void this.renderPropertiesAsync(propertyIds, filteredEntries, dateAnchors, renderCycle)
+    }
+
+    /**
+     * Filter entries based on time frame using their date anchors.
+     * Returns all entries if dateRange is null (AllTime).
+     */
+    private filterEntriesByTimeFrame(
+        entries: BasesEntry[],
+        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>,
+        dateRange: TimeFrameDateRange | null
+    ): BasesEntry[] {
+        if (!dateRange) {
+            return entries
+        }
+
+        return entries.filter((entry) => {
+            const anchor = dateAnchors.get(entry)
+            if (!anchor) {
+                // No date anchor - include it (entry will show with no date)
+                return true
+            }
+            return isDateInTimeFrame(anchor.date, dateRange)
+        })
     }
 
     /**
@@ -338,6 +398,12 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Can't do incremental if grid doesn't exist
         if (!this.gridEl) return false
+
+        // Check if time frame has changed
+        const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+        if (this.previousTimeFrame !== null && this.previousTimeFrame !== currentTimeFrame) {
+            return false
+        }
 
         // Check if there are new properties that don't have visualizations yet
         // or if visualization type has changed
@@ -394,13 +460,22 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             this.cacheService.setDateAnchors(dateAnchors)
         }
 
+        // Filter entries based on time frame
+        const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+        const timeFrameDateRange = getTimeFrameDateRange(currentTimeFrame)
+        const filteredEntries = this.filterEntriesByTimeFrame(
+            entries,
+            dateAnchors,
+            timeFrameDateRange
+        )
+
         // Get showEmptyValues setting
         const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
 
         this.visualizations.forEach((value, key) => {
             // Update each visualization with new data (already filtered based on showEmptyValues)
             const dataPoints = this.aggregationService.createDataPoints(
-                entries,
+                filteredEntries,
                 key,
                 value.propertyDisplayName,
                 dateAnchors,

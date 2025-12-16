@@ -1,11 +1,18 @@
 import { setIcon } from 'obsidian'
-import type { GridSettings, GridSettingsChangeCallback } from '../../types'
+import {
+    TimeFrame,
+    TIME_FRAME_LABELS,
+    TIME_FRAME_OPTIONS,
+    type GridSettings,
+    type GridSettingsChangeCallback
+} from '../../types'
 
 /**
  * Default grid settings
  */
 export const DEFAULT_GRID_SETTINGS: GridSettings = {
-    columns: 2
+    columns: 2,
+    timeFrame: TimeFrame.AllTime
 }
 
 /**
@@ -20,13 +27,12 @@ export function createGridControls(
 
     const controlBar = container.createDiv({ cls: 'lt-control-bar' })
 
-    // Left side: title/info (optional, currently empty)
-    controlBar.createDiv({ cls: 'lt-control-bar-left' })
+    // Left side: time frame selector
+    const controlsLeft = controlBar.createDiv({ cls: 'lt-control-bar-left' })
+    createTimeFrameControl(controlsLeft, settings, onChange)
 
-    // Right side: controls
+    // Right side: columns control
     const controlsRight = controlBar.createDiv({ cls: 'lt-control-bar-right' })
-
-    // Columns control
     createColumnsControl(controlsRight, settings, onChange)
 
     return controlBar
@@ -74,5 +80,41 @@ function createColumnsControl(
             valueEl.textContent = String(settings.columns)
             onChange(settings)
         }
+    })
+}
+
+/**
+ * Creates time frame dropdown control
+ */
+function createTimeFrameControl(
+    container: HTMLElement,
+    settings: GridSettings,
+    onChange: GridSettingsChangeCallback
+): void {
+    const group = container.createDiv({ cls: 'lt-control-group' })
+
+    // Icon
+    const iconEl = group.createDiv({ cls: 'lt-control-icon' })
+    setIcon(iconEl, 'calendar')
+
+    // Dropdown select
+    const selectEl = group.createEl('select', { cls: 'lt-control-select' })
+    selectEl.setAttribute('aria-label', 'Time frame')
+
+    // Add options
+    for (const timeFrame of TIME_FRAME_OPTIONS) {
+        const optionEl = selectEl.createEl('option', {
+            value: timeFrame,
+            text: TIME_FRAME_LABELS[timeFrame]
+        })
+        if (timeFrame === settings.timeFrame) {
+            optionEl.selected = true
+        }
+    }
+
+    // Event handler
+    selectEl.addEventListener('change', () => {
+        settings.timeFrame = selectEl.value as TimeFrame
+        onChange(settings)
     })
 }

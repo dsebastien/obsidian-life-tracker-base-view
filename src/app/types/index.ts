@@ -94,6 +94,7 @@ export type {
     CardMenuAction,
     CardMenuCallback
 } from './ui'
+export { TimeFrame, TIME_FRAME_LABELS, TIME_FRAME_OPTIONS } from './ui'
 
 // Plugin types
 export {

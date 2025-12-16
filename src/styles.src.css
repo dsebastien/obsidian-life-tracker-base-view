@@ -95,7 +95,7 @@
    ======================================== */
 
 .lt-control-bar {
-    @apply flex items-center justify-end mb-2 pb-1;
+    @apply flex items-center justify-between mb-2 pb-1;
     border-bottom: 1px solid var(--background-modifier-border);
 }
 
@@ -154,6 +154,26 @@
 .lt-control-slider::-moz-range-thumb {
     @apply w-2.5 h-2.5 rounded-full cursor-pointer border-0 appearance-none;
     background-color: var(--interactive-accent);
+}
+
+.lt-control-select {
+    @apply text-xs py-0.5 px-2 rounded cursor-pointer;
+    @apply border-0 outline-none appearance-none;
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 4px center;
+    padding-right: 20px;
+    min-width: 100px;
+}
+
+.lt-control-select:hover {
+    background-color: var(--interactive-hover);
+}
+
+.lt-control-select:focus {
+    outline: 1px solid var(--interactive-accent);
 }
 
 /* ========================================
