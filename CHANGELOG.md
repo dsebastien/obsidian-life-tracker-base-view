@@ -1,3 +1,14 @@
+## [1.8.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.7.0...1.8.0) (2025-12-16)
+
+### Features
+
+* **all:** added more per-visualization customization options for heatmaps ([cd46c57](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/cd46c57245d4e33c17f8222460eec5e7bc8f7527))
+* **all:** enabled customizing visualization colors ([e3bee7c](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/e3bee7c6a6f428220dac28e3ca027269c259793b))
+
+### Bug Fixes
+
+* **all:** better handled color customization for boolean pie and doughtnut charts ([01f5cfd](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/01f5cfdb5eccba4bed5fe2e9983082b077c84054))
+* **all:** fixed tooltip display for heatmaps ([fefc112](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/fefc112980c3fc83b4c138e39ba0c67521c6bd60))
 ## [1.7.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.6.0...1.7.0) (2025-12-15)
 
 ### Features
