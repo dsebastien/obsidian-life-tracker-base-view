@@ -1,3 +1,8 @@
+## [1.8.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.8.0...1.8.1) (2025-12-16)
+
+### Features
+
+* **all:** enabed copying an existing property definition ([51c1817](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/51c18170bc1f6fd3985f8466cca77f01e859bdea)), closes [#20](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/20)
 ## [1.8.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.7.0...1.8.0) (2025-12-16)
 
 ### Features
