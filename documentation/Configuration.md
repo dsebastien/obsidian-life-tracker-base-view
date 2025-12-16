@@ -9,7 +9,7 @@ Stored in plugin data, applies to all views.
 | `visualizationPresets` | PropertyVisualizationPreset[] | `[]`    | Auto-apply visualization by property name pattern |
 | `animationDuration`    | number                        | `3000`  | Chart animation duration (ms)                     |
 
-## View Options (Per-View)
+## Life Tracker View Options (Per-View)
 
 Configured via Obsidian's view options UI.
 
@@ -26,6 +26,15 @@ Configured via Obsidian's view options UI.
 | `heatmapColorScheme` | string          | `green`    | Heatmap color preset                                        |
 | `gridColumns`        | number          | `3`        | Grid columns (1-6)                                          |
 | `showLegend`         | boolean         | `true`     | Show chart legends                                          |
+
+## Grid View Options (Per-View)
+
+Configured via Obsidian's view options UI.
+
+| Option          | Type            | Default    | Description                                                |
+| --------------- | --------------- | ---------- | ---------------------------------------------------------- |
+| `timeFrame`     | TimeFrameId     | `all_time` | Filter notes by date range                                 |
+| `hideNotesWhen` | BatchFilterMode | `required` | Hide notes when properties are filled (required/all/never) |
 
 ## Time Frame Options
 

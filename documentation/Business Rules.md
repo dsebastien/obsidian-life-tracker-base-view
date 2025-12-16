@@ -54,6 +54,15 @@ All property types are supported for visualization rendering:
 
 - Ongoing animations must be stopped before maximizing or minimizing a visualization
 
+## Capture Command Dataset
+
+When the "Capture properties" command is invoked from a custom base view (Life Tracker or Life Tracking Grid):
+
+- The file list passed to the capture modal MUST respect the view's configured time frame
+- Only files within the selected time frame are included in the batch
+- Entries without date anchors are included (not filtered out)
+- This ensures users only capture data for the period they're currently viewing
+
 ## Release Tags
 
 - Tags MUST NOT have 'v' prefix per Obsidian plugin spec (e.g., `1.0.0` not `v1.0.0`)

@@ -121,6 +121,11 @@ This enables focusing on completing missing information in your notes.
 
 The columns shown by this view correspond to the property definitions. If you show additional columns through the built-in "Properties" dropdown of Obsidian, those will be shown as read-only columns to the left of the property definitions. The idea behind this feature is that you can show additional information providing context for your data entry.
 
+**Filtering options**: The Grid view supports two filtering options accessible via the view settings:
+
+- **Time frame**: Filter notes by date range (all time, last 7/30/90/365 days, this week/month/quarter/year, etc.)
+- **Hide notes when**: Automatically hide notes when all required properties (or all properties) are filled
+
 ## Data Entry Command and Modal
 
 In version 1.2.0, a new command was added: "Life Tracker: Capture Properties".
@@ -128,6 +133,8 @@ That command behaves differently depending on where you invoke it from:
 
 - If you invoke the command from a note that contains known properties (i.e., properties with property definitions in the plugin settings), it enables editing those properties one by one with a dedicated modal (carousel) that lets you fill-in the data and navigate between properties using the arrows
 - If you invoke the command from one of the custom base views (Life Tracker or Life Tracking Grid), then it shows the same modal, but also lets you navigate between all the files included in the base view (aka bulk edit mode)
+
+**Time frame integration**: When invoking the capture command from a base view with a time frame configured, only notes within that time frame are included in the batch. This lets you focus on capturing data for a specific period.
 
 TIP: When working with a set of files (aka bulk edit mode), you can filter the files in the carousel to only include those that have missing required properties through the dropdown on the top.
 
