@@ -195,9 +195,31 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
     /**
      * Get all files currently in the view (for batch capture)
+     * Filters by the configured time frame
      */
     getFiles(): TFile[] {
-        return this.data.data.map((entry) => entry.file)
+        const entries = this.data.data
+
+        // Get time frame date range
+        const timeFrameDateRange = getTimeFrameDateRange(this.gridSettings.timeFrame)
+
+        // If no time frame filtering (AllTime), return all files
+        if (!timeFrameDateRange) {
+            return entries.map((entry) => entry.file)
+        }
+
+        // Resolve date anchors for filtering
+        const dateAnchorConfig = this.getDateAnchorConfig()
+        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, dateAnchorConfig)
+
+        // Filter entries by time frame
+        const filteredEntries = this.filterEntriesByTimeFrame(
+            entries,
+            dateAnchors,
+            timeFrameDateRange
+        )
+
+        return filteredEntries.map((entry) => entry.file)
     }
 
     /**
