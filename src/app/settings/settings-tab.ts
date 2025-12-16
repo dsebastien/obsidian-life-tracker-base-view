@@ -320,6 +320,17 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                 })
         })
 
+        // Copy button
+        mainSetting.addExtraButton((button) => {
+            button
+                .setIcon('copy')
+                .setTooltip('Copy property definition')
+                .onClick(async () => {
+                    await this.copyPropertyDefinition(definition.id)
+                    this.display()
+                })
+        })
+
         // Delete button
         mainSetting.addExtraButton((button) => {
             button
@@ -766,6 +777,52 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     private async deletePropertyDefinition(id: string): Promise<void> {
         await this.plugin.updateSettings((draft) => {
             draft.propertyDefinitions = draft.propertyDefinitions.filter((d) => d.id !== id)
+        })
+    }
+
+    /**
+     * Copy an existing property definition.
+     * Creates a new definition with:
+     * - New unique ID
+     * - Empty name and displayName (user must fill in)
+     * - All other properties copied (type, mappings, defaultValue, numberRange, allowedValues, etc.)
+     */
+    private async copyPropertyDefinition(sourceId: string): Promise<void> {
+        const source = this.plugin.settings.propertyDefinitions.find((d) => d.id === sourceId)
+        if (!source) return
+
+        const nextOrder = this.plugin.settings.propertyDefinitions.length
+        const newId = crypto.randomUUID()
+
+        // Deep copy allowedValues preserving the type
+        // PropertyAllowedValues is string[] | number[], spread operator loses the union distinction
+        const copiedAllowedValues =
+            source.allowedValues.length > 0 && typeof source.allowedValues[0] === 'number'
+                ? (source.allowedValues.map((v) => v) as number[])
+                : (source.allowedValues.map((v) => v) as string[])
+
+        // Create copy with new ID, cleared name/displayName, and copied mappings
+        const copiedDefinition: PropertyDefinition = {
+            id: newId,
+            name: '', // Clear - user must fill in
+            displayName: '', // Clear - user must fill in
+            type: source.type,
+            allowedValues: copiedAllowedValues,
+            numberRange: source.numberRange ? { ...source.numberRange } : null, // Deep copy object
+            defaultValue: Array.isArray(source.defaultValue)
+                ? [...source.defaultValue] // Deep copy array default values
+                : source.defaultValue,
+            required: source.required,
+            description: source.description,
+            order: nextOrder,
+            mappings: source.mappings.map((m) => ({ ...m })) // Deep copy mappings
+        }
+
+        // Auto-expand the new definition
+        this.expandedDefinitions.add(newId)
+
+        await this.plugin.updateSettings((draft) => {
+            draft.propertyDefinitions.push(copiedDefinition)
         })
     }
 
