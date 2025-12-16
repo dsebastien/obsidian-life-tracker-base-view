@@ -319,12 +319,24 @@ export class ChartVisualization extends BaseVisualization {
             // Chart.js dataset colors can be arrays, but types may not reflect this
             const isBoolean = newPieData.isBooleanData
             const colors = getChartColorScheme(this.chartConfig.colorScheme)
+
+            // Use semantic boolean colors (green/red) only when:
+            // 1. Data is boolean AND
+            // 2. No custom color scheme is set (undefined or 'default')
+            const useSemanticBooleanColors =
+                isBoolean &&
+                (!this.chartConfig.colorScheme || this.chartConfig.colorScheme === 'default')
+
             const backgroundColors = newPieData.labels.map((label, index) => {
-                const color = isBoolean ? getBooleanColor(label) : colors[index % colors.length]!
+                const color = useSemanticBooleanColors
+                    ? getBooleanColor(label)
+                    : colors[index % colors.length]!
                 return getColorWithAlpha(color, 0.7)
             })
             const borderColors = newPieData.labels.map((label, index) => {
-                return isBoolean ? getBooleanColor(label) : colors[index % colors.length]!
+                return useSemanticBooleanColors
+                    ? getBooleanColor(label)
+                    : colors[index % colors.length]!
             })
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js types don't fully reflect that colors can be arrays
             ;(dataset as any).backgroundColor = backgroundColors

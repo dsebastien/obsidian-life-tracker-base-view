@@ -106,12 +106,19 @@ export function aggregateForPieChart(
     // Check if data is boolean by looking at booleanValue
     const isBooleanData = dataPoints.some((p) => p.booleanValue !== null)
 
-    // Group by display label
+    // Group by appropriate label
     const valueGroups = new Map<string, { count: number; filePaths: string[] }>()
 
     for (const point of dataPoints) {
-        // Use pre-extracted displayLabel
-        const label = point.displayLabel
+        // For boolean data, use simple True/False labels for proper color matching
+        // For other data, use the full displayLabel
+        let label: string | null
+        if (isBooleanData && point.booleanValue !== null) {
+            // Use simple True/False label that getBooleanColor() can match
+            label = point.booleanValue ? 'True' : 'False'
+        } else {
+            label = point.displayLabel
+        }
 
         // Handle entries without a label - count as "No data"
         if (!label) {
@@ -124,14 +131,14 @@ export function aggregateForPieChart(
             continue
         }
 
-        // Capitalize boolean values for display
-        const displayLabel = capitalizeBoolean(label)
+        // Capitalize boolean-like strings in non-boolean data
+        const groupLabel = isBooleanData ? label : capitalizeBoolean(label)
 
-        if (!valueGroups.has(displayLabel)) {
-            valueGroups.set(displayLabel, { count: 0, filePaths: [] })
+        if (!valueGroups.has(groupLabel)) {
+            valueGroups.set(groupLabel, { count: 0, filePaths: [] })
         }
 
-        const group = valueGroups.get(displayLabel)!
+        const group = valueGroups.get(groupLabel)!
         group.count++
         group.filePaths.push(point.filePath)
     }

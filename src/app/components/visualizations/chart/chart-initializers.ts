@@ -41,16 +41,23 @@ export function initPieChart(
     // Get colors from the configured scheme (or default)
     const colors = getChartColorScheme(chartConfig.colorScheme)
 
+    // Use semantic boolean colors (green/red) only when:
+    // 1. Data is boolean AND
+    // 2. No custom color scheme is set (undefined or 'default')
+    // Otherwise, respect the user's custom color scheme choice
+    const useSemanticBooleanColors =
+        isBoolean && (!chartConfig.colorScheme || chartConfig.colorScheme === 'default')
+
     // Generate colors for each segment
-    // For boolean data, use semantic colors (green for true, red for false)
-    // For other data, use index-based colors from palette
     const backgroundColors = pieChartData.labels.map((label, index) => {
-        const color = isBoolean ? getBooleanColor(label) : colors[index % colors.length]!
+        const color = useSemanticBooleanColors
+            ? getBooleanColor(label)
+            : colors[index % colors.length]!
         return getColorWithAlpha(color, 0.7)
     })
 
     const borderColors = pieChartData.labels.map((label, index) => {
-        return isBoolean ? getBooleanColor(label) : colors[index % colors.length]!
+        return useSemanticBooleanColors ? getBooleanColor(label) : colors[index % colors.length]!
     })
 
     return new Chart(ctx, {
