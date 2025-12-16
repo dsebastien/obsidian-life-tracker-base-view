@@ -16,12 +16,21 @@ import type {
     BatchFilterMode,
     PropertyDefinition,
     PropertyEditor,
-    SettingsChangeInfo
+    SettingsChangeInfo,
+    ResolvedDateAnchor
 } from '../../types'
+import { TimeFrame, TIME_FRAME_LABELS } from '../../types'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
 import { createPropertyEditor } from '../../components/editing/property-editor'
-import { log, DATA_ATTR_FULL, formatFileTitleWithWeekday } from '../../../utils'
+import {
+    log,
+    DATA_ATTR_FULL,
+    formatFileTitleWithWeekday,
+    getTimeFrameDateRange,
+    isDateInTimeFrame
+} from '../../../utils'
+import { DateAnchorService } from '../../services/date-anchor.service'
 
 /**
  * View type identifier for Grid View
@@ -55,6 +64,10 @@ export class GridView extends BasesView implements FileProvider {
     // Services (only used for writing, not reading)
     private frontmatterService: FrontmatterService
     private recognitionService: PropertyRecognitionService
+    private dateAnchorService: DateAnchorService
+
+    // Date anchors for time frame filtering
+    private dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null> = new Map()
 
     // Editor tracking: map of "filePath:propertyName" -> PropertyEditor
     private editors: Map<string, PropertyEditor> = new Map()
@@ -135,6 +148,7 @@ export class GridView extends BasesView implements FileProvider {
         // Initialize services
         this.frontmatterService = new FrontmatterService(plugin.app)
         this.recognitionService = new PropertyRecognitionService(plugin.app)
+        this.dateAnchorService = new DateAnchorService()
 
         // Subscribe to global settings changes
         this.unsubscribeSettings = this.plugin.onSettingsChange((_settings, changeInfo) => {
@@ -267,6 +281,7 @@ export class GridView extends BasesView implements FileProvider {
         this.filteredEntries = []
         this.rowElements.clear()
         this.renderedRowIndices.clear()
+        this.dateAnchors.clear()
         // Reset visible range to force re-render
         this.visibleStartIndex = -1
         this.visibleEndIndex = -1
@@ -293,6 +308,10 @@ export class GridView extends BasesView implements FileProvider {
         const definitionNames = new Set(allDefinitions.map((d) => d.name))
         this.baseSelectedProperties = this.getBaseSelectedProperties(definitionNames)
 
+        // Get time frame setting
+        const timeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+        const dateRange = getTimeFrameDateRange(timeFrame)
+
         // Get filtering option: 'required' (default), 'all', or 'never'
         const hideNotesWhen = (this.config.get('hideNotesWhen') as string) ?? 'required'
 
@@ -302,6 +321,17 @@ export class GridView extends BasesView implements FileProvider {
         // Extract values from Bases API and filter in a single pass
         for (const entry of entries) {
             const file = entry.file
+
+            // Resolve date anchor for this entry
+            const anchor = this.dateAnchorService.resolveAnchor(entry)
+            this.dateAnchors.set(entry, anchor)
+
+            // Time frame filter: skip if outside date range
+            // Include entries without anchors (same behavior as Life Tracker view)
+            if (dateRange && anchor && !isDateInTimeFrame(anchor.date, dateRange)) {
+                continue
+            }
+
             // Use Bases API - data is already loaded, very fast
             const values = this.getEntryValues(entry, this.activeDefinitions)
             this.originalValues.set(file.path, { ...values })
@@ -333,10 +363,14 @@ export class GridView extends BasesView implements FileProvider {
         }
 
         if (this.filteredEntries.length === 0) {
-            const message =
-                hideNotesWhen === 'all'
-                    ? 'All notes have all properties filled.'
-                    : 'All notes have their required properties filled.'
+            let message: string
+            if (dateRange && entries.length > 0) {
+                message = `No notes found in the selected time frame (${TIME_FRAME_LABELS[timeFrame]}).`
+            } else if (hideNotesWhen === 'all') {
+                message = 'All notes have all properties filled.'
+            } else {
+                message = 'All notes have their required properties filled.'
+            }
             this.renderEmptyState(message)
             return
         }
