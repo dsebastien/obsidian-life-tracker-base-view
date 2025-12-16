@@ -405,6 +405,15 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             return false
         }
 
+        // Check if any properties were removed (existing visualizations not in new propertyIds)
+        const propertyIdSet = new Set(propertyIds)
+        for (const existingPropertyId of this.visualizations.keys()) {
+            if (!propertyIdSet.has(existingPropertyId)) {
+                // Property was removed - need full refresh to remove its card
+                return false
+            }
+        }
+
         // Check if there are new properties that don't have visualizations yet
         // or if visualization type has changed
         for (const propertyId of propertyIds) {
