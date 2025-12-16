@@ -31,8 +31,9 @@ describe('build constants', () => {
         expect(STYLES_OUT).toBe('dist/styles.css')
     })
 
-    test('PLUGIN_ID is set correctly', () => {
-        expect(PLUGIN_ID).toBe('life-tracker')
+    test('PLUGIN_ID matches package.json name', async () => {
+        const packageJson = (await Bun.file('package.json').json()) as { name: string }
+        expect(PLUGIN_ID).toBe(packageJson.name)
     })
 
     test('BANNER contains expected text', () => {
