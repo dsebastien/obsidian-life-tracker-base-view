@@ -32,7 +32,7 @@ import { TagCloudVisualization } from '../components/visualizations/tag-cloud/ta
 import { TimelineVisualization } from '../components/visualizations/timeline/timeline-visualization'
 import { createEmptyState, EMPTY_STATE_MESSAGES } from '../components/ui/empty-state'
 import { createColumnConfigCard } from '../components/ui/column-config-card'
-import { showCardContextMenu } from '../components/ui/card-context-menu'
+import { showCardContextMenu, type HeatmapMenuConfig } from '../components/ui/card-context-menu'
 import { createGridControls, DEFAULT_GRID_SETTINGS } from '../components/ui/grid-controls'
 import { DEFAULT_GRID_COLUMNS } from './view-options'
 import { DATA_ATTR_FULL } from '../../utils'
@@ -93,6 +93,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
     // Track current render cycle for async rendering
     private currentRenderCycle: number = 0
+
+    // Track previous heatmap settings for change detection
+    private previousHeatmapSettings: {
+        cellSize: number | undefined
+        showMonthLabels: boolean | undefined
+        showDayLabels: boolean | undefined
+        colorScheme: string | undefined
+    } | null = null
 
     constructor(controller: QueryController, scrollEl: HTMLElement, plugin: LifeTrackerPlugin) {
         super(controller)
@@ -234,14 +242,43 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Start new cache cycle (invalidates stale cached data if entries changed)
         this.cacheService.startRenderCycle(entries)
 
+        // Get current heatmap settings from view config
+        const currentHeatmapSettings = {
+            cellSize: this.config.get('heatmapCellSize') as number | undefined,
+            showMonthLabels: this.config.get('heatmapShowMonthLabels') as boolean | undefined,
+            showDayLabels: this.config.get('heatmapShowDayLabels') as boolean | undefined,
+            colorScheme: this.config.get('heatmapColorScheme') as string | undefined
+        }
+
+        // Check if heatmap settings changed
+        const heatmapSettingsChanged =
+            this.previousHeatmapSettings !== null &&
+            (this.previousHeatmapSettings.cellSize !== currentHeatmapSettings.cellSize ||
+                this.previousHeatmapSettings.showMonthLabels !==
+                    currentHeatmapSettings.showMonthLabels ||
+                this.previousHeatmapSettings.showDayLabels !==
+                    currentHeatmapSettings.showDayLabels ||
+                this.previousHeatmapSettings.colorScheme !== currentHeatmapSettings.colorScheme)
+
         // Check if we can do an incremental update (same structure, just data changed)
         const canIncrementalUpdate = this.canDoIncrementalUpdate(entries, propertyIds)
 
         if (canIncrementalUpdate) {
             // Fast path: update existing visualizations in place
             this.performIncrementalUpdate(entries)
+
+            // If heatmap settings changed, refresh heatmaps without custom settings
+            if (heatmapSettingsChanged) {
+                this.refreshHeatmapsForGlobalSettingsChange()
+            }
+
+            // Update tracking
+            this.previousHeatmapSettings = currentHeatmapSettings
             return
         }
+
+        // Update tracking for full re-render path
+        this.previousHeatmapSettings = currentHeatmapSettings
 
         // Full re-render path
         this.maximizeService.cleanup()
@@ -638,11 +675,23 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const { config, isFromPreset } = effectiveConfig
         const isMaximized = this.maximizeService.isMaximized(propertyId)
 
+        // Get local column config for heatmap-specific overrides
+        const localConfig = this.columnConfigService.getColumnConfig(propertyId)
+        const heatmapConfig: HeatmapMenuConfig | undefined =
+            config.visualizationType === VisualizationType.Heatmap
+                ? {
+                      cellSize: localConfig?.heatmapCellSize,
+                      showMonthLabels: localConfig?.heatmapShowMonthLabels,
+                      showDayLabels: localConfig?.heatmapShowDayLabels
+                  }
+                : undefined
+
         showCardContextMenu(
             event,
             config.visualizationType,
             config.scale,
             config.colorScheme,
+            heatmapConfig,
             isFromPreset,
             isMaximized,
             (action: CardMenuAction) => {
@@ -720,6 +769,54 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     })
                 }
                 // Only refresh this specific visualization
+                this.refreshVisualization(propertyId)
+                break
+
+            case 'configureHeatmapCellSize':
+                if (isFromPreset && currentConfig) {
+                    this.columnConfigService.saveColumnConfig(
+                        propertyId,
+                        currentConfig.visualizationType,
+                        displayName,
+                        currentConfig.scale,
+                        currentConfig.colorScheme
+                    )
+                }
+                this.columnConfigService.updateColumnConfig(propertyId, {
+                    heatmapCellSize: action.cellSize
+                })
+                this.refreshVisualization(propertyId)
+                break
+
+            case 'configureHeatmapShowMonthLabels':
+                if (isFromPreset && currentConfig) {
+                    this.columnConfigService.saveColumnConfig(
+                        propertyId,
+                        currentConfig.visualizationType,
+                        displayName,
+                        currentConfig.scale,
+                        currentConfig.colorScheme
+                    )
+                }
+                this.columnConfigService.updateColumnConfig(propertyId, {
+                    heatmapShowMonthLabels: action.showMonthLabels
+                })
+                this.refreshVisualization(propertyId)
+                break
+
+            case 'configureHeatmapShowDayLabels':
+                if (isFromPreset && currentConfig) {
+                    this.columnConfigService.saveColumnConfig(
+                        propertyId,
+                        currentConfig.visualizationType,
+                        displayName,
+                        currentConfig.scale,
+                        currentConfig.colorScheme
+                    )
+                }
+                this.columnConfigService.updateColumnConfig(propertyId, {
+                    heatmapShowDayLabels: action.showDayLabels
+                })
                 this.refreshVisualization(propertyId)
                 break
 
@@ -853,6 +950,53 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         if (propertyIdsToRefresh.length === 0) return
 
         // Refresh each affected visualization
+        const entries = this.data.data
+        const anchorConfig = this.getDateAnchorConfig()
+        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
+        this.cacheService.setDateAnchors(dateAnchors)
+
+        for (const propertyId of propertyIdsToRefresh) {
+            this.refreshSingleVisualizationWithData(propertyId, entries, dateAnchors)
+        }
+    }
+
+    /**
+     * Refresh heatmap visualizations that use global settings.
+     * Called when global heatmap settings (cellSize, showMonthLabels, showDayLabels, colorScheme) change.
+     * Skips heatmaps with custom per-visualization settings.
+     */
+    private refreshHeatmapsForGlobalSettingsChange(): void {
+        if (!this.gridEl) return
+
+        // Collect heatmap visualizations that use global settings
+        const propertyIdsToRefresh: BasesPropertyId[] = []
+
+        for (const propertyId of this.visualizations.keys()) {
+            // Check if this is a heatmap
+            const vizType = this.visualizationTypes.get(propertyId)
+            if (vizType !== VisualizationType.Heatmap) {
+                continue
+            }
+
+            // Check if it has custom heatmap settings
+            const localConfig = this.columnConfigService.getColumnConfig(propertyId)
+            const hasCustomSettings =
+                localConfig?.heatmapCellSize !== undefined ||
+                localConfig?.heatmapShowMonthLabels !== undefined ||
+                localConfig?.heatmapShowDayLabels !== undefined ||
+                localConfig?.colorScheme !== undefined
+
+            // Skip heatmaps with custom settings
+            if (hasCustomSettings) {
+                continue
+            }
+
+            propertyIdsToRefresh.push(propertyId)
+        }
+
+        if (propertyIdsToRefresh.length === 0) return
+
+        // Refresh each affected heatmap
         const entries = this.data.data
         const anchorConfig = this.getDateAnchorConfig()
         const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)

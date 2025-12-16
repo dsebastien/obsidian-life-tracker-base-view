@@ -23,6 +23,26 @@ const COLOR_SCHEME_OPTIONS: Array<{ value: ChartColorScheme; label: string }> = 
 ]
 
 /**
+ * Cell size options for heatmap
+ */
+const CELL_SIZE_OPTIONS: Array<{ value: number | 'default'; label: string }> = [
+    { value: 'default', label: 'Default' },
+    { value: 8, label: 'Small (8px)' },
+    { value: 12, label: 'Medium (12px)' },
+    { value: 16, label: 'Large (16px)' },
+    { value: 20, label: 'Extra large (20px)' }
+]
+
+/**
+ * Heatmap-specific configuration passed to the menu
+ */
+export interface HeatmapMenuConfig {
+    cellSize?: number
+    showMonthLabels?: boolean
+    showDayLabels?: boolean
+}
+
+/**
  * Show context menu popover for a visualization card
  * Two-column layout: left = viz type selection, right = options
  */
@@ -31,6 +51,7 @@ export function showCardContextMenu(
     currentType: VisualizationType,
     currentScale: ScaleConfig | undefined,
     currentColorScheme: ChartColorScheme | undefined,
+    currentHeatmapConfig: HeatmapMenuConfig | undefined,
     isFromPreset: boolean,
     isMaximized: boolean,
     onAction: CardMenuCallback
@@ -213,6 +234,104 @@ export function showCardContextMenu(
                 })
             })
         }
+
+        // Heatmap-specific options
+        if (vizType === VisualizationType.Heatmap) {
+            // Cell size dropdown
+            const cellSizeGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            cellSizeGroup.createEl('label', { text: 'Cell size' })
+
+            const cellSizeSelect = cellSizeGroup.createEl('select', {
+                cls: 'lt-card-popover-select'
+            })
+
+            for (const option of CELL_SIZE_OPTIONS) {
+                const opt = cellSizeSelect.createEl('option', {
+                    value: String(option.value),
+                    text: option.label
+                })
+                if (
+                    (option.value === 'default' && currentHeatmapConfig?.cellSize === undefined) ||
+                    option.value === currentHeatmapConfig?.cellSize
+                ) {
+                    opt.selected = true
+                }
+            }
+
+            cellSizeSelect.addEventListener('change', () => {
+                const value = cellSizeSelect.value
+                close()
+                onAction({
+                    type: 'configureHeatmapCellSize',
+                    cellSize: value === 'default' ? undefined : parseInt(value, 10)
+                })
+            })
+
+            // Show month labels toggle
+            const monthLabelsGroup = optionsContent.createDiv({
+                cls: 'lt-card-popover-option-group'
+            })
+            monthLabelsGroup.createEl('label', { text: 'Month labels' })
+
+            const monthLabelsSelect = monthLabelsGroup.createEl('select', {
+                cls: 'lt-card-popover-select'
+            })
+            const monthDefault = monthLabelsSelect.createEl('option', {
+                value: 'default',
+                text: 'Default'
+            })
+            const monthShow = monthLabelsSelect.createEl('option', { value: 'true', text: 'Show' })
+            const monthHide = monthLabelsSelect.createEl('option', { value: 'false', text: 'Hide' })
+
+            if (currentHeatmapConfig?.showMonthLabels === undefined) {
+                monthDefault.selected = true
+            } else if (currentHeatmapConfig.showMonthLabels) {
+                monthShow.selected = true
+            } else {
+                monthHide.selected = true
+            }
+
+            monthLabelsSelect.addEventListener('change', () => {
+                const value = monthLabelsSelect.value
+                close()
+                onAction({
+                    type: 'configureHeatmapShowMonthLabels',
+                    showMonthLabels:
+                        value === 'default' ? undefined : value === 'true' ? true : false
+                })
+            })
+
+            // Show day labels toggle
+            const dayLabelsGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            dayLabelsGroup.createEl('label', { text: 'Day labels' })
+
+            const dayLabelsSelect = dayLabelsGroup.createEl('select', {
+                cls: 'lt-card-popover-select'
+            })
+            const dayDefault = dayLabelsSelect.createEl('option', {
+                value: 'default',
+                text: 'Default'
+            })
+            const dayShow = dayLabelsSelect.createEl('option', { value: 'true', text: 'Show' })
+            const dayHide = dayLabelsSelect.createEl('option', { value: 'false', text: 'Hide' })
+
+            if (currentHeatmapConfig?.showDayLabels === undefined) {
+                dayDefault.selected = true
+            } else if (currentHeatmapConfig.showDayLabels) {
+                dayShow.selected = true
+            } else {
+                dayHide.selected = true
+            }
+
+            dayLabelsSelect.addEventListener('change', () => {
+                const value = dayLabelsSelect.value
+                close()
+                onAction({
+                    type: 'configureHeatmapShowDayLabels',
+                    showDayLabels: value === 'default' ? undefined : value === 'true' ? true : false
+                })
+            })
+        }
     }
 
     // Right column: Options
@@ -262,8 +381,8 @@ export function showCardContextMenu(
     // Position popover
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
-    const popoverWidth = 420
-    const popoverHeight = 380
+    const popoverWidth = 605
+    const popoverHeight = 438
 
     // Adjust position to keep popover in viewport
     let left = x

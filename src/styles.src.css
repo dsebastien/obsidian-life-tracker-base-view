@@ -489,9 +489,9 @@
     @apply fixed flex flex-col rounded-lg shadow-xl;
     background-color: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
-    min-width: 400px;
-    max-width: 480px;
-    max-height: 420px;
+    min-width: 576px;
+    max-width: 692px;
+    max-height: 484px;
 }
 
 .lt-card-popover-header {

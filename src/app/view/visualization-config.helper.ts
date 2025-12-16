@@ -36,18 +36,32 @@ export function getVisualizationConfig(
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
-            // Use per-visualization color scheme if set, otherwise fall back to global setting
+            // Use per-visualization settings if set, otherwise fall back to global settings
             const colorSchemeName =
                 colorScheme ?? (getConfig('heatmapColorScheme') as string) ?? 'green'
             const heatmapColorScheme = HEATMAP_PRESETS[colorSchemeName] ?? HEATMAP_PRESETS['green']!
 
+            // Per-viz overrides for heatmap settings
+            const cellSize =
+                columnConfig.heatmapCellSize ??
+                (getConfig('heatmapCellSize') as number) ??
+                DEFAULT_CELL_SIZE
+            const showMonthLabels =
+                columnConfig.heatmapShowMonthLabels ??
+                (getConfig('heatmapShowMonthLabels') as boolean) ??
+                true
+            const showDayLabels =
+                columnConfig.heatmapShowDayLabels ??
+                (getConfig('heatmapShowDayLabels') as boolean) ??
+                true
+
             return {
                 ...baseConfig,
                 colorScheme: heatmapColorScheme,
-                cellSize: (getConfig('heatmapCellSize') as number) ?? DEFAULT_CELL_SIZE,
+                cellSize,
                 cellGap: 2,
-                showMonthLabels: (getConfig('heatmapShowMonthLabels') as boolean) ?? true,
-                showDayLabels: (getConfig('heatmapShowDayLabels') as boolean) ?? true,
+                showMonthLabels,
+                showDayLabels,
                 scale
             } as HeatmapConfig
         }

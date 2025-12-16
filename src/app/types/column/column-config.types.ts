@@ -28,6 +28,12 @@ export interface ColumnVisualizationConfig {
     scale?: ScaleConfig
     /** Color scheme for chart visualizations */
     colorScheme?: ChartColorScheme
+    /** Heatmap cell size override (pixels) */
+    heatmapCellSize?: number
+    /** Heatmap show month labels override */
+    heatmapShowMonthLabels?: boolean
+    /** Heatmap show day labels override */
+    heatmapShowDayLabels?: boolean
 }
 
 /**

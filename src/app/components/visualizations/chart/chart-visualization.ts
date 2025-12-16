@@ -10,7 +10,7 @@ import type {
 } from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { ChartLoaderService } from '../../../services/chart-loader.service'
-import { log, getBooleanColor, CHART_COLORS_HEX, getColorWithAlpha } from '../../../../utils'
+import { log, getBooleanColor, getChartColorScheme, getColorWithAlpha } from '../../../../utils'
 import type { ChartClickElement, ChartInstance } from './chart-types'
 import {
     initBubbleChart,
@@ -315,19 +315,16 @@ export class ChartVisualization extends BaseVisualization {
         if (dataset) {
             dataset.data = newPieData.values
 
-            // Regenerate colors for new labels
+            // Regenerate colors for new labels using configured color scheme
             // Chart.js dataset colors can be arrays, but types may not reflect this
             const isBoolean = newPieData.isBooleanData
+            const colors = getChartColorScheme(this.chartConfig.colorScheme)
             const backgroundColors = newPieData.labels.map((label, index) => {
-                const color = isBoolean
-                    ? getBooleanColor(label)
-                    : CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+                const color = isBoolean ? getBooleanColor(label) : colors[index % colors.length]!
                 return getColorWithAlpha(color, 0.7)
             })
             const borderColors = newPieData.labels.map((label, index) => {
-                return isBoolean
-                    ? getBooleanColor(label)
-                    : CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+                return isBoolean ? getBooleanColor(label) : colors[index % colors.length]!
             })
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js types don't fully reflect that colors can be arrays
             ;(dataset as any).backgroundColor = backgroundColors

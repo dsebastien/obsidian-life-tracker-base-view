@@ -44,7 +44,7 @@ export function extractDisplayLabel(
         return null
     }
 
-    if (booleanValue) {
+    if (booleanValue !== null) {
         if (booleanValue === true) {
             return `${propertyDisplayName}: True`
         } else {
