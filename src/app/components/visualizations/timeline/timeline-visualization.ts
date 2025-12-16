@@ -1,10 +1,15 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
-import type { TimelineData, VisualizationConfig, VisualizationDataPoint } from '../../../types'
+import type {
+    TimelineConfig,
+    TimelineData,
+    VisualizationConfig,
+    VisualizationDataPoint
+} from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip } from '../../ui/tooltip'
 import { differenceInMilliseconds, parseISO } from 'date-fns'
-import { formatDateByGranularity, log } from '../../../../utils'
+import { formatDateByGranularity, getChartColorScheme, log } from '../../../../utils'
 
 /**
  * Shared aggregation service instance for all timeline visualizations
@@ -56,6 +61,16 @@ export class TimelineVisualization extends BaseVisualization {
 
         // Create timeline container (auto-height, no scrolling)
         this.timelineEl = this.containerEl.createDiv({ cls: 'lt-timeline' })
+
+        // Apply color scheme if configured
+        const timelineConfig = this.config as TimelineConfig
+        if (timelineConfig.colorScheme) {
+            const colors = getChartColorScheme(timelineConfig.colorScheme)
+            const primaryColor = colors[0]
+            if (primaryColor) {
+                this.timelineEl.style.setProperty('--lt-timeline-point-color', primaryColor)
+            }
+        }
 
         // Create tooltip
         this.tooltip = new Tooltip(this.timelineEl)

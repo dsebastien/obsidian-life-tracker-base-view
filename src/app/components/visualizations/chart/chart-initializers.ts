@@ -12,7 +12,7 @@ import type {
     PieTooltipContext,
     PointTooltipContext
 } from '../../../types'
-import { CHART_COLORS_HEX, getColorWithAlpha, getBooleanColor } from '../../../../utils'
+import { getColorWithAlpha, getBooleanColor, getChartColorScheme } from '../../../../utils'
 
 /**
  * Chart.js constructor type.
@@ -38,20 +38,19 @@ export function initPieChart(
     // Use pre-computed isBooleanData flag for consistent coloring
     const isBoolean = pieChartData.isBooleanData
 
+    // Get colors from the configured scheme (or default)
+    const colors = getChartColorScheme(chartConfig.colorScheme)
+
     // Generate colors for each segment
     // For boolean data, use semantic colors (green for true, red for false)
     // For other data, use index-based colors from palette
     const backgroundColors = pieChartData.labels.map((label, index) => {
-        const color = isBoolean
-            ? getBooleanColor(label)
-            : CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+        const color = isBoolean ? getBooleanColor(label) : colors[index % colors.length]!
         return getColorWithAlpha(color, 0.7)
     })
 
     const borderColors = pieChartData.labels.map((label, index) => {
-        return isBoolean
-            ? getBooleanColor(label)
-            : CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+        return isBoolean ? getBooleanColor(label) : colors[index % colors.length]!
     })
 
     return new Chart(ctx, {
@@ -118,8 +117,11 @@ export function initRadarChart(
     chartConfig: ChartConfig,
     onClick: (elements: ChartClickElement[]) => void
 ): ChartInstance {
+    // Get colors from the configured scheme (or default)
+    const colors = getChartColorScheme(chartConfig.colorScheme)
+
     const datasets: ChartDatasetConfig[] = chartData.datasets.map((dataset, index) => {
-        const color = CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+        const color = colors[index % colors.length]!
 
         return {
             label: dataset.label,
@@ -177,8 +179,11 @@ export function initCartesianChart(
     // Use fill property from config (area charts have fill: true, line charts have fill: false)
     const shouldFill = chartConfig.fill ?? false
 
+    // Get colors from the configured scheme (or default)
+    const colors = getChartColorScheme(chartConfig.colorScheme)
+
     const datasets: ChartDatasetConfig[] = chartData.datasets.map((dataset, index) => {
-        const color = CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]!
+        const color = colors[index % colors.length]!
 
         return {
             label: dataset.label,
@@ -279,7 +284,9 @@ export function initScatterChart(
     displayName: string,
     onClick: (elements: ChartClickElement[]) => void
 ): ChartInstance {
-    const color = CHART_COLORS_HEX[0]!
+    // Get colors from the configured scheme (or default)
+    const colors = getChartColorScheme(chartConfig.colorScheme)
+    const color = colors[0]!
 
     return new Chart(ctx, {
         type: 'scatter',
@@ -363,7 +370,9 @@ export function initBubbleChart(
     displayName: string,
     onClick: (elements: ChartClickElement[]) => void
 ): ChartInstance {
-    const color = CHART_COLORS_HEX[0]!
+    // Get colors from the configured scheme (or default)
+    const colors = getChartColorScheme(chartConfig.colorScheme)
+    const color = colors[0]!
 
     return new Chart(ctx, {
         type: 'bubble',

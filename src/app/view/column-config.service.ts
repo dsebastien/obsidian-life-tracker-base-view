@@ -8,7 +8,7 @@ import {
     type ScaleConfig,
     type EffectiveConfigResult
 } from '../types'
-import { log } from '../../utils'
+import { log, type ChartColorScheme } from '../../utils'
 
 /**
  * Config key for storing column configurations in view config
@@ -40,7 +40,8 @@ export class ColumnConfigService {
         propertyId: BasesPropertyId,
         visualizationType: VisualizationType,
         displayName: string,
-        scale?: ScaleConfig
+        scale?: ScaleConfig,
+        colorScheme?: ChartColorScheme
     ): void {
         const configs = this.getColumnConfigs()
         const config: ColumnVisualizationConfig = {
@@ -51,6 +52,9 @@ export class ColumnConfigService {
         }
         if (scale) {
             config.scale = scale
+        }
+        if (colorScheme) {
+            config.colorScheme = colorScheme
         }
         configs[propertyId] = config
         this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
@@ -123,7 +127,8 @@ export class ColumnConfigService {
                 visualizationType: preset.visualizationType,
                 displayName,
                 configuredAt: 0, // Not persisted
-                scale: preset.scale
+                scale: preset.scale,
+                colorScheme: preset.colorScheme
             }
             return { config: configFromPreset, isFromPreset: true }
         }

@@ -12,8 +12,11 @@ export {
     isDarkTheme,
     getThemeAwareHeatmapColors,
     applyHeatmapColorScheme,
-    getBooleanColor
+    getBooleanColor,
+    CHART_COLOR_PRESETS,
+    getChartColorScheme
 } from './color.utils'
+export type { ChartColorScheme } from './color.utils'
 
 // Date utilities
 export {

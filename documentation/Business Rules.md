@@ -33,6 +33,8 @@ Priority order for resolving an entry's date:
 
 - Scale-supporting types: Heatmap, BarChart, LineChart, AreaChart, RadarChart, ScatterChart, BubbleChart
 - Non-scale types: PieChart, DoughnutChart, PolarAreaChart, TagCloud, Timeline
+- Color scheme-supporting types: Heatmap, BarChart, LineChart, AreaChart, PieChart, DoughnutChart, RadarChart, PolarAreaChart, ScatterChart, BubbleChart, Timeline
+- Non-color scheme types: TagCloud
 
 ## Maximize State
 

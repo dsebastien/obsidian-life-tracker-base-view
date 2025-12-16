@@ -1,124 +1,290 @@
-import { Menu } from 'obsidian'
+import { setIcon } from 'obsidian'
 import {
     VisualizationType,
     CONTEXT_MENU_VISUALIZATION_OPTIONS,
     SCALE_PRESETS,
     supportsScale,
+    supportsColorScheme,
     type ScaleConfig,
     type CardMenuCallback
 } from '../../types'
+import type { ChartColorScheme } from '../../../utils'
 
 /**
- * Show context menu for a visualization card
+ * Color scheme options for the dropdown
+ */
+const COLOR_SCHEME_OPTIONS: Array<{ value: ChartColorScheme; label: string }> = [
+    { value: 'default', label: 'Default' },
+    { value: 'green', label: 'Green' },
+    { value: 'blue', label: 'Blue' },
+    { value: 'purple', label: 'Purple' },
+    { value: 'orange', label: 'Orange' },
+    { value: 'red', label: 'Red' }
+]
+
+/**
+ * Show context menu popover for a visualization card
+ * Two-column layout: left = viz type selection, right = options
  */
 export function showCardContextMenu(
     event: MouseEvent | TouchEvent,
     currentType: VisualizationType,
     currentScale: ScaleConfig | undefined,
+    currentColorScheme: ChartColorScheme | undefined,
     isFromPreset: boolean,
     isMaximized: boolean,
     onAction: CardMenuCallback
 ): void {
-    const menu = new Menu()
-
-    // Maximize/Minimize option at the top
-    menu.addItem((item) => {
-        item.setTitle(isMaximized ? 'Minimize' : 'Maximize')
-            .setIcon(isMaximized ? 'minimize-2' : 'maximize-2')
-            .onClick(() => {
-                onAction({ type: 'toggleMaximize' })
-            })
-    })
-
-    menu.addSeparator()
-
-    // Section: Change visualization type
-    menu.addItem((item) => {
-        item.setTitle('Change to:').setDisabled(true).setIsLabel(true)
-    })
-
-    for (const option of CONTEXT_MENU_VISUALIZATION_OPTIONS) {
-        menu.addItem((item) => {
-            item.setTitle(option.label)
-                .setIcon(option.icon)
-                .setChecked(option.type === currentType)
-                .onClick(() => {
-                    onAction({
-                        type: 'changeVisualization',
-                        visualizationType: option.type
-                    })
-                })
-        })
+    // Get position from event
+    let x: number, y: number
+    if (event instanceof MouseEvent) {
+        x = event.clientX
+        y = event.clientY
+    } else {
+        const touch = event.changedTouches[0]
+        if (!touch) return
+        x = touch.clientX
+        y = touch.clientY
     }
 
-    // Scale configuration (only for supported types)
-    if (supportsScale(currentType)) {
-        menu.addSeparator()
+    // Create overlay
+    const overlay = document.body.createDiv({ cls: 'lt-card-popover-overlay' })
 
-        menu.addItem((item) => {
-            item.setTitle('Scale:').setDisabled(true).setIsLabel(true)
-        })
+    // Create popover container
+    const popover = overlay.createDiv({ cls: 'lt-card-popover' })
 
-        // Auto option
-        menu.addItem((item) => {
-            item.setTitle('Auto-detect')
-                .setIcon('wand')
-                .setChecked(!currentScale)
-                .onClick(() => {
-                    onAction({ type: 'configureScale', scale: undefined })
-                })
-        })
+    // Track selected type for dynamic options
+    let selectedType = currentType
 
-        // Preset scales
-        for (const preset of SCALE_PRESETS) {
-            const isSelected = currentScale?.min === preset.min && currentScale?.max === preset.max
-            menu.addItem((item) => {
-                item.setTitle(preset.label)
-                    .setChecked(isSelected)
-                    .onClick(() => {
-                        onAction({
-                            type: 'configureScale',
-                            scale: { min: preset.min, max: preset.max }
-                        })
-                    })
+    // Close function
+    const close = (): void => {
+        document.removeEventListener('keydown', handleEscape)
+        overlay.remove()
+    }
+
+    const handleEscape = (e: KeyboardEvent): void => {
+        if (e.key === 'Escape') {
+            close()
+        }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            close()
+        }
+    })
+
+    // ========== HEADER ==========
+    const header = popover.createDiv({ cls: 'lt-card-popover-header' })
+
+    // Maximize/Minimize button
+    const maximizeBtn = header.createEl('button', {
+        cls: 'lt-card-popover-btn'
+    })
+    setIcon(maximizeBtn, isMaximized ? 'minimize-2' : 'maximize-2')
+    maximizeBtn.createSpan({ text: isMaximized ? 'Minimize' : 'Maximize' })
+    maximizeBtn.addEventListener('click', () => {
+        close()
+        onAction({ type: 'toggleMaximize' })
+    })
+
+    // Reset button
+    const resetBtn = header.createEl('button', {
+        cls: `lt-card-popover-btn ${isFromPreset ? '' : 'lt-card-popover-btn--warning'}`
+    })
+    setIcon(resetBtn, 'rotate-ccw')
+    resetBtn.createSpan({ text: isFromPreset ? 'Reset to preset' : 'Reset' })
+    resetBtn.addEventListener('click', () => {
+        close()
+        onAction({ type: 'resetConfig' })
+    })
+
+    // ========== BODY (two columns) ==========
+    const body = popover.createDiv({ cls: 'lt-card-popover-body' })
+
+    // Left column: Visualization type selection
+    const leftCol = body.createDiv({ cls: 'lt-card-popover-column lt-card-popover-column--left' })
+    leftCol.createDiv({ cls: 'lt-card-popover-column-title', text: 'Visualization' })
+
+    const typeList = leftCol.createDiv({ cls: 'lt-card-popover-type-list' })
+
+    // Render options column function (will be called when type changes)
+    const renderOptionsColumn = (container: HTMLElement, vizType: VisualizationType): void => {
+        container.empty()
+        container.createDiv({ cls: 'lt-card-popover-column-title', text: 'Options' })
+
+        const optionsContent = container.createDiv({ cls: 'lt-card-popover-options' })
+
+        const hasScale = supportsScale(vizType)
+        const hasColorScheme = supportsColorScheme(vizType)
+
+        if (!hasScale && !hasColorScheme) {
+            optionsContent.createDiv({
+                cls: 'lt-card-popover-no-options',
+                text: 'No options for this type'
             })
+            return
         }
 
-        // Custom option
-        menu.addItem((item) => {
-            item.setTitle('Custom scale...')
-                .setIcon('edit')
-                .onClick(() => {
+        // Scale dropdown (if supported)
+        if (hasScale) {
+            const scaleGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            scaleGroup.createEl('label', { text: 'Scale' })
+
+            const scaleSelect = scaleGroup.createEl('select', { cls: 'lt-card-popover-select' })
+
+            // Auto option
+            const autoOption = scaleSelect.createEl('option', { value: '', text: 'Auto-detect' })
+            if (!currentScale) {
+                autoOption.selected = true
+            }
+
+            // Preset options
+            for (const preset of SCALE_PRESETS) {
+                const option = scaleSelect.createEl('option', {
+                    value: `${preset.min}-${preset.max}`,
+                    text: preset.label
+                })
+                if (currentScale?.min === preset.min && currentScale?.max === preset.max) {
+                    option.selected = true
+                }
+            }
+
+            // Custom option
+            const customOption = scaleSelect.createEl('option', {
+                value: 'custom',
+                text: 'Custom...'
+            })
+            const isCustom =
+                currentScale &&
+                !SCALE_PRESETS.some((p) => p.min === currentScale.min && p.max === currentScale.max)
+            if (isCustom) {
+                customOption.selected = true
+            }
+
+            scaleSelect.addEventListener('change', () => {
+                const value = scaleSelect.value
+                if (value === '') {
+                    close()
+                    onAction({ type: 'configureScale', scale: undefined })
+                } else if (value === 'custom') {
+                    close()
                     showCustomScaleModal(currentScale, (scale) => {
                         onAction({ type: 'configureScale', scale })
                     })
+                } else {
+                    const [min, max] = value.split('-').map(Number)
+                    close()
+                    onAction({
+                        type: 'configureScale',
+                        scale: { min: min ?? 0, max: max ?? 100 }
+                    })
+                }
+            })
+        }
+
+        // Color scheme dropdown (if supported)
+        if (hasColorScheme) {
+            const colorGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            colorGroup.createEl('label', { text: 'Colors' })
+
+            const colorSelect = colorGroup.createEl('select', { cls: 'lt-card-popover-select' })
+
+            for (const scheme of COLOR_SCHEME_OPTIONS) {
+                const option = colorSelect.createEl('option', {
+                    value: scheme.value,
+                    text: scheme.label
                 })
+                const effectiveScheme = currentColorScheme ?? 'default'
+                if (scheme.value === effectiveScheme) {
+                    option.selected = true
+                }
+            }
+
+            colorSelect.addEventListener('change', () => {
+                const value = colorSelect.value as ChartColorScheme
+                close()
+                onAction({
+                    type: 'configureColorScheme',
+                    colorScheme: value === 'default' ? undefined : value
+                })
+            })
+        }
+    }
+
+    // Right column: Options
+    const rightCol = body.createDiv({ cls: 'lt-card-popover-column lt-card-popover-column--right' })
+    renderOptionsColumn(rightCol, selectedType)
+
+    // Create type items
+    for (const option of CONTEXT_MENU_VISUALIZATION_OPTIONS) {
+        const item = typeList.createDiv({
+            cls: `lt-card-popover-type-item ${option.type === selectedType ? 'lt-card-popover-type-item--selected' : ''}`
+        })
+
+        const iconEl = item.createSpan({ cls: 'lt-card-popover-type-icon' })
+        setIcon(iconEl, option.icon)
+
+        item.createSpan({ cls: 'lt-card-popover-type-label', text: option.label })
+
+        if (option.type === selectedType) {
+            const checkEl = item.createSpan({ cls: 'lt-card-popover-type-check' })
+            setIcon(checkEl, 'check')
+        }
+
+        item.addEventListener('click', () => {
+            if (option.type !== selectedType) {
+                // Update selection visually
+                typeList.querySelectorAll('.lt-card-popover-type-item').forEach((el) => {
+                    el.classList.remove('lt-card-popover-type-item--selected')
+                    const check = el.querySelector('.lt-card-popover-type-check')
+                    if (check) check.remove()
+                })
+                item.classList.add('lt-card-popover-type-item--selected')
+                const checkEl = item.createSpan({ cls: 'lt-card-popover-type-check' })
+                setIcon(checkEl, 'check')
+
+                selectedType = option.type
+
+                // Re-render options column for new type
+                renderOptionsColumn(rightCol, selectedType)
+
+                // Dispatch action
+                close()
+                onAction({ type: 'changeVisualization', visualizationType: option.type })
+            }
         })
     }
 
-    menu.addSeparator()
+    // Position popover
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    const popoverWidth = 420
+    const popoverHeight = 380
 
-    // Reset configuration - different text based on source
-    menu.addItem((item) => {
-        const title = isFromPreset ? 'Reset to preset' : 'Reset configuration'
-        item.setTitle(title)
-            .setIcon('rotate-ccw')
-            .setWarning(!isFromPreset) // Only show warning for full reset
-            .onClick(() => {
-                onAction({ type: 'resetConfig' })
-            })
-    })
+    // Adjust position to keep popover in viewport
+    let left = x
+    let top = y
 
-    // Show menu at appropriate position based on event type
-    if (event instanceof MouseEvent) {
-        menu.showAtMouseEvent(event)
-    } else {
-        // TouchEvent - get position from first touch
-        const touch = event.changedTouches[0]
-        if (touch) {
-            menu.showAtPosition({ x: touch.clientX, y: touch.clientY })
-        }
+    if (left + popoverWidth > viewportWidth - 20) {
+        left = viewportWidth - popoverWidth - 20
     }
+    if (left < 20) {
+        left = 20
+    }
+
+    if (top + popoverHeight > viewportHeight - 20) {
+        top = viewportHeight - popoverHeight - 20
+    }
+    if (top < 20) {
+        top = 20
+    }
+
+    popover.style.left = `${left}px`
+    popover.style.top = `${top}px`
 }
 
 /**

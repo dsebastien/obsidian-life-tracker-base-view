@@ -324,6 +324,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 if (currentType && currentType !== effectiveConfig.config.visualizationType) {
                     return false
                 }
+            } else {
+                // Property had a visualization but no longer has a config (e.g., after reset with no preset)
+                // Need full refresh to show unconfigured state
+                return false
             }
 
             // Check if showEmptyValues setting has changed
@@ -638,6 +642,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             event,
             config.visualizationType,
             config.scale,
+            config.colorScheme,
             isFromPreset,
             isMaximized,
             (action: CardMenuAction) => {
@@ -687,11 +692,31 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         propertyId,
                         currentConfig.visualizationType,
                         displayName,
-                        action.scale
+                        action.scale,
+                        currentConfig.colorScheme
                     )
                 } else {
                     this.columnConfigService.updateColumnConfig(propertyId, {
                         scale: action.scale
+                    })
+                }
+                // Only refresh this specific visualization
+                this.refreshVisualization(propertyId)
+                break
+
+            case 'configureColorScheme':
+                if (isFromPreset && currentConfig) {
+                    // Create local override from preset with new color scheme
+                    this.columnConfigService.saveColumnConfig(
+                        propertyId,
+                        currentConfig.visualizationType,
+                        displayName,
+                        currentConfig.scale,
+                        action.colorScheme
+                    )
+                } else {
+                    this.columnConfigService.updateColumnConfig(propertyId, {
+                        colorScheme: action.colorScheme
                     })
                 }
                 // Only refresh this specific visualization

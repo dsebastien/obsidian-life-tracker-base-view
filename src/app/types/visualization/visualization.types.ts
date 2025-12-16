@@ -2,6 +2,7 @@ import type { BasesPropertyId } from 'obsidian'
 import type { TimeGranularity } from './time-granularity.intf'
 import type { ResolvedDateAnchor } from '../view/date-anchor.types'
 import type { ScaleConfig } from '../column/column-config.types'
+import type { ChartColorScheme } from '../../../utils/color.utils'
 
 /**
  * A single data point for visualization.
@@ -216,6 +217,8 @@ export interface ChartConfig extends VisualizationConfig {
     scale?: ScaleConfig
     /** For pie/doughnut: whether to aggregate by value distribution */
     aggregateByValue?: boolean
+    /** Color scheme for chart colors */
+    colorScheme?: ChartColorScheme
 }
 
 /**
@@ -226,4 +229,12 @@ export interface TagCloudConfig extends VisualizationConfig {
     maxFontSize: number
     sortBy: 'frequency' | 'alphabetical'
     maxTags: number
+}
+
+/**
+ * Timeline-specific configuration
+ */
+export interface TimelineConfig extends VisualizationConfig {
+    /** Color scheme for timeline points */
+    colorScheme?: ChartColorScheme
 }

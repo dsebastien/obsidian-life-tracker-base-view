@@ -21,7 +21,8 @@ export type {
     HeatmapConfig,
     ChartJsType,
     ChartConfig,
-    TagCloudConfig
+    TagCloudConfig,
+    TimelineConfig
 } from './visualization.types'
 export {
     CONFIG_CARD_VISUALIZATION_OPTIONS,

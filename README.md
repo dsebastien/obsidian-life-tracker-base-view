@@ -20,6 +20,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Grid layout controls**: adjustable columns (1-6)
 - **Visualization presets**: auto-apply settings to properties by name pattern
 - **Scale configuration**: auto-detect or manual min/max for numeric visualizations
+- **Color schemes**: 5 chart color schemes (green, blue, purple, orange, red) for all chart types
 - **Chart options**: toggle legend, grid lines, and more
 
 ### Property Capture
@@ -33,7 +34,7 @@ You can find more details and background information here: https://www.knowii.ne
 
 ### User Experience
 
-- **Context menu**: right-click any card to change visualization, configure scale, maximize, or reset
+- **Context menu**: right-click any card to change visualization, configure scale and color scheme, maximize, or reset
 - **Maximize mode**: expand any visualization to full view (press Escape to exit)
 - **Persistent settings**: grid layout and card configurations saved per view
 - **Empty states**: helpful messages when data is missing or misconfigured
@@ -65,7 +66,7 @@ Adjust layout options including number of columns, empty date display, default c
 ### Right-click context menu
 
 ![Customize visualizations](documentation/screenshots/customize-visualizations.png)
-Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), maximize, or reset configuration.
+Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100) and color scheme, maximize, or reset configuration.
 
 ### Maximize view
 
@@ -136,6 +137,7 @@ Configure presets in **Settings → Life Tracker → Visualization presets** by 
 - **Property name pattern**: The text to match against property names
 - **Visualization type**: Which visualization to use (heatmap, line chart, etc.)
 - **Scale**: Optional min/max range for numeric visualizations
+- **Color scheme**: Optional color palette for chart types (green, blue, purple, orange, red)
 
 **How presets work with overrides**: When you add a property column to a Life Tracker Base View, the plugin checks for matching presets and applies them automatically. However, you can always override the preset configuration for that specific property in that specific view using the right-click context menu. Your per-view overrides take precedence over presets, giving you global defaults with local flexibility.
 

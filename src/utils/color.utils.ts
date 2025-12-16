@@ -96,6 +96,50 @@ export const CHART_COLORS_HEX: string[] = [
 ]
 
 /**
+ * Chart color scheme identifiers
+ */
+export type ChartColorScheme = 'default' | 'green' | 'blue' | 'purple' | 'orange' | 'red'
+
+/**
+ * Chart color presets - 8 distinct colors per scheme
+ * Each scheme uses colors from the same color family
+ */
+export const CHART_COLOR_PRESETS: Record<ChartColorScheme, string[]> = {
+    default: CHART_COLORS_HEX,
+    green: ['#216e39', '#2ea043', '#3fb950', '#56d364', '#7ee787', '#aff5b4', '#d3f9d8', '#e6ffec'],
+    blue: ['#1f6feb', '#388bfd', '#58a6ff', '#79c0ff', '#a5d6ff', '#c6e6ff', '#ddf4ff', '#f0f8ff'],
+    purple: [
+        '#6e40c9',
+        '#8957e5',
+        '#a371f7',
+        '#b87fff',
+        '#d2a8ff',
+        '#d8b9ff',
+        '#e8daff',
+        '#f5f0ff'
+    ],
+    orange: [
+        '#f0883e',
+        '#ffa657',
+        '#ffc680',
+        '#ffdf5d',
+        '#ffe58f',
+        '#fff1c2',
+        '#fff8dc',
+        '#fffbe6'
+    ],
+    red: ['#da3633', '#f85149', '#ff7b72', '#ffa198', '#ffbdbb', '#ffc1c1', '#ffdcd9', '#ffebe9']
+}
+
+/**
+ * Get chart colors for a specific scheme
+ */
+export function getChartColorScheme(scheme: ChartColorScheme | undefined): string[] {
+    if (!scheme) return CHART_COLOR_PRESETS.default
+    return CHART_COLOR_PRESETS[scheme] ?? CHART_COLOR_PRESETS.default
+}
+
+/**
  * Semantic colors for boolean values.
  * Used to ensure consistent coloring in pie/doughnut charts
  * regardless of which value has more occurrences.

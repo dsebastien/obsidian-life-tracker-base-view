@@ -1,5 +1,6 @@
 import type { BasesPropertyId } from 'obsidian'
 import { VisualizationType } from '../visualization/visualization-type.intf'
+import type { ChartColorScheme } from '../../../utils/color.utils'
 
 /**
  * Scale configuration for numeric visualizations
@@ -25,6 +26,8 @@ export interface ColumnVisualizationConfig {
     configuredAt: number
     /** Scale configuration for numeric visualizations (Heatmap, BarChart, LineChart) */
     scale?: ScaleConfig
+    /** Color scheme for chart visualizations */
+    colorScheme?: ChartColorScheme
 }
 
 /**
@@ -45,6 +48,31 @@ export const SCALE_SUPPORTED_TYPES: VisualizationType[] = [
  */
 export function supportsScale(vizType: VisualizationType): boolean {
     return SCALE_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
+ * Visualization types that support color scheme configuration
+ * All chart types plus Heatmap and Timeline. Excludes TagCloud.
+ */
+export const COLOR_SCHEME_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.Heatmap,
+    VisualizationType.BarChart,
+    VisualizationType.LineChart,
+    VisualizationType.AreaChart,
+    VisualizationType.PieChart,
+    VisualizationType.DoughnutChart,
+    VisualizationType.RadarChart,
+    VisualizationType.PolarAreaChart,
+    VisualizationType.ScatterChart,
+    VisualizationType.BubbleChart,
+    VisualizationType.Timeline
+]
+
+/**
+ * Check if a visualization type supports color scheme configuration
+ */
+export function supportsColorScheme(vizType: VisualizationType): boolean {
+    return COLOR_SCHEME_SUPPORTED_TYPES.includes(vizType)
 }
 
 /**

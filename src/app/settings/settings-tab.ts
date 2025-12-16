@@ -1,12 +1,13 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import { FolderSuggest } from '../components/ui/folder-suggest'
-import { CSS_CLASS, CSS_SELECTOR } from '../../utils'
+import { CSS_CLASS, CSS_SELECTOR, type ChartColorScheme } from '../../utils'
 import {
     VisualizationType,
     SETTINGS_TAB_VISUALIZATION_OPTIONS,
     SCALE_PRESETS_RECORD,
     supportsScale,
+    supportsColorScheme,
     PROPERTY_TYPES,
     PROPERTY_TYPE_LABELS,
     MAPPING_TYPE_LABELS,
@@ -17,6 +18,18 @@ import {
     type ObsidianPropertyType,
     type MappingType
 } from '../types'
+
+/**
+ * Color scheme options for the preset dropdown
+ */
+const COLOR_SCHEME_OPTIONS: Record<string, string> = {
+    default: 'Default',
+    green: 'Green',
+    blue: 'Blue',
+    purple: 'Purple',
+    orange: 'Orange',
+    red: 'Red'
+}
 
 type SettingsTab = 'properties' | 'visualizations' | 'about'
 
@@ -882,6 +895,9 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                         if (!supportsScale(p.visualizationType)) {
                             p.scale = undefined
                         }
+                        if (!supportsColorScheme(p.visualizationType)) {
+                            p.colorScheme = undefined
+                        }
                     })
                     this.display()
                 })
@@ -919,6 +935,21 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                             p.scale = scaleValue
                                 ? { min: scaleValue.min, max: scaleValue.max }
                                 : undefined
+                        })
+                    })
+            })
+        }
+
+        // Color scheme dropdown (only for chart types)
+        if (supportsColorScheme(preset.visualizationType)) {
+            setting.addDropdown((dropdown) => {
+                dropdown
+                    .addOptions(COLOR_SCHEME_OPTIONS)
+                    .setValue(preset.colorScheme ?? 'default')
+                    .onChange(async (value) => {
+                        await this.plugin.updatePreset(preset.id, (p) => {
+                            p.colorScheme =
+                                value === 'default' ? undefined : (value as ChartColorScheme)
                         })
                     })
             })

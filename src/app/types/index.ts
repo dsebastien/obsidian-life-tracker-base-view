@@ -40,13 +40,19 @@ export type {
     ChartJsType,
     ChartConfig,
     TagCloudConfig,
+    TimelineConfig,
     ContextMenuVisualizationOption,
     ConfigCardVisualizationOption,
     ScalePreset
 } from './visualization'
 
 // Column types
-export { SCALE_SUPPORTED_TYPES, supportsScale } from './column'
+export {
+    SCALE_SUPPORTED_TYPES,
+    supportsScale,
+    COLOR_SCHEME_SUPPORTED_TYPES,
+    supportsColorScheme
+} from './column'
 export type {
     ScaleConfig,
     ColumnVisualizationConfig,

@@ -1,6 +1,7 @@
 import type { VisualizationType } from '../visualization/visualization-type.intf'
 import type { ScaleConfig } from '../column/column-config.types'
 import type { PropertyDefinition } from '../property/property-definition.types'
+import type { ChartColorScheme } from '../../../utils/color.utils'
 
 /**
  * Global preset for a property name pattern
@@ -15,6 +16,8 @@ export interface PropertyVisualizationPreset {
     visualizationType: VisualizationType
     /** Optional scale configuration */
     scale?: ScaleConfig
+    /** Optional color scheme for chart types */
+    colorScheme?: ChartColorScheme
 }
 
 export interface PluginSettings {

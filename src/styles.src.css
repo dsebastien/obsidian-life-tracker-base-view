@@ -477,6 +477,139 @@
 }
 
 /* ========================================
+   CARD POPOVER (two-column context menu)
+   ======================================== */
+
+.lt-card-popover-overlay {
+    @apply fixed inset-0 z-50;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.lt-card-popover {
+    @apply fixed flex flex-col rounded-lg shadow-xl;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    min-width: 400px;
+    max-width: 480px;
+    max-height: 420px;
+}
+
+.lt-card-popover-header {
+    @apply flex items-center justify-between gap-3 px-4 py-3;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lt-card-popover-btn {
+    @apply flex items-center gap-2 px-3 py-1.5 text-sm rounded cursor-pointer;
+    @apply transition-colors duration-150;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-card-popover-btn:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-card-popover-btn--warning {
+    color: var(--text-error);
+}
+
+.lt-card-popover-body {
+    @apply flex flex-1 overflow-hidden;
+}
+
+.lt-card-popover-column {
+    @apply flex flex-col py-3;
+}
+
+.lt-card-popover-column--left {
+    @apply flex-1;
+    border-right: 1px solid var(--background-modifier-border);
+    min-width: 180px;
+}
+
+.lt-card-popover-column--right {
+    @apply flex-1;
+    min-width: 120px;
+}
+
+.lt-card-popover-column-title {
+    @apply px-4 pb-2 text-xs font-medium uppercase tracking-wide;
+    color: var(--text-muted);
+}
+
+.lt-card-popover-type-list {
+    @apply flex-1 overflow-y-auto px-2;
+}
+
+.lt-card-popover-type-item {
+    @apply flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer;
+    @apply transition-colors duration-100;
+    color: var(--text-normal);
+}
+
+.lt-card-popover-type-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-card-popover-type-item--selected {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-card-popover-type-icon {
+    @apply flex items-center justify-center w-4 h-4;
+    color: var(--text-muted);
+}
+
+.lt-card-popover-type-item--selected .lt-card-popover-type-icon {
+    color: var(--text-accent);
+}
+
+.lt-card-popover-type-label {
+    @apply flex-1 text-sm;
+}
+
+.lt-card-popover-type-check {
+    @apply flex items-center justify-center w-4 h-4;
+    color: var(--text-accent);
+}
+
+.lt-card-popover-options {
+    @apply flex flex-col gap-3 px-2;
+}
+
+.lt-card-popover-option-group {
+    @apply flex flex-col gap-1;
+}
+
+.lt-card-popover-option-group label {
+    @apply text-xs font-medium;
+    color: var(--text-muted);
+}
+
+.lt-card-popover-select {
+    @apply text-sm rounded cursor-pointer;
+    background-color: var(--interactive-normal);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-card-popover-select:hover {
+    background-color: var(--interactive-hover);
+}
+
+.lt-card-popover-select:focus {
+    @apply outline-none;
+    border-color: var(--interactive-accent);
+}
+
+.lt-card-popover-no-options {
+    @apply text-sm italic px-4;
+    color: var(--text-muted);
+}
+
+/* ========================================
    SECTION (inside cards)
    ======================================== */
 
@@ -798,7 +931,7 @@
     @apply transition-all duration-150;
     top: 50%;
     transform: translate(-50%, -50%);
-    background-color: var(--interactive-accent);
+    background-color: var(--lt-timeline-point-color, var(--interactive-accent));
 }
 
 .lt-timeline-point:hover {

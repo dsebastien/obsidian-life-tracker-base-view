@@ -5,6 +5,7 @@ import {
     type ChartConfig,
     type HeatmapConfig,
     type TagCloudConfig,
+    type TimelineConfig,
     type VisualizationConfig,
     type ConfigGetter
 } from '../types'
@@ -29,17 +30,20 @@ export function getVisualizationConfig(
         embeddedHeight
     }
 
-    // Extract scale from column config if present
+    // Extract scale and color scheme from column config if present
     const scale = columnConfig.scale
+    const colorScheme = columnConfig.colorScheme
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
-            const colorSchemeName = (getConfig('heatmapColorScheme') as string) ?? 'green'
-            const colorScheme = HEATMAP_PRESETS[colorSchemeName] ?? HEATMAP_PRESETS['green']!
+            // Use per-visualization color scheme if set, otherwise fall back to global setting
+            const colorSchemeName =
+                colorScheme ?? (getConfig('heatmapColorScheme') as string) ?? 'green'
+            const heatmapColorScheme = HEATMAP_PRESETS[colorSchemeName] ?? HEATMAP_PRESETS['green']!
 
             return {
                 ...baseConfig,
-                colorScheme,
+                colorScheme: heatmapColorScheme,
                 cellSize: (getConfig('heatmapCellSize') as number) ?? DEFAULT_CELL_SIZE,
                 cellGap: 2,
                 showMonthLabels: (getConfig('heatmapShowMonthLabels') as boolean) ?? true,
@@ -56,7 +60,8 @@ export function getVisualizationConfig(
                 showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
                 tension: 0.3,
                 fill: false, // Line charts don't have fill
-                scale
+                scale,
+                colorScheme
             } as ChartConfig
 
         case VisualizationType.AreaChart:
@@ -67,7 +72,8 @@ export function getVisualizationConfig(
                 showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
                 tension: 0.3,
                 fill: true, // Area charts have fill
-                scale
+                scale,
+                colorScheme
             } as ChartConfig
 
         case VisualizationType.BarChart:
@@ -83,7 +89,8 @@ export function getVisualizationConfig(
                 showLegend: (getConfig('chartShowLegend') as boolean) ?? false,
                 showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
                 tension: 0.3,
-                scale
+                scale,
+                colorScheme
             } as ChartConfig
 
         case VisualizationType.TagCloud:
@@ -95,6 +102,12 @@ export function getVisualizationConfig(
                     (getConfig('tagCloudSortBy') as 'frequency' | 'alphabetical') ?? 'frequency',
                 maxTags: (getConfig('tagCloudMaxTags') as number) ?? 50
             } as TagCloudConfig
+
+        case VisualizationType.Timeline:
+            return {
+                ...baseConfig,
+                colorScheme
+            } as TimelineConfig
 
         default:
             return baseConfig
