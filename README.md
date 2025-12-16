@@ -17,11 +17,13 @@ You can find more details and background information here: https://www.knowii.ne
 ### Customization
 
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
+- **Time frame selection**: filter visualizations to show specific date ranges (all time, last 7/30/90/365 days, this week/month/quarter/year, etc.)
 - **Grid layout controls**: adjustable columns (1-6)
 - **Visualization presets**: auto-apply settings to properties by name pattern
 - **Scale configuration**: auto-detect or manual min/max for numeric visualizations
 - **Color schemes**: 5 chart color schemes (green, blue, purple, orange, red) for all chart types
 - **Chart options**: toggle legend, grid lines, and more
+- **Responsive resizing**: visualizations automatically adjust to available space
 
 ### Property Capture
 
@@ -107,6 +109,7 @@ Property definitions let you configure which frontmatter properties to track acr
 - **Default value**: Pre-filled when capturing new data
 - **Note filtering**: Apply the property only to specific notes by folder, tag, or regex pattern
 - **Reordering**: Drag and drop to reorder property definitions (affects modal and grid order)
+- **Copy definitions**: Duplicate an existing property definition to quickly create similar ones
 
 Configure property definitions in **Settings → Life Tracker → Property definitions**. These definitions power the capture command and determine which properties appear in the capture dialog.
 

@@ -10,6 +10,10 @@ Rendering type for data: `Heatmap`, `LineChart`, `BarChart`, `AreaChart`, `PieCh
 
 Time grouping: `Daily`, `Weekly`, `Monthly`, `Quarterly`, `Yearly`
 
+### TimeFrame
+
+Date range filter for visualizations: `all_time`, `last_7_days`, `last_30_days`, `last_90_days`, `last_365_days`, `this_week`, `this_month`, `this_quarter`, `this_year`, `last_week`, `last_month`, `last_quarter`, `last_year`
+
 ## Core Types
 
 ### ScaleConfig
@@ -24,6 +28,9 @@ Per-property visualization settings stored in view config:
 - `visualizationType`: Selected visualization
 - `displayName`: Cached display name
 - `scale`: Optional ScaleConfig
+- `colorScheme`: Optional color scheme override
+- `showLegend`: Optional legend visibility override
+- `showGridLines`: Optional grid lines visibility override
 
 ### PropertyVisualizationPreset
 
@@ -32,6 +39,7 @@ Global preset (plugin settings) auto-applied by property name pattern:
 - `propertyNamePattern`: Case-insensitive match
 - `visualizationType`: Visualization to use
 - `scale`: Optional scale
+- `colorScheme`: Optional color scheme
 
 ## Data Structures
 
