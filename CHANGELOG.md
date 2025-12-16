@@ -1,3 +1,13 @@
+## [1.9.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.8.1...1.9.0) (2025-12-16)
+
+### Features
+
+* **all:** enabled changing the time frame for the life tracker view ([671c6d1](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/671c6d1cad8b06257758036774474df751f50bf8))
+* **all:** improved visualizations resizing based on available space ([ee0c7a3](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/ee0c7a3ad02fe51fb94560f675301787af9d3bba))
+
+### Bug Fixes
+
+* **all:** removed visualization as soon as a property is removed from the life tracker view ([3511f83](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/3511f830542f7e572f116e3fde3ebfa8df24e0f1))
 ## [1.8.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/1.8.0...1.8.1) (2025-12-16)
 
 ### Features
