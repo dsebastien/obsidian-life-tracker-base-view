@@ -58,18 +58,22 @@ Available time frames for filtering visualization data:
 
 ## Per-Column Config (Per-View)
 
-Stored in view config under `columnConfigs` key.
+Stored in view config under `columnConfigs` key as `Record<PropertyId, ColumnVisualizationConfig[]>`.
 
-| Field               | Description                       |
-| ------------------- | --------------------------------- |
-| `propertyId`        | Bases property ID                 |
-| `visualizationType` | Selected visualization            |
-| `displayName`       | Cached property name              |
-| `configuredAt`      | Timestamp                         |
-| `scale`             | Optional {min, max}               |
-| `colorScheme`       | Optional color scheme             |
-| `showLegend`        | Optional per-column legend toggle |
-| `showGridLines`     | Optional per-column grid toggle   |
+**Multiple visualizations per property**: Each property can have multiple visualizations, each independently configurable. Right-click a visualization to add a new one (copies settings from source) or remove it (only if 2+ exist for the property).
+
+| Field                    | Description                              |
+| ------------------------ | ---------------------------------------- |
+| `id`                     | Unique visualization ID (UUID)           |
+| `propertyId`             | Bases property ID                        |
+| `visualizationType`      | Selected visualization                   |
+| `displayName`            | Cached property name                     |
+| `configuredAt`           | Timestamp                                |
+| `scale`                  | Optional {min, max}                      |
+| `colorScheme`            | Optional color scheme                    |
+| `heatmapCellSize`        | Optional heatmap cell size override      |
+| `heatmapShowMonthLabels` | Optional heatmap month labels visibility |
+| `heatmapShowDayLabels`   | Optional heatmap day labels visibility   |
 
 ## Scale Presets
 

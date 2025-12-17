@@ -22,15 +22,19 @@ Min/max bounds for numeric visualizations. `null` = auto-detect from data.
 
 ### ColumnVisualizationConfig
 
-Per-property visualization settings stored in view config:
+Per-visualization settings stored in view config. Multiple visualizations can exist per property.
 
+- `id`: Unique visualization ID (UUID)
 - `propertyId`: Bases property ID
 - `visualizationType`: Selected visualization
 - `displayName`: Cached display name
 - `scale`: Optional ScaleConfig
 - `colorScheme`: Optional color scheme override
-- `showLegend`: Optional legend visibility override
-- `showGridLines`: Optional grid lines visibility override
+- `heatmapCellSize`: Optional heatmap cell size override
+- `heatmapShowMonthLabels`: Optional heatmap month labels visibility
+- `heatmapShowDayLabels`: Optional heatmap day labels visibility
+
+**Note**: A property can have multiple visualizations, each independently configurable. The `ColumnConfigMap` stores arrays of configs per property.
 
 ### PropertyVisualizationPreset
 

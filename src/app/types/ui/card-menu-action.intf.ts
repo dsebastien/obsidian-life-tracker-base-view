@@ -14,3 +14,5 @@ export type CardMenuAction =
     | { type: 'configureHeatmapShowDayLabels'; showDayLabels: boolean | undefined }
     | { type: 'resetConfig' }
     | { type: 'toggleMaximize' }
+    | { type: 'addVisualization' }
+    | { type: 'removeVisualization' }

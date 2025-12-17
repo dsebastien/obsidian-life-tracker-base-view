@@ -4,6 +4,15 @@ import type { GetDataPointsCallback } from '../types'
 import { CSS_SELECTOR, DATA_ATTR_FULL } from '../../utils'
 
 /**
+ * Visualization entry with property ID (keyed by visualization ID)
+ */
+export interface VisualizationEntry {
+    propertyId: BasesPropertyId
+    propertyDisplayName: string
+    visualization: BaseVisualization
+}
+
+/**
  * Service for managing card maximize/minimize state.
  * Handles escape key listeners and DOM class updates.
  */
@@ -14,10 +23,7 @@ export class MaximizeStateService {
     constructor(
         private containerEl: HTMLElement,
         private getGridEl: () => HTMLElement | null,
-        private getVisualizations: () => Map<
-            BasesPropertyId,
-            { propertyDisplayName: string; visualization: BaseVisualization }
-        >,
+        private getVisualizations: () => Map<string, VisualizationEntry>,
         private getDataPoints: GetDataPointsCallback
     ) {}
 
@@ -71,8 +77,8 @@ export class MaximizeStateService {
 
         // Update visualization states
         const visualizations = this.getVisualizations()
-        for (const [id, viz] of visualizations) {
-            const isMaximized = id === this.maximizedPropertyId
+        for (const viz of visualizations.values()) {
+            const isMaximized = viz.propertyId === this.maximizedPropertyId
             viz.visualization.setMaximized(isMaximized)
         }
 
@@ -109,19 +115,24 @@ export class MaximizeStateService {
             })
         }
 
-        // Re-render the maximized visualization to fit new size
+        // Re-render the maximized visualization(s) to fit new size
         if (maximize) {
-            const viz = visualizations.get(propertyId)
-            if (viz && viz.visualization) {
-                const dataPoints = this.getDataPoints(propertyId, viz.propertyDisplayName)
-                viz.visualization.update(dataPoints)
+            for (const viz of visualizations.values()) {
+                if (viz.propertyId === propertyId) {
+                    const dataPoints = this.getDataPoints(propertyId, viz.propertyDisplayName)
+                    viz.visualization.update(dataPoints)
+                }
             }
         } else if (previousMaximized) {
-            // Re-render the previously maximized visualization
-            const viz = visualizations.get(previousMaximized)
-            if (viz && viz.visualization) {
-                const dataPoints = this.getDataPoints(previousMaximized, viz.propertyDisplayName)
-                viz.visualization.update(dataPoints)
+            // Re-render the previously maximized visualization(s)
+            for (const viz of visualizations.values()) {
+                if (viz.propertyId === previousMaximized) {
+                    const dataPoints = this.getDataPoints(
+                        previousMaximized,
+                        viz.propertyDisplayName
+                    )
+                    viz.visualization.update(dataPoints)
+                }
             }
         }
     }

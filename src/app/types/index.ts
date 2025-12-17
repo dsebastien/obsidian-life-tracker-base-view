@@ -51,12 +51,14 @@ export {
     SCALE_SUPPORTED_TYPES,
     supportsScale,
     COLOR_SCHEME_SUPPORTED_TYPES,
-    supportsColorScheme
+    supportsColorScheme,
+    generateVisualizationId
 } from './column'
 export type {
     ScaleConfig,
     ColumnVisualizationConfig,
     ColumnConfigMap,
+    LegacyColumnConfigMap,
     ColumnConfigResult,
     ColumnConfigCallback,
     EffectiveConfigResult

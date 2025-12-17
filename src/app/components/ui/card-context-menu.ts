@@ -45,6 +45,7 @@ export interface HeatmapMenuConfig {
 /**
  * Show context menu popover for a visualization card
  * Two-column layout: left = viz type selection, right = options
+ * @param canRemove - Whether the "Remove visualization" button should be shown (true when property has 2+ visualizations)
  */
 export function showCardContextMenu(
     event: MouseEvent | TouchEvent,
@@ -54,6 +55,7 @@ export function showCardContextMenu(
     currentHeatmapConfig: HeatmapMenuConfig | undefined,
     isFromPreset: boolean,
     isMaximized: boolean,
+    canRemove: boolean,
     onAction: CardMenuCallback
 ): void {
     // Get position from event
@@ -100,6 +102,30 @@ export function showCardContextMenu(
 
     // ========== HEADER ==========
     const header = popover.createDiv({ cls: 'lt-card-popover-header' })
+
+    // Add visualization button
+    const addVizBtn = header.createEl('button', {
+        cls: 'lt-card-popover-btn'
+    })
+    setIcon(addVizBtn, 'plus')
+    addVizBtn.createSpan({ text: 'Add visualization' })
+    addVizBtn.addEventListener('click', () => {
+        close()
+        onAction({ type: 'addVisualization' })
+    })
+
+    // Remove visualization button (only shown when canRemove is true)
+    if (canRemove) {
+        const removeVizBtn = header.createEl('button', {
+            cls: 'lt-card-popover-btn lt-card-popover-btn--warning'
+        })
+        setIcon(removeVizBtn, 'trash-2')
+        removeVizBtn.createSpan({ text: 'Remove' })
+        removeVizBtn.addEventListener('click', () => {
+            close()
+            onAction({ type: 'removeVisualization' })
+        })
+    }
 
     // Maximize/Minimize button
     const maximizeBtn = header.createEl('button', {

@@ -13,9 +13,11 @@ export interface ScaleConfig {
 }
 
 /**
- * Configuration for a single column's visualization
+ * Configuration for a single visualization
  */
 export interface ColumnVisualizationConfig {
+    /** Unique visualization ID (for multiple visualizations per property) */
+    id: string
     /** The property ID this config applies to */
     propertyId: BasesPropertyId
     /** User-selected visualization type */
@@ -82,7 +84,20 @@ export function supportsColorScheme(vizType: VisualizationType): boolean {
 }
 
 /**
- * Map of property IDs to their visualization configs
+ * Map of property IDs to their visualization configs (supports multiple per property)
  * Stored in view config to persist across sessions
  */
-export type ColumnConfigMap = Record<BasesPropertyId, ColumnVisualizationConfig>
+export type ColumnConfigMap = Record<BasesPropertyId, ColumnVisualizationConfig[]>
+
+/**
+ * Legacy format for migration (single config per property)
+ * @deprecated Used only for migrating old config format
+ */
+export type LegacyColumnConfigMap = Record<BasesPropertyId, Omit<ColumnVisualizationConfig, 'id'>>
+
+/**
+ * Generate a unique visualization ID
+ */
+export function generateVisualizationId(): string {
+    return crypto.randomUUID()
+}

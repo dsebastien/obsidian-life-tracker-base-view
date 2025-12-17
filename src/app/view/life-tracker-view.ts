@@ -42,9 +42,15 @@ import {
     isDateInTimeFrame,
     type TimeFrameDateRange
 } from '../../utils'
+
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
 import { getVisualizationConfig } from './visualization-config.helper'
+
+/**
+ * Data attribute for visualization ID
+ */
+const DATA_ATTR_VISUALIZATION_ID = 'data-visualization-id'
 
 /**
  * Number of visualizations to render per animation frame batch
@@ -73,17 +79,21 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private columnConfigService: ColumnConfigService
     private maximizeService: MaximizeStateService
 
-    // Active visualizations
+    // Active visualizations (keyed by visualization ID)
     private visualizations: Map<
-        BasesPropertyId,
-        { propertyDisplayName: string; visualization: BaseVisualization }
+        string, // visualization ID
+        {
+            propertyId: BasesPropertyId
+            propertyDisplayName: string
+            visualization: BaseVisualization
+        }
     > = new Map()
 
-    // Track visualization types for change detection
-    private visualizationTypes: Map<BasesPropertyId, VisualizationType> = new Map()
+    // Track visualization types for change detection (keyed by visualization ID)
+    private visualizationTypes: Map<string, VisualizationType> = new Map()
 
-    // Track showEmptyValues setting for change detection
-    private visualizationShowEmptyValues: Map<BasesPropertyId, boolean> = new Map()
+    // Track showEmptyValues setting for change detection (keyed by visualization ID)
+    private visualizationShowEmptyValues: Map<string, boolean> = new Map()
 
     // Grid settings (runtime state)
     private gridSettings: GridSettings = { ...DEFAULT_GRID_SETTINGS }
@@ -468,9 +478,15 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             return false
         }
 
+        // Build set of property IDs that have existing visualizations
+        const existingPropertyIds = new Set<BasesPropertyId>()
+        for (const viz of this.visualizations.values()) {
+            existingPropertyIds.add(viz.propertyId)
+        }
+
         // Check if any properties were removed (existing visualizations not in new propertyIds)
         const propertyIdSet = new Set(propertyIds)
-        for (const existingPropertyId of this.visualizations.keys()) {
+        for (const existingPropertyId of existingPropertyIds) {
             if (!propertyIdSet.has(existingPropertyId)) {
                 // Property was removed - need full refresh to remove its card
                 return false
@@ -478,41 +494,61 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         }
 
         // Check if there are new properties that don't have visualizations yet
-        // or if visualization type has changed
+        // or if visualization type/count has changed
         for (const propertyId of propertyIds) {
-            const existingViz = this.visualizations.get(propertyId)
-
-            if (!existingViz) {
+            if (!existingPropertyIds.has(propertyId)) {
                 // New property added - need full refresh to create its card
-                // (whether it has a config or not - unconfigured shows config card)
                 return false
             }
 
-            // Check if visualization type has changed for existing visualizations
+            // Check if visualization count or type has changed for this property
             const displayName = this.config.getDisplayName(propertyId)
-            const effectiveConfig = this.columnConfigService.getEffectiveConfig(
+            const effectiveConfigs = this.columnConfigService.getEffectiveConfigs(
                 propertyId,
                 displayName
             )
-            if (effectiveConfig) {
-                const currentType = this.visualizationTypes.get(propertyId)
-                if (currentType && currentType !== effectiveConfig.config.visualizationType) {
-                    return false
+
+            // Count existing visualizations for this property
+            let existingVizCount = 0
+            for (const [vizId, viz] of this.visualizations) {
+                if (viz.propertyId === propertyId) {
+                    existingVizCount++
+                    // Check if type changed
+                    const currentType = this.visualizationTypes.get(vizId)
+                    const newConfig = effectiveConfigs.find((ec) => ec.config.id === vizId)
+                    if (
+                        newConfig &&
+                        currentType &&
+                        currentType !== newConfig.config.visualizationType
+                    ) {
+                        return false
+                    }
                 }
-            } else {
-                // Property had a visualization but no longer has a config (e.g., after reset with no preset)
-                // Need full refresh to show unconfigured state
+            }
+
+            // Check if visualization count changed
+            if (effectiveConfigs.length !== existingVizCount) {
                 return false
             }
 
-            // Check if showEmptyValues setting has changed
-            const currentShowEmptyValues = this.visualizationShowEmptyValues.get(propertyId)
-            const newShowEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
-            if (
-                currentShowEmptyValues !== undefined &&
-                currentShowEmptyValues !== newShowEmptyValues
-            ) {
+            if (effectiveConfigs.length === 0 && existingVizCount > 0) {
+                // Property had a visualization but no longer has a config
                 return false
+            }
+
+            // Check if showEmptyValues setting has changed (check first viz for property)
+            const firstVizId = Array.from(this.visualizations.entries()).find(
+                ([_, v]) => v.propertyId === propertyId
+            )?.[0]
+            if (firstVizId) {
+                const currentShowEmptyValues = this.visualizationShowEmptyValues.get(firstVizId)
+                const newShowEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
+                if (
+                    currentShowEmptyValues !== undefined &&
+                    currentShowEmptyValues !== newShowEmptyValues
+                ) {
+                    return false
+                }
             }
         }
 
@@ -544,17 +580,17 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Get showEmptyValues setting
         const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
 
-        this.visualizations.forEach((value, key) => {
+        this.visualizations.forEach((viz) => {
             // Update each visualization with new data (already filtered based on showEmptyValues)
             const dataPoints = this.aggregationService.createDataPoints(
                 filteredEntries,
-                key,
-                value.propertyDisplayName,
+                viz.propertyId,
+                viz.propertyDisplayName,
                 dateAnchors,
                 showEmptyValues
             )
-            this.cacheService.setDataPoints(key, dataPoints)
-            value.visualization.update(dataPoints)
+            this.cacheService.setDataPoints(viz.propertyId, dataPoints)
+            viz.visualization.update(dataPoints)
         })
     }
 
@@ -583,13 +619,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 if (!propertyId) continue
 
                 const displayName = this.config.getDisplayName(propertyId)
-                const effectiveConfig = this.columnConfigService.getEffectiveConfig(
+                const effectiveConfigs = this.columnConfigService.getEffectiveConfigs(
                     propertyId,
                     displayName
                 )
 
-                if (effectiveConfig) {
-                    // Has configuration (local override or global preset)
+                if (effectiveConfigs.length > 0) {
+                    // Has configuration(s) (local overrides or global preset)
                     const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
                     const dataPoints = this.aggregationService.createDataPoints(
                         entries,
@@ -599,7 +635,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         showEmptyValues
                     )
                     this.cacheService.setDataPoints(propertyId, dataPoints)
-                    this.renderConfiguredColumn(effectiveConfig.config, displayName, dataPoints)
+
+                    // Render all visualizations for this property
+                    for (const effectiveConfig of effectiveConfigs) {
+                        this.renderConfiguredColumn(
+                            effectiveConfig.config,
+                            displayName,
+                            dataPoints,
+                            effectiveConfigs.length > 1 // canRemove: only if multiple visualizations
+                        )
+                    }
                 } else {
                     // No configuration - show config card
                     this.renderUnconfiguredColumn(propertyId, displayName)
@@ -630,26 +675,37 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
     /**
      * Render a configured column with its visualization
+     * @param canRemove - Whether the visualization can be removed (true when property has 2+ visualizations)
      */
     private renderConfiguredColumn(
         columnConfig: ColumnVisualizationConfig,
         displayName: string,
-        dataPoints: VisualizationDataPoint[]
+        dataPoints: VisualizationDataPoint[],
+        canRemove: boolean
     ): void {
         if (!this.gridEl) return
 
         const cardEl = this.gridEl.createDiv({
             cls: 'lt-card',
-            attr: { [DATA_ATTR_FULL.PROPERTY_ID]: columnConfig.propertyId }
+            attr: {
+                [DATA_ATTR_FULL.PROPERTY_ID]: columnConfig.propertyId,
+                [DATA_ATTR_VISUALIZATION_ID]: columnConfig.id
+            }
         })
 
-        // Add context menu and touch handlers (only pass propertyId to avoid stale config)
-        this.setupCardEventHandlers(cardEl, columnConfig.propertyId, displayName)
+        // Add context menu and touch handlers
+        this.setupCardEventHandlers(
+            cardEl,
+            columnConfig.propertyId,
+            columnConfig.id,
+            displayName,
+            canRemove
+        )
 
         // Create visualization
         const visualization = this.createVisualization(cardEl, columnConfig, displayName)
 
-        // Wire up maximize callback
+        // Wire up maximize callback (using visualization ID)
         visualization.setMaximizeCallback((propertyId, maximize) => {
             this.maximizeService.handleMaximizeToggle(propertyId, maximize)
         })
@@ -657,32 +713,35 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Set animation duration from plugin settings
         visualization.setAnimationDuration(this.plugin.settings.animationDuration)
 
-        // Render and store (data points are already filtered based on showEmptyValues)
+        // Render and store by visualization ID
         visualization.render(dataPoints)
-        this.visualizations.set(columnConfig.propertyId, {
+        this.visualizations.set(columnConfig.id, {
+            propertyId: columnConfig.propertyId,
             propertyDisplayName: displayName,
             visualization
         })
-        this.visualizationTypes.set(columnConfig.propertyId, columnConfig.visualizationType)
+        this.visualizationTypes.set(columnConfig.id, columnConfig.visualizationType)
         this.visualizationShowEmptyValues.set(
-            columnConfig.propertyId,
+            columnConfig.id,
             (this.config.get('showEmptyValues') as boolean) ?? true
         )
     }
 
     /**
      * Setup event handlers for card (context menu, touch)
-     * Only passes propertyId to avoid stale config references - config is fetched fresh when menu opens
+     * Passes visualization ID and canRemove for context menu
      */
     private setupCardEventHandlers(
         cardEl: HTMLElement,
         propertyId: BasesPropertyId,
-        displayName: string
+        visualizationId: string,
+        displayName: string,
+        canRemove: boolean
     ): void {
         // Add context menu handler (right-click)
         cardEl.addEventListener('contextmenu', (event) => {
             event.preventDefault()
-            this.handleCardContextMenu(event, propertyId, displayName)
+            this.handleCardContextMenu(event, propertyId, visualizationId, displayName, canRemove)
         })
 
         // Add long-touch support for context menu
@@ -695,7 +754,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 touchStartPos = { x: touch.clientX, y: touch.clientY }
                 longTouchTimer = setTimeout(() => {
                     event.preventDefault()
-                    this.handleCardContextMenu(event, propertyId, displayName)
+                    this.handleCardContextMenu(
+                        event,
+                        propertyId,
+                        visualizationId,
+                        displayName,
+                        canRemove
+                    )
                 }, 500) // 500ms long press
             }
         })
@@ -810,39 +875,47 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private handleCardContextMenu(
         event: MouseEvent | TouchEvent,
         propertyId: BasesPropertyId,
-        displayName: string
+        visualizationId: string,
+        displayName: string,
+        canRemove: boolean
     ): void {
         // Fetch current config from service to ensure we show latest state
-        const effectiveConfig = this.columnConfigService.getEffectiveConfig(propertyId, displayName)
+        const config = this.columnConfigService.getVisualizationConfig(propertyId, visualizationId)
+
+        // If no local config, try to get from preset
+        const effectiveConfig = config
+            ? { config, isFromPreset: false }
+            : this.columnConfigService.getEffectiveConfig(propertyId, displayName)
+
         if (!effectiveConfig) {
             // No config found - shouldn't happen for configured columns
             return
         }
 
-        const { config, isFromPreset } = effectiveConfig
+        const { config: vizConfig, isFromPreset } = effectiveConfig
         const isMaximized = this.maximizeService.isMaximized(propertyId)
 
-        // Get local column config for heatmap-specific overrides
-        const localConfig = this.columnConfigService.getColumnConfig(propertyId)
+        // Get visualization config for heatmap-specific overrides
         const heatmapConfig: HeatmapMenuConfig | undefined =
-            config.visualizationType === VisualizationType.Heatmap
+            vizConfig.visualizationType === VisualizationType.Heatmap
                 ? {
-                      cellSize: localConfig?.heatmapCellSize,
-                      showMonthLabels: localConfig?.heatmapShowMonthLabels,
-                      showDayLabels: localConfig?.heatmapShowDayLabels
+                      cellSize: vizConfig.heatmapCellSize,
+                      showMonthLabels: vizConfig.heatmapShowMonthLabels,
+                      showDayLabels: vizConfig.heatmapShowDayLabels
                   }
                 : undefined
 
         showCardContextMenu(
             event,
-            config.visualizationType,
-            config.scale,
-            config.colorScheme,
+            vizConfig.visualizationType,
+            vizConfig.scale,
+            vizConfig.colorScheme,
             heatmapConfig,
             isFromPreset,
             isMaximized,
+            canRemove,
             (action: CardMenuAction) => {
-                this.handleCardMenuAction(action, propertyId, displayName)
+                this.handleCardMenuAction(action, propertyId, visualizationId, displayName)
             }
         )
     }
@@ -854,12 +927,15 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private handleCardMenuAction(
         action: CardMenuAction,
         propertyId: BasesPropertyId,
+        visualizationId: string,
         displayName: string
     ): void {
         // Fetch current config from service
-        const effectiveConfig = this.columnConfigService.getEffectiveConfig(propertyId, displayName)
-        const currentConfig = effectiveConfig?.config
-        const isFromPreset = effectiveConfig?.isFromPreset ?? false
+        const currentConfig = this.columnConfigService.getVisualizationConfig(
+            propertyId,
+            visualizationId
+        )
+        const isFromPreset = !currentConfig
 
         switch (action.type) {
             case 'changeVisualization':
@@ -872,110 +948,149 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         undefined // Clear scale for new type
                     )
                 } else {
-                    this.columnConfigService.updateColumnConfig(propertyId, {
-                        visualizationType: action.visualizationType,
-                        scale: undefined
-                    })
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        {
+                            visualizationType: action.visualizationType,
+                            scale: undefined
+                        }
+                    )
                 }
-                // Only refresh this specific visualization
-                this.refreshVisualization(propertyId)
+                // Full refresh to re-render all visualizations for this property
+                this.onDataUpdated()
                 break
 
             case 'configureScale':
-                if (isFromPreset && currentConfig) {
+                if (isFromPreset) {
                     // Create local override from preset with new scale
-                    this.columnConfigService.saveColumnConfig(
-                        propertyId,
-                        currentConfig.visualizationType,
-                        displayName,
-                        action.scale,
-                        currentConfig.colorScheme
-                    )
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            action.scale,
+                            preset.colorScheme
+                        )
+                    }
                 } else {
-                    this.columnConfigService.updateColumnConfig(propertyId, {
-                        scale: action.scale
-                    })
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { scale: action.scale }
+                    )
                 }
-                // Only refresh this specific visualization
-                this.refreshVisualization(propertyId)
+                this.onDataUpdated()
                 break
 
             case 'configureColorScheme':
-                if (isFromPreset && currentConfig) {
+                if (isFromPreset) {
                     // Create local override from preset with new color scheme
-                    this.columnConfigService.saveColumnConfig(
-                        propertyId,
-                        currentConfig.visualizationType,
-                        displayName,
-                        currentConfig.scale,
-                        action.colorScheme
-                    )
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            action.colorScheme
+                        )
+                    }
                 } else {
-                    this.columnConfigService.updateColumnConfig(propertyId, {
-                        colorScheme: action.colorScheme
-                    })
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { colorScheme: action.colorScheme }
+                    )
                 }
-                // Only refresh this specific visualization
-                this.refreshVisualization(propertyId)
+                this.onDataUpdated()
                 break
 
             case 'configureHeatmapCellSize':
-                if (isFromPreset && currentConfig) {
-                    this.columnConfigService.saveColumnConfig(
-                        propertyId,
-                        currentConfig.visualizationType,
-                        displayName,
-                        currentConfig.scale,
-                        currentConfig.colorScheme
-                    )
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme
+                        )
+                    }
                 }
-                this.columnConfigService.updateColumnConfig(propertyId, {
+                this.columnConfigService.updateVisualizationConfig(propertyId, visualizationId, {
                     heatmapCellSize: action.cellSize
                 })
-                this.refreshVisualization(propertyId)
+                this.onDataUpdated()
                 break
 
             case 'configureHeatmapShowMonthLabels':
-                if (isFromPreset && currentConfig) {
-                    this.columnConfigService.saveColumnConfig(
-                        propertyId,
-                        currentConfig.visualizationType,
-                        displayName,
-                        currentConfig.scale,
-                        currentConfig.colorScheme
-                    )
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme
+                        )
+                    }
                 }
-                this.columnConfigService.updateColumnConfig(propertyId, {
+                this.columnConfigService.updateVisualizationConfig(propertyId, visualizationId, {
                     heatmapShowMonthLabels: action.showMonthLabels
                 })
-                this.refreshVisualization(propertyId)
+                this.onDataUpdated()
                 break
 
             case 'configureHeatmapShowDayLabels':
-                if (isFromPreset && currentConfig) {
-                    this.columnConfigService.saveColumnConfig(
-                        propertyId,
-                        currentConfig.visualizationType,
-                        displayName,
-                        currentConfig.scale,
-                        currentConfig.colorScheme
-                    )
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme
+                        )
+                    }
                 }
-                this.columnConfigService.updateColumnConfig(propertyId, {
+                this.columnConfigService.updateVisualizationConfig(propertyId, visualizationId, {
                     heatmapShowDayLabels: action.showDayLabels
                 })
-                this.refreshVisualization(propertyId)
+                this.onDataUpdated()
                 break
 
             case 'resetConfig':
-                this.columnConfigService.deleteColumnConfig(propertyId)
-                // Only refresh this specific visualization
-                this.refreshVisualization(propertyId)
+                this.columnConfigService.resetVisualizationConfig(propertyId, visualizationId)
+                this.onDataUpdated()
                 break
 
             case 'toggleMaximize': {
                 const isCurrentlyMaximized = this.maximizeService.isMaximized(propertyId)
                 this.maximizeService.handleMaximizeToggle(propertyId, !isCurrentlyMaximized)
+                break
+            }
+
+            case 'addVisualization': {
+                // Add a new visualization by copying settings from the current one
+                this.columnConfigService.addVisualization(propertyId, visualizationId)
+                this.onDataUpdated()
+                break
+            }
+
+            case 'removeVisualization': {
+                // Remove this visualization (only allowed if property has 2+ visualizations)
+                const removed = this.columnConfigService.removeVisualization(
+                    propertyId,
+                    visualizationId
+                )
+                if (removed) {
+                    this.onDataUpdated()
+                }
                 break
             }
         }
@@ -1062,193 +1177,20 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
     /**
      * Refresh visualizations affected by a preset change.
-     * For preset-updated: only refreshes visualizations matching the preset pattern.
-     * For preset-deleted: refreshes all visualizations without local config.
+     * Triggers full refresh to simplify handling of multiple visualizations per property.
      */
-    private refreshVisualizationsForPreset(presetId: string): void {
-        if (!this.gridEl) return
-
-        // Try to find the preset (will exist for updates, not for deletes)
-        const preset = this.plugin.settings.visualizationPresets.find((p) => p.id === presetId)
-        const presetPattern = preset?.propertyNamePattern?.toLowerCase()
-
-        // Collect properties to refresh
-        const propertyIdsToRefresh: BasesPropertyId[] = []
-        for (const propertyId of this.visualizations.keys()) {
-            // Skip properties with local config (they don't use presets)
-            if (this.columnConfigService.getColumnConfig(propertyId)) {
-                continue
-            }
-
-            if (presetPattern) {
-                // Preset exists (update case): only refresh if pattern matches
-                const rawPropertyName = propertyId.includes('.')
-                    ? propertyId.substring(propertyId.indexOf('.') + 1)
-                    : propertyId
-                if (rawPropertyName.toLowerCase() === presetPattern) {
-                    propertyIdsToRefresh.push(propertyId)
-                }
-            } else {
-                // Preset deleted: refresh all without local config
-                propertyIdsToRefresh.push(propertyId)
-            }
-        }
-
-        if (propertyIdsToRefresh.length === 0) return
-
-        // Refresh each affected visualization
-        const entries = this.data.data
-        const anchorConfig = this.getDateAnchorConfig()
-        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
-        this.cacheService.setDateAnchors(dateAnchors)
-
-        for (const propertyId of propertyIdsToRefresh) {
-            this.refreshSingleVisualizationWithData(propertyId, entries, dateAnchors)
-        }
+    private refreshVisualizationsForPreset(_presetId: string): void {
+        // With multiple visualizations per property, simplify by doing a full refresh
+        this.onDataUpdated()
     }
 
     /**
      * Refresh heatmap visualizations that use global settings.
-     * Called when global heatmap settings (cellSize, showMonthLabels, showDayLabels, colorScheme) change.
-     * Skips heatmaps with custom per-visualization settings.
+     * Triggers full refresh to simplify handling of multiple visualizations per property.
      */
     private refreshHeatmapsForGlobalSettingsChange(): void {
-        if (!this.gridEl) return
-
-        // Collect heatmap visualizations that use global settings
-        const propertyIdsToRefresh: BasesPropertyId[] = []
-
-        for (const propertyId of this.visualizations.keys()) {
-            // Check if this is a heatmap
-            const vizType = this.visualizationTypes.get(propertyId)
-            if (vizType !== VisualizationType.Heatmap) {
-                continue
-            }
-
-            // Check if it has custom heatmap settings
-            const localConfig = this.columnConfigService.getColumnConfig(propertyId)
-            const hasCustomSettings =
-                localConfig?.heatmapCellSize !== undefined ||
-                localConfig?.heatmapShowMonthLabels !== undefined ||
-                localConfig?.heatmapShowDayLabels !== undefined ||
-                localConfig?.colorScheme !== undefined
-
-            // Skip heatmaps with custom settings
-            if (hasCustomSettings) {
-                continue
-            }
-
-            propertyIdsToRefresh.push(propertyId)
-        }
-
-        if (propertyIdsToRefresh.length === 0) return
-
-        // Refresh each affected heatmap
-        const entries = this.data.data
-        const anchorConfig = this.getDateAnchorConfig()
-        const dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
-        this.cacheService.setDateAnchors(dateAnchors)
-
-        for (const propertyId of propertyIdsToRefresh) {
-            this.refreshSingleVisualizationWithData(propertyId, entries, dateAnchors)
-        }
-    }
-
-    /**
-     * Refresh a single visualization in place.
-     * Gets entries and date anchors from cache or computes them.
-     */
-    private refreshVisualization(propertyId: BasesPropertyId): void {
-        if (!this.gridEl) return
-
-        // Get entries and date anchors
-        const entries = this.data.data
-        let dateAnchors = this.cacheService.getDateAnchors()
-        if (!dateAnchors) {
-            const anchorConfig = this.getDateAnchorConfig()
-            dateAnchors = this.dateAnchorService.resolveAllAnchors(entries, anchorConfig)
-            this.cacheService.setDateAnchors(dateAnchors)
-        }
-
-        this.refreshSingleVisualizationWithData(propertyId, entries, dateAnchors)
-    }
-
-    /**
-     * Refresh a single visualization in place with provided data.
-     * Used by refreshVisualization and refreshVisualizationsForPreset.
-     */
-    private refreshSingleVisualizationWithData(
-        propertyId: BasesPropertyId,
-        entries: BasesEntry[],
-        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>
-    ): void {
-        if (!this.gridEl) return
-
-        // Get the existing visualization and its card element
-        const existingViz = this.visualizations.get(propertyId)
-        if (!existingViz) {
-            return
-        }
-
-        // Find the card element for this visualization
-        const cardEl = this.gridEl.querySelector(
-            `[data-property-id="${propertyId}"]`
-        ) as HTMLElement | null
-        if (!cardEl) {
-            return
-        }
-
-        // Get the display name
-        const displayName = this.config.getDisplayName(propertyId)
-
-        // Get the new effective config
-        const effectiveConfig = this.columnConfigService.getEffectiveConfig(propertyId, displayName)
-
-        if (!effectiveConfig) {
-            // No longer has a config - property should become unconfigured
-            // For simplicity, do a full refresh in this case
-            this.onDataUpdated()
-            return
-        }
-
-        // Destroy the old visualization
-        existingViz.visualization.destroy()
-        this.visualizations.delete(propertyId)
-        this.visualizationTypes.delete(propertyId)
-        this.visualizationShowEmptyValues.delete(propertyId)
-
-        // Clear the card element
-        cardEl.empty()
-
-        // Create the new visualization in the same card
-        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
-        const dataPoints = this.aggregationService.createDataPoints(
-            entries,
-            propertyId,
-            displayName,
-            dateAnchors,
-            showEmptyValues
-        )
-        this.cacheService.setDataPoints(propertyId, dataPoints)
-
-        const visualization = this.createVisualization(cardEl, effectiveConfig.config, displayName)
-
-        // Wire up maximize callback
-        visualization.setMaximizeCallback((propId, maximize) => {
-            this.maximizeService.handleMaximizeToggle(propId, maximize)
-        })
-
-        // Set animation duration
-        visualization.setAnimationDuration(this.plugin.settings.animationDuration)
-
-        // Render and store (data points are already filtered based on showEmptyValues)
-        visualization.render(dataPoints)
-        this.visualizations.set(propertyId, {
-            propertyDisplayName: displayName,
-            visualization: visualization
-        })
-        this.visualizationTypes.set(propertyId, effectiveConfig.config.visualizationType)
-        this.visualizationShowEmptyValues.set(propertyId, showEmptyValues)
+        // With multiple visualizations per property, simplify by doing a full refresh
+        this.onDataUpdated()
     }
 
     /**
