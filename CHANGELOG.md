@@ -1,3 +1,4 @@
+## [2.2.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.1.0...2.2.0) (2025-12-17)
 ## [2.1.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.0.0...2.1.0) (2025-12-17)
 
 ### Features
