@@ -49,6 +49,8 @@ Read the Business Rules document at the start of each session to understand the 
 
 **MUST UPDATE** documentation when making changes. Keep it terse, accurate, no fluff.
 
+**README.md**: When updating README.md, keep explanations concise but clear, targeted at end users (not developers). Focus on what features do and why users would want them, not implementation details.
+
 ### Core Coding Rules
 
 **MUST READ** TypeScript type definitions you can find in the Obsidian dependency now.
