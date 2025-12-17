@@ -16,6 +16,7 @@ You can find more details and background information here: https://www.knowii.ne
 
 ### Customization
 
+- **Multiple visualizations per property**: add multiple visualization cards for the same property to compare different chart types or configurations side by side
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
 - **Time frame selection**: filter visualizations to show specific date ranges (all time, last 7/30/90/365 days, this week/month/quarter/year, etc.)
 - **Grid layout controls**: adjustable columns (1-6)
@@ -68,7 +69,7 @@ Adjust layout options including number of columns, empty date display, default c
 ### Right-click context menu
 
 ![Customize visualizations](documentation/screenshots/customize-visualizations.png)
-Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100) and color scheme, maximize, or reset configuration.
+Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100) and color scheme, add another visualization for the same property, maximize, or reset configuration.
 
 ### Maximize view
 
