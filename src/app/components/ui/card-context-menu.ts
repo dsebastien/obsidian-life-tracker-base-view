@@ -404,28 +404,41 @@ export function showCardContextMenu(
         })
     }
 
-    // Position popover
+    // Position popover - on mobile (<=480px), CSS handles positioning via inset
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
-    const popoverWidth = 605
-    const popoverHeight = 438
+    const isMobile = viewportWidth <= 480
+
+    if (isMobile) {
+        // On mobile, CSS uses inset positioning, so we don't set left/top
+        // The popover will be centered/near-fullscreen via CSS
+        return
+    }
+
+    // For tablet/desktop, calculate position based on click location
+    // Use responsive dimensions based on viewport
+    const isSmallScreen = viewportWidth <= 640
+    const popoverWidth = isSmallScreen ? Math.min(viewportWidth - 24, 400) : 605
+    const popoverHeight = isSmallScreen ? Math.min(viewportHeight - 24, 500) : 438
 
     // Adjust position to keep popover in viewport
     let left = x
     let top = y
 
-    if (left + popoverWidth > viewportWidth - 20) {
-        left = viewportWidth - popoverWidth - 20
+    const margin = isSmallScreen ? 12 : 20
+
+    if (left + popoverWidth > viewportWidth - margin) {
+        left = viewportWidth - popoverWidth - margin
     }
-    if (left < 20) {
-        left = 20
+    if (left < margin) {
+        left = margin
     }
 
-    if (top + popoverHeight > viewportHeight - 20) {
-        top = viewportHeight - popoverHeight - 20
+    if (top + popoverHeight > viewportHeight - margin) {
+        top = viewportHeight - popoverHeight - margin
     }
-    if (top < 20) {
-        top = 20
+    if (top < margin) {
+        top = margin
     }
 
     popover.style.left = `${left}px`

@@ -496,6 +496,32 @@
     opacity: 0.9;
 }
 
+/* Scale modal mobile responsive styles */
+@media (max-width: 480px) {
+    .lt-scale-modal {
+        @apply mx-3;
+        min-width: auto;
+        width: calc(100vw - 24px);
+        max-width: 320px;
+    }
+
+    .lt-scale-modal-header {
+        @apply text-sm;
+    }
+
+    .lt-scale-modal-input-group {
+        @apply gap-2;
+    }
+
+    .lt-scale-modal-input {
+        @apply px-2 py-1.5 text-sm;
+    }
+
+    .lt-scale-modal-btn {
+        @apply px-3 py-1.5 text-xs;
+    }
+}
+
 /* ========================================
    CARD POPOVER (two-column context menu)
    ======================================== */
@@ -627,6 +653,105 @@
 .lt-card-popover-no-options {
     @apply text-sm italic px-4;
     color: var(--text-muted);
+}
+
+/* Card popover mobile responsive styles */
+@media (max-width: 640px) {
+    .lt-card-popover {
+        @apply rounded-lg;
+        min-width: auto;
+        max-width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+        width: calc(100vw - 24px);
+    }
+
+    .lt-card-popover-header {
+        @apply flex-wrap gap-2 px-3 py-2;
+    }
+
+    .lt-card-popover-btn {
+        @apply px-2 py-1 text-xs;
+    }
+
+    .lt-card-popover-body {
+        @apply flex-col;
+    }
+
+    .lt-card-popover-column--left {
+        @apply border-r-0;
+        border-bottom: 1px solid var(--background-modifier-border);
+        min-width: auto;
+        max-height: 200px;
+    }
+
+    .lt-card-popover-column--right {
+        min-width: auto;
+    }
+
+    .lt-card-popover-column-title {
+        @apply px-3 pb-1 text-[10px];
+    }
+
+    .lt-card-popover-type-list {
+        @apply px-1;
+    }
+
+    .lt-card-popover-type-item {
+        @apply px-2 py-1;
+    }
+
+    .lt-card-popover-type-label {
+        @apply text-xs;
+    }
+
+    .lt-card-popover-options {
+        @apply gap-2 px-1;
+    }
+
+    .lt-card-popover-option-group label {
+        @apply text-[10px];
+    }
+
+    .lt-card-popover-select {
+        @apply text-xs;
+    }
+
+    .lt-card-popover-no-options {
+        @apply text-xs px-3;
+    }
+}
+
+/* Card popover extra small screens - near fullscreen */
+@media (max-width: 480px) {
+    .lt-card-popover {
+        @apply fixed inset-3 rounded-lg;
+        width: auto !important;
+        height: auto !important;
+        max-width: none;
+        max-height: none;
+        left: 12px !important;
+        top: 12px !important;
+        right: 12px;
+        bottom: 12px;
+    }
+
+    .lt-card-popover-header {
+        @apply justify-start;
+    }
+
+    .lt-card-popover-body {
+        @apply flex-1 overflow-hidden;
+    }
+
+    .lt-card-popover-column--left {
+        @apply flex-none;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+
+    .lt-card-popover-column--right {
+        @apply flex-1 overflow-y-auto;
+    }
 }
 
 /* ========================================
