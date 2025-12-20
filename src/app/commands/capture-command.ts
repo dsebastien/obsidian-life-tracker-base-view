@@ -62,7 +62,7 @@ function detectContext(plugin: LifeTrackerPlugin): CaptureContext | null {
         }
     }
 
-    // Check for active file provider (Grid View or Life Tracker View)
+    // Check for active file provider (Grid View, Life Tracker View or Base views of compatible plugins)
     const providerFiles = plugin.getActiveProviderFiles()
     const filterMode = plugin.getActiveProviderFilterMode()
 
