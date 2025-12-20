@@ -21,7 +21,7 @@ export function getVisualizationConfig(
     getConfig: ConfigGetter
 ): VisualizationConfig {
     const granularity = (getConfig('granularity') as TimeGranularity) ?? TimeGranularity.Daily
-    const showEmptyValues = (getConfig('showEmptyValues') as boolean) ?? true
+    const showEmptyValues = (getConfig('showEmptyValues') as boolean) ?? false
     const embeddedHeight = (getConfig('embeddedHeight') as number) ?? DEFAULT_EMBEDDED_HEIGHT
 
     const baseConfig: VisualizationConfig = {

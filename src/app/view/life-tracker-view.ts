@@ -148,7 +148,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             () => this.visualizations,
             (propertyId, propertyDisplayName) => {
                 // Get data points (already filtered based on showEmptyValues setting)
-                const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
+                const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
                 return this.getDataPointsForProperty(
                     propertyId,
                     propertyDisplayName,
@@ -542,7 +542,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             )?.[0]
             if (firstVizId) {
                 const currentShowEmptyValues = this.visualizationShowEmptyValues.get(firstVizId)
-                const newShowEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
+                const newShowEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
                 if (
                     currentShowEmptyValues !== undefined &&
                     currentShowEmptyValues !== newShowEmptyValues
@@ -578,7 +578,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         )
 
         // Get showEmptyValues setting
-        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
+        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
 
         this.visualizations.forEach((viz) => {
             // Update each visualization with new data (already filtered based on showEmptyValues)
@@ -626,7 +626,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
                 if (effectiveConfigs.length > 0) {
                     // Has configuration(s) (local overrides or global preset)
-                    const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? true
+                    const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
                     const dataPoints = this.aggregationService.createDataPoints(
                         entries,
                         propertyId,
@@ -723,7 +723,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.visualizationTypes.set(columnConfig.id, columnConfig.visualizationType)
         this.visualizationShowEmptyValues.set(
             columnConfig.id,
-            (this.config.get('showEmptyValues') as boolean) ?? true
+            (this.config.get('showEmptyValues') as boolean) ?? false
         )
     }
 
