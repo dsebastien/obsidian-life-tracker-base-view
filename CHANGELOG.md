@@ -1,3 +1,8 @@
+## [2.2.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.2.0...2.2.1) (2025-12-20)
+
+### Bug Fixes
+
+* **all:** fixed default state for show empty values ([0a0f59c](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/0a0f59ca342dec5fc0375357ba5a5b2309eadd4b))
 ## [2.2.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.1.0...2.2.0) (2025-12-17)
 ## [2.1.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.0.0...2.1.0) (2025-12-17)
 
