@@ -81,3 +81,12 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - When properties are removed from Base, orphaned column configs are automatically cleaned up
 - Cleanup runs after each full view re-render (not during incremental updates)
 - Both individual property configs and overlay configs are cleaned
+
+## List Property Visualizations
+
+- List properties (arrays of values) are automatically detected and visualized appropriately
+- For pie/doughnut/polarArea charts: counts individual value occurrences across all entries (case-insensitive grouping)
+- For cartesian charts (line/bar/area/radar): creates one dataset per unique value showing 0/1 presence per time period
+- Case-insensitive matching: "Running", "running", "RUNNING" are grouped together
+- Display labels use capitalized first letter (e.g., "Running" not "running")
+- Legends are always shown when multiple datasets exist (list data, overlays)

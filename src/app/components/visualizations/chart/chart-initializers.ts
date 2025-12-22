@@ -152,7 +152,8 @@ export function initRadarChart(
             aspectRatio: 2,
             plugins: {
                 legend: {
-                    display: chartConfig.showLegend
+                    // Always show legend when there are multiple datasets (list data, overlays)
+                    display: chartConfig.showLegend || datasets.length > 1
                 },
                 tooltip: {
                     enabled: true
@@ -231,7 +232,8 @@ export function initCartesianChart(
             },
             plugins: {
                 legend: {
-                    display: chartConfig.showLegend
+                    // Always show legend when there are multiple datasets (list data, overlays)
+                    display: chartConfig.showLegend || datasets.length > 1
                 },
                 tooltip: {
                     enabled: true,

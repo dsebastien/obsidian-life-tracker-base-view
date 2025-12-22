@@ -74,6 +74,14 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
+     * Check if this is a cartesian chart type that supports list data visualization
+     * (line, bar, area, radar)
+     */
+    private isCartesianType(): boolean {
+        return ['line', 'bar', 'radar'].includes(this.chartConfig.chartType)
+    }
+
+    /**
      * Render the chart with data
      */
     override render(data: VisualizationDataPoint[]): void {
@@ -119,15 +127,32 @@ export class ChartVisualization extends BaseVisualization {
                 return
             }
         } else {
-            this.chartData = sharedAggregationService.aggregateForChart(
-                data,
-                this.propertyId,
-                this.displayName,
-                this.chartConfig.granularity
-            )
+            // For cartesian charts, check if data contains list values
+            const hasListValues = sharedAggregationService.hasListData(data)
+
+            if (hasListValues && this.isCartesianType()) {
+                // Use list aggregation: creates one dataset per unique value with 0/1 presence
+                this.chartData = sharedAggregationService.aggregateListForChart(
+                    data,
+                    this.propertyId,
+                    this.displayName,
+                    this.chartConfig.granularity
+                )
+            } else {
+                // Standard numeric aggregation
+                this.chartData = sharedAggregationService.aggregateForChart(
+                    data,
+                    this.propertyId,
+                    this.displayName,
+                    this.chartConfig.granularity
+                )
+            }
 
             if (this.chartData.labels.length === 0) {
-                this.showEmptyState(`No numeric data with dates found for "${this.displayName}"`)
+                const message = hasListValues
+                    ? `No list data with dates found for "${this.displayName}"`
+                    : `No numeric data with dates found for "${this.displayName}"`
+                this.showEmptyState(message)
                 return
             }
         }
@@ -412,14 +437,36 @@ export class ChartVisualization extends BaseVisualization {
      * Incremental update for cartesian and radar charts
      */
     private updateCartesianChart(data: VisualizationDataPoint[]): void {
-        const newChartData = sharedAggregationService.aggregateForChart(
-            data,
-            this.propertyId,
-            this.displayName,
-            this.chartConfig.granularity
-        )
+        // Check if data contains list values
+        const hasListValues = sharedAggregationService.hasListData(data)
+
+        let newChartData: ChartData
+        if (hasListValues && this.isCartesianType()) {
+            newChartData = sharedAggregationService.aggregateListForChart(
+                data,
+                this.propertyId,
+                this.displayName,
+                this.chartConfig.granularity
+            )
+        } else {
+            newChartData = sharedAggregationService.aggregateForChart(
+                data,
+                this.propertyId,
+                this.displayName,
+                this.chartConfig.granularity
+            )
+        }
 
         if (newChartData.labels.length === 0) {
+            this.destroy()
+            this.render(data)
+            return
+        }
+
+        // Check if structure changed (different number of datasets) - need full re-render
+        const currentDatasetCount = this.chart!.data.datasets.length
+        const newDatasetCount = newChartData.datasets.length
+        if (currentDatasetCount !== newDatasetCount) {
             this.destroy()
             this.render(data)
             return
@@ -430,10 +477,15 @@ export class ChartVisualization extends BaseVisualization {
 
         // Update chart data in place
         this.chart!.data.labels = newChartData.labels
-        const firstDataset = newChartData.datasets[0]
-        const chartDataset = this.chart!.data.datasets[0]
-        if (firstDataset && chartDataset) {
-            chartDataset.data = firstDataset.data
+
+        // Update all datasets (supports multiple datasets for list data)
+        for (let i = 0; i < newChartData.datasets.length; i++) {
+            const newDataset = newChartData.datasets[i]
+            const chartDataset = this.chart!.data.datasets[i]
+            if (newDataset && chartDataset) {
+                chartDataset.data = newDataset.data
+                chartDataset.label = newDataset.label
+            }
         }
 
         // Clear animation state since data changed

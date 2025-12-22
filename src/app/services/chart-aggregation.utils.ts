@@ -29,6 +29,38 @@ function capitalizeBoolean(label: string): string {
 }
 
 /**
+ * Check if data points contain list data (for list property visualization).
+ * Returns true if data points have list values that are NOT just numeric/boolean values.
+ * A proper list property will have list values but NO numeric or boolean values.
+ */
+export function hasListData(dataPoints: VisualizationDataPoint[]): boolean {
+    // A data point is considered "list data" only if:
+    // 1. It has list values, AND
+    // 2. It does NOT have a numeric value, AND
+    // 3. It does NOT have a boolean value
+    // This prevents numeric properties (like sleep_hours: 7) from being treated as lists
+    return dataPoints.some(
+        (p) => p.listValues.length > 0 && p.numericValue === null && p.booleanValue === null
+    )
+}
+
+/**
+ * Normalize a string for case-insensitive comparison.
+ * Trims whitespace and converts to lowercase.
+ */
+function normalizeForComparison(value: string): string {
+    return value.trim().toLowerCase()
+}
+
+/**
+ * Capitalize first letter of a string.
+ */
+function capitalizeFirst(value: string): string {
+    if (!value) return value
+    return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+/**
  * Aggregate data for chart visualization (line, bar, area).
  */
 export function aggregateForChart(
@@ -94,8 +126,129 @@ export function aggregateForChart(
 const NO_DATA_LABEL = 'No data'
 
 /**
+ * Aggregate list data for cartesian chart visualization (line, bar, area).
+ * Creates one dataset per unique list value, showing 0/1 presence per time period.
+ * Case-insensitive grouping of list values.
+ */
+export function aggregateListForChart(
+    dataPoints: VisualizationDataPoint[],
+    propertyId: BasesPropertyId,
+    displayName: string,
+    granularity: TimeGranularity
+): ChartData {
+    // Filter to points with valid dates
+    const validPoints = dataPoints.filter((p) => p.dateAnchor !== null)
+
+    if (validPoints.length === 0) {
+        return { propertyId, displayName, labels: [], datasets: [] }
+    }
+
+    // Step 1: Collect all unique list values (case-insensitive) and their display labels
+    const uniqueValues = new Map<string, string>() // normalized key -> display label
+    for (const point of validPoints) {
+        for (const value of point.listValues) {
+            const normalizedKey = normalizeForComparison(value)
+            if (!uniqueValues.has(normalizedKey)) {
+                uniqueValues.set(normalizedKey, capitalizeFirst(value.trim()))
+            }
+        }
+    }
+
+    // If no list values found, return empty
+    if (uniqueValues.size === 0) {
+        return { propertyId, displayName, labels: [], datasets: [] }
+    }
+
+    // Step 2: Group data points by time unit
+    const grouped = new Map<
+        string,
+        {
+            date: Date
+            // Set of normalized list values present in this time period
+            valuesPresent: Set<string>
+            filePaths: string[]
+            // Map normalized value -> file paths containing that value
+            valueFilePaths: Map<string, string[]>
+        }
+    >()
+
+    for (const point of validPoints) {
+        const date = point.dateAnchor!.date
+        const key = getTimeKey(date, granularity)
+        const normDate = normalizeDate(date, granularity)
+
+        if (!grouped.has(key)) {
+            grouped.set(key, {
+                date: normDate,
+                valuesPresent: new Set(),
+                filePaths: [],
+                valueFilePaths: new Map()
+            })
+        }
+
+        const group = grouped.get(key)!
+        group.filePaths.push(point.filePath)
+
+        // Track which values are present in this time period
+        for (const value of point.listValues) {
+            const normalizedKey = normalizeForComparison(value)
+            group.valuesPresent.add(normalizedKey)
+
+            // Track file paths per value
+            if (!group.valueFilePaths.has(normalizedKey)) {
+                group.valueFilePaths.set(normalizedKey, [])
+            }
+            const valuePaths = group.valueFilePaths.get(normalizedKey)!
+            if (!valuePaths.includes(point.filePath)) {
+                valuePaths.push(point.filePath)
+            }
+        }
+    }
+
+    // Step 3: Sort by date and build labels
+    const sortedGroups = [...grouped.entries()].sort((a, b) => compareAsc(a[1].date, b[1].date))
+    const labels = sortedGroups.map(([, g]) => formatDateByGranularity(g.date, granularity))
+
+    // Step 4: Create one dataset per unique list value
+    const datasets: ChartDataset[] = []
+
+    for (const [normalizedKey, displayLabel] of uniqueValues) {
+        const data: (number | null)[] = []
+        const filePaths: string[][] = []
+
+        for (const [, group] of sortedGroups) {
+            // 1 if this value is present in this time period, 0 otherwise
+            const isPresent = group.valuesPresent.has(normalizedKey)
+            data.push(isPresent ? 1 : 0)
+
+            // File paths for entries containing this value in this time period
+            const paths = group.valueFilePaths.get(normalizedKey) ?? []
+            filePaths.push(paths)
+        }
+
+        datasets.push({
+            label: displayLabel,
+            data,
+            filePaths,
+            propertyId
+        })
+    }
+
+    // Sort datasets alphabetically by label for consistent ordering
+    datasets.sort((a, b) => a.label.localeCompare(b.label))
+
+    return {
+        propertyId,
+        displayName,
+        labels,
+        datasets
+    }
+}
+
+/**
  * Aggregate data for pie/doughnut/polarArea chart visualization.
  * Groups values by their display labels and counts frequency.
+ * For list properties, counts individual list value occurrences (case-insensitive).
  * Entries without values are counted as "No data".
  */
 export function aggregateForPieChart(
@@ -103,6 +256,14 @@ export function aggregateForPieChart(
     propertyId: BasesPropertyId,
     displayName: string
 ): PieChartData {
+    // Check if data contains list values
+    const isListData = hasListData(dataPoints)
+
+    // If list data, aggregate by individual list values
+    if (isListData) {
+        return aggregateListForPieChart(dataPoints, propertyId, displayName)
+    }
+
     // Check if data is boolean by looking at booleanValue
     const isBooleanData = dataPoints.some((p) => p.booleanValue !== null)
 
@@ -157,6 +318,74 @@ export function aggregateForPieChart(
         values,
         filePaths,
         isBooleanData
+    }
+}
+
+/**
+ * Aggregate list data for pie/doughnut/polarArea chart.
+ * Counts individual list value occurrences (case-insensitive).
+ */
+function aggregateListForPieChart(
+    dataPoints: VisualizationDataPoint[],
+    propertyId: BasesPropertyId,
+    displayName: string
+): PieChartData {
+    // Map normalized key -> { displayLabel, count, filePaths }
+    // We keep track of the first-seen display label for each normalized key
+    const valueGroups = new Map<
+        string,
+        { displayLabel: string; count: number; filePaths: string[] }
+    >()
+
+    for (const point of dataPoints) {
+        if (point.listValues.length === 0) {
+            // Entry has no list values - count as "No data"
+            const key = normalizeForComparison(NO_DATA_LABEL)
+            if (!valueGroups.has(key)) {
+                valueGroups.set(key, { displayLabel: NO_DATA_LABEL, count: 0, filePaths: [] })
+            }
+            const group = valueGroups.get(key)!
+            group.count++
+            group.filePaths.push(point.filePath)
+            continue
+        }
+
+        // Count each list value individually
+        for (const value of point.listValues) {
+            const normalizedKey = normalizeForComparison(value)
+
+            if (!valueGroups.has(normalizedKey)) {
+                // Use capitalized version for display
+                valueGroups.set(normalizedKey, {
+                    displayLabel: capitalizeFirst(value.trim()),
+                    count: 0,
+                    filePaths: []
+                })
+            }
+
+            const group = valueGroups.get(normalizedKey)!
+            group.count++
+            // Only add file path once per entry (even if value appears multiple times in same entry)
+            if (!group.filePaths.includes(point.filePath)) {
+                group.filePaths.push(point.filePath)
+            }
+        }
+    }
+
+    // Convert to arrays sorted by count descending
+    const sortedEntries = [...valueGroups.values()].sort((a, b) => b.count - a.count)
+
+    const labels = sortedEntries.map((entry) => entry.displayLabel)
+    const values = sortedEntries.map((entry) => entry.count)
+    const filePaths = sortedEntries.map((entry) => entry.filePaths)
+
+    return {
+        propertyId,
+        displayName,
+        labels,
+        values,
+        filePaths,
+        isBooleanData: false
     }
 }
 

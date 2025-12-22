@@ -23,6 +23,8 @@ import {
     aggregateForTagCloud as tagCloudAggregation,
     aggregateForTimeline as timelineAggregation,
     aggregateForOverlayChart as overlayChartAggregation,
+    aggregateListForChart as listChartAggregation,
+    hasListData as checkHasListData,
     type OverlayPropertyData
 } from './chart-aggregation.utils'
 
@@ -184,6 +186,26 @@ export class DataAggregationService {
         granularity: TimeGranularity
     ): ChartData {
         return chartAggregation(dataPoints, propertyId, displayName, granularity)
+    }
+
+    /**
+     * Aggregate list data for chart visualization (line, bar, area).
+     * Creates one dataset per unique list value, showing 0/1 presence per time period.
+     */
+    aggregateListForChart(
+        dataPoints: VisualizationDataPoint[],
+        propertyId: BasesPropertyId,
+        displayName: string,
+        granularity: TimeGranularity
+    ): ChartData {
+        return listChartAggregation(dataPoints, propertyId, displayName, granularity)
+    }
+
+    /**
+     * Check if data points contain list data.
+     */
+    hasListData(dataPoints: VisualizationDataPoint[]): boolean {
+        return checkHasListData(dataPoints)
     }
 
     /**
