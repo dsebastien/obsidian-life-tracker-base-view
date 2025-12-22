@@ -1,3 +1,8 @@
+## [2.3.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.2.1...2.3.0) (2025-12-22)
+
+### Features
+
+* **all:** added support for creating visualizationss with multiple properties ([c33ee52](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c33ee52f9858dd93ff9ac05bc71e51972b4970bf)), closes [#68](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/68)
 ## [2.2.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.2.0...2.2.1) (2025-12-20)
 
 ### Bug Fixes
