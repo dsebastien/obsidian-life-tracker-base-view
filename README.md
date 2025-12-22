@@ -17,6 +17,8 @@ You can find more details and background information here: https://www.knowii.ne
 ### Customization
 
 - **Multiple visualizations per property**: add multiple visualization cards for the same property to compare different chart types or configurations side by side
+- **Overlay charts**: combine multiple properties on a single chart to visualize correlations (e.g., sleep vs mood, exercise vs energy)
+- **List property visualization**: list/tag properties automatically visualized with occurrence counts (pie/doughnut) or presence tracking over time (line/bar)
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
 - **Time frame selection**: filter visualizations to show specific date ranges (all time, last 7/30/90/365 days, this week/month/quarter/year, etc.)
 - **Grid layout controls**: adjustable columns (1-6)
@@ -99,6 +101,22 @@ Invoked on a specific note:
 Invoked in a Life Tracking Base view:
 
 ![Data Entry on a set of notes](documentation/screenshots/data-entry-on-a-set-of-notes.png)
+
+### Overlay Charts
+
+Combine multiple properties on a single chart to visualize correlations and patterns:
+
+![Create overlay chart](documentation/screenshots/create-overlay-chart.png)
+
+Click "Create overlay" to select which properties to combine. Only cartesian chart types (Line, Bar, Area) support overlays.
+
+![Overlay multiple properties](documentation/screenshots/overlay-multiple-properties-with-overlay-charts.png)
+
+View multiple properties together on a single chart with a shared time axis. Each property gets its own color and appears in the legend.
+
+![Edit overlay chart](documentation/screenshots/edit-overlay-chart.png)
+
+Right-click an overlay chart to edit its name, change the chart type, modify which properties are included, or delete it.
 
 ## Property definitions
 
