@@ -1,3 +1,4 @@
+import type { BasesPropertyId } from 'obsidian'
 import type { VisualizationType } from '../visualization/visualization-type.intf'
 import type { ScaleConfig } from '../column/column-config.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
@@ -16,3 +17,13 @@ export type CardMenuAction =
     | { type: 'toggleMaximize' }
     | { type: 'addVisualization' }
     | { type: 'removeVisualization' }
+    // Overlay chart actions
+    | { type: 'openCreateOverlay' } // Opens the property selection modal
+    | {
+          type: 'createOverlay'
+          propertyIds: BasesPropertyId[]
+          visualizationType: VisualizationType
+          displayName: string
+      }
+    | { type: 'editOverlayProperties'; overlayId: string; propertyIds: BasesPropertyId[] }
+    | { type: 'deleteOverlay'; overlayId: string }

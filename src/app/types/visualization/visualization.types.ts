@@ -64,6 +64,8 @@ export interface ChartDataset {
     label: string
     data: (number | null)[]
     filePaths: string[][]
+    /** Property ID this dataset represents (used in overlay charts for click handling) */
+    propertyId?: BasesPropertyId
 }
 
 /**

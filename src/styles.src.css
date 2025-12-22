@@ -136,6 +136,30 @@
     @apply w-2.5 h-2.5;
 }
 
+/* Overlay button variant - wider with text label */
+.lt-control-btn--overlay {
+    @apply w-auto h-auto px-2 py-1 gap-1.5;
+}
+
+.lt-control-btn--overlay svg {
+    @apply w-3 h-3;
+}
+
+.lt-control-btn-label {
+    @apply text-xs font-medium;
+}
+
+/* Hide label on very small screens */
+@media (max-width: 400px) {
+    .lt-control-btn-label {
+        @apply hidden;
+    }
+
+    .lt-control-btn--overlay {
+        @apply w-6 h-6 p-0;
+    }
+}
+
 .lt-control-value {
     @apply text-xs font-medium min-w-[1.25rem] text-center;
     color: var(--text-normal);
@@ -752,6 +776,28 @@
     .lt-card-popover-column--right {
         @apply flex-1 overflow-y-auto;
     }
+}
+
+/* Overlay context menu variant */
+.lt-card-popover--overlay {
+    @apply w-auto min-w-[240px] max-w-[300px];
+}
+
+.lt-card-popover--overlay .lt-card-popover-header {
+    @apply flex items-center justify-between gap-4 flex-nowrap;
+}
+
+.lt-card-popover--overlay .lt-card-popover-title {
+    @apply text-sm font-semibold truncate flex-1 min-w-0;
+    color: var(--text-normal);
+}
+
+.lt-card-popover-body--single {
+    @apply p-4;
+}
+
+.lt-card-popover-body--single .lt-card-popover-type-list {
+    @apply gap-1;
 }
 
 /* ========================================
@@ -2717,5 +2763,505 @@
 
     .lt-carousel-btn {
         @apply px-4 py-2 text-xs;
+    }
+}
+
+/* ========================================
+   PROPERTY SELECTION MODAL (Overlay)
+   ======================================== */
+
+.lt-property-selection-modal {
+    @apply p-0 overflow-hidden;
+    max-width: min(480px, calc(100vw - 32px));
+    min-width: min(380px, calc(100vw - 32px));
+}
+
+.lt-property-selection-modal .modal-content {
+    @apply p-6 overflow-hidden;
+}
+
+.lt-property-selection-title {
+    @apply text-lg font-bold mb-2;
+    color: var(--text-normal);
+}
+
+.lt-property-selection-description {
+    @apply text-sm mb-5;
+    color: var(--text-muted);
+}
+
+.lt-property-selection-type-row,
+.lt-property-selection-name-row {
+    @apply flex items-center gap-3 mb-4;
+}
+
+.lt-property-selection-label {
+    @apply text-sm font-medium w-24 shrink-0;
+    color: var(--text-normal);
+}
+
+.lt-property-selection-select {
+    @apply flex-1 px-3 rounded text-sm;
+    height: 36px;
+    line-height: 36px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-property-selection-select:focus {
+    border-color: var(--interactive-accent);
+    outline: none;
+}
+
+.lt-property-selection-input {
+    @apply flex-1 px-3 rounded text-sm;
+    height: 36px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-property-selection-input:focus {
+    border-color: var(--interactive-accent);
+    outline: none;
+}
+
+.lt-property-selection-list {
+    @apply flex flex-col gap-1 overflow-y-auto mb-5 p-1;
+    max-height: min(300px, 40vh);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+}
+
+.lt-property-selection-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded cursor-pointer;
+    @apply transition-all duration-100;
+}
+
+.lt-property-selection-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-property-selection-item--selected {
+    background-color: var(
+        --background-modifier-active-hover,
+        rgba(var(--interactive-accent-rgb), 0.1)
+    );
+}
+
+.lt-property-selection-checkbox {
+    @apply w-4 h-4 shrink-0 cursor-pointer;
+}
+
+.lt-property-selection-item-label {
+    @apply text-sm cursor-pointer flex-1;
+    color: var(--text-normal);
+}
+
+.lt-property-selection-buttons {
+    @apply flex justify-end gap-3;
+}
+
+.lt-property-selection-btn {
+    @apply px-4 py-2 rounded font-medium text-sm;
+    @apply transition-all duration-150 cursor-pointer;
+}
+
+.lt-property-selection-btn--cancel {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-property-selection-btn--cancel:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-property-selection-btn--confirm {
+    background-color: var(--interactive-accent);
+    border: 1px solid var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.lt-property-selection-btn--confirm:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.lt-property-selection-btn--confirm:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+/* Responsive styles for property selection modal */
+@media (max-width: 480px) {
+    .lt-property-selection-modal {
+        min-width: calc(100vw - 24px);
+        max-width: calc(100vw - 24px);
+    }
+
+    .lt-property-selection-modal .modal-content {
+        @apply p-4;
+    }
+
+    .lt-property-selection-title {
+        @apply text-base mb-1;
+    }
+
+    .lt-property-selection-description {
+        @apply text-xs mb-4;
+    }
+
+    .lt-property-selection-type-row,
+    .lt-property-selection-name-row {
+        @apply flex-col items-stretch gap-2 mb-3;
+    }
+
+    .lt-property-selection-label {
+        @apply w-auto;
+    }
+
+    .lt-property-selection-select,
+    .lt-property-selection-input {
+        height: 40px;
+        line-height: 40px;
+    }
+
+    .lt-property-selection-list {
+        max-height: min(250px, 35vh);
+        @apply mb-4;
+    }
+
+    .lt-property-selection-item {
+        @apply px-2 py-2;
+    }
+
+    .lt-property-selection-buttons {
+        @apply flex-col gap-2;
+    }
+
+    .lt-property-selection-btn {
+        @apply w-full text-center py-3;
+    }
+}
+
+/* ========================================
+   OVERLAY EDIT MODAL
+   ======================================== */
+
+.lt-overlay-edit-modal {
+    @apply p-0;
+    max-width: min(520px, calc(100vw - 32px));
+    min-width: min(420px, calc(100vw - 32px));
+    max-height: min(600px, calc(100vh - 80px));
+    display: flex;
+    flex-direction: column;
+}
+
+.lt-overlay-edit-modal .modal-content {
+    @apply p-0 flex flex-col min-h-0;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Header */
+.lt-overlay-edit-header {
+    @apply flex items-center justify-between px-6 py-4 shrink-0;
+    border-bottom: 1px solid var(--background-modifier-border);
+    background-color: var(--background-primary);
+}
+
+.lt-overlay-edit-title {
+    @apply text-lg font-bold m-0;
+    color: var(--text-normal);
+}
+
+.lt-overlay-edit-close {
+    @apply w-8 h-8 flex items-center justify-center rounded-full;
+    @apply cursor-pointer transition-colors duration-150;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+}
+
+.lt-overlay-edit-close:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.lt-overlay-edit-close svg {
+    @apply w-4 h-4;
+}
+
+/* Content */
+.lt-overlay-edit-content {
+    @apply flex-1 overflow-y-auto px-6 py-5 min-h-0;
+}
+
+/* Sections */
+.lt-overlay-edit-section {
+    @apply mb-5;
+}
+
+.lt-overlay-edit-section:last-of-type {
+    @apply mb-0;
+}
+
+.lt-overlay-edit-label {
+    @apply block text-sm font-medium mb-2;
+    color: var(--text-normal);
+}
+
+.lt-overlay-edit-label-row {
+    @apply flex items-center justify-between mb-2;
+}
+
+.lt-overlay-edit-label-hint {
+    @apply text-xs;
+    color: var(--text-muted);
+}
+
+/* Name input */
+.lt-overlay-edit-input {
+    @apply w-full px-3 rounded text-sm;
+    height: 40px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-overlay-edit-input:focus {
+    border-color: var(--interactive-accent);
+    outline: none;
+}
+
+.lt-overlay-edit-input::placeholder {
+    color: var(--text-faint);
+}
+
+/* Chart type grid */
+.lt-overlay-edit-type-grid {
+    @apply grid gap-2;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.lt-overlay-edit-type-btn {
+    @apply flex flex-col items-center justify-center gap-2 p-3 rounded-lg;
+    @apply cursor-pointer transition-all duration-150;
+    @apply min-h-[72px];
+    background-color: var(--background-secondary);
+    border: 2px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-overlay-edit-type-btn:hover {
+    background-color: var(--background-modifier-hover);
+    border-color: var(--background-modifier-border-hover);
+}
+
+.lt-overlay-edit-type-btn--selected {
+    background-color: rgba(var(--interactive-accent-rgb), 0.1);
+    border-color: var(--interactive-accent);
+}
+
+.lt-overlay-edit-type-btn--selected:hover {
+    background-color: rgba(var(--interactive-accent-rgb), 0.15);
+}
+
+.lt-overlay-edit-type-icon {
+    @apply w-6 h-6 flex items-center justify-center shrink-0;
+    @apply overflow-visible;
+    color: var(--text-muted);
+}
+
+.lt-overlay-edit-type-btn--selected .lt-overlay-edit-type-icon {
+    color: var(--interactive-accent);
+}
+
+.lt-overlay-edit-type-icon svg {
+    @apply w-5 h-5;
+}
+
+.lt-overlay-edit-type-label {
+    @apply text-xs font-medium;
+}
+
+.lt-overlay-edit-type-check {
+    @apply absolute top-1 right-1 w-4 h-4;
+    color: var(--interactive-accent);
+}
+
+.lt-overlay-edit-type-btn {
+    @apply relative;
+}
+
+.lt-overlay-edit-type-check svg {
+    @apply w-4 h-4;
+}
+
+/* Property list */
+.lt-overlay-edit-property-list {
+    @apply flex flex-col gap-1 overflow-y-auto p-1 rounded-lg;
+    max-height: min(200px, 30vh);
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.lt-overlay-edit-property-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer;
+    @apply transition-all duration-100;
+}
+
+.lt-overlay-edit-property-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-overlay-edit-property-item--selected {
+    background-color: rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.lt-overlay-edit-checkbox {
+    @apply w-4 h-4 shrink-0 cursor-pointer;
+    accent-color: var(--interactive-accent);
+}
+
+.lt-overlay-edit-property-label {
+    @apply text-sm cursor-pointer flex-1;
+    color: var(--text-normal);
+}
+
+/* Error message */
+.lt-overlay-edit-error {
+    @apply text-xs mt-3 opacity-0 transition-opacity duration-150;
+    color: var(--text-error);
+    height: 0;
+    overflow: hidden;
+}
+
+.lt-overlay-edit-error--visible {
+    @apply opacity-100;
+    height: auto;
+}
+
+/* Footer */
+.lt-overlay-edit-footer {
+    @apply flex items-center justify-between px-6 py-4 gap-4 shrink-0;
+    border-top: 1px solid var(--background-modifier-border);
+    background-color: var(--background-primary);
+}
+
+.lt-overlay-edit-footer-left,
+.lt-overlay-edit-footer-right {
+    @apply flex items-center gap-3;
+}
+
+/* Buttons */
+.lt-overlay-edit-btn {
+    @apply flex items-center justify-center gap-2 px-4 py-2.5 rounded-md;
+    @apply font-medium text-sm cursor-pointer transition-all duration-150;
+    border: none;
+}
+
+.lt-overlay-edit-btn svg {
+    @apply w-4 h-4;
+}
+
+.lt-overlay-edit-btn--primary {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.lt-overlay-edit-btn--primary:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.lt-overlay-edit-btn--primary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+.lt-overlay-edit-btn--secondary {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-overlay-edit-btn--secondary:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.lt-overlay-edit-btn--danger {
+    background-color: transparent;
+    color: var(--text-error);
+}
+
+.lt-overlay-edit-btn--danger:hover {
+    background-color: rgba(var(--color-red-rgb, 255, 0, 0), 0.1);
+}
+
+/* Responsive styles - fullscreen on mobile */
+@media (max-width: 520px) {
+    .lt-overlay-edit-modal {
+        @apply fixed inset-0 min-w-full max-w-full min-h-screen max-h-screen rounded-none m-0;
+    }
+
+    .lt-overlay-edit-header {
+        @apply px-4 py-3;
+    }
+
+    .lt-overlay-edit-title {
+        @apply text-base;
+    }
+
+    .lt-overlay-edit-content {
+        @apply px-4 py-4;
+    }
+
+    .lt-overlay-edit-type-grid {
+        grid-template-columns: repeat(3, 1fr);
+        @apply gap-1.5;
+    }
+
+    .lt-overlay-edit-type-btn {
+        @apply p-2 min-h-[60px];
+    }
+
+    .lt-overlay-edit-type-icon svg {
+        @apply w-4 h-4;
+    }
+
+    .lt-overlay-edit-type-icon {
+        @apply w-5 h-5;
+    }
+
+    .lt-overlay-edit-type-label {
+        @apply text-[10px];
+    }
+
+    .lt-overlay-edit-property-list {
+        max-height: min(180px, 25vh);
+    }
+
+    .lt-overlay-edit-property-item {
+        @apply px-2 py-2;
+    }
+
+    .lt-overlay-edit-footer {
+        @apply flex-col-reverse gap-3 px-4 py-3;
+    }
+
+    .lt-overlay-edit-footer-left,
+    .lt-overlay-edit-footer-right {
+        @apply w-full;
+    }
+
+    .lt-overlay-edit-footer-right {
+        @apply flex-col;
+    }
+
+    .lt-overlay-edit-btn {
+        @apply w-full justify-center py-3;
+    }
+
+    .lt-overlay-edit-btn--danger {
+        @apply w-auto;
     }
 }

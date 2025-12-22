@@ -10,6 +10,7 @@ import {
     DEFAULT_BATCH_FILTER_MODE,
     VisualizationType,
     TimeFrame,
+    TimeGranularity,
     type FileProvider,
     type CardMenuAction,
     type GridSettings,
@@ -21,8 +22,10 @@ import {
     type VisualizationDataPoint,
     type SettingsChangeInfo,
     type ResolvedDateAnchor,
-    type DateAnchorConfig
+    type DateAnchorConfig,
+    type OverlayVisualizationConfig
 } from '../types'
+import type { OverlayPropertyData } from '../services/chart-aggregation.utils'
 import { DateAnchorService } from '../services/date-anchor.service'
 import { DataAggregationService } from '../services/data-aggregation.service'
 import { RenderCacheService } from '../services/render-cache.service'
@@ -46,6 +49,11 @@ import {
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
 import { getVisualizationConfig } from './visualization-config.helper'
+import {
+    PropertySelectionModal,
+    type SelectableProperty
+} from '../components/modals/property-selection-modal'
+import { OverlayEditModal, type EditableProperty } from '../components/modals/overlay-edit-modal'
 
 /**
  * Data attribute for visualization ID
@@ -389,28 +397,33 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.gridSettings.timeFrame = savedTimeFrame ?? TimeFrame.AllTime
 
         // Create control bar at the top
-        createGridControls(this.containerEl, this.gridSettings, (settings) => {
-            const timeFrameChanged = this.gridSettings.timeFrame !== settings.timeFrame
-            this.gridSettings = settings
+        createGridControls(
+            this.containerEl,
+            this.gridSettings,
+            (settings) => {
+                const timeFrameChanged = this.gridSettings.timeFrame !== settings.timeFrame
+                this.gridSettings = settings
 
-            // Set flag to prevent full re-render when config.set triggers onDataUpdated
-            this.isUpdatingGridSettings = true
+                // Set flag to prevent full re-render when config.set triggers onDataUpdated
+                this.isUpdatingGridSettings = true
 
-            // Persist grid settings to view config
-            this.config.set('gridColumns', settings.columns)
-            this.config.set('timeFrame', settings.timeFrame)
+                // Persist grid settings to view config
+                this.config.set('gridColumns', settings.columns)
+                this.config.set('timeFrame', settings.timeFrame)
 
-            // Reset flag after config updates
-            this.isUpdatingGridSettings = false
+                // Reset flag after config updates
+                this.isUpdatingGridSettings = false
 
-            if (timeFrameChanged) {
-                // Time frame changed - need full re-render to filter data
-                this.onDataUpdated()
-            } else {
-                // Just columns changed - apply CSS changes, no full re-render needed
-                this.applyGridSettings()
-            }
-        })
+                if (timeFrameChanged) {
+                    // Time frame changed - need full re-render to filter data
+                    this.onDataUpdated()
+                } else {
+                    // Just columns changed - apply CSS changes, no full re-render needed
+                    this.applyGridSettings()
+                }
+            },
+            () => this.openCreateOverlayModal()
+        )
 
         // Create grid container
         this.gridEl = this.containerEl.createDiv({ cls: 'lt-grid' })
@@ -434,6 +447,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             createEmptyState(this.gridEl, 'No data available for the selected time frame', '📅')
             return
         }
+
+        // Clean up orphaned configs for properties that no longer exist
+        const currentPropertyIds = new Set(propertyIds)
+        this.columnConfigService.cleanupOrphanedConfigs(currentPropertyIds)
 
         // Use async batched rendering to prevent UI freezing
         void this.renderPropertiesAsync(propertyIds, filteredEntries, dateAnchors, renderCycle)
@@ -552,6 +569,36 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             }
         }
 
+        // Check if overlay configs have changed
+        const overlayConfigs = this.columnConfigService.getOverlayConfigsArray()
+        const existingOverlayIds = new Set<string>()
+
+        // Find existing overlay visualizations
+        for (const [vizId] of this.visualizations) {
+            // Check if this visualization ID matches an overlay
+            const isOverlay = overlayConfigs.some((oc) => oc.id === vizId)
+            if (isOverlay) {
+                existingOverlayIds.add(vizId)
+            }
+        }
+
+        // Check for new overlays that need to be rendered
+        for (const overlayConfig of overlayConfigs) {
+            if (!this.visualizations.has(overlayConfig.id)) {
+                // New overlay - need full refresh
+                return false
+            }
+        }
+
+        // Check for removed overlays
+        for (const existingOverlayId of existingOverlayIds) {
+            const stillExists = overlayConfigs.some((oc) => oc.id === existingOverlayId)
+            if (!stillExists) {
+                // Overlay was removed - need full refresh
+                return false
+            }
+        }
+
         // If we have visualizations and entries, we can try incremental
         return entries.length > 0 && this.visualizations.size > 0
     }
@@ -656,6 +703,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.pendingRenderFrame = requestAnimationFrame(renderBatch)
             } else {
                 this.pendingRenderFrame = null
+                // After all properties are rendered, render overlay charts
+                this.renderOverlays(entries, dateAnchors, renderCycle)
             }
         }
 
@@ -671,6 +720,136 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             cancelAnimationFrame(this.pendingRenderFrame)
             this.pendingRenderFrame = null
         }
+    }
+
+    /**
+     * Render overlay charts (multi-property visualizations)
+     */
+    private renderOverlays(
+        entries: BasesEntry[],
+        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>,
+        renderCycle: number
+    ): void {
+        // Check if this render cycle is still current
+        if (renderCycle !== this.currentRenderCycle) {
+            return
+        }
+
+        if (!this.gridEl) return
+
+        // Get all overlay configs
+        const overlayConfigs = this.columnConfigService.getOverlayConfigsArray()
+
+        for (const overlayConfig of overlayConfigs) {
+            this.renderOverlayCard(overlayConfig, entries, dateAnchors)
+        }
+    }
+
+    /**
+     * Render a single overlay card
+     */
+    private renderOverlayCard(
+        overlayConfig: OverlayVisualizationConfig,
+        entries: BasesEntry[],
+        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>
+    ): void {
+        if (!this.gridEl) return
+
+        // Gather data for all properties in the overlay
+        const propertiesData: OverlayPropertyData[] = []
+        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
+
+        for (const propertyId of overlayConfig.propertyIds) {
+            const displayName = this.config.getDisplayName(propertyId)
+
+            // Try to get cached data points first
+            let dataPoints = this.cacheService.getDataPoints(propertyId)
+
+            if (!dataPoints) {
+                // Create data points if not cached
+                dataPoints = this.aggregationService.createDataPoints(
+                    entries,
+                    propertyId,
+                    displayName,
+                    dateAnchors,
+                    showEmptyValues
+                )
+            }
+
+            propertiesData.push({
+                propertyId,
+                displayName,
+                dataPoints
+            })
+        }
+
+        // Skip if no data
+        if (propertiesData.length === 0) return
+
+        // Get granularity from view config
+        const granularity =
+            (this.config.get('granularity') as TimeGranularity) ?? TimeGranularity.Daily
+
+        // Aggregate data for the overlay chart
+        const chartData = this.aggregationService.aggregateForOverlayChart(
+            propertiesData,
+            overlayConfig.displayName,
+            granularity
+        )
+
+        // Create the card element
+        const cardEl = this.gridEl.createDiv({
+            cls: 'lt-card lt-card--overlay',
+            attr: {
+                'data-overlay-id': overlayConfig.id
+            }
+        })
+
+        // Add context menu and touch handlers for overlay
+        this.setupOverlayCardEventHandlers(cardEl, overlayConfig)
+
+        // Create a ColumnVisualizationConfig for the overlay
+        const overlayColumnConfig: ColumnVisualizationConfig = {
+            propertyId: overlayConfig.propertyIds[0] ?? ('' as BasesPropertyId),
+            id: overlayConfig.id,
+            visualizationType: overlayConfig.visualizationType,
+            displayName: overlayConfig.displayName,
+            configuredAt: overlayConfig.configuredAt,
+            scale: overlayConfig.scale,
+            colorScheme: overlayConfig.colorScheme
+        }
+
+        // Get chart config using the standard helper
+        const chartConfig: ChartConfig = getVisualizationConfig(
+            overlayConfig.visualizationType,
+            overlayColumnConfig,
+            (key) => this.config.get(key)
+        ) as ChartConfig
+
+        // Enable legend for overlay charts (show property names)
+        chartConfig.showLegend = true
+
+        // Create chart visualization
+        const visualization = new ChartVisualization(
+            cardEl,
+            this.plugin.app,
+            overlayConfig.propertyIds[0] ?? ('' as BasesPropertyId),
+            overlayConfig.displayName,
+            chartConfig
+        )
+
+        // Set animation duration from plugin settings
+        visualization.setAnimationDuration(this.plugin.settings.animationDuration)
+
+        // Render with the pre-aggregated chart data
+        visualization.renderChartData(chartData)
+
+        // Store in visualizations map using overlay ID
+        this.visualizations.set(overlayConfig.id, {
+            propertyId: overlayConfig.propertyIds[0] ?? ('' as BasesPropertyId),
+            propertyDisplayName: overlayConfig.displayName,
+            visualization
+        })
     }
 
     /**
@@ -795,6 +974,134 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             }
             touchStartPos = null
         })
+    }
+
+    /**
+     * Setup event handlers for overlay card (context menu, touch)
+     */
+    private setupOverlayCardEventHandlers(
+        cardEl: HTMLElement,
+        overlayConfig: OverlayVisualizationConfig
+    ): void {
+        // Add context menu handler (right-click)
+        cardEl.addEventListener('contextmenu', (event) => {
+            event.preventDefault()
+            this.handleOverlayContextMenu(event, overlayConfig)
+        })
+
+        // Add long-touch support for context menu
+        let longTouchTimer: ReturnType<typeof setTimeout> | null = null
+        let touchStartPos: { x: number; y: number } | null = null
+
+        cardEl.addEventListener('touchstart', (event) => {
+            const touch = event.touches[0]
+            if (touch) {
+                touchStartPos = { x: touch.clientX, y: touch.clientY }
+                longTouchTimer = setTimeout(() => {
+                    event.preventDefault()
+                    this.handleOverlayContextMenu(event, overlayConfig)
+                }, 500) // 500ms long press
+            }
+        })
+
+        cardEl.addEventListener('touchmove', (event) => {
+            // Cancel long touch if finger moves too much
+            if (longTouchTimer && touchStartPos) {
+                const touch = event.touches[0]
+                if (touch) {
+                    const dx = Math.abs(touch.clientX - touchStartPos.x)
+                    const dy = Math.abs(touch.clientY - touchStartPos.y)
+                    if (dx > 10 || dy > 10) {
+                        clearTimeout(longTouchTimer)
+                        longTouchTimer = null
+                    }
+                }
+            }
+        })
+
+        cardEl.addEventListener('touchend', () => {
+            if (longTouchTimer) {
+                clearTimeout(longTouchTimer)
+                longTouchTimer = null
+            }
+            touchStartPos = null
+        })
+
+        cardEl.addEventListener('touchcancel', () => {
+            if (longTouchTimer) {
+                clearTimeout(longTouchTimer)
+                longTouchTimer = null
+            }
+            touchStartPos = null
+        })
+    }
+
+    /**
+     * Handle context menu for overlay cards - opens the edit modal
+     */
+    private handleOverlayContextMenu(
+        _event: MouseEvent | TouchEvent,
+        overlayConfig: OverlayVisualizationConfig
+    ): void {
+        // Gather all available properties
+        const propertyIds = this.config.getOrder()
+        const availableProperties: EditableProperty[] = []
+
+        for (const propId of propertyIds) {
+            const displayName = this.config.getDisplayName(propId)
+            availableProperties.push({
+                id: propId,
+                displayName
+            })
+        }
+
+        // Open the overlay edit modal
+        new OverlayEditModal(this.plugin, overlayConfig, availableProperties, {
+            onSave: (result) => {
+                // Update the overlay config with new values
+                this.columnConfigService.updateOverlayConfig(overlayConfig.id, {
+                    displayName: result.displayName,
+                    visualizationType: result.visualizationType,
+                    propertyIds: result.propertyIds
+                })
+                this.onDataUpdated()
+            },
+            onDelete: () => {
+                this.columnConfigService.deleteOverlayConfig(overlayConfig.id)
+                this.onDataUpdated()
+            }
+        }).open()
+    }
+
+    /**
+     * Open the create overlay modal from the control bar
+     */
+    private openCreateOverlayModal(): void {
+        // Gather all available properties for selection
+        const propertyIds = this.config.getOrder()
+        const availableProperties: SelectableProperty[] = []
+
+        for (const propId of propertyIds) {
+            const displayName = this.config.getDisplayName(propId)
+            availableProperties.push({
+                id: propId,
+                displayName
+            })
+        }
+
+        // No properties pre-selected when opening from control bar
+        const preSelectedIds: BasesPropertyId[] = []
+
+        // Open property selection modal
+        new PropertySelectionModal(this.plugin, availableProperties, preSelectedIds, (result) => {
+            // Create overlay with selected properties
+            this.columnConfigService.createOverlayConfig(
+                result.propertyIds,
+                result.visualizationType,
+                result.displayName
+            )
+            this.onDataUpdated()
+        }).open()
     }
 
     /**
@@ -1091,6 +1398,69 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 if (removed) {
                     this.onDataUpdated()
                 }
+                break
+            }
+
+            case 'openCreateOverlay': {
+                // Gather all available properties for selection
+                const propertyIds = this.config.getOrder()
+                const availableProperties: SelectableProperty[] = []
+
+                for (const propId of propertyIds) {
+                    // Get display name from the current property's visualization info
+                    const vizInfo = this.visualizations.get(propId)
+                    const propDisplayName = vizInfo?.propertyDisplayName ?? propId
+                    availableProperties.push({
+                        id: propId,
+                        displayName: propDisplayName
+                    })
+                }
+
+                // Pre-select the current property
+                const preSelectedIds: BasesPropertyId[] = [propertyId]
+
+                // Open property selection modal
+                new PropertySelectionModal(
+                    this.plugin,
+                    availableProperties,
+                    preSelectedIds,
+                    (result) => {
+                        // Create overlay with selected properties
+                        this.columnConfigService.createOverlayConfig(
+                            result.propertyIds,
+                            result.visualizationType,
+                            result.displayName
+                        )
+                        this.onDataUpdated()
+                    }
+                ).open()
+                break
+            }
+
+            case 'createOverlay': {
+                // Direct overlay creation (used when modal result is passed directly)
+                this.columnConfigService.createOverlayConfig(
+                    action.propertyIds,
+                    action.visualizationType,
+                    action.displayName
+                )
+                this.onDataUpdated()
+                break
+            }
+
+            case 'editOverlayProperties': {
+                // Update overlay properties
+                this.columnConfigService.updateOverlayConfig(action.overlayId, {
+                    propertyIds: action.propertyIds
+                })
+                this.onDataUpdated()
+                break
+            }
+
+            case 'deleteOverlay': {
+                // Delete the overlay
+                this.columnConfigService.deleteOverlayConfig(action.overlayId)
+                this.onDataUpdated()
                 break
             }
         }

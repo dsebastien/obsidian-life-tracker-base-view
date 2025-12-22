@@ -66,3 +66,18 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 ## Release Tags
 
 - Tags MUST NOT have 'v' prefix per Obsidian plugin spec (e.g., `1.0.0` not `v1.0.0`)
+
+## Overlay Charts
+
+- Overlay visualizations require at least 2 properties
+- Only cartesian chart types support overlay mode: LineChart, BarChart, AreaChart
+- Legends are always shown for overlay charts (to identify each property's line/bar)
+- When a property in an overlay is removed from Base, it is automatically removed from the overlay
+- If an overlay drops below 2 properties after cleanup, the overlay is deleted entirely
+- Overlays are rendered after all individual property visualizations
+
+## Property Removal Cleanup
+
+- When properties are removed from Base, orphaned column configs are automatically cleaned up
+- Cleanup runs after each full view re-render (not during incremental updates)
+- Both individual property configs and overlay configs are cleaned

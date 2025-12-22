@@ -7,6 +7,8 @@ import {
     type ColumnConfigMap,
     type LegacyColumnConfigMap,
     type ColumnVisualizationConfig,
+    type OverlayVisualizationConfig,
+    type OverlayConfigMap,
     type ScaleConfig,
     type EffectiveConfigResult
 } from '../types'
@@ -16,6 +18,11 @@ import { log, type ChartColorScheme } from '../../utils'
  * Config key for storing column configurations in view config
  */
 export const COLUMN_CONFIGS_KEY = 'columnConfigs'
+
+/**
+ * Config key for storing overlay configurations in view config
+ */
+export const OVERLAY_CONFIGS_KEY = 'overlayConfigs'
 
 /**
  * Check if a config object is in legacy format (single config per property)
@@ -412,5 +419,215 @@ export class ColumnConfigService {
         }
 
         this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+    }
+
+    /**
+     * Clean up orphaned configs for properties that no longer exist.
+     * Call this after detecting property removal to prevent config bloat.
+     * @param currentPropertyIds - Set of property IDs currently in the Base
+     * @returns Array of deleted property IDs
+     */
+    cleanupOrphanedConfigs(currentPropertyIds: Set<BasesPropertyId>): BasesPropertyId[] {
+        const configs = this.getColumnConfigs()
+        const orphanedIds: BasesPropertyId[] = []
+
+        for (const propertyId of Object.keys(configs) as BasesPropertyId[]) {
+            if (!currentPropertyIds.has(propertyId)) {
+                orphanedIds.push(propertyId)
+                delete configs[propertyId]
+            }
+        }
+
+        if (orphanedIds.length > 0) {
+            this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+            log('Cleaned up orphaned configs', 'debug', { orphanedIds })
+        }
+
+        // Also cleanup overlay configs that reference removed properties
+        this.cleanupOrphanedOverlays(currentPropertyIds)
+
+        return orphanedIds
+    }
+
+    // ==================== Overlay Config Methods ====================
+
+    /**
+     * Get stored overlay configurations from view config.
+     */
+    getOverlayConfigs(): OverlayConfigMap {
+        const raw = this.getConfigValue(OVERLAY_CONFIGS_KEY) as OverlayConfigMap | undefined
+        return raw ?? {}
+    }
+
+    /**
+     * Get all overlay configs as an array
+     */
+    getOverlayConfigsArray(): OverlayVisualizationConfig[] {
+        const configs = this.getOverlayConfigs()
+        return Object.values(configs)
+    }
+
+    /**
+     * Get a specific overlay config by ID
+     */
+    getOverlayConfig(overlayId: string): OverlayVisualizationConfig | null {
+        const configs = this.getOverlayConfigs()
+        return configs[overlayId] ?? null
+    }
+
+    /**
+     * Create an overlay visualization combining multiple properties
+     * @returns The new overlay ID
+     */
+    createOverlayConfig(
+        propertyIds: BasesPropertyId[],
+        visualizationType: VisualizationType,
+        displayName: string,
+        scale?: ScaleConfig,
+        colorScheme?: ChartColorScheme
+    ): string {
+        if (propertyIds.length < 2) {
+            log('Cannot create overlay with fewer than 2 properties', 'warn')
+            return ''
+        }
+
+        const configs = this.getOverlayConfigs()
+        const id = generateVisualizationId()
+
+        const config: OverlayVisualizationConfig = {
+            id,
+            propertyIds,
+            visualizationType,
+            displayName,
+            configuredAt: Date.now()
+        }
+
+        if (scale) {
+            config.scale = scale
+        }
+        if (colorScheme) {
+            config.colorScheme = colorScheme
+        }
+
+        configs[id] = config
+        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+
+        log('Created overlay config', 'debug', { id, propertyIds, visualizationType })
+        return id
+    }
+
+    /**
+     * Update an overlay configuration
+     */
+    updateOverlayConfig(
+        overlayId: string,
+        updates: Partial<Omit<OverlayVisualizationConfig, 'id'>>
+    ): void {
+        const configs = this.getOverlayConfigs()
+        const existing = configs[overlayId]
+
+        if (!existing) return
+
+        configs[overlayId] = {
+            ...existing,
+            ...updates,
+            configuredAt: Date.now()
+        }
+
+        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+    }
+
+    /**
+     * Add a property to an existing overlay
+     */
+    addPropertyToOverlay(overlayId: string, propertyId: BasesPropertyId): boolean {
+        const configs = this.getOverlayConfigs()
+        const overlay = configs[overlayId]
+
+        if (!overlay) return false
+
+        // Don't add duplicates
+        if (overlay.propertyIds.includes(propertyId)) {
+            return false
+        }
+
+        overlay.propertyIds.push(propertyId)
+        overlay.configuredAt = Date.now()
+
+        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+        return true
+    }
+
+    /**
+     * Remove a property from an overlay
+     * If only one property would remain, deletes the overlay
+     * @returns true if property was removed, false if overlay was deleted or property not found
+     */
+    removePropertyFromOverlay(overlayId: string, propertyId: BasesPropertyId): boolean {
+        const configs = this.getOverlayConfigs()
+        const overlay = configs[overlayId]
+
+        if (!overlay) return false
+
+        const index = overlay.propertyIds.indexOf(propertyId)
+        if (index === -1) return false
+
+        overlay.propertyIds.splice(index, 1)
+
+        // Delete overlay if fewer than 2 properties remain
+        if (overlay.propertyIds.length < 2) {
+            delete configs[overlayId]
+            this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+            log('Deleted overlay due to insufficient properties', 'debug', { overlayId })
+            return false
+        }
+
+        overlay.configuredAt = Date.now()
+        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+        return true
+    }
+
+    /**
+     * Delete an overlay configuration
+     */
+    deleteOverlayConfig(overlayId: string): void {
+        const configs = this.getOverlayConfigs()
+        delete configs[overlayId]
+        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+    }
+
+    /**
+     * Clean up overlays that reference properties that no longer exist.
+     * If an overlay loses properties, it's adjusted. If it drops below 2 properties, it's deleted.
+     */
+    cleanupOrphanedOverlays(currentPropertyIds: Set<BasesPropertyId>): void {
+        const configs = this.getOverlayConfigs()
+        let changed = false
+
+        for (const [overlayId, overlay] of Object.entries(configs)) {
+            // Filter to only properties that still exist
+            const validPropertyIds = overlay.propertyIds.filter((id) => currentPropertyIds.has(id))
+
+            if (validPropertyIds.length !== overlay.propertyIds.length) {
+                changed = true
+
+                if (validPropertyIds.length < 2) {
+                    // Not enough properties - delete the overlay
+                    delete configs[overlayId]
+                    log('Deleted overlay due to removed properties', 'debug', {
+                        overlayId,
+                        removed: overlay.propertyIds.filter((id) => !currentPropertyIds.has(id))
+                    })
+                } else {
+                    // Update the overlay with remaining properties
+                    overlay.propertyIds = validPropertyIds
+                    overlay.configuredAt = Date.now()
+                }
+            }
+        }
+
+        if (changed) {
+            this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+        }
     }
 }

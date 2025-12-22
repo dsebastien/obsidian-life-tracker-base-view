@@ -96,6 +96,49 @@ export type ColumnConfigMap = Record<BasesPropertyId, ColumnVisualizationConfig[
 export type LegacyColumnConfigMap = Record<BasesPropertyId, Omit<ColumnVisualizationConfig, 'id'>>
 
 /**
+ * Configuration for an overlay visualization (multiple properties on one chart)
+ */
+export interface OverlayVisualizationConfig {
+    /** Unique visualization ID */
+    id: string
+    /** Array of property IDs to overlay on the same chart */
+    propertyIds: BasesPropertyId[]
+    /** Visualization type (only cartesian charts: LineChart, BarChart, AreaChart) */
+    visualizationType: VisualizationType
+    /** Display name for the overlay card */
+    displayName: string
+    /** Timestamp when configured */
+    configuredAt: number
+    /** Scale configuration for Y-axis */
+    scale?: ScaleConfig
+    /** Color scheme for chart colors */
+    colorScheme?: ChartColorScheme
+}
+
+/**
+ * Map of overlay IDs to their configs
+ * Stored in view config to persist across sessions
+ */
+export type OverlayConfigMap = Record<string, OverlayVisualizationConfig>
+
+/**
+ * Visualization types that support overlay mode (multiple properties on one chart)
+ * Only cartesian chart types make sense for overlays
+ */
+export const OVERLAY_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.LineChart,
+    VisualizationType.BarChart,
+    VisualizationType.AreaChart
+]
+
+/**
+ * Check if a visualization type supports overlay mode
+ */
+export function supportsOverlay(vizType: VisualizationType): boolean {
+    return OVERLAY_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
  * Generate a unique visualization ID
  */
 export function generateVisualizationId(): string {

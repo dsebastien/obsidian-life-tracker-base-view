@@ -52,6 +52,8 @@ export {
     supportsScale,
     COLOR_SCHEME_SUPPORTED_TYPES,
     supportsColorScheme,
+    OVERLAY_SUPPORTED_TYPES,
+    supportsOverlay,
     generateVisualizationId
 } from './column'
 export type {
@@ -59,6 +61,8 @@ export type {
     ColumnVisualizationConfig,
     ColumnConfigMap,
     LegacyColumnConfigMap,
+    OverlayVisualizationConfig,
+    OverlayConfigMap,
     ColumnConfigResult,
     ColumnConfigCallback,
     EffectiveConfigResult

@@ -355,3 +355,110 @@ export function aggregateForTimeline(
         maxDate
     }
 }
+
+/**
+ * Property data for overlay chart aggregation
+ */
+export interface OverlayPropertyData {
+    propertyId: BasesPropertyId
+    displayName: string
+    dataPoints: VisualizationDataPoint[]
+}
+
+/**
+ * Aggregate data for overlay chart visualization (multiple properties on one chart).
+ * Aligns timestamps across all properties to create unified labels.
+ * Each property becomes a separate dataset.
+ */
+export function aggregateForOverlayChart(
+    propertiesData: OverlayPropertyData[],
+    overlayDisplayName: string,
+    granularity: TimeGranularity
+): ChartData {
+    if (propertiesData.length === 0) {
+        return {
+            propertyId: '' as BasesPropertyId,
+            displayName: overlayDisplayName,
+            labels: [],
+            datasets: []
+        }
+    }
+
+    // Step 1: Collect all unique time keys across all properties
+    const allTimeKeys = new Map<string, Date>()
+
+    for (const propData of propertiesData) {
+        for (const point of propData.dataPoints) {
+            if (point.dateAnchor) {
+                const key = getTimeKey(point.dateAnchor.date, granularity)
+                if (!allTimeKeys.has(key)) {
+                    allTimeKeys.set(key, normalizeDate(point.dateAnchor.date, granularity))
+                }
+            }
+        }
+    }
+
+    // Step 2: Sort time keys by date
+    const sortedTimeEntries = [...allTimeKeys.entries()].sort((a, b) => compareAsc(a[1], b[1]))
+
+    // Create unified labels array
+    const labels = sortedTimeEntries.map(([, date]) => formatDateByGranularity(date, granularity))
+
+    // Create a map from time key to label index for fast lookup
+    const timeKeyToIndex = new Map<string, number>()
+    sortedTimeEntries.forEach(([key], index) => {
+        timeKeyToIndex.set(key, index)
+    })
+
+    // Step 3: For each property, create a dataset aligned to unified labels
+    const datasets: ChartDataset[] = []
+
+    for (const propData of propertiesData) {
+        // Group this property's data by time unit
+        const grouped = new Map<string, { values: number[]; filePaths: string[] }>()
+
+        for (const point of propData.dataPoints) {
+            if (!point.dateAnchor) continue
+
+            const key = getTimeKey(point.dateAnchor.date, granularity)
+
+            if (!grouped.has(key)) {
+                grouped.set(key, { values: [], filePaths: [] })
+            }
+
+            const group = grouped.get(key)!
+            group.values.push(point.numericValue ?? 0)
+            group.filePaths.push(point.filePath)
+        }
+
+        // Create data array aligned to unified labels (null for missing time periods)
+        const data: (number | null)[] = new Array(labels.length).fill(null)
+        const filePaths: string[][] = new Array(labels.length).fill(null).map(() => [])
+
+        for (const [key, group] of grouped) {
+            const index = timeKeyToIndex.get(key)
+            if (index !== undefined) {
+                // Calculate average for this time period
+                data[index] = group.values.reduce((a, b) => a + b, 0) / group.values.length
+                filePaths[index] = group.filePaths
+            }
+        }
+
+        datasets.push({
+            label: propData.displayName,
+            data,
+            filePaths,
+            propertyId: propData.propertyId
+        })
+    }
+
+    // Use first property ID as representative (for compatibility)
+    const firstPropertyId = propertiesData[0]?.propertyId ?? ('' as BasesPropertyId)
+
+    return {
+        propertyId: firstPropertyId,
+        displayName: overlayDisplayName,
+        labels,
+        datasets
+    }
+}

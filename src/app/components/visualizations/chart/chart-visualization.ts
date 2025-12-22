@@ -149,6 +149,40 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
+     * Render the chart with pre-aggregated chart data (used for overlay charts)
+     */
+    renderChartData(data: ChartData): void {
+        // Reset all data
+        this.chartData = null
+        this.pieChartData = null
+        this.scatterChartData = null
+        this.bubbleChartData = null
+
+        // Use the provided chart data directly
+        this.chartData = data
+
+        if (this.chartData.labels.length === 0) {
+            this.showEmptyState(`No data found for "${this.displayName}"`)
+            return
+        }
+
+        // Clear container
+        this.containerEl.empty()
+
+        // Create section header
+        this.createSectionHeader(this.displayName)
+
+        // Create chart container (auto-height, no scrolling)
+        this.chartContainer = this.containerEl.createDiv({ cls: 'lt-chart' })
+
+        // Create canvas with aspect ratio for natural sizing
+        this.canvasEl = this.chartContainer.createEl('canvas', { cls: 'lt-chart-canvas' })
+
+        // Initialize chart (async, errors handled internally)
+        void this.initChart()
+    }
+
+    /**
      * Initialize Chart.js
      */
     private async initChart(): Promise<void> {

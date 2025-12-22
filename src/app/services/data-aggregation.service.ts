@@ -21,7 +21,9 @@ import {
     aggregateForScatterChart as scatterChartAggregation,
     aggregateForBubbleChart as bubbleChartAggregation,
     aggregateForTagCloud as tagCloudAggregation,
-    aggregateForTimeline as timelineAggregation
+    aggregateForTimeline as timelineAggregation,
+    aggregateForOverlayChart as overlayChartAggregation,
+    type OverlayPropertyData
 } from './chart-aggregation.utils'
 
 /**
@@ -256,6 +258,19 @@ export class DataAggregationService {
         displayName: string
     ): TimelineData {
         return timelineAggregation(dataPoints, propertyId, displayName)
+    }
+
+    /**
+     * Aggregate data for overlay chart visualization (multiple properties on one chart).
+     * Aligns timestamps across all properties to create unified labels.
+     * Each property becomes a separate dataset.
+     */
+    aggregateForOverlayChart(
+        propertiesData: OverlayPropertyData[],
+        overlayDisplayName: string,
+        granularity: TimeGranularity
+    ): ChartData {
+        return overlayChartAggregation(propertiesData, overlayDisplayName, granularity)
     }
 
     /**

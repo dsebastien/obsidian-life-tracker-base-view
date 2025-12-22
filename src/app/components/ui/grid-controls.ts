@@ -16,26 +16,52 @@ export const DEFAULT_GRID_SETTINGS: GridSettings = {
 }
 
 /**
+ * Callback for create overlay button
+ */
+export type CreateOverlayCallback = () => void
+
+/**
  * Creates a control bar for adjusting grid layout
+ * @param onCreateOverlay - Optional callback for "Create overlay" button. If not provided, button is hidden.
  */
 export function createGridControls(
     container: HTMLElement,
     initialSettings: GridSettings,
-    onChange: GridSettingsChangeCallback
+    onChange: GridSettingsChangeCallback,
+    onCreateOverlay?: CreateOverlayCallback
 ): HTMLElement {
     const settings = { ...initialSettings }
 
     const controlBar = container.createDiv({ cls: 'lt-control-bar' })
 
-    // Left side: time frame selector
+    // Left side: time frame selector and overlay button
     const controlsLeft = controlBar.createDiv({ cls: 'lt-control-bar-left' })
     createTimeFrameControl(controlsLeft, settings, onChange)
+
+    // Create overlay button (only if callback provided)
+    if (onCreateOverlay) {
+        createOverlayButton(controlsLeft, onCreateOverlay)
+    }
 
     // Right side: columns control
     const controlsRight = controlBar.createDiv({ cls: 'lt-control-bar-right' })
     createColumnsControl(controlsRight, settings, onChange)
 
     return controlBar
+}
+
+/**
+ * Creates the "Create overlay" button
+ */
+function createOverlayButton(container: HTMLElement, onClick: CreateOverlayCallback): void {
+    const btn = container.createEl('button', {
+        cls: 'lt-control-btn lt-control-btn--overlay',
+        attr: { 'aria-label': 'Create overlay chart' }
+    })
+    setIcon(btn, 'layers')
+    btn.createSpan({ cls: 'lt-control-btn-label', text: 'Overlay' })
+
+    btn.addEventListener('click', onClick)
 }
 
 /**
