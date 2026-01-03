@@ -1,3 +1,13 @@
+## [2.5.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.4.0...2.5.0) (2026-01-03)
+
+### Features
+
+* **all:** added reference line support in visualization customizations ([faef43e](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/faef43e96523eeb1c0ddaaecd0862570f93bb252))
+* **all:** added support for reference lines on visualizations with multiple properties ([0a042e8](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/0a042e89a5d02a7c3a5c508f71a4ceeadcc5c8cc))
+
+### Bug Fixes
+
+* **all:** fixed issue with maximizing charts with multiple props ([5d4d2c2](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/5d4d2c271dc75ad49da267d195e6faa86f7d588c))
 ## [2.4.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.3.0...2.4.0) (2026-01-03)
 
 ### Features
