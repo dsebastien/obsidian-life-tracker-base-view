@@ -30,9 +30,10 @@ export function getVisualizationConfig(
         embeddedHeight
     }
 
-    // Extract scale and color scheme from column config if present
+    // Extract scale, color scheme, and reference line from column config if present
     const scale = columnConfig.scale
     const colorScheme = columnConfig.colorScheme
+    const referenceLine = columnConfig.referenceLine
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
@@ -75,7 +76,8 @@ export function getVisualizationConfig(
                 tension: 0.3,
                 fill: false, // Line charts don't have fill
                 scale,
-                colorScheme
+                colorScheme,
+                referenceLine
             } as ChartConfig
 
         case VisualizationType.AreaChart:
@@ -87,10 +89,22 @@ export function getVisualizationConfig(
                 tension: 0.3,
                 fill: true, // Area charts have fill
                 scale,
-                colorScheme
+                colorScheme,
+                referenceLine
             } as ChartConfig
 
         case VisualizationType.BarChart:
+            return {
+                ...baseConfig,
+                chartType: mapVisualizationTypeToChartType(vizType),
+                showLegend: (getConfig('chartShowLegend') as boolean) ?? false,
+                showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
+                tension: 0.3,
+                scale,
+                colorScheme,
+                referenceLine
+            } as ChartConfig
+
         case VisualizationType.PieChart:
         case VisualizationType.DoughnutChart:
         case VisualizationType.RadarChart:

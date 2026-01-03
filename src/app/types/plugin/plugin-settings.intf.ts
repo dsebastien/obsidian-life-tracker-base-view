@@ -1,5 +1,5 @@
 import type { VisualizationType } from '../visualization/visualization-type.intf'
-import type { ScaleConfig } from '../column/column-config.types'
+import type { ScaleConfig, ReferenceLineConfig } from '../column/column-config.types'
 import type { PropertyDefinition } from '../property/property-definition.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
 
@@ -18,6 +18,8 @@ export interface PropertyVisualizationPreset {
     scale?: ScaleConfig
     /** Optional color scheme for chart types */
     colorScheme?: ChartColorScheme
+    /** Reference line configuration for cartesian charts */
+    referenceLine?: ReferenceLineConfig
 }
 
 export interface PluginSettings {

@@ -52,12 +52,15 @@ export {
     supportsScale,
     COLOR_SCHEME_SUPPORTED_TYPES,
     supportsColorScheme,
+    REFERENCE_LINE_SUPPORTED_TYPES,
+    supportsReferenceLine,
     OVERLAY_SUPPORTED_TYPES,
     supportsOverlay,
     generateVisualizationId
 } from './column'
 export type {
     ScaleConfig,
+    ReferenceLineConfig,
     ColumnVisualizationConfig,
     ColumnConfigMap,
     LegacyColumnConfigMap,

@@ -48,8 +48,11 @@ export class ChartLoaderService {
 
         const module = await import('chart.js')
 
-        // Register all components once
-        module.Chart.register(...module.registerables)
+        // Import and register annotation plugin
+        const annotationPlugin = await import('chartjs-plugin-annotation')
+
+        // Register all components once, including annotation plugin
+        module.Chart.register(...module.registerables, annotationPlugin.default)
 
         const loadTime = performance.now() - startTime
         log(`Chart.js loaded and registered in ${loadTime.toFixed(1)}ms`, 'debug')

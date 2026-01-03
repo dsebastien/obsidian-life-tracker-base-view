@@ -264,12 +264,29 @@ export class ChartVisualization extends BaseVisualization {
                     (elements) => this.handleBubbleChartClick(elements)
                 )
             } else if (this.chartData) {
+                // Build reference lines array if configured
+                const referenceLines: Array<{ value: number; label: string; color: string }> = []
+
+                if (this.chartConfig.referenceLine?.enabled) {
+                    const colors = getChartColorScheme(this.chartConfig.colorScheme)
+                    const color = colors[0] ?? '#8884d8'
+                    const label =
+                        this.chartConfig.referenceLine.label ??
+                        `Target: ${this.chartConfig.referenceLine.value}`
+                    referenceLines.push({
+                        value: this.chartConfig.referenceLine.value,
+                        label,
+                        color
+                    })
+                }
+
                 this.chart = initCartesianChart(
                     Chart,
                     ctx,
                     this.chartData,
                     this.chartConfig,
-                    (elements) => this.handleChartClick(elements)
+                    (elements) => this.handleChartClick(elements),
+                    referenceLines
                 )
             }
         } catch (error) {

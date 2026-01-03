@@ -182,7 +182,8 @@ export function initCartesianChart(
     ctx: CanvasRenderingContext2D,
     chartData: ChartData,
     chartConfig: ChartConfig,
-    onClick: (elements: ChartClickElement[]) => void
+    onClick: (elements: ChartClickElement[]) => void,
+    referenceLines?: Array<{ value: number; label: string; color: string }>
 ): ChartInstance {
     // Use fill property from config (area charts have fill: true, line charts have fill: false)
     const shouldFill = chartConfig.fill ?? false
@@ -209,6 +210,35 @@ export function initCartesianChart(
 
     // Map chart type (area uses line type)
     const chartJsType = chartConfig.chartType === 'line' ? 'line' : chartConfig.chartType
+
+    // Build annotation configuration if reference lines exist
+    const annotations: Record<string, unknown> = {}
+
+    if (referenceLines && referenceLines.length > 0) {
+        referenceLines.forEach((line, index) => {
+            annotations[`referenceLine${index}`] = {
+                type: 'line',
+                yMin: line.value,
+                yMax: line.value,
+                borderColor: line.color,
+                borderWidth: 2,
+                borderDash: [5, 5], // Dashed line
+                label: {
+                    display: true,
+                    content: line.label,
+                    enabled: true,
+                    position: 'end',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    color: 'white',
+                    font: { size: 11, weight: 'normal' },
+                    padding: 4,
+                    borderRadius: 3,
+                    xAdjust: -10,
+                    yAdjust: 0
+                }
+            }
+        })
+    }
 
     return new Chart(ctx, {
         type: chartJsType as ChartType,
@@ -246,6 +276,9 @@ export function initCartesianChart(
                             return `${label}: ${value.toFixed(2)}`
                         }
                     }
+                },
+                annotation: {
+                    annotations
                 }
             },
             scales: {

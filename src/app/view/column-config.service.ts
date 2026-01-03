@@ -10,6 +10,7 @@ import {
     type OverlayVisualizationConfig,
     type OverlayConfigMap,
     type ScaleConfig,
+    type ReferenceLineConfig,
     type EffectiveConfigResult
 } from '../types'
 import { log, type ChartColorScheme } from '../../utils'
@@ -109,7 +110,8 @@ export class ColumnConfigService {
         visualizationType: VisualizationType,
         displayName: string,
         scale?: ScaleConfig,
-        colorScheme?: ChartColorScheme
+        colorScheme?: ChartColorScheme,
+        referenceLine?: ReferenceLineConfig
     ): string {
         const configs = this.getColumnConfigs()
         const existingConfigs = configs[propertyId] ?? []
@@ -127,6 +129,9 @@ export class ColumnConfigService {
         }
         if (colorScheme) {
             config.colorScheme = colorScheme
+        }
+        if (referenceLine) {
+            config.referenceLine = referenceLine
         }
 
         // If no existing configs, create first one. Otherwise replace first one.

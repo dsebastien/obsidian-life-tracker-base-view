@@ -4,7 +4,8 @@
       "Bash(bun:*)",
       "Bash(cat:*)",
       "Bash(wc:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebSearch"
     ]
   }
 }

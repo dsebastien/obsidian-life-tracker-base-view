@@ -13,6 +13,19 @@ export interface ScaleConfig {
 }
 
 /**
+ * Reference line configuration for cartesian charts
+ * Displays a horizontal line at a specific Y-axis value (e.g., target/goal)
+ */
+export interface ReferenceLineConfig {
+    /** Whether the reference line is enabled */
+    enabled: boolean
+    /** The Y-axis value where the line should be drawn */
+    value: number
+    /** Optional custom label (defaults to "Target: {value}") */
+    label?: string
+}
+
+/**
  * Configuration for a single visualization
  */
 export interface ColumnVisualizationConfig {
@@ -36,6 +49,8 @@ export interface ColumnVisualizationConfig {
     heatmapShowMonthLabels?: boolean
     /** Heatmap show day labels override */
     heatmapShowDayLabels?: boolean
+    /** Reference line configuration for cartesian charts */
+    referenceLine?: ReferenceLineConfig
 }
 
 /**
@@ -84,6 +99,22 @@ export function supportsColorScheme(vizType: VisualizationType): boolean {
 }
 
 /**
+ * Visualization types that support reference lines (cartesian charts only)
+ */
+export const REFERENCE_LINE_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.LineChart,
+    VisualizationType.BarChart,
+    VisualizationType.AreaChart
+]
+
+/**
+ * Check if a visualization type supports reference lines
+ */
+export function supportsReferenceLine(vizType: VisualizationType): boolean {
+    return REFERENCE_LINE_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
  * Map of property IDs to their visualization configs (supports multiple per property)
  * Stored in view config to persist across sessions
  */
@@ -113,6 +144,8 @@ export interface OverlayVisualizationConfig {
     scale?: ScaleConfig
     /** Color scheme for chart colors */
     colorScheme?: ChartColorScheme
+    /** Reference line configurations per property ID (for overlays with multiple properties) */
+    referenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
 }
 
 /**

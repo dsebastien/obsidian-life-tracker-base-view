@@ -1,7 +1,7 @@
 import type { BasesPropertyId } from 'obsidian'
 import type { TimeGranularity } from './time-granularity.intf'
 import type { ResolvedDateAnchor } from '../view/date-anchor.types'
-import type { ScaleConfig } from '../column/column-config.types'
+import type { ScaleConfig, ReferenceLineConfig } from '../column/column-config.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
 
 /**
@@ -221,6 +221,8 @@ export interface ChartConfig extends VisualizationConfig {
     aggregateByValue?: boolean
     /** Color scheme for chart colors */
     colorScheme?: ChartColorScheme
+    /** Reference line configuration for cartesian charts */
+    referenceLine?: ReferenceLineConfig
 }
 
 /**

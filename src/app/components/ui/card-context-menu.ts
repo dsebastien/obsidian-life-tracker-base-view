@@ -5,7 +5,9 @@ import {
     SCALE_PRESETS,
     supportsScale,
     supportsColorScheme,
+    supportsReferenceLine,
     type ScaleConfig,
+    type ReferenceLineConfig,
     type CardMenuCallback
 } from '../../types'
 import type { ChartColorScheme } from '../../../utils'
@@ -53,6 +55,7 @@ export function showCardContextMenu(
     currentScale: ScaleConfig | undefined,
     currentColorScheme: ChartColorScheme | undefined,
     currentHeatmapConfig: HeatmapMenuConfig | undefined,
+    currentReferenceLine: ReferenceLineConfig | undefined,
     isFromPreset: boolean,
     isMaximized: boolean,
     canRemove: boolean,
@@ -167,8 +170,11 @@ export function showCardContextMenu(
 
         const hasScale = supportsScale(vizType)
         const hasColorScheme = supportsColorScheme(vizType)
+        const hasReferenceLine = supportsReferenceLine(vizType)
 
-        if (!hasScale && !hasColorScheme) {
+        const hasHeatmapConfig = vizType === VisualizationType.Heatmap
+
+        if (!hasScale && !hasColorScheme && !hasReferenceLine && !hasHeatmapConfig) {
             optionsContent.createDiv({
                 cls: 'lt-card-popover-no-options',
                 text: 'No options for this type'
@@ -259,6 +265,64 @@ export function showCardContextMenu(
                     colorScheme: value === 'default' ? undefined : value
                 })
             })
+        }
+
+        // Reference line configuration
+        if (hasReferenceLine) {
+            const refLineGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            refLineGroup.createEl('label', { text: 'Reference line' })
+
+            const refLineToggle = refLineGroup.createEl('select', { cls: 'lt-card-popover-select' })
+            const disabledOption = refLineToggle.createEl('option', {
+                value: 'disabled',
+                text: 'Disabled'
+            })
+            const enabledOption = refLineToggle.createEl('option', {
+                value: 'enabled',
+                text: 'Enabled'
+            })
+
+            if (currentReferenceLine?.enabled) {
+                enabledOption.selected = true
+            } else {
+                disabledOption.selected = true
+            }
+
+            refLineToggle.addEventListener('change', () => {
+                const enabled = refLineToggle.value === 'enabled'
+                if (enabled) {
+                    showReferenceLineModal(currentReferenceLine, (refLine) => {
+                        close()
+                        onAction({ type: 'configureReferenceLine', referenceLine: refLine })
+                    })
+                } else {
+                    close()
+                    onAction({
+                        type: 'configureReferenceLine',
+                        referenceLine: { enabled: false, value: 0 }
+                    })
+                }
+            })
+
+            // If enabled, show current value and edit button
+            if (currentReferenceLine?.enabled) {
+                const refLineValueGroup = optionsContent.createDiv({
+                    cls: 'lt-card-popover-option-group'
+                })
+                const label = currentReferenceLine.label ?? `Target: ${currentReferenceLine.value}`
+                refLineValueGroup.createEl('label', { text: `Value: ${label}` })
+
+                const editBtn = refLineValueGroup.createEl('button', {
+                    cls: 'lt-card-popover-select',
+                    text: 'Edit'
+                })
+                editBtn.addEventListener('click', () => {
+                    showReferenceLineModal(currentReferenceLine, (refLine) => {
+                        close()
+                        onAction({ type: 'configureReferenceLine', referenceLine: refLine })
+                    })
+                })
+            }
         }
 
         // Heatmap-specific options
@@ -545,4 +609,88 @@ function showCustomScaleModal(
 
     // Focus min input
     minInput.focus()
+}
+
+/**
+ * Show a modal for reference line configuration
+ */
+function showReferenceLineModal(
+    currentReferenceLine: ReferenceLineConfig | undefined,
+    onConfirm: (referenceLine: ReferenceLineConfig) => void
+): void {
+    const overlay = document.body.createDiv({ cls: 'lt-scale-modal-overlay' })
+    const modal = overlay.createDiv({ cls: 'lt-scale-modal' })
+
+    modal.createDiv({ cls: 'lt-scale-modal-header', text: 'Configure reference line' })
+
+    const form = modal.createDiv({ cls: 'lt-scale-modal-form' })
+
+    // Value input
+    const valueGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
+    valueGroup.createSpan({ text: 'Value:' })
+    const valueInput = valueGroup.createEl('input', {
+        type: 'number',
+        cls: 'lt-scale-modal-input',
+        placeholder: 'e.g., 75'
+    })
+    if (currentReferenceLine?.value !== undefined) {
+        valueInput.value = String(currentReferenceLine.value)
+    }
+
+    // Label input (optional)
+    const labelGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
+    labelGroup.createSpan({ text: 'Label (optional):' })
+    const labelInput = labelGroup.createEl('input', {
+        type: 'text',
+        cls: 'lt-scale-modal-input',
+        placeholder: 'e.g., Target: 75'
+    })
+    if (currentReferenceLine?.label) {
+        labelInput.value = currentReferenceLine.label
+    }
+
+    const handleEscape = (e: KeyboardEvent): void => {
+        if (e.key === 'Escape') cleanup()
+    }
+
+    const cleanup = (): void => {
+        document.removeEventListener('keydown', handleEscape)
+        overlay.remove()
+    }
+
+    const buttons = modal.createDiv({ cls: 'lt-scale-modal-buttons' })
+
+    const cancelBtn = buttons.createEl('button', {
+        cls: 'lt-scale-modal-btn lt-scale-modal-btn--secondary',
+        text: 'Cancel'
+    })
+    cancelBtn.addEventListener('click', cleanup)
+
+    const confirmBtn = buttons.createEl('button', {
+        cls: 'lt-scale-modal-btn lt-scale-modal-btn--primary',
+        text: 'Apply'
+    })
+    confirmBtn.addEventListener('click', () => {
+        const value = parseFloat(valueInput.value.trim())
+        if (isNaN(value)) {
+            return
+        }
+
+        const label = labelInput.value.trim() || undefined
+
+        onConfirm({
+            enabled: true,
+            value,
+            label
+        })
+
+        cleanup()
+    })
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cleanup()
+    })
+
+    document.addEventListener('keydown', handleEscape)
+    valueInput.focus()
 }

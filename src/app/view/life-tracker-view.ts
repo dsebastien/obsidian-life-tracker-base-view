@@ -1218,6 +1218,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.scale,
             vizConfig.colorScheme,
             heatmapConfig,
+            vizConfig.referenceLine,
             isFromPreset,
             isMaximized,
             canRemove,
@@ -1309,6 +1310,30 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         propertyId,
                         visualizationId,
                         { colorScheme: action.colorScheme }
+                    )
+                }
+                this.onDataUpdated()
+                break
+
+            case 'configureReferenceLine':
+                if (isFromPreset) {
+                    // Create local override from preset with new reference line
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme,
+                            action.referenceLine
+                        )
+                    }
+                } else {
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { referenceLine: action.referenceLine }
                     )
                 }
                 this.onDataUpdated()
