@@ -1,3 +1,12 @@
+## [2.4.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.3.0...2.4.0) (2026-01-03)
+
+### Features
+
+* **all:** add better support for lists. The values are now considered in isolation and aggregated correctly ([933f5b3](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/933f5b31c5fe1311ff74a8d81cb8a1931b8ef6d3))
+
+### Bug Fixes
+
+* **all:** fixed broken test ([bf3db4a](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/bf3db4ade3ec67171303afc1dc395550afbaae2a))
 ## [2.3.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.2.1...2.3.0) (2025-12-22)
 
 ### Features
