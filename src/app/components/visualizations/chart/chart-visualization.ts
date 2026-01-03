@@ -5,6 +5,7 @@ import type {
     ChartConfig,
     ChartData,
     PieChartData,
+    ReferenceLineConfig,
     ScatterChartData,
     VisualizationDataPoint
 } from '../../../types'
@@ -40,16 +41,19 @@ export class ChartVisualization extends BaseVisualization {
     private originalData: (number | null)[][] = []
     private animationInterval: ReturnType<typeof setInterval> | null = null
     private currentAnimationIndex: number = 0
+    private overlayReferenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
 
     constructor(
         containerEl: HTMLElement,
         app: App,
         propertyId: BasesPropertyId,
         displayName: string,
-        config: ChartConfig
+        config: ChartConfig,
+        overlayReferenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
     ) {
         super(containerEl, app, propertyId, displayName, config)
         this.chartConfig = config
+        this.overlayReferenceLines = overlayReferenceLines
     }
 
     /**
@@ -267,6 +271,7 @@ export class ChartVisualization extends BaseVisualization {
                 // Build reference lines array if configured
                 const referenceLines: Array<{ value: number; label: string; color: string }> = []
 
+                // Single property reference line
                 if (this.chartConfig.referenceLine?.enabled) {
                     const colors = getChartColorScheme(this.chartConfig.colorScheme)
                     const color = colors[0] ?? '#8884d8'
@@ -277,6 +282,28 @@ export class ChartVisualization extends BaseVisualization {
                         value: this.chartConfig.referenceLine.value,
                         label,
                         color
+                    })
+                }
+
+                // Overlay reference lines (one per dataset/property)
+                if (this.overlayReferenceLines && this.chartData.datasets) {
+                    const colors = getChartColorScheme(this.chartConfig.colorScheme)
+                    this.chartData.datasets.forEach((dataset, index) => {
+                        const propertyId = dataset.propertyId
+                        if (propertyId) {
+                            const refLineConfig = this.overlayReferenceLines?.[propertyId]
+                            if (refLineConfig?.enabled) {
+                                const color = colors[index % colors.length] ?? '#8884d8'
+                                const label =
+                                    refLineConfig.label ??
+                                    `${dataset.label}: ${refLineConfig.value}`
+                                referenceLines.push({
+                                    value: refLineConfig.value,
+                                    label,
+                                    color
+                                })
+                            }
+                        }
                     })
                 }
 

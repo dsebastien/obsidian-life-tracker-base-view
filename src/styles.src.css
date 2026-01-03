@@ -3129,6 +3129,54 @@
     color: var(--text-normal);
 }
 
+/* Reference lines */
+.lt-overlay-edit-reflines-list {
+    @apply flex flex-col gap-2.5;
+}
+
+.lt-overlay-edit-reflines-empty {
+    @apply text-sm text-center py-4;
+    color: var(--text-muted);
+}
+
+.lt-overlay-edit-refline-row {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-md;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.lt-overlay-edit-refline-name {
+    @apply text-sm flex-1;
+    color: var(--text-normal);
+}
+
+.lt-overlay-edit-refline-toggle {
+    @apply w-4 h-4 shrink-0 cursor-pointer;
+    accent-color: var(--interactive-accent);
+}
+
+.lt-overlay-edit-refline-input {
+    @apply px-2.5 py-1.5 rounded text-sm;
+    width: 100px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.lt-overlay-edit-refline-input:focus {
+    border-color: var(--interactive-accent);
+    outline: none;
+}
+
+.lt-overlay-edit-refline-input:disabled {
+    @apply opacity-50 cursor-not-allowed;
+    background-color: var(--background-secondary);
+}
+
+.lt-overlay-edit-refline-input::placeholder {
+    color: var(--text-faint);
+}
+
 /* Error message */
 .lt-overlay-edit-error {
     @apply text-xs mt-3 opacity-0 transition-opacity duration-150;

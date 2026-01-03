@@ -829,13 +829,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Enable legend for overlay charts (show property names)
         chartConfig.showLegend = true
 
-        // Create chart visualization
+        // Create chart visualization with overlay reference lines
         const visualization = new ChartVisualization(
             cardEl,
             this.plugin.app,
             overlayConfig.propertyIds[0] ?? ('' as BasesPropertyId),
             overlayConfig.displayName,
-            chartConfig
+            chartConfig,
+            overlayConfig.referenceLines
         )
 
         // Set animation duration from plugin settings
@@ -1062,7 +1063,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.columnConfigService.updateOverlayConfig(overlayConfig.id, {
                     displayName: result.displayName,
                     visualizationType: result.visualizationType,
-                    propertyIds: result.propertyIds
+                    propertyIds: result.propertyIds,
+                    referenceLines: result.referenceLines
                 })
                 this.onDataUpdated()
             },

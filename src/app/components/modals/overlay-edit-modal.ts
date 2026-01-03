@@ -1,7 +1,11 @@
 import { Modal, setIcon } from 'obsidian'
 import type { BasesPropertyId } from 'obsidian'
 import type { LifeTrackerPlugin } from '../../plugin'
-import { VisualizationType, type OverlayVisualizationConfig } from '../../types'
+import {
+    VisualizationType,
+    type OverlayVisualizationConfig,
+    type ReferenceLineConfig
+} from '../../types'
 
 /**
  * Property info for selection
@@ -18,6 +22,7 @@ export interface OverlayEditResult {
     displayName: string
     visualizationType: VisualizationType
     propertyIds: BasesPropertyId[]
+    referenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
 }
 
 /**
@@ -50,10 +55,12 @@ export class OverlayEditModal extends Modal {
     private displayName: string
     private visualizationType: VisualizationType
     private selectedPropertyIds: Set<BasesPropertyId>
+    private referenceLines: Map<BasesPropertyId, ReferenceLineConfig>
 
     // DOM elements
     private nameInputEl: HTMLInputElement | null = null
     private propertyListEl: HTMLElement | null = null
+    private referenceLinesEl: HTMLElement | null = null
     private saveBtn: HTMLButtonElement | null = null
     private errorEl: HTMLElement | null = null
 
@@ -72,6 +79,14 @@ export class OverlayEditModal extends Modal {
         this.displayName = overlayConfig.displayName
         this.visualizationType = overlayConfig.visualizationType
         this.selectedPropertyIds = new Set(overlayConfig.propertyIds)
+
+        // Initialize reference lines from config
+        this.referenceLines = new Map()
+        if (overlayConfig.referenceLines) {
+            for (const [propId, refLine] of Object.entries(overlayConfig.referenceLines)) {
+                this.referenceLines.set(propId as BasesPropertyId, refLine)
+            }
+        }
     }
 
     override onOpen(): void {
@@ -115,6 +130,9 @@ export class OverlayEditModal extends Modal {
 
         // Properties section
         this.renderPropertiesSection(content)
+
+        // Reference lines section
+        this.renderReferenceLinesSection(content)
 
         // Error message area
         this.errorEl = content.createDiv({ cls: 'lt-overlay-edit-error' })
@@ -278,6 +296,7 @@ export class OverlayEditModal extends Modal {
         this.updatePropertyCount()
         this.updateSaveButton()
         this.refreshPropertyStyles()
+        this.renderReferenceLinesList()
     }
 
     private updatePropertyCount(): void {
@@ -351,14 +370,105 @@ export class OverlayEditModal extends Modal {
         }
     }
 
+    private renderReferenceLinesSection(container: HTMLElement): void {
+        const section = container.createDiv({ cls: 'lt-overlay-edit-section' })
+
+        section.createEl('label', {
+            cls: 'lt-overlay-edit-label',
+            text: 'Reference lines (optional)'
+        })
+        section.createSpan({
+            cls: 'lt-overlay-edit-label-hint',
+            text: 'Set target values for each property'
+        })
+
+        this.referenceLinesEl = section.createDiv({ cls: 'lt-overlay-edit-reflines-list' })
+        this.renderReferenceLinesList()
+    }
+
+    private renderReferenceLinesList(): void {
+        if (!this.referenceLinesEl) return
+        this.referenceLinesEl.empty()
+
+        if (this.selectedPropertyIds.size === 0) {
+            this.referenceLinesEl.createDiv({
+                cls: 'lt-overlay-edit-reflines-empty',
+                text: 'Select properties above to configure reference lines'
+            })
+            return
+        }
+
+        for (const propId of this.selectedPropertyIds) {
+            const prop = this.availableProperties.find((p) => p.id === propId)
+            if (!prop) continue
+
+            const refLine = this.referenceLines.get(propId)
+            const row = this.referenceLinesEl.createDiv({ cls: 'lt-overlay-edit-refline-row' })
+
+            // Property name
+            row.createDiv({
+                cls: 'lt-overlay-edit-refline-name',
+                text: prop.displayName
+            })
+
+            // Toggle
+            const toggle = row.createEl('input', {
+                type: 'checkbox',
+                cls: 'lt-overlay-edit-refline-toggle'
+            })
+            toggle.checked = refLine?.enabled ?? false
+
+            // Value input
+            const valueInput = row.createEl('input', {
+                type: 'number',
+                cls: 'lt-overlay-edit-refline-input',
+                placeholder: 'Value',
+                value: refLine?.value?.toString() ?? ''
+            })
+            valueInput.disabled = !toggle.checked
+
+            // Update handler
+            const updateRefLine = (): void => {
+                if (toggle.checked) {
+                    const value = parseFloat(valueInput.value)
+                    if (!isNaN(value)) {
+                        this.referenceLines.set(propId, {
+                            enabled: true,
+                            value,
+                            label: refLine?.label
+                        })
+                    }
+                } else {
+                    this.referenceLines.delete(propId)
+                }
+            }
+
+            toggle.addEventListener('change', () => {
+                valueInput.disabled = !toggle.checked
+                updateRefLine()
+            })
+
+            valueInput.addEventListener('input', updateRefLine)
+        }
+    }
+
     private handleSave(): void {
         if (this.selectedPropertyIds.size < 2) return
         if (this.displayName.trim().length === 0) return
 
+        // Build reference lines record
+        const referenceLines: Record<BasesPropertyId, ReferenceLineConfig> = {}
+        for (const [propId, refLine] of this.referenceLines.entries()) {
+            if (refLine.enabled && this.selectedPropertyIds.has(propId)) {
+                referenceLines[propId] = refLine
+            }
+        }
+
         const result: OverlayEditResult = {
             displayName: this.displayName.trim(),
             visualizationType: this.visualizationType,
-            propertyIds: Array.from(this.selectedPropertyIds)
+            propertyIds: Array.from(this.selectedPropertyIds),
+            referenceLines: Object.keys(referenceLines).length > 0 ? referenceLines : undefined
         }
 
         this.callbacks.onSave(result)
