@@ -19,7 +19,13 @@ function createDataPoint(
 ): VisualizationDataPoint {
     return {
         filePath,
-        dateAnchor: dateStr ? { date: new Date(dateStr), source: 'filename' } : null,
+        dateAnchor: dateStr
+            ? {
+                  date: new Date(dateStr),
+                  source: { type: 'filename', pattern: 'YYYY-MM-DD' },
+                  confidence: 'high'
+              }
+            : null,
         numericValue: options.numericValue ?? null,
         booleanValue: options.booleanValue ?? null,
         listValues: options.listValues ?? [],
