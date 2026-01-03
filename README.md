@@ -24,6 +24,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Grid layout controls**: adjustable columns (1-6)
 - **Visualization presets**: auto-apply settings to properties by name pattern
 - **Scale configuration**: auto-detect or manual min/max for numeric visualizations
+- **Reference lines**: add horizontal target lines to cartesian charts (line, bar, area) to track values against goals (e.g., weight target)
 - **Color schemes**: 5 chart color schemes (green, blue, purple, orange, red) for all chart types
 - **Chart options**: toggle legend, grid lines, and more
 - **Responsive resizing**: visualizations automatically adjust to available space
@@ -71,7 +72,7 @@ Adjust layout options including number of columns, empty date display, default c
 ### Right-click context menu
 
 ![Customize visualizations](documentation/screenshots/customize-visualizations.png)
-Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100) and color scheme, add another visualization for the same property, maximize, or reset configuration.
+Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), color scheme, and reference lines, add another visualization for the same property, maximize, or reset configuration.
 
 ### Maximize view
 

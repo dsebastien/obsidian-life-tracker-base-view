@@ -120,7 +120,10 @@ export class MaximizeStateService {
             for (const viz of visualizations.values()) {
                 if (viz.propertyId === propertyId) {
                     const dataPoints = this.getDataPoints(propertyId, viz.propertyDisplayName)
-                    viz.visualization.update(dataPoints)
+                    // Skip update for overlays (they return empty array from getDataPoints)
+                    if (dataPoints.length > 0) {
+                        viz.visualization.update(dataPoints)
+                    }
                 }
             }
         } else if (previousMaximized) {
@@ -131,7 +134,10 @@ export class MaximizeStateService {
                         previousMaximized,
                         viz.propertyDisplayName
                     )
-                    viz.visualization.update(dataPoints)
+                    // Skip update for overlays (they return empty array from getDataPoints)
+                    if (dataPoints.length > 0) {
+                        viz.visualization.update(dataPoints)
+                    }
                 }
             }
         }

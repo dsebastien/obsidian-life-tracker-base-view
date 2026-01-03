@@ -155,6 +155,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             () => this.gridEl,
             () => this.visualizations,
             (propertyId, propertyDisplayName) => {
+                // Check if this is an overlay (overlays use their ID as propertyId)
+                const overlayConfigs = this.columnConfigService.getOverlayConfigs()
+                if (overlayConfigs[propertyId as string]) {
+                    // Overlays don't use data points - they have pre-aggregated chart data
+                    // Return empty array to skip the update call
+                    return []
+                }
+
                 // Get data points (already filtered based on showEmptyValues setting)
                 const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
                 return this.getDataPointsForProperty(
@@ -801,7 +809,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const cardEl = this.gridEl.createDiv({
             cls: 'lt-card lt-card--overlay',
             attr: {
-                'data-overlay-id': overlayConfig.id
+                'data-overlay-id': overlayConfig.id,
+                [DATA_ATTR_FULL.PROPERTY_ID]: overlayConfig.id // Use overlay ID for maximize functionality
             }
         })
 
@@ -809,8 +818,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.setupOverlayCardEventHandlers(cardEl, overlayConfig)
 
         // Create a ColumnVisualizationConfig for the overlay
+        // Use overlay ID as propertyId since overlays are independent visualizations
         const overlayColumnConfig: ColumnVisualizationConfig = {
-            propertyId: overlayConfig.propertyIds[0] ?? ('' as BasesPropertyId),
+            propertyId: overlayConfig.id as BasesPropertyId,
             id: overlayConfig.id,
             visualizationType: overlayConfig.visualizationType,
             displayName: overlayConfig.displayName,
@@ -833,11 +843,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const visualization = new ChartVisualization(
             cardEl,
             this.plugin.app,
-            overlayConfig.propertyIds[0] ?? ('' as BasesPropertyId),
+            overlayConfig.id as BasesPropertyId,
             overlayConfig.displayName,
             chartConfig,
             overlayConfig.referenceLines
         )
+
+        // Wire up maximize callback (using overlay ID)
+        visualization.setMaximizeCallback((propertyId, maximize) => {
+            this.maximizeService.handleMaximizeToggle(propertyId, maximize)
+        })
 
         // Set animation duration from plugin settings
         visualization.setAnimationDuration(this.plugin.settings.animationDuration)
@@ -846,8 +861,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         visualization.renderChartData(chartData)
 
         // Store in visualizations map using overlay ID
+        // Use overlay ID as propertyId for maximize functionality (overlays are independent visualizations)
         this.visualizations.set(overlayConfig.id, {
-            propertyId: overlayConfig.propertyIds[0] ?? ('' as BasesPropertyId),
+            propertyId: overlayConfig.id as BasesPropertyId,
             propertyDisplayName: overlayConfig.displayName,
             visualization
         })

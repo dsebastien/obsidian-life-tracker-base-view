@@ -41,6 +41,9 @@ Priority order for resolving an entry's date:
 - Only configured cards (with `data-property-id`) participate in maximize/minimize
 - Unconfigured cards are hidden when another card is maximized, but never receive maximize state
 - Escape key minimizes the currently maximized card
+- Overlay visualizations use their overlay ID as the data-property-id, allowing them to be maximized independently
+- Each overlay is treated as an independent visualization for maximize purposes
+- When overlays are maximized/minimized, they receive the maximize state but are not re-rendered (overlays use pre-aggregated chart data)
 
 ## Property Types in Visualizations
 
