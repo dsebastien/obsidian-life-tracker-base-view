@@ -35,20 +35,35 @@ jobs:
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
 
-            - name: Determine version
+            - name: Determine version and branch
               id: version
               run: |
                   if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
                     VERSION="${{ github.event.inputs.version }}"
+                    BRANCH="${{ github.ref_name }}"
                   else
+                    # Triggered by tag push
                     VERSION="${{ github.ref_name }}"
+                    # Find the branch that contains this tag
+                    BRANCH=$(git branch -r --contains ${{ github.ref }} | grep -v HEAD | head -1 | sed 's/.*\///')
+                    if [ -z "$BRANCH" ]; then
+                      BRANCH="main"
+                    fi
                   fi
                   # Strip 'v' prefix if present (for backwards compatibility)
                   VERSION="${VERSION#v}"
                   echo "version=$VERSION" >> $GITHUB_OUTPUT
                   # Tag WITHOUT 'v' prefix per Obsidian plugin spec
                   echo "tag=$VERSION" >> $GITHUB_OUTPUT
+                  echo "branch=$BRANCH" >> $GITHUB_OUTPUT
                   echo "Version: $VERSION"
+                  echo "Target branch: $BRANCH"
+
+            - name: Checkout branch (when triggered by tag)
+              if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+              run: |
+                  git checkout ${{ steps.version.outputs.branch }}
+                  git pull origin ${{ steps.version.outputs.branch }}
 
             - name: Install dependencies
               run: bun install --frozen-lockfile
@@ -76,7 +91,7 @@ jobs:
               run: |
                   git add package.json versions.json manifest.json CHANGELOG.md
                   git commit -m "chore(release): ${{ steps.version.outputs.version }}" || echo "No changes to commit"
-                  git push origin HEAD:${{ github.ref_name }}
+                  git push origin HEAD:${{ steps.version.outputs.branch }}
 
             - name: Create and push tag (manual trigger only)
               if: github.event_name == 'workflow_dispatch'
