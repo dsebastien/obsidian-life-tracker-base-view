@@ -1,3 +1,8 @@
+## [2.6.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.5.0...2.6.0) (2026-01-05)
+
+### Features
+
+* **all:** added support for value mappings ([83c0434](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/83c0434fd50749080992b4a14dfe09da60d996fd)), closes [#75](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/75)
 ## [2.5.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.4.0...2.5.0) (2026-01-03)
 
 ### Features
