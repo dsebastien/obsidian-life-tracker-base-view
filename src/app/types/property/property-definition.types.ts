@@ -102,6 +102,18 @@ export type PropertyDefaultValue = string | number | boolean | string[] | null
 export type PropertyAllowedValues = string[] | number[]
 
 /**
+ * Custom value mapping for converting text values to numbers.
+ * Used for star ratings, emoji ratings, custom scales, etc.
+ *
+ * @example
+ * { "⭐": 1, "⭐⭐": 2, "⭐⭐⭐": 3 }
+ *
+ * @example
+ * { "Morning": 1, "Evening": 2, "Morning + Evening": 3 }
+ */
+export type ValueMapping = Record<string, number>
+
+/**
  * Definition of a trackable property.
  * Compatible with Obsidian Starter Kit plugin's PropertyDefinition.
  *
@@ -158,6 +170,8 @@ export interface PropertyDefinition {
     order: number
     /** Mappings to filter which notes this property applies to (empty = all notes) - Life Tracker extension */
     mappings: Mapping[]
+    /** Custom value mapping for text-to-number conversion (null if not configured) */
+    valueMapping: ValueMapping | null
 }
 
 /**
@@ -198,7 +212,8 @@ export function createDefaultPropertyDefinition(id: string, order: number): Prop
         required: false,
         description: '',
         order,
-        mappings: []
+        mappings: [],
+        valueMapping: null
     }
 }
 

@@ -6,6 +6,7 @@ import {
     type HeatmapCell,
     type HeatmapData,
     type PieChartData,
+    type PropertyDefinition,
     type ScatterChartData,
     type TagCloudData,
     type TimelineData,
@@ -13,7 +14,13 @@ import {
     type ResolvedDateAnchor
 } from '../types'
 import { compareAsc, min, max } from 'date-fns'
-import { extractNumber, extractBoolean, extractDisplayLabel, extractList } from '../../utils'
+import {
+    extractNumber,
+    extractBoolean,
+    extractDisplayLabel,
+    extractList,
+    extractNumberWithMapping
+} from '../../utils'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
 import {
     aggregateForChart as chartAggregation,
@@ -48,6 +55,7 @@ export class DataAggregationService {
         entries: BasesEntry[],
         propertyId: BasesPropertyId,
         propertyDisplayName: string,
+        propertyDefinition: PropertyDefinition | null,
         dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>,
         showEmptyValues: boolean = true
     ): VisualizationDataPoint[] {
@@ -59,11 +67,32 @@ export class DataAggregationService {
             // Extract numeric value (excludes booleans)
             let numericValue = extractNumber(rawValue)
 
-            // Extract boolean value
-            const booleanValue = extractBoolean(rawValue)
-            if (booleanValue !== null) {
-                numericValue = booleanValue ? 1 : 0
+            // Apply custom value mapping if configured
+            if (
+                propertyDefinition?.valueMapping &&
+                Object.keys(propertyDefinition.valueMapping).length > 0
+            ) {
+                const mappedValue = extractNumberWithMapping(
+                    rawValue,
+                    propertyDefinition.valueMapping
+                )
+                if (mappedValue !== null) {
+                    numericValue = mappedValue
+                } else {
+                    // Unmapped value - treat as 0 per user requirement
+                    numericValue = 0
+                }
+            } else {
+                // No mapping - use standard extraction
+                // Extract boolean value
+                const booleanValue = extractBoolean(rawValue)
+                if (booleanValue !== null) {
+                    numericValue = booleanValue ? 1 : 0
+                }
             }
+
+            // Extract boolean value for display label (needed even with value mapping)
+            const booleanValue = extractBoolean(rawValue)
 
             // Extract list values for tag cloud visualization
             const listValues = extractList(rawValue).filter(

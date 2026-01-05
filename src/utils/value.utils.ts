@@ -96,6 +96,41 @@ export function extractNumber(value: unknown): number | null {
 }
 
 /**
+ * Extract number using custom value mapping.
+ * Performs case-insensitive matching with trimmed values.
+ *
+ * @param value - The value to map
+ * @param mapping - The value mapping configuration
+ * @returns Mapped number or null if value not found in mapping
+ *
+ * @example
+ * const mapping = { "⭐": 1, "⭐⭐": 2, "⭐⭐⭐": 3 }
+ * extractNumberWithMapping("⭐⭐", mapping) // returns 2
+ * extractNumberWithMapping("MORNING", { "Morning": 1 }) // returns 1 (case-insensitive)
+ */
+export function extractNumberWithMapping(
+    value: unknown,
+    mapping: Record<string, number>
+): number | null {
+    if (value === null || value === undefined) return null
+
+    const str = value.toString().trim()
+    if (!str) return null
+
+    // Case-insensitive lookup
+    const lowerStr = str.toLowerCase()
+
+    for (const [key, mappedValue] of Object.entries(mapping)) {
+        if (key.toLowerCase() === lowerStr) {
+            return mappedValue
+        }
+    }
+
+    // No match found - return null (treated as 0 per user requirement)
+    return null
+}
+
+/**
  * Extract boolean value.
  * Returns true/false for boolean values, null otherwise.
  */
@@ -215,4 +250,26 @@ export function isDateLike(value: Value | null): boolean {
 
     // Try parsing anyway for other formats
     return parseDateString(str) !== null
+}
+
+/**
+ * Extract the property name from a BasesPropertyId.
+ * BasesPropertyId can include namespace prefixes like "note.propertyName" or "file.propertyName".
+ * This function returns just the property name part (the part after the last dot).
+ * If there's no dot, returns the entire string.
+ *
+ * @param propertyId - The property ID (potentially with namespace prefix)
+ * @returns The property name without namespace prefix
+ *
+ * @example
+ * extractPropertyName("note.lolz") // returns "lolz"
+ * extractPropertyName("lolz") // returns "lolz"
+ * extractPropertyName("file.name") // returns "name"
+ */
+export function extractPropertyName(propertyId: string): string {
+    const lastDotIndex = propertyId.lastIndexOf('.')
+    if (lastDotIndex === -1) {
+        return propertyId
+    }
+    return propertyId.substring(lastDotIndex + 1)
 }

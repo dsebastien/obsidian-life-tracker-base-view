@@ -382,6 +382,11 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             this.renderAllowedValues(optionsContainer, definition)
         }
 
+        // Value mapping (only for text properties)
+        if (definition.type === 'text') {
+            this.renderValueMapping(optionsContainer, definition)
+        }
+
         // Default value
         this.renderDefaultValue(optionsContainer, definition)
 
@@ -630,6 +635,131 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             })
     }
 
+    private renderValueMapping(container: HTMLElement, definition: PropertyDefinition): void {
+        const mappingContainer = container.createDiv({ cls: 'lt-value-mapping-container' })
+
+        new Setting(mappingContainer)
+            .setName('Value mapping')
+            .setDesc(
+                'Map text values to numbers for calculations. Display shows original text, charts use mapped numbers. Example: "⭐" → 1, "⭐⭐" → 2'
+            )
+            .addButton((button) => {
+                button
+                    .setIcon('plus')
+                    .setTooltip('Add value mapping')
+                    .onClick(async () => {
+                        // Blur any focused input to trigger onChange before adding new mapping
+                        const activeElement = document.activeElement as HTMLElement
+                        if (activeElement && activeElement.blur) {
+                            activeElement.blur()
+                        }
+
+                        // Wait a bit for any pending onChange handlers to complete
+                        await new Promise((resolve) => setTimeout(resolve, 50))
+
+                        await this.plugin.updateSettings((draft) => {
+                            const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                            if (d) {
+                                if (!d.valueMapping) {
+                                    d.valueMapping = {}
+                                }
+                                d.valueMapping[''] = 0
+                            }
+                        })
+                        this.display()
+                    })
+            })
+
+        if (!definition.valueMapping || Object.keys(definition.valueMapping).length === 0) {
+            mappingContainer.createDiv({
+                cls: 'lt-value-mapping-empty',
+                text: 'No mappings configured.'
+            })
+            return
+        }
+
+        const mappingsList = mappingContainer.createDiv({ cls: 'lt-value-mapping-list' })
+
+        for (const [textValue, numericValue] of Object.entries(definition.valueMapping)) {
+            this.renderValueMappingItem(mappingsList, definition, textValue, numericValue)
+        }
+    }
+
+    private renderValueMappingItem(
+        container: HTMLElement,
+        definition: PropertyDefinition,
+        textValue: string,
+        numericValue: number
+    ): void {
+        const setting = new Setting(container)
+
+        // Text value input
+        setting.addText((text) => {
+            text.setPlaceholder('Text value (e.g., ⭐⭐⭐)')
+                .setValue(textValue)
+                .onChange(async (newTextValue) => {
+                    await this.plugin.updateSettings((draft) => {
+                        const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                        if (d?.valueMapping) {
+                            delete d.valueMapping[textValue]
+                            if (newTextValue.trim()) {
+                                d.valueMapping[newTextValue.trim()] = numericValue
+                            }
+                        }
+                    })
+                })
+        })
+
+        // Arrow separator
+        setting.settingEl.createSpan({ text: '→', cls: 'lt-value-mapping-arrow' })
+
+        // Numeric value input
+        setting.addText((text) => {
+            text.setPlaceholder('Number')
+                .setValue(String(numericValue))
+                .onChange(async (value) => {
+                    await this.plugin.updateSettings((draft) => {
+                        const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                        if (d?.valueMapping && textValue in d.valueMapping) {
+                            const num = parseFloat(value)
+                            if (!isNaN(num)) {
+                                d.valueMapping[textValue] = num
+                            }
+                        }
+                    })
+                })
+            text.inputEl.type = 'number'
+        })
+
+        // Delete button
+        setting.addExtraButton((button) => {
+            button
+                .setIcon('trash')
+                .setTooltip('Remove mapping')
+                .onClick(async () => {
+                    // Blur any focused input to trigger onChange before deleting
+                    const activeElement = document.activeElement as HTMLElement
+                    if (activeElement && activeElement.blur) {
+                        activeElement.blur()
+                    }
+
+                    // Wait a bit for any pending onChange handlers to complete
+                    await new Promise((resolve) => setTimeout(resolve, 50))
+
+                    await this.plugin.updateSettings((draft) => {
+                        const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                        if (d?.valueMapping) {
+                            delete d.valueMapping[textValue]
+                            if (Object.keys(d.valueMapping).length === 0) {
+                                d.valueMapping = null
+                            }
+                        }
+                    })
+                    this.display()
+                })
+        })
+    }
+
     private renderDefaultValue(container: HTMLElement, definition: PropertyDefinition): void {
         const setting = new Setting(container)
             .setName('Default value')
@@ -815,7 +945,8 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             required: source.required,
             description: source.description,
             order: nextOrder,
-            mappings: source.mappings.map((m) => ({ ...m })) // Deep copy mappings
+            mappings: source.mappings.map((m) => ({ ...m })), // Deep copy mappings
+            valueMapping: source.valueMapping ? { ...source.valueMapping } : null // Deep copy value mapping
         }
 
         // Auto-expand the new definition

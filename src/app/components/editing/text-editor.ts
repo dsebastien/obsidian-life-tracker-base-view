@@ -21,7 +21,11 @@ export class TextEditor extends BasePropertyEditor {
         const hasAllowedValues =
             this.config.definition.allowedValues && this.config.definition.allowedValues.length > 0
 
-        if (hasAllowedValues) {
+        const hasValueMapping =
+            this.config.definition.valueMapping &&
+            Object.keys(this.config.definition.valueMapping).length > 0
+
+        if (hasAllowedValues || hasValueMapping) {
             this.renderDropdown(container)
         } else {
             this.renderInput(container)
@@ -41,12 +45,25 @@ export class TextEditor extends BasePropertyEditor {
             text: '— Select —'
         })
 
-        // Add allowed values
-        for (const value of this.config.definition.allowedValues) {
-            const strValue = String(value)
+        // Determine which values to show in dropdown
+        let options: string[] = []
+
+        if (this.config.definition.allowedValues.length > 0) {
+            // Use allowedValues if configured
+            options = this.config.definition.allowedValues.map(String)
+        } else if (
+            this.config.definition.valueMapping &&
+            Object.keys(this.config.definition.valueMapping).length > 0
+        ) {
+            // Use valueMapping keys if configured
+            options = Object.keys(this.config.definition.valueMapping)
+        }
+
+        // Add options to dropdown
+        for (const value of options) {
             this.selectEl.createEl('option', {
-                value: strValue,
-                text: strValue
+                value,
+                text: value
             })
         }
 

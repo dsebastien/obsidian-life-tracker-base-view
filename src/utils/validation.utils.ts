@@ -238,6 +238,7 @@ export function isEmpty(value: unknown): boolean {
 export function validateText(value: unknown, definition: PropertyDefinition): ValidationResult {
     const strValue = String(value)
 
+    // Check allowed values first (more strict)
     if (definition.allowedValues.length > 0) {
         const lowerValue = strValue.toLowerCase()
         const isAllowed = definition.allowedValues.some(
@@ -247,6 +248,18 @@ export function validateText(value: unknown, definition: PropertyDefinition): Va
             return {
                 valid: false,
                 error: `Value must be one of: ${definition.allowedValues.join(', ')}`
+            }
+        }
+    } else if (definition.valueMapping && Object.keys(definition.valueMapping).length > 0) {
+        // If no allowedValues but valueMapping is configured, validate against mapping
+        const lowerValue = strValue.trim().toLowerCase()
+        const mappingKeys = Object.keys(definition.valueMapping)
+        const isInMapping = mappingKeys.some((key) => key.toLowerCase() === lowerValue)
+
+        if (!isInMapping) {
+            return {
+                valid: false,
+                error: `Value must be one of: ${mappingKeys.join(', ')}`
             }
         }
     }

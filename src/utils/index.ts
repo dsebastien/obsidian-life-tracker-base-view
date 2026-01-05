@@ -78,9 +78,11 @@ export {
 // Value extraction utilities
 export {
     extractNumber,
+    extractNumberWithMapping,
     extractBoolean,
     extractDate,
     extractDisplayLabel,
     extractList,
-    isDateLike
+    isDateLike,
+    extractPropertyName
 } from './value.utils'

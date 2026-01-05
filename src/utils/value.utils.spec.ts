@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test'
-import { extractNumber, extractBoolean, extractDate, extractList, isDateLike } from './value.utils'
+import {
+    extractNumber,
+    extractNumberWithMapping,
+    extractBoolean,
+    extractDate,
+    extractList,
+    isDateLike,
+    extractPropertyName
+} from './value.utils'
 
 // Mock Value type for testing
 class MockValue {
@@ -275,6 +283,102 @@ describe('value-extractors', () => {
 
         test('returns false for empty string', () => {
             expect(isDateLike(new MockValue('') as never)).toBe(false)
+        })
+    })
+
+    describe('extractNumberWithMapping', () => {
+        test('returns null for null input', () => {
+            const mapping = { '⭐': 1, '⭐⭐': 2 }
+            expect(extractNumberWithMapping(null, mapping)).toBeNull()
+        })
+
+        test('returns null for undefined input', () => {
+            const mapping = { '⭐': 1, '⭐⭐': 2 }
+            expect(extractNumberWithMapping(undefined, mapping)).toBeNull()
+        })
+
+        test('returns null for empty string', () => {
+            const mapping = { '⭐': 1, '⭐⭐': 2 }
+            expect(extractNumberWithMapping('', mapping)).toBeNull()
+        })
+
+        test('maps exact star value', () => {
+            const mapping = { '⭐': 1, '⭐⭐': 2, '⭐⭐⭐': 3 }
+            expect(extractNumberWithMapping('⭐⭐', mapping)).toBe(2)
+            expect(extractNumberWithMapping('⭐⭐⭐', mapping)).toBe(3)
+        })
+
+        test('maps text value case-insensitively', () => {
+            const mapping = { Morning: 1, Evening: 2 }
+            expect(extractNumberWithMapping('morning', mapping)).toBe(1)
+            expect(extractNumberWithMapping('MORNING', mapping)).toBe(1)
+            expect(extractNumberWithMapping('evening', mapping)).toBe(2)
+        })
+
+        test('trims whitespace before matching', () => {
+            const mapping = { Morning: 1, Evening: 2 }
+            expect(extractNumberWithMapping('  Morning  ', mapping)).toBe(1)
+            expect(extractNumberWithMapping('  evening  ', mapping)).toBe(2)
+        })
+
+        test('returns null for unmapped value', () => {
+            const mapping = { '⭐': 1, '⭐⭐': 2 }
+            expect(extractNumberWithMapping('⭐⭐⭐⭐', mapping)).toBeNull()
+            expect(extractNumberWithMapping('Unknown', mapping)).toBeNull()
+        })
+
+        test('handles complex multi-word mappings', () => {
+            const mapping = {
+                'Morning': 1,
+                'Evening': 2,
+                'Morning + Evening': 3
+            }
+            expect(extractNumberWithMapping('Morning + Evening', mapping)).toBe(3)
+        })
+
+        test('handles heart emoji mappings', () => {
+            const mapping = { '❤️': 1, '❤️❤️': 2, '❤️❤️❤️': 3 }
+            expect(extractNumberWithMapping('❤️❤️', mapping)).toBe(2)
+        })
+
+        test('does not do partial matching', () => {
+            const mapping = { '⭐⭐⭐': 3 }
+            expect(extractNumberWithMapping('⭐⭐', mapping)).toBeNull()
+        })
+
+        test('works with MockValue objects', () => {
+            const mapping = { '⭐': 1, '⭐⭐': 2 }
+            expect(extractNumberWithMapping(new MockValue('⭐⭐') as never, mapping)).toBe(2)
+        })
+    })
+
+    describe('extractPropertyName', () => {
+        test('extracts property name from namespaced propertyId', () => {
+            expect(extractPropertyName('note.lolz')).toBe('lolz')
+            expect(extractPropertyName('file.name')).toBe('name')
+            expect(extractPropertyName('note.health_energy_level')).toBe('health_energy_level')
+        })
+
+        test('returns property name when no namespace', () => {
+            expect(extractPropertyName('lolz')).toBe('lolz')
+            expect(extractPropertyName('health_energy_level')).toBe('health_energy_level')
+        })
+
+        test('handles multiple dots (uses last one)', () => {
+            expect(extractPropertyName('some.nested.property.name')).toBe('name')
+        })
+
+        test('handles edge cases', () => {
+            expect(extractPropertyName('')).toBe('')
+            expect(extractPropertyName('.')).toBe('')
+            expect(extractPropertyName('prefix.')).toBe('')
+        })
+
+        test('handles common property namespaces', () => {
+            expect(extractPropertyName('note.title')).toBe('title')
+            expect(extractPropertyName('note.tags')).toBe('tags')
+            expect(extractPropertyName('file.name')).toBe('name')
+            expect(extractPropertyName('file.path')).toBe('path')
         })
     })
 })

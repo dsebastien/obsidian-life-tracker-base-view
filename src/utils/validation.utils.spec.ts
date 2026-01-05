@@ -33,6 +33,7 @@ function createMockDefinition(overrides: Partial<PropertyDefinition> = {}): Prop
         description: '',
         order: 0,
         mappings: [],
+        valueMapping: null,
         ...overrides
     }
 }
