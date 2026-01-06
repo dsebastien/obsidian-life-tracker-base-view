@@ -4,6 +4,10 @@ Capture and visualize the data that matters in your life. This Obsidian plugin a
 
 You can find more details and background information here: https://www.knowii.net/c/announcements/new-obsidian-plugin-life-tracker
 
+## Overview/Demo Video
+
+[![Overview](https://www.youtube.com/watch?v=IrHwD1QWako)
+
 ## Features
 
 ### Visualizations
