@@ -2,6 +2,37 @@ import { Value } from 'obsidian'
 import { parseISO, isValid, parse } from 'date-fns'
 
 /**
+ * Safely convert a value to string.
+ * Returns the string value for primitives and objects with custom toString().
+ * Returns null for plain objects that would return '[object Object]'.
+ */
+function safeToString(value: unknown): string | null {
+    if (value === null || value === undefined) {
+        return null
+    }
+    if (typeof value === 'string') {
+        return value
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+        return String(value)
+    }
+    if (typeof value === 'object') {
+        // Check if object has a custom toString() method (not the default Object.prototype.toString)
+        const proto = Object.getPrototypeOf(value) as { toString?: () => string } | null
+        if (proto && proto.toString !== Object.prototype.toString) {
+            // Object has custom toString() (like Obsidian's Value type), use it
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string -- Verified: object has custom toString() that returns meaningful value
+            return String(value)
+        }
+        // Plain object would return '[object Object]', skip it
+        return null
+    }
+    // bigint, symbol, etc - use string representation
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string -- Intentional: bigint/symbol have meaningful string representations
+    return String(value)
+}
+
+/**
  * Common date formats to try when parsing dates.
  * Order matters - more specific/common formats first.
  */
@@ -77,7 +108,8 @@ export function extractNumber(value: unknown): number | null {
         return null
     }
 
-    const str = value.toString().trim()
+    // Safely convert to string (handles objects with custom toString())
+    const str = safeToString(value)?.trim()
     if (!str) return null
 
     // Check if it's a boolean-like string - don't convert
@@ -114,7 +146,8 @@ export function extractNumberWithMapping(
 ): number | null {
     if (value === null || value === undefined) return null
 
-    const str = value.toString().trim()
+    // Safely convert to string (handles objects with custom toString())
+    const str = safeToString(value)?.trim()
     if (!str) return null
 
     // Case-insensitive lookup
@@ -147,7 +180,8 @@ export function extractBoolean(value: unknown): boolean | null {
         return null
     }
 
-    const str = value.toString().trim().toLowerCase()
+    // Safely convert to string (handles objects with custom toString())
+    const str = safeToString(value)?.trim().toLowerCase()
     if (!str || str === 'null' || str === 'undefined') return null
 
     // Check for boolean-like strings

@@ -940,8 +940,8 @@ export class PropertyCaptureModal extends Modal {
         const originX = (modalRect.left + modalRect.width / 2) / window.innerWidth
         const originY = (modalRect.top + modalRect.height / 2) / window.innerHeight
 
-        // Fire confetti from modal center
-        confetti({
+        // Fire confetti from modal center (fire-and-forget, no need to await)
+        void confetti({
             particleCount: 100,
             spread: 70,
             origin: { x: originX, y: originY },
@@ -955,7 +955,7 @@ export class PropertyCaptureModal extends Modal {
 
         // Second burst slightly delayed
         setTimeout(() => {
-            confetti({
+            void confetti({
                 particleCount: 50,
                 spread: 100,
                 origin: { x: originX, y: originY },
@@ -976,7 +976,7 @@ export class PropertyCaptureModal extends Modal {
         const originX = (modalRect.left + modalRect.width / 2) / window.innerWidth
         const originY = (modalRect.top + modalRect.height / 2) / window.innerHeight
 
-        confetti({
+        void confetti({
             particleCount: 30,
             spread: 50,
             origin: { x: originX, y: originY },

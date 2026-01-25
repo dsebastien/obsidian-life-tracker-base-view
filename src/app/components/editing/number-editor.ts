@@ -188,7 +188,18 @@ export class NumberEditor extends BasePropertyEditor {
         if (value === null || value === undefined || value === '') {
             return null
         }
-        const num = typeof value === 'number' ? value : parseFloat(String(value))
+        if (typeof value === 'number') {
+            return isNaN(value) ? null : value
+        }
+        // Objects without meaningful toString() would return '[object Object]'
+        if (typeof value === 'object') {
+            return null
+        }
+        // Only strings can be parsed as numbers
+        if (typeof value !== 'string') {
+            return null
+        }
+        const num = parseFloat(value)
         return isNaN(num) ? null : num
     }
 

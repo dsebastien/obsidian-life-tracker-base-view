@@ -29,7 +29,7 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
             // Check if property definitions are configured
             if (plugin.settings.propertyDefinitions.length === 0) {
                 new Notice(
-                    'No property definitions configured. Add them in Settings → Life Tracker → Property Definitions.'
+                    'No property definitions configured. Add them in settings > Life Tracker > property definitions.'
                 )
                 return
             }
@@ -37,7 +37,7 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
             const context = detectContext(plugin)
 
             if (!context) {
-                new Notice('Please open a markdown file or a Life Tracker view first')
+                new Notice('Please open a markdown file or a life tracker view first')
                 return
             }
 

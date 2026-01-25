@@ -94,8 +94,12 @@ export class BooleanEditor extends BasePropertyEditor {
     private parseBoolean(value: unknown): boolean {
         if (typeof value === 'boolean') return value
         if (value === null || value === undefined) return false
+        // Objects without meaningful toString() return '[object Object]'
+        if (typeof value === 'object') return false
+        // Only strings can represent boolean values
+        if (typeof value !== 'string') return false
 
-        const strVal = String(value).toLowerCase()
+        const strVal = value.toLowerCase()
         return strVal === 'true' || strVal === 'yes' || strVal === '1'
     }
 

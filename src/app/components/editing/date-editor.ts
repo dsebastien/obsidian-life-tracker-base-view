@@ -51,7 +51,17 @@ export class DateEditor extends BasePropertyEditor {
             return ''
         }
 
-        const strValue = String(value)
+        // Objects without meaningful toString() would return '[object Object]'
+        if (typeof value === 'object') {
+            return ''
+        }
+
+        // Only strings can be date values
+        if (typeof value !== 'string') {
+            return ''
+        }
+
+        const strValue = value
         const isDatetime = this.config.definition.type === 'datetime'
 
         // Try to parse and format

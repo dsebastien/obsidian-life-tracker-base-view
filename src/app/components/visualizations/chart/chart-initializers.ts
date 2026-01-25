@@ -61,7 +61,7 @@ export function initPieChart(
     })
 
     return new Chart(ctx, {
-        type: chartConfig.chartType as ChartType,
+        type: chartConfig.chartType,
         data: {
             labels: pieChartData.labels,
             datasets: [

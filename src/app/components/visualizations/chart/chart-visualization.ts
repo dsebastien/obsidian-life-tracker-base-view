@@ -545,8 +545,8 @@ export class ChartVisualization extends BaseVisualization {
         if (this.chart && this.canvasEl && this.chartContainer) {
             // Clear explicit canvas dimensions (both styles and attributes)
             // to allow Chart.js to properly recalculate size
-            this.canvasEl.style.width = ''
-            this.canvasEl.style.height = ''
+            this.canvasEl.style.removeProperty('width')
+            this.canvasEl.style.removeProperty('height')
             this.canvasEl.removeAttribute('width')
             this.canvasEl.removeAttribute('height')
 

@@ -742,7 +742,7 @@ export class GridView extends BasesView implements FileProvider {
         })
         title.addEventListener('click', (e) => {
             e.preventDefault()
-            this.plugin.app.workspace.getLeaf().openFile(file)
+            void this.plugin.app.workspace.getLeaf().openFile(file)
         })
 
         // Collapse toggle
@@ -1132,7 +1132,7 @@ export class GridView extends BasesView implements FileProvider {
         })
         fileLink.addEventListener('click', (e) => {
             e.preventDefault()
-            this.plugin.app.workspace.getLeaf().openFile(file)
+            void this.plugin.app.workspace.getLeaf().openFile(file)
         })
 
         // Base-selected property cells (read-only, sticky)
@@ -1248,7 +1248,13 @@ export class GridView extends BasesView implements FileProvider {
         } else if (typeof value === 'object') {
             // Handle objects by stringifying to avoid [object Object]
             displayValue = JSON.stringify(value)
+        } else if (typeof value === 'string') {
+            displayValue = value
+        } else if (typeof value === 'number') {
+            displayValue = String(value)
         } else {
+            // bigint, symbol, etc - use string representation
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string -- Intentional: bigint/symbol have meaningful string representations
             displayValue = String(value)
         }
 

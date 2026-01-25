@@ -42,7 +42,7 @@ export class TextEditor extends BasePropertyEditor {
         // Add empty option
         this.selectEl.createEl('option', {
             value: '',
-            text: '— Select —'
+            text: '— Select'
         })
 
         // Determine which values to show in dropdown
@@ -67,15 +67,8 @@ export class TextEditor extends BasePropertyEditor {
             })
         }
 
-        // Set current value (handle null/undefined/object explicitly)
-        let currentValue = ''
-        if (this.config.value != null) {
-            currentValue =
-                typeof this.config.value === 'object'
-                    ? JSON.stringify(this.config.value)
-                    : String(this.config.value)
-        }
-        this.selectEl.value = currentValue
+        // Set current value - convert to string for display
+        this.selectEl.value = this.valueToString(this.config.value)
 
         // Event handlers
         this.selectEl.addEventListener('change', () => {
@@ -102,14 +95,8 @@ export class TextEditor extends BasePropertyEditor {
             placeholder: this.config.definition.description ?? this.getDisplayLabel()
         })
 
-        // Set current value (handle null/undefined/object explicitly)
-        if (this.config.value == null) {
-            this.inputEl.value = ''
-        } else if (typeof this.config.value === 'object') {
-            this.inputEl.value = JSON.stringify(this.config.value)
-        } else {
-            this.inputEl.value = String(this.config.value)
-        }
+        // Set current value - convert to string for display
+        this.inputEl.value = this.valueToString(this.config.value)
 
         // Event handlers
         this.inputEl.addEventListener('input', () => {
@@ -135,10 +122,7 @@ export class TextEditor extends BasePropertyEditor {
     }
 
     setValue(value: unknown): void {
-        let strValue = ''
-        if (value != null) {
-            strValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
-        }
+        const strValue = this.valueToString(value)
         if (this.selectEl) {
             this.selectEl.value = strValue
         } else if (this.inputEl) {
@@ -166,6 +150,28 @@ export class TextEditor extends BasePropertyEditor {
         }
 
         return validateText(value, this.config.definition)
+    }
+
+    /**
+     * Convert any value to a string for display.
+     * Objects are JSON-stringified, primitives use their string representation.
+     */
+    private valueToString(value: unknown): string {
+        if (value == null) {
+            return ''
+        }
+        if (typeof value === 'string') {
+            return value
+        }
+        if (typeof value === 'number' || typeof value === 'boolean') {
+            return String(value)
+        }
+        if (typeof value === 'object') {
+            return JSON.stringify(value)
+        }
+        // For bigint, symbol, etc. - use string coercion
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string -- Intentional: bigint/symbol have meaningful string representations
+        return String(value)
     }
 
     override destroy(): void {
