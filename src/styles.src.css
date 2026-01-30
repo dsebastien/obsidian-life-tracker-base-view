@@ -1,3378 +1,3390 @@
-@import 'tailwindcss';
+/* Tailwind CSS Configuration for Obsidian Plugin
+   - No preflight: prevents resetting Obsidian's base styles and other plugins
+   - Theme reference: provides values for utilities without adding CSS variables to :root
+   - Uses CSS layers to isolate styles from other plugins */
 
-/* ========================================
+/* Define layer order for cascade isolation */
+@layer lt-base, lt-components, lt-utilities;
+
+@import 'tailwindcss/theme' layer(theme) theme(reference);
+@import 'tailwindcss/utilities' layer(lt-utilities);
+
+/* All custom plugin styles go in lt-components layer for proper cascade isolation */
+@layer lt-components {
+    /* ========================================
    UTILITY CLASSES
    ======================================== */
 
-/* Visibility toggle - use instead of inline style.display */
-.lt-hidden {
-    display: none !important;
-}
+    /* Visibility toggle - use instead of inline style.display */
+    .lt-hidden {
+        display: none !important;
+    }
 
-/* Layout utilities - use instead of inline style.display */
-.lt-flex {
-    @apply flex;
-}
+    /* Layout utilities - use instead of inline style.display */
+    .lt-flex {
+        @apply flex;
+    }
 
-/* Note: Grid templates for heatmap are defined in HEATMAP section after base .lt-heatmap-grid */
+    /* Note: Grid templates for heatmap are defined in HEATMAP section after base .lt-heatmap-grid */
 
-/* Flex utilities */
-.lt-flex-shrink-0 {
-    flex-shrink: 0;
-}
+    /* Flex utilities */
+    .lt-flex-shrink-0 {
+        flex-shrink: 0;
+    }
 
-/* ========================================
+    /* ========================================
    SUPPORT & UI SECTIONS
    ======================================== */
 
-/* Support section */
-.support-header-margin {
-    @apply mb-5;
-}
+    /* Support section */
+    .support-header-margin {
+        @apply mb-5;
+    }
 
-/* ========================================
+    /* ========================================
    SETTINGS - VISUALIZATION PRESETS
    ======================================== */
 
-.lt-presets-container {
-    @apply mb-4;
-}
+    .lt-presets-container {
+        @apply mb-4;
+    }
 
-.lt-presets-empty {
-    @apply text-sm py-4 px-3 rounded;
-    color: var(--text-muted);
-    background-color: var(--background-secondary);
-}
+    .lt-presets-empty {
+        @apply text-sm py-4 px-3 rounded;
+        color: var(--text-muted);
+        background-color: var(--background-secondary);
+    }
 
-.lt-preset-name-input {
-    @apply w-32;
-}
+    .lt-preset-name-input {
+        @apply w-32;
+    }
 
-/* ========================================
+    /* ========================================
    SETTINGS - TABS
    ======================================== */
 
-.lt-settings {
-    @apply flex flex-col;
-}
+    .lt-settings {
+        @apply flex flex-col;
+    }
 
-.lt-settings-nav {
-    @apply flex gap-1 mb-4 pb-2;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
+    .lt-settings-nav {
+        @apply flex gap-1 mb-4 pb-2;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
 
-.lt-settings-nav-tab {
-    @apply px-4 py-2 rounded-t cursor-pointer transition-all duration-150;
-    color: var(--text-muted);
-}
+    .lt-settings-nav-tab {
+        @apply px-4 py-2 rounded-t cursor-pointer transition-all duration-150;
+        color: var(--text-muted);
+    }
 
-.lt-settings-nav-tab:hover {
-    color: var(--text-normal);
-    background-color: var(--background-modifier-hover);
-}
+    .lt-settings-nav-tab:hover {
+        color: var(--text-normal);
+        background-color: var(--background-modifier-hover);
+    }
 
-.lt-settings-nav-tab--active {
-    @apply font-medium;
-    color: var(--text-normal);
-    background-color: var(--background-secondary);
-}
+    .lt-settings-nav-tab--active {
+        @apply font-medium;
+        color: var(--text-normal);
+        background-color: var(--background-secondary);
+    }
 
-.lt-settings-content {
-    @apply flex flex-col;
-}
+    .lt-settings-content {
+        @apply flex flex-col;
+    }
 
-/* ========================================
+    /* ========================================
    LIFE TRACKER VIEW
    ======================================== */
 
-/* Container - no scrolling, content fits naturally */
-.lt-container {
-    @apply flex flex-col gap-4 p-4 overflow-visible;
-}
+    /* Container - no scrolling, content fits naturally */
+    .lt-container {
+        @apply flex flex-col gap-4 p-4 overflow-visible;
+    }
 
-/* ========================================
+    /* ========================================
    CONTROL BAR (Compact Header)
    ======================================== */
 
-.lt-control-bar {
-    @apply flex items-center justify-between mb-2 pb-1;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.lt-control-bar-left {
-    @apply flex items-center gap-2;
-}
-
-.lt-control-bar-right {
-    @apply flex items-center gap-3;
-}
-
-.lt-control-group {
-    @apply flex items-center gap-1;
-}
-
-.lt-control-icon {
-    @apply w-3.5 h-3.5 opacity-60;
-    color: var(--text-muted);
-}
-
-.lt-control-icon svg {
-    @apply w-3.5 h-3.5;
-}
-
-.lt-control-btn {
-    @apply w-5 h-5 p-0 flex items-center justify-center rounded;
-    @apply cursor-pointer transition-colors duration-150;
-    background-color: var(--background-modifier-hover);
-    border: none;
-    color: var(--text-normal);
-}
-
-.lt-control-btn:hover {
-    background-color: var(--interactive-hover);
-}
-
-.lt-control-btn svg {
-    @apply w-2.5 h-2.5;
-}
-
-/* Overlay button variant - wider with text label */
-.lt-control-btn--overlay {
-    @apply w-auto h-auto px-2 py-1 gap-1.5;
-}
-
-.lt-control-btn--overlay svg {
-    @apply w-3 h-3;
-}
-
-.lt-control-btn-label {
-    @apply text-xs font-medium;
-}
-
-/* Hide label on very small screens */
-@media (max-width: 400px) {
-    .lt-control-btn-label {
-        @apply hidden;
-    }
-
-    .lt-control-btn--overlay {
-        @apply w-6 h-6 p-0;
-    }
-}
-
-.lt-control-value {
-    @apply text-xs font-medium min-w-[1.25rem] text-center;
-    color: var(--text-normal);
-}
-
-.lt-control-slider {
-    @apply w-16 h-1 rounded-full cursor-pointer appearance-none;
-    background-color: var(--background-modifier-border);
-}
-
-.lt-control-slider::-webkit-slider-thumb {
-    @apply w-2.5 h-2.5 rounded-full cursor-pointer appearance-none;
-    background-color: var(--interactive-accent);
-}
-
-.lt-control-slider::-moz-range-thumb {
-    @apply w-2.5 h-2.5 rounded-full cursor-pointer border-0 appearance-none;
-    background-color: var(--interactive-accent);
-}
-
-.lt-control-select {
-    @apply text-xs py-0.5 px-2 rounded cursor-pointer;
-    @apply border-0 outline-none appearance-none;
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 4px center;
-    padding-right: 20px;
-    min-width: 100px;
-}
-
-.lt-control-select:hover {
-    background-color: var(--interactive-hover);
-}
-
-.lt-control-select:focus {
-    outline: 1px solid var(--interactive-accent);
-}
-
-/* ========================================
-   GRID LAYOUT
-   ======================================== */
-
-.lt-grid {
-    @apply grid gap-4;
-    /* CSS custom property set by JS */
-    --lt-grid-columns: 2;
-    grid-template-columns: repeat(var(--lt-grid-columns), 1fr);
-}
-
-/* ========================================
-   CARD COMPONENT
-   ======================================== */
-
-.lt-card {
-    @apply rounded-lg p-4 overflow-hidden;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    min-height: 200px;
-}
-
-.lt-card:hover {
-    border-color: var(--background-modifier-border-hover);
-}
-
-/* Card content should fill available space */
-.lt-card > .lt-section {
-    @apply h-full flex flex-col min-h-0;
-}
-
-/* ========================================
-   MAXIMIZED CARD STATE
-   ======================================== */
-
-/* Container when a card is maximized */
-.lt-container--has-maximized {
-    @apply relative;
-}
-
-.lt-container--has-maximized .lt-grid {
-    @apply relative;
-}
-
-/* Hidden cards when another is maximized */
-.lt-card--hidden {
-    @apply hidden;
-}
-
-/* Maximized card - fullscreen overlay */
-.lt-card--maximized {
-    @apply fixed inset-4 z-50 p-6 flex flex-col overflow-auto shadow-2xl;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    min-height: auto;
-}
-
-.lt-card--maximized > .lt-section {
-    @apply flex-1 flex flex-col;
-}
-
-/* Maximized card header adjustments */
-.lt-card--maximized .lt-section-header {
-    @apply mb-4 pb-3;
-}
-
-.lt-card--maximized .lt-section-title {
-    @apply text-base;
-}
-
-/* Maximize button styling when maximized */
-.lt-card--maximized .lt-maximize-btn {
-    @apply opacity-100;
-}
-
-/* Backdrop overlay */
-.lt-container--has-maximized::before {
-    content: '';
-    @apply fixed inset-0 z-40 pointer-events-none;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-/* ========================================
-   COLUMN CONFIGURATION CARD
-   ======================================== */
-
-.lt-config-card {
-    @apply flex flex-col items-center justify-center;
-}
-
-.lt-config-card-header {
-    @apply flex flex-col items-center gap-1 mb-4;
-}
-
-.lt-config-card-title {
-    @apply text-base font-semibold;
-    color: var(--text-normal);
-}
-
-.lt-config-card-subtitle {
-    @apply text-sm;
-    color: var(--text-muted);
-}
-
-.lt-config-card-options {
-    @apply grid gap-2 w-full max-w-[400px];
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-}
-
-.lt-config-option {
-    @apply flex flex-col items-center gap-2 p-3 rounded-lg cursor-pointer;
-    @apply transition-all duration-150;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-}
-
-.lt-config-option:hover {
-    background-color: var(--background-modifier-hover);
-    border-color: var(--interactive-accent);
-}
-
-.lt-config-option:focus {
-    @apply outline-none;
-    border-color: var(--interactive-accent);
-    box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
-}
-
-.lt-config-option-icon {
-    @apply w-6 h-6;
-    color: var(--text-muted);
-}
-
-.lt-config-option-icon svg {
-    @apply w-6 h-6;
-}
-
-.lt-config-option:hover .lt-config-option-icon {
-    color: var(--interactive-accent);
-}
-
-.lt-config-option-label {
-    @apply text-xs font-medium text-center;
-    color: var(--text-normal);
-}
-
-/* Scale configuration section */
-.lt-config-scale-section {
-    @apply w-full;
-}
-
-.lt-scale-form {
-    @apply flex flex-col gap-3;
-}
-
-.lt-scale-info {
-    @apply text-sm text-center;
-    color: var(--text-muted);
-}
-
-.lt-scale-inputs {
-    @apply flex items-center justify-center gap-4;
-}
-
-.lt-scale-input-group {
-    @apply flex items-center gap-2;
-}
-
-.lt-scale-label {
-    @apply text-sm font-medium;
-    color: var(--text-muted);
-}
-
-.lt-scale-input {
-    @apply w-20 px-2 py-1 rounded text-sm text-center;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-scale-input:focus {
-    @apply outline-none;
-    border-color: var(--interactive-accent);
-}
-
-.lt-scale-input::placeholder {
-    color: var(--text-faint);
-}
-
-.lt-scale-presets {
-    @apply flex items-center justify-center gap-2 flex-wrap;
-}
-
-.lt-scale-presets-label {
-    @apply text-xs;
-    color: var(--text-muted);
-}
-
-.lt-scale-preset-btn {
-    @apply px-2 py-0.5 text-xs rounded cursor-pointer;
-    @apply transition-colors duration-150;
-    background-color: var(--background-modifier-hover);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-muted);
-}
-
-.lt-scale-preset-btn:hover {
-    background-color: var(--interactive-hover);
-    border-color: var(--interactive-accent);
-    color: var(--text-normal);
-}
-
-.lt-scale-buttons {
-    @apply flex items-center justify-center gap-3 mt-2;
-}
-
-.lt-scale-btn {
-    @apply px-4 py-1.5 text-sm font-medium rounded cursor-pointer;
-    @apply transition-colors duration-150;
-    border: 1px solid var(--background-modifier-border);
-}
-
-.lt-scale-btn--secondary {
-    background-color: var(--background-primary);
-    color: var(--text-muted);
-}
-
-.lt-scale-btn--secondary:hover {
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-}
-
-.lt-scale-btn--primary {
-    background-color: var(--interactive-accent);
-    border-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-}
-
-.lt-scale-btn--primary:hover {
-    opacity: 0.9;
-}
-
-/* ========================================
-   SCALE MODAL (for context menu)
-   ======================================== */
-
-.lt-scale-modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.lt-scale-modal {
-    @apply flex flex-col gap-4 p-5 rounded-lg shadow-xl;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    min-width: 280px;
-}
-
-.lt-scale-modal-header {
-    @apply text-base font-semibold;
-    color: var(--text-normal);
-}
-
-.lt-scale-modal-form {
-    @apply flex flex-col gap-3;
-}
-
-.lt-scale-modal-input-group {
-    @apply flex items-center gap-3;
-}
-
-.lt-scale-modal-input-group span {
-    @apply text-sm font-medium w-10;
-    color: var(--text-muted);
-}
-
-.lt-scale-modal-input {
-    @apply flex-1 px-3 py-2 rounded text-sm;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-scale-modal-input:focus {
-    @apply outline-none;
-    border-color: var(--interactive-accent);
-}
-
-.lt-scale-modal-input::placeholder {
-    color: var(--text-faint);
-}
-
-.lt-scale-modal-buttons {
-    @apply flex items-center justify-end gap-2 mt-2;
-}
-
-.lt-scale-modal-btn {
-    @apply px-4 py-2 text-sm font-medium rounded cursor-pointer;
-    @apply transition-colors duration-150;
-    border: 1px solid var(--background-modifier-border);
-}
-
-.lt-scale-modal-btn--secondary {
-    background-color: var(--background-secondary);
-    color: var(--text-normal);
-}
-
-.lt-scale-modal-btn--secondary:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-scale-modal-btn--primary {
-    background-color: var(--interactive-accent);
-    border-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-}
-
-.lt-scale-modal-btn--primary:hover {
-    opacity: 0.9;
-}
-
-/* Scale modal mobile responsive styles */
-@media (max-width: 480px) {
-    .lt-scale-modal {
-        @apply mx-3;
-        min-width: auto;
-        width: calc(100vw - 24px);
-        max-width: 320px;
-    }
-
-    .lt-scale-modal-header {
-        @apply text-sm;
-    }
-
-    .lt-scale-modal-input-group {
-        @apply gap-2;
-    }
-
-    .lt-scale-modal-input {
-        @apply px-2 py-1.5 text-sm;
-    }
-
-    .lt-scale-modal-btn {
-        @apply px-3 py-1.5 text-xs;
-    }
-}
-
-/* ========================================
-   CARD POPOVER (two-column context menu)
-   ======================================== */
-
-.lt-card-popover-overlay {
-    @apply fixed inset-0 z-50;
-    background-color: rgba(0, 0, 0, 0.3);
-}
-
-.lt-card-popover {
-    @apply fixed flex flex-col rounded-lg shadow-xl;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    min-width: 576px;
-    max-width: 692px;
-    max-height: 484px;
-}
-
-.lt-card-popover-header {
-    @apply flex items-center justify-between gap-3 px-4 py-3;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.lt-card-popover-btn {
-    @apply flex items-center gap-2 px-3 py-1.5 text-sm rounded cursor-pointer;
-    @apply transition-colors duration-150;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-card-popover-btn:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-card-popover-btn--warning {
-    color: var(--text-error);
-}
-
-.lt-card-popover-body {
-    @apply flex flex-1 overflow-hidden;
-}
-
-.lt-card-popover-column {
-    @apply flex flex-col py-3;
-}
-
-.lt-card-popover-column--left {
-    @apply flex-1;
-    border-right: 1px solid var(--background-modifier-border);
-    min-width: 180px;
-}
-
-.lt-card-popover-column--right {
-    @apply flex-1;
-    min-width: 120px;
-}
-
-.lt-card-popover-column-title {
-    @apply px-4 pb-2 text-xs font-medium uppercase tracking-wide;
-    color: var(--text-muted);
-}
-
-.lt-card-popover-type-list {
-    @apply flex-1 overflow-y-auto px-2;
-}
-
-.lt-card-popover-type-item {
-    @apply flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer;
-    @apply transition-colors duration-100;
-    color: var(--text-normal);
-}
-
-.lt-card-popover-type-item:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-card-popover-type-item--selected {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-card-popover-type-icon {
-    @apply flex items-center justify-center w-4 h-4;
-    color: var(--text-muted);
-}
-
-.lt-card-popover-type-item--selected .lt-card-popover-type-icon {
-    color: var(--text-accent);
-}
-
-.lt-card-popover-type-label {
-    @apply flex-1 text-sm;
-}
-
-.lt-card-popover-type-check {
-    @apply flex items-center justify-center w-4 h-4;
-    color: var(--text-accent);
-}
-
-.lt-card-popover-options {
-    @apply flex flex-col gap-3 px-2;
-}
-
-.lt-card-popover-option-group {
-    @apply flex flex-col gap-1;
-}
-
-.lt-card-popover-option-group label {
-    @apply text-xs font-medium;
-    color: var(--text-muted);
-}
-
-.lt-card-popover-select {
-    @apply text-sm rounded cursor-pointer;
-    background-color: var(--interactive-normal);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-card-popover-select:hover {
-    background-color: var(--interactive-hover);
-}
-
-.lt-card-popover-select:focus {
-    @apply outline-none;
-    border-color: var(--interactive-accent);
-}
-
-.lt-card-popover-no-options {
-    @apply text-sm italic px-4;
-    color: var(--text-muted);
-}
-
-/* Card popover mobile responsive styles */
-@media (max-width: 640px) {
-    .lt-card-popover {
-        @apply rounded-lg;
-        min-width: auto;
-        max-width: calc(100vw - 24px);
-        max-height: calc(100vh - 24px);
-        width: calc(100vw - 24px);
-    }
-
-    .lt-card-popover-header {
-        @apply flex-wrap gap-2 px-3 py-2;
-    }
-
-    .lt-card-popover-btn {
-        @apply px-2 py-1 text-xs;
-    }
-
-    .lt-card-popover-body {
-        @apply flex-col;
-    }
-
-    .lt-card-popover-column--left {
-        @apply border-r-0;
-        border-bottom: 1px solid var(--background-modifier-border);
-        min-width: auto;
-        max-height: 200px;
-    }
-
-    .lt-card-popover-column--right {
-        min-width: auto;
-    }
-
-    .lt-card-popover-column-title {
-        @apply px-3 pb-1 text-[10px];
-    }
-
-    .lt-card-popover-type-list {
-        @apply px-1;
-    }
-
-    .lt-card-popover-type-item {
-        @apply px-2 py-1;
-    }
-
-    .lt-card-popover-type-label {
-        @apply text-xs;
-    }
-
-    .lt-card-popover-options {
-        @apply gap-2 px-1;
-    }
-
-    .lt-card-popover-option-group label {
-        @apply text-[10px];
-    }
-
-    .lt-card-popover-select {
-        @apply text-xs;
-    }
-
-    .lt-card-popover-no-options {
-        @apply text-xs px-3;
-    }
-}
-
-/* Card popover extra small screens - near fullscreen */
-@media (max-width: 480px) {
-    .lt-card-popover {
-        @apply fixed inset-3 rounded-lg;
-        width: auto !important;
-        height: auto !important;
-        max-width: none;
-        max-height: none;
-        left: 12px !important;
-        top: 12px !important;
-        right: 12px;
-        bottom: 12px;
-    }
-
-    .lt-card-popover-header {
-        @apply justify-start;
-    }
-
-    .lt-card-popover-body {
-        @apply flex-1 overflow-hidden;
-    }
-
-    .lt-card-popover-column--left {
-        @apply flex-none;
-        max-height: 180px;
-        overflow-y: auto;
-    }
-
-    .lt-card-popover-column--right {
-        @apply flex-1 overflow-y-auto;
-    }
-}
-
-/* Overlay context menu variant */
-.lt-card-popover--overlay {
-    @apply w-auto min-w-[240px] max-w-[300px];
-}
-
-.lt-card-popover--overlay .lt-card-popover-header {
-    @apply flex items-center justify-between gap-4 flex-nowrap;
-}
-
-.lt-card-popover--overlay .lt-card-popover-title {
-    @apply text-sm font-semibold truncate flex-1 min-w-0;
-    color: var(--text-normal);
-}
-
-.lt-card-popover-body--single {
-    @apply p-4;
-}
-
-.lt-card-popover-body--single .lt-card-popover-type-list {
-    @apply gap-1;
-}
-
-/* ========================================
-   SECTION (inside cards)
-   ======================================== */
-
-/* Section */
-.lt-section {
-    @apply mb-0;
-}
-
-.lt-section-header {
-    @apply flex items-center justify-between mb-3 pb-2;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.lt-section-title {
-    @apply text-sm font-semibold uppercase tracking-wide;
-    color: var(--text-muted);
-}
-
-.lt-section-actions {
-    @apply flex items-center gap-1;
-}
-
-/* Play button */
-.lt-play-btn {
-    @apply w-6 h-6 flex items-center justify-center rounded cursor-pointer;
-    @apply transition-all duration-150 opacity-60;
-    color: var(--text-muted);
-}
-
-.lt-play-btn:hover {
-    @apply opacity-100;
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-}
-
-.lt-play-btn:focus {
-    @apply outline-none opacity-100;
-    box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
-}
-
-.lt-play-btn svg {
-    @apply w-4 h-4;
-}
-
-/* Playing state - pulsing animation */
-.lt-play-btn--playing {
-    @apply opacity-100;
-    color: var(--interactive-accent);
-    animation: lt-pulse 1s ease-in-out infinite;
-}
-
-.lt-play-btn--playing:hover {
-    color: var(--interactive-accent);
-}
-
-@keyframes lt-pulse {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-/* Maximize button */
-.lt-maximize-btn {
-    @apply w-6 h-6 flex items-center justify-center rounded cursor-pointer;
-    @apply transition-colors duration-150 opacity-60;
-    color: var(--text-muted);
-}
-
-.lt-maximize-btn:hover {
-    @apply opacity-100;
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-}
-
-.lt-maximize-btn:focus {
-    @apply outline-none opacity-100;
-    box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
-}
-
-.lt-maximize-btn svg {
-    @apply w-4 h-4;
-}
-
-/* ========================================
-   HEATMAP VISUALIZATION
-   ======================================== */
-
-.lt-heatmap {
-    @apply flex flex-col gap-2 overflow-x-auto;
-}
-
-.lt-heatmap-wrapper {
-    @apply flex gap-1;
-}
-
-.lt-heatmap-grid {
-    @apply flex gap-0.5;
-}
-
-/* Grid templates for monthly/quarterly heatmaps - must be after base .lt-heatmap-grid to override display */
-.lt-heatmap-grid--monthly,
-.lt-heatmap-grid--quarterly {
-    @apply grid;
-}
-
-.lt-heatmap-grid--monthly {
-    grid-template-columns: repeat(12, 1fr);
-}
-
-.lt-heatmap-grid--quarterly {
-    grid-template-columns: repeat(4, 1fr);
-}
-
-.lt-heatmap-week {
-    @apply flex flex-col gap-0.5;
-}
-
-.lt-heatmap-cell {
-    @apply w-3 h-3 rounded-sm cursor-pointer;
-    @apply transition-all duration-150;
-    background-color: var(--background-modifier-border);
-}
-
-.lt-heatmap-cell:hover {
-    @apply ring-2 ring-offset-1;
-    --tw-ring-color: var(--interactive-accent);
-    --tw-ring-offset-color: var(--background-primary);
-}
-
-/* Placeholder cell for grid layout when showEmptyValues is false */
-/* Shows the grid background but is non-interactive (no hover, no tooltip) */
-.lt-heatmap-placeholder {
-    @apply block rounded-sm flex-shrink-0;
-    background-color: var(--lt-heatmap-empty, var(--background-modifier-border));
-    pointer-events: none;
-}
-
-.lt-heatmap-cell--has-data:hover {
-    @apply scale-110;
-}
-
-/* Heatmap color levels */
-.lt-heatmap-cell--level-0 {
-    background-color: var(--lt-heatmap-empty, var(--background-modifier-border));
-}
-
-.lt-heatmap-cell--level-1 {
-    background-color: var(--lt-heatmap-level-1, #9be9a8);
-}
-
-.lt-heatmap-cell--level-2 {
-    background-color: var(--lt-heatmap-level-2, #40c463);
-}
-
-.lt-heatmap-cell--level-3 {
-    background-color: var(--lt-heatmap-level-3, #30a14e);
-}
-
-.lt-heatmap-cell--level-4 {
-    background-color: var(--lt-heatmap-level-4, #216e39);
-}
-
-/* Dark theme heatmap colors */
-.theme-dark .lt-heatmap-cell--level-1 {
-    background-color: var(--lt-heatmap-level-1, #0e4429);
-}
-
-.theme-dark .lt-heatmap-cell--level-2 {
-    background-color: var(--lt-heatmap-level-2, #006d32);
-}
-
-.theme-dark .lt-heatmap-cell--level-3 {
-    background-color: var(--lt-heatmap-level-3, #26a641);
-}
-
-.theme-dark .lt-heatmap-cell--level-4 {
-    background-color: var(--lt-heatmap-level-4, #39d353);
-}
-
-/* Heatmap labels */
-.lt-heatmap-months {
-    @apply flex items-center text-xs mb-1;
-    color: var(--text-muted);
-}
-
-.lt-heatmap-month-labels {
-    /* Gap is set dynamically in JS to match config.cellGap */
-    @apply flex;
-}
-
-.lt-heatmap-month-slot {
-    /* Width is set dynamically in JS to match config.cellSize */
-    /* Allow text to overflow into adjacent empty slots */
-    @apply flex-shrink-0 overflow-visible;
-}
-
-.lt-heatmap-month-label {
-    @apply text-xs;
-    color: var(--text-muted);
-}
-
-.lt-heatmap-month-spacer {
-    @apply flex-shrink-0;
-}
-
-.lt-heatmap-days {
-    /* Gap is set dynamically in JS to match config.cellGap */
-    @apply flex flex-col text-xs pr-1;
-    color: var(--text-muted);
-}
-
-.lt-heatmap-day-label {
-    @apply text-xs text-right;
-    color: var(--text-muted);
-}
-
-.lt-heatmap-legend {
-    @apply flex items-center gap-1 text-xs mt-2;
-    color: var(--text-muted);
-}
-
-/* Heatmap grid variants */
-.lt-heatmap-grid--weekly,
-.lt-heatmap-grid--yearly {
-    @apply flex-row flex-wrap;
-}
-
-.lt-heatmap-grid--monthly,
-.lt-heatmap-grid--quarterly {
-    @apply gap-1;
-}
-
-/* ========================================
-   CHART VISUALIZATION
-   ======================================== */
-
-.lt-chart {
-    @apply w-full flex-1;
-    min-height: 150px; /* Minimum height for chart visibility */
-}
-
-.lt-chart-header {
-    @apply flex items-center justify-between mb-3;
-}
-
-.lt-chart-title {
-    @apply text-sm font-medium;
-    color: var(--text-normal);
-}
-
-.lt-chart-canvas {
-    @apply w-full;
-    max-height: 100%;
-}
-
-/* ========================================
-   TAG CLOUD VISUALIZATION
-   ======================================== */
-
-.lt-tag-cloud {
-    @apply flex flex-wrap gap-2;
-}
-
-.lt-tag {
-    @apply px-2 py-1 rounded-full cursor-pointer;
-    @apply transition-all duration-150;
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-}
-
-.lt-tag:hover {
-    @apply scale-105;
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-}
-
-/* Tag size variants */
-.lt-tag--xs {
-    @apply text-xs;
-}
-
-.lt-tag--sm {
-    @apply text-sm;
-}
-
-.lt-tag--md {
-    @apply text-base;
-}
-
-.lt-tag--lg {
-    @apply text-lg;
-}
-
-.lt-tag--xl {
-    @apply text-xl;
-}
-
-/* ========================================
-   TIMELINE VISUALIZATION
-   ======================================== */
-
-.lt-timeline {
-    @apply relative py-8 px-4;
-    height: 80px; /* Fixed compact height for timeline */
-}
-
-.lt-timeline-line {
-    @apply absolute left-4 right-4 h-0.5;
-    top: 50%;
-    background-color: var(--background-modifier-border);
-}
-
-.lt-timeline-point {
-    @apply absolute w-3 h-3 rounded-full cursor-pointer;
-    @apply transition-all duration-150;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    background-color: var(--lt-timeline-point-color, var(--interactive-accent));
-}
-
-.lt-timeline-point:hover {
-    @apply scale-150;
-    box-shadow: 0 0 0 4px var(--background-modifier-hover);
-}
-
-.lt-timeline-label {
-    @apply absolute text-xs whitespace-nowrap;
-    bottom: 10px;
-    color: var(--text-muted);
-}
-
-.lt-timeline-label--start {
-    left: 1rem;
-}
-
-.lt-timeline-label--end {
-    right: 1rem;
-}
-
-/* ========================================
-   SHARED COMPONENTS
-   ======================================== */
-
-/* Tooltip */
-.lt-tooltip {
-    @apply fixed z-50 px-3 py-2 rounded-lg shadow-lg;
-    @apply text-sm pointer-events-none;
-    @apply opacity-0 transition-opacity duration-150;
-    transform: translate(-50%, -100%);
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-tooltip--visible {
-    @apply opacity-100;
-}
-
-.lt-tooltip-title {
-    @apply font-medium mb-1;
-}
-
-.lt-tooltip-value {
-    color: var(--text-accent);
-}
-
-.lt-tooltip-subtitle {
-    @apply text-xs mt-1;
-    color: var(--text-muted);
-}
-
-/* Empty state */
-.lt-empty {
-    @apply flex flex-col items-center justify-center py-12 text-center;
-    color: var(--text-muted);
-}
-
-.lt-empty-icon {
-    @apply text-4xl mb-4 opacity-50;
-}
-
-.lt-empty-text {
-    @apply text-sm;
-}
-
-/* Loading state */
-.lt-loading {
-    @apply flex items-center justify-center py-8;
-}
-
-.lt-loading-spinner {
-    @apply w-6 h-6 animate-spin rounded-full;
-    border: 2px solid var(--background-modifier-border);
-    border-top-color: var(--interactive-accent);
-}
-
-/* Error state */
-.lt-error {
-    @apply flex flex-col items-center justify-center py-8 text-center;
-    color: var(--text-error);
-}
-
-.lt-error-icon {
-    @apply text-2xl mb-2;
-}
-
-.lt-error-message {
-    @apply text-sm font-medium;
-}
-
-.lt-error-details {
-    @apply text-xs mt-1;
-    color: var(--text-muted);
-}
-
-/* ========================================
-   RESPONSIVE ADJUSTMENTS
-   ======================================== */
-
-/* Embedded view (smaller space) */
-.lt-embedded .lt-heatmap-cell {
-    @apply w-2.5 h-2.5;
-}
-
-.lt-embedded .lt-chart {
-    @apply p-2;
-}
-
-/* Mobile adjustments */
-@media (max-width: 640px) {
-    .lt-container {
-        @apply p-2 gap-3;
-    }
-
     .lt-control-bar {
-        @apply flex-wrap gap-2;
+        @apply flex items-center justify-between mb-2 pb-1;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-control-bar-left {
+        @apply flex items-center gap-2;
     }
 
     .lt-control-bar-right {
-        @apply gap-2;
+        @apply flex items-center gap-3;
     }
 
-    .lt-control-slider {
-        @apply w-16;
+    .lt-control-group {
+        @apply flex items-center gap-1;
     }
 
-    .lt-grid {
-        @apply gap-3;
-        /* Force single column on mobile */
-        grid-template-columns: 1fr !important;
+    .lt-control-icon {
+        @apply w-3.5 h-3.5 opacity-60;
+        color: var(--text-muted);
     }
 
-    .lt-card {
-        @apply p-3;
-        min-height: auto;
+    .lt-control-icon svg {
+        @apply w-3.5 h-3.5;
     }
 
-    .lt-heatmap-cell {
-        @apply w-2 h-2;
+    .lt-control-btn {
+        @apply w-5 h-5 p-0 flex items-center justify-center rounded;
+        @apply cursor-pointer transition-colors duration-150;
+        background-color: var(--background-modifier-hover);
+        border: none;
+        color: var(--text-normal);
     }
 
-    .lt-tag-cloud {
-        @apply gap-1;
+    .lt-control-btn:hover {
+        background-color: var(--interactive-hover);
     }
 
-    .lt-tag {
-        @apply px-1.5 py-0.5 text-xs;
+    .lt-control-btn svg {
+        @apply w-2.5 h-2.5;
     }
 
-    .lt-timeline {
-        @apply px-2;
-    }
-}
-
-/* ========================================
-   PROPERTY DEFINITIONS (Settings Tab)
-   ======================================== */
-
-.lt-property-definitions-container {
-    @apply mb-4;
-}
-
-.lt-property-definitions-empty {
-    @apply text-sm py-4 px-3 rounded;
-    color: var(--text-muted);
-    background-color: var(--background-secondary);
-}
-
-.lt-property-definition-item {
-    @apply mb-4 pb-4 rounded cursor-grab transition-all duration-150;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.lt-property-definition-item--dragging {
-    @apply opacity-50 cursor-grabbing;
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-property-definition-item--drag-over {
-    @apply border-t-2;
-    border-top-color: var(--interactive-accent);
-}
-
-.lt-property-header {
-    @apply py-1;
-}
-
-.lt-property-header .setting-item-control {
-    @apply gap-2;
-}
-
-.lt-property-drag-handle {
-    @apply p-1 cursor-grab;
-    background: transparent !important;
-    box-shadow: none !important;
-    color: var(--text-faint);
-}
-
-.lt-property-drag-handle:hover {
-    color: var(--text-muted);
-    background-color: var(--background-modifier-hover) !important;
-}
-
-.lt-property-drag-handle:active {
-    @apply cursor-grabbing;
-}
-
-.lt-property-chevron {
-    @apply p-1;
-    background: transparent !important;
-    box-shadow: none !important;
-}
-
-.lt-property-chevron:hover {
-    background-color: var(--background-modifier-hover) !important;
-}
-
-.lt-property-name-input {
-    @apply w-40;
-}
-
-.lt-property-details {
-    @apply ml-8 mt-2 pl-4;
-    border-left: 2px solid var(--background-modifier-border);
-}
-
-.lt-property-type-options {
-    @apply mt-2;
-}
-
-.lt-constraint-input {
-    @apply w-20;
-}
-
-/* Value Mapping */
-.lt-value-mapping-container {
-    @apply mt-2 p-3 rounded;
-    background-color: var(--background-primary-alt);
-}
-
-.lt-value-mapping-empty {
-    @apply text-sm italic opacity-80;
-    color: var(--text-muted);
-}
-
-.lt-value-mapping-list {
-    @apply flex flex-col gap-2 mt-2;
-}
-
-.lt-value-mapping-arrow {
-    @apply text-sm opacity-60 mx-2;
-    color: var(--text-muted);
-}
-
-/* ========================================
-   PROPERTY MAPPINGS (Note Filtering)
-   ======================================== */
-
-.lt-mappings-container {
-    @apply mt-4 pt-4;
-    border-top: 1px dashed var(--background-modifier-border);
-}
-
-.lt-mappings-empty {
-    @apply text-xs py-2 px-3 rounded mt-2 italic;
-    color: var(--text-muted);
-    background-color: var(--background-primary-alt);
-}
-
-.lt-mappings-list {
-    @apply mt-2;
-}
-
-.lt-mapping-item {
-    @apply py-1;
-}
-
-.lt-mapping-item .setting-item-control {
-    @apply gap-2;
-}
-
-.lt-mapping-value-input {
-    @apply w-40;
-}
-
-/* ========================================
-   PROPERTY EDITORS
-   ======================================== */
-
-.lt-editor-input {
-    @apply w-full px-2 py-1.5 rounded text-sm;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-editor-input:focus {
-    @apply outline-none;
-    border-color: var(--interactive-accent);
-}
-
-.lt-editor-input--compact {
-    @apply px-1.5 py-1;
-}
-
-.lt-editor-input--number {
-    @apply w-24;
-}
-
-.lt-editor-input--date {
-    @apply w-40;
-}
-
-.lt-editor-input--invalid {
-    border-color: var(--text-error);
-}
-
-.lt-editor-select {
-    @apply w-full px-2 py-1.5 rounded text-sm cursor-pointer;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-    line-height: 1.4;
-    height: auto;
-}
-
-.lt-editor-select:focus {
-    @apply outline-none;
-    border-color: var(--interactive-accent);
-}
-
-.lt-editor-select--compact {
-    @apply px-1.5 py-1;
-}
-
-/* Number editor with slider */
-.lt-editor-number-wrapper {
-    @apply flex items-center gap-3;
-}
-
-.lt-editor-slider {
-    @apply flex-1 h-4 rounded-full cursor-pointer appearance-none;
-    /* Use a gradient to create a thin track line centered in the element */
-    background: linear-gradient(
-        to bottom,
-        transparent calc(50% - 4px),
-        var(--background-modifier-border) calc(50% - 4px),
-        var(--background-modifier-border) calc(50% + 4px),
-        transparent calc(50% + 4px)
-    );
-}
-
-.lt-editor-slider::-webkit-slider-thumb {
-    @apply w-4 h-4 rounded-full cursor-pointer appearance-none;
-    background-color: var(--interactive-accent);
-}
-
-.lt-editor-slider::-moz-range-thumb {
-    @apply w-4 h-4 rounded-full cursor-pointer border-0 appearance-none;
-    background-color: var(--interactive-accent);
-}
-
-/* Boolean toggle */
-.lt-editor-toggle {
-    @apply inline-flex items-center cursor-pointer rounded-full;
-    @apply transition-colors duration-200;
-    width: 44px;
-    height: 24px;
-    padding: 2px;
-    background-color: var(--background-modifier-border);
-}
-
-.lt-editor-toggle:focus {
-    @apply outline-none;
-    box-shadow: 0 0 0 2px var(--interactive-accent);
-}
-
-.lt-editor-toggle--on {
-    background-color: var(--interactive-accent);
-}
-
-.lt-editor-toggle-track {
-    @apply relative w-full h-full;
-}
-
-.lt-editor-toggle-thumb {
-    @apply absolute w-5 h-5 rounded-full;
-    @apply transition-transform duration-200;
-    background-color: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.lt-editor-toggle--on .lt-editor-toggle-thumb {
-    transform: translateX(20px);
-}
-
-.lt-editor-checkbox-wrapper {
-    @apply flex items-center cursor-pointer;
-}
-
-.lt-editor-checkbox {
-    @apply w-4 h-4 cursor-pointer;
-}
-
-/* List/Tags editor */
-.lt-editor-list {
-    @apply flex flex-wrap items-center gap-1 p-1 rounded min-h-[32px];
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-}
-
-.lt-editor-list:focus-within {
-    border-color: var(--interactive-accent);
-}
-
-.lt-editor-list--compact {
-    @apply min-h-[28px] p-0.5;
-}
-
-.lt-editor-list-pills {
-    @apply flex flex-wrap gap-1;
-}
-
-.lt-editor-list-pill {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs;
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-}
-
-.lt-editor-list-pill-text {
-    @apply max-w-[100px] truncate;
-}
-
-.lt-editor-list-pill-remove {
-    @apply cursor-pointer opacity-70 hover:opacity-100 font-bold;
-}
-
-.lt-editor-list-input {
-    @apply flex-1 min-w-[60px] px-1 py-0.5 text-sm bg-transparent border-none;
-    color: var(--text-normal);
-}
-
-.lt-editor-list-input:focus {
-    @apply outline-none;
-}
-
-.lt-editor-list-suggestions {
-    @apply absolute z-50 mt-1 rounded-lg shadow-lg overflow-hidden max-h-40 overflow-y-auto;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    min-width: 120px;
-}
-
-.lt-editor-list-suggestion {
-    @apply px-3 py-2 text-sm cursor-pointer;
-    color: var(--text-normal);
-}
-
-.lt-editor-list-suggestion:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-/* ========================================
-   CAPTURE MODAL
-   ======================================== */
-
-.lt-capture-modal {
-    @apply flex flex-col gap-4;
-    max-width: 500px;
-}
-
-.lt-capture-header {
-    @apply flex items-center justify-between pb-3;
-    @apply transition-colors duration-300;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.lt-capture-header--success {
-    background-color: rgba(0, 200, 100, 0.1);
-}
-
-.lt-capture-nav {
-    @apply flex items-center gap-2;
-}
-
-.lt-capture-nav-btn {
-    @apply w-8 h-8 flex items-center justify-center rounded cursor-pointer;
-    @apply transition-colors duration-150;
-    background-color: var(--background-modifier-hover);
-    color: var(--text-muted);
-    border: none;
-}
-
-.lt-capture-nav-btn:hover:not(:disabled) {
-    background-color: var(--interactive-hover);
-    color: var(--text-normal);
-}
-
-.lt-capture-nav-btn:disabled {
-    @apply opacity-50 cursor-not-allowed;
-}
-
-.lt-capture-nav-count {
-    @apply text-sm px-2;
-    color: var(--text-muted);
-}
-
-.lt-capture-title {
-    @apply text-lg font-semibold;
-    color: var(--text-normal);
-}
-
-.lt-capture-form {
-    @apply flex flex-col gap-4;
-}
-
-.lt-capture-empty {
-    @apply text-sm py-4 text-center;
-    color: var(--text-muted);
-}
-
-.lt-capture-field {
-    @apply flex flex-col gap-1;
-}
-
-.lt-capture-field--invalid .lt-capture-editor {
-    border-color: var(--text-error);
-}
-
-.lt-capture-label {
-    @apply text-sm font-medium;
-    color: var(--text-normal);
-}
-
-.lt-capture-required {
-    color: var(--text-error);
-}
-
-.lt-capture-description {
-    @apply text-xs mb-1;
-    color: var(--text-muted);
-}
-
-.lt-capture-editor {
-    @apply relative;
-}
-
-.lt-capture-error {
-    @apply text-xs mt-1;
-    color: var(--text-error);
-}
-
-.lt-capture-actions {
-    @apply flex justify-end gap-3 pt-3;
-    border-top: 1px solid var(--background-modifier-border);
-}
-
-.lt-capture-btn {
-    @apply px-4 py-2 rounded font-medium cursor-pointer;
-    @apply transition-colors duration-150;
-    border: 1px solid var(--background-modifier-border);
-}
-
-.lt-capture-btn:disabled {
-    @apply opacity-50 cursor-not-allowed;
-}
-
-.lt-capture-btn--primary {
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-    border-color: var(--interactive-accent);
-}
-
-.lt-capture-btn--primary:hover:not(:disabled) {
-    background-color: var(--interactive-accent-hover);
-}
-
-.lt-capture-btn--secondary {
-    background-color: var(--background-secondary);
-    color: var(--text-muted);
-}
-
-.lt-capture-btn--secondary:hover:not(:disabled) {
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-}
-
-/* ========================================
-   GRID VIEW (Editing)
-   ======================================== */
-
-.lt-edit-grid-container {
-    @apply p-4;
-}
-
-.lt-edit-grid {
-    @apply grid gap-4;
-    grid-template-columns: repeat(var(--lt-grid-columns, 2), 1fr);
-}
-
-.lt-edit-card {
-    @apply rounded-lg overflow-hidden;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-}
-
-.lt-edit-card--dirty {
-    border-color: var(--interactive-accent);
-}
-
-.lt-edit-card-header {
-    @apply px-4 py-3;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.lt-edit-card-title {
-    @apply text-base font-semibold cursor-pointer;
-    color: var(--text-accent);
-}
-
-.lt-edit-card-title:hover {
-    @apply underline;
-}
-
-.lt-edit-card-body {
-    @apply p-4 flex flex-col gap-3;
-}
-
-.lt-edit-card-row {
-    @apply flex items-start gap-3;
-}
-
-.lt-edit-card-label {
-    @apply text-sm font-medium w-28 flex-shrink-0 pt-1.5;
-    color: var(--text-muted);
-}
-
-.lt-edit-card-value {
-    @apply flex-1;
-}
-
-.lt-edit-card-footer {
-    @apply px-4 py-3 flex justify-end gap-2;
-    border-top: 1px solid var(--background-modifier-border);
-}
-
-/* ========================================
-   GRID VIEW (BasesView) - Table Layout
-   ======================================== */
-
-.lt-grid-view-container {
-    @apply p-2 relative;
-}
-
-.lt-grid-view-table-wrapper {
-    overflow-x: auto;
-}
-
-/* Fixed header wrapper - positioned at top when scrolled */
-.lt-grid-view-fixed-header-wrapper {
-    @apply absolute left-0 right-0 z-[100] overflow-x-auto overflow-y-hidden pointer-events-none;
-    /* Hide scrollbar since we sync with main table */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.lt-grid-view-fixed-header-wrapper::-webkit-scrollbar {
-    display: none;
-}
-
-.lt-grid-view-table--fixed {
-    @apply pointer-events-auto;
-}
-
-.lt-grid-view-table {
-    @apply w-full border-collapse text-sm;
-    min-width: max-content;
-}
-
-.lt-grid-view-empty {
-    @apply text-sm py-8 px-4 text-center rounded;
-    color: var(--text-muted);
-    background-color: var(--background-secondary);
-}
-
-/* Table header */
-.lt-grid-view-table thead {
-    /* Sticky is handled via JS with fixed header clone */
-}
-
-.lt-grid-view-th {
-    @apply px-2 py-1.5 text-left text-xs font-semibold whitespace-nowrap;
-    background-color: var(--background-secondary);
-    color: var(--text-muted);
-    border-bottom: 2px solid var(--background-modifier-border);
-}
-
-.lt-grid-view-th--note {
-    @apply sticky left-0 z-30 min-w-[180px] w-[180px];
-    background-color: var(--background-secondary);
-}
-
-.lt-grid-view-th-content {
-    @apply flex items-center gap-0.5;
-}
-
-.lt-grid-view-th-name {
-    @apply truncate;
-    max-width: 120px;
-}
-
-.lt-grid-view-th-required {
-    @apply text-xs;
-    color: var(--text-error);
-}
-
-.lt-grid-view-th--base {
-    @apply sticky z-[25] italic min-w-[120px] w-[120px];
-    background-color: var(--background-primary-alt);
-    color: var(--text-faint);
-}
-
-/* Table rows - fixed height for virtual scrolling */
-.lt-grid-view-tr {
-    @apply transition-colors duration-100;
-    height: 32px;
-}
-
-.lt-grid-view-tr:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-grid-view-tr--has-issues {
-    background-color: rgba(255, 100, 100, 0.05);
-}
-
-.lt-grid-view-tr--has-issues:hover {
-    background-color: rgba(255, 100, 100, 0.1);
-}
-
-/* Virtual scrolling spacers */
-.lt-grid-view-spacer {
-    @apply p-0 border-0;
-}
-
-.lt-grid-view-spacer td {
-    @apply p-0 border-0;
-}
-
-/* Table cells */
-.lt-grid-view-td {
-    @apply px-2 py-1 align-middle;
-    border-bottom: 1px solid var(--background-modifier-border);
-    min-width: 100px;
-    max-width: 200px;
-}
-
-.lt-grid-view-td--note {
-    @apply font-medium sticky left-0 z-[5] min-w-[180px] w-[180px];
-    background-color: var(--background-primary);
-}
-
-.lt-grid-view-tr:hover .lt-grid-view-td--note {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-grid-view-td--na {
-    @apply text-center;
-}
-
-.lt-grid-view-td--invalid {
-    background-color: rgba(255, 100, 100, 0.1);
-}
-
-.lt-grid-view-td--base {
-    @apply sticky z-[4] min-w-[120px] w-[120px];
-    background-color: var(--background-primary-alt);
-}
-
-.lt-grid-view-tr:hover .lt-grid-view-td--base {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-grid-view-td--empty {
-    @apply text-center;
-}
-
-.lt-grid-view-na {
-    @apply text-xs;
-    color: var(--text-faint);
-}
-
-.lt-grid-view-empty-value {
-    @apply text-xs;
-    color: var(--text-faint);
-}
-
-.lt-grid-view-readonly-value {
-    @apply text-xs truncate block;
-    color: var(--text-muted);
-    max-width: 180px;
-}
-
-.lt-grid-view-note-link {
-    @apply cursor-pointer truncate block;
-    color: var(--text-accent);
-    max-width: 160px;
-}
-
-.lt-grid-view-note-link:hover {
-    @apply underline;
-}
-
-/* Compact editors in table cells */
-.lt-grid-view-td .lt-editor-input {
-    @apply px-1.5 py-0.5 text-xs;
-    min-height: 24px;
-    line-height: 1.4;
-}
-
-.lt-grid-view-td .lt-editor-select {
-    @apply px-1.5 py-0.5 text-xs;
-    min-height: 24px;
-    line-height: 1.4;
-}
-
-.lt-grid-view-td .lt-editor-toggle {
-    @apply scale-75 origin-left;
-}
-
-.lt-grid-view-td .lt-editor-list {
-    @apply min-h-[24px] p-0.5;
-}
-
-.lt-grid-view-td .lt-editor-list-pill {
-    @apply text-[10px] px-1.5 py-0;
-}
-
-.lt-grid-view-td .lt-editor-list-input {
-    @apply text-xs min-w-[40px];
-}
-
-.lt-grid-view-td .lt-editor-number-wrapper {
-    @apply gap-1;
-}
-
-.lt-grid-view-td .lt-editor-slider {
-    @apply h-3;
-    background: linear-gradient(
-        to bottom,
-        transparent calc(50% - 2px),
-        var(--background-modifier-border) calc(50% - 2px),
-        var(--background-modifier-border) calc(50% + 2px),
-        transparent calc(50% + 2px)
-    );
-}
-
-.lt-grid-view-td .lt-editor-slider::-webkit-slider-thumb {
-    @apply w-3 h-3;
-}
-
-.lt-grid-view-td .lt-editor-slider::-moz-range-thumb {
-    @apply w-3 h-3;
-}
-
-.lt-grid-view-td .lt-editor-input--number {
-    @apply w-12 text-center;
-}
-
-/* ========================================
-   GRID VIEW - MOBILE CARD LAYOUT
-   ======================================== */
-
-/* Mobile: transform table into card-based layout */
-@media (max-width: 640px) {
-    .lt-grid-view-container {
-        @apply p-2;
+    /* Overlay button variant - wider with text label */
+    .lt-control-btn--overlay {
+        @apply w-auto h-auto px-2 py-1 gap-1.5;
     }
 
-    /* Hide the table on mobile */
-    .lt-grid-view-table-wrapper,
-    .lt-grid-view-fixed-header-wrapper {
-        @apply hidden;
-    }
-
-    /* Show the mobile card container */
-    .lt-grid-view-mobile-container {
-        @apply flex flex-col gap-3;
-    }
-}
-
-/* Desktop: hide mobile container */
-.lt-grid-view-mobile-container {
-    @apply hidden;
-}
-
-@media (max-width: 640px) {
-    .lt-grid-view-mobile-container {
-        @apply flex;
-    }
-}
-
-/* Mobile card styles */
-.lt-grid-view-card {
-    @apply rounded-lg overflow-hidden;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-}
-
-.lt-grid-view-card--has-issues {
-    border-color: rgba(255, 100, 100, 0.3);
-    background-color: rgba(255, 100, 100, 0.02);
-}
-
-.lt-grid-view-card-header {
-    @apply flex items-center justify-between px-3 py-2;
-    background-color: var(--background-primary-alt);
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.lt-grid-view-card-title {
-    @apply text-sm font-semibold truncate cursor-pointer;
-    color: var(--text-accent);
-    max-width: calc(100% - 40px);
-}
-
-.lt-grid-view-card-title:active {
-    @apply underline;
-}
-
-.lt-grid-view-card-toggle {
-    @apply w-7 h-7 flex items-center justify-center rounded cursor-pointer;
-    @apply transition-transform duration-200;
-    color: var(--text-muted);
-}
-
-.lt-grid-view-card-toggle:active {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-grid-view-card-toggle--collapsed {
-    transform: rotate(-90deg);
-}
-
-.lt-grid-view-card-body {
-    @apply flex flex-col;
-}
-
-.lt-grid-view-card-body--collapsed {
-    @apply hidden;
-}
-
-.lt-grid-view-card-row {
-    @apply flex flex-col gap-1 px-3 py-2;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.lt-grid-view-card-row:last-child {
-    border-bottom: none;
-}
-
-.lt-grid-view-card-row--na {
-    @apply opacity-50;
-}
-
-.lt-grid-view-card-label {
-    @apply flex items-center gap-1 text-xs font-medium;
-    color: var(--text-muted);
-}
-
-.lt-grid-view-card-label-required {
-    color: var(--text-error);
-}
-
-.lt-grid-view-card-value {
-    @apply mt-1;
-}
-
-.lt-grid-view-card-na {
-    @apply text-xs italic;
-    color: var(--text-faint);
-}
-
-/* Mobile card editors - larger touch targets */
-.lt-grid-view-card-value .lt-editor-input {
-    @apply w-full px-3 py-2 text-sm;
-    min-height: 40px;
-    line-height: 1.4;
-}
-
-.lt-grid-view-card-value .lt-editor-select {
-    @apply w-full px-3 py-2 text-sm;
-    min-height: 40px;
-    line-height: 1.4;
-}
-
-.lt-grid-view-card-value .lt-editor-toggle {
-    @apply scale-100;
-}
-
-.lt-grid-view-card-value .lt-editor-list {
-    @apply min-h-[40px] p-1.5;
-}
-
-.lt-grid-view-card-value .lt-editor-list-pill {
-    @apply text-xs px-2 py-0.5;
-}
-
-.lt-grid-view-card-value .lt-editor-list-input {
-    @apply text-sm min-w-[80px];
-}
-
-.lt-grid-view-card-value .lt-editor-number-wrapper {
-    @apply flex-col gap-2;
-}
-
-.lt-grid-view-card-value .lt-editor-slider {
-    @apply h-5 w-full;
-    background: linear-gradient(
-        to bottom,
-        transparent calc(50% - 3px),
-        var(--background-modifier-border) calc(50% - 3px),
-        var(--background-modifier-border) calc(50% + 3px),
-        transparent calc(50% + 3px)
-    );
-}
-
-.lt-grid-view-card-value .lt-editor-slider::-webkit-slider-thumb {
-    @apply w-5 h-5;
-}
-
-.lt-grid-view-card-value .lt-editor-slider::-moz-range-thumb {
-    @apply w-5 h-5;
-}
-
-.lt-grid-view-card-value .lt-editor-input--number {
-    @apply w-full text-center;
-}
-
-/* Mobile empty state */
-.lt-grid-view-mobile-empty {
-    @apply text-sm py-8 px-4 text-center rounded;
-    color: var(--text-muted);
-    background-color: var(--background-secondary);
-}
-
-/* ========================================
-   CAROUSEL MODAL (Property Capture)
-   ======================================== */
-
-.lt-carousel-modal {
-    @apply p-0 max-w-[520px] min-w-[420px] overflow-hidden;
-}
-
-.lt-carousel-modal .modal-content {
-    @apply p-0 overflow-hidden;
-}
-
-.lt-carousel-container {
-    @apply flex flex-col p-8 overflow-hidden;
-}
-
-/* File navigation (batch mode) */
-.lt-carousel-file-nav {
-    @apply flex flex-col gap-3 mb-4 pb-4;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.lt-carousel-file-nav-row {
-    @apply flex items-center justify-center gap-3;
-}
-
-.lt-carousel-file-nav-btn {
-    @apply w-7 h-7 flex items-center justify-center rounded-full cursor-pointer;
-    @apply transition-all duration-150 bg-transparent border;
-    color: var(--text-muted);
-    border-color: var(--background-modifier-border);
-}
-
-.lt-carousel-file-nav-btn:hover:not(:disabled) {
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-}
-
-.lt-carousel-file-nav-btn:disabled {
-    @apply cursor-not-allowed opacity-30;
-}
-
-.lt-carousel-file-counter {
-    @apply flex flex-col items-center px-3;
-}
-
-.lt-carousel-file-position {
-    @apply text-sm font-medium;
-    color: var(--text-muted);
-}
-
-.lt-carousel-file-remaining {
-    @apply text-xs;
-    color: var(--text-accent);
-}
-
-.lt-carousel-filter-row {
-    @apply flex items-center justify-center gap-2;
-}
-
-.lt-carousel-filter-label {
-    @apply text-xs;
-    color: var(--text-muted);
-}
-
-.lt-carousel-filter-select {
-    @apply text-xs pl-2 pr-6 py-1 rounded;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-/* Title with date/weekday */
-.lt-carousel-file-name {
-    @apply text-xl font-bold text-center mb-6 tracking-tight;
-    color: var(--text-normal);
-}
-
-/* Card (main content area) */
-.lt-carousel-card {
-    @apply flex flex-col rounded-xl p-6 mb-6 min-h-[220px] shadow-md;
-    background: linear-gradient(
-        145deg,
-        var(--background-secondary) 0%,
-        var(--background-primary-alt) 100%
-    );
-    border: 1px solid var(--background-modifier-border);
-}
-
-/* Navigation row */
-.lt-carousel-nav {
-    @apply flex items-center justify-between mb-5;
-}
-
-.lt-carousel-nav-btn {
-    @apply w-10 h-10 flex items-center justify-center rounded-full cursor-pointer;
-    @apply transition-all duration-200 bg-transparent border;
-    color: var(--text-muted);
-    border-color: var(--background-modifier-border);
-}
-
-.lt-carousel-nav-btn:hover:not(:disabled) {
-    @apply scale-105;
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-    border-color: var(--text-muted);
-}
-
-.lt-carousel-nav-btn:disabled {
-    @apply opacity-20 cursor-not-allowed scale-100;
-}
-
-.lt-carousel-nav-btn--done {
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-    border-color: var(--interactive-accent);
-}
-
-.lt-carousel-nav-btn--done:hover {
-    @apply scale-110;
-    background-color: var(--interactive-accent-hover, var(--interactive-accent));
-    border-color: var(--interactive-accent-hover, var(--interactive-accent));
-}
-
-.lt-carousel-nav-btn svg {
-    @apply w-5 h-5;
-}
-
-.lt-carousel-counter {
-    @apply text-sm font-semibold px-4 py-1.5 rounded-full border;
-    background-color: var(--background-primary);
-    color: var(--text-muted);
-    border-color: var(--background-modifier-border);
-}
-
-/* Property label */
-.lt-carousel-label {
-    @apply flex items-center gap-3 mb-3;
-}
-
-.lt-carousel-property-name {
-    @apply text-xl font-bold tracking-tight;
-    color: var(--text-normal);
-}
-
-.lt-carousel-required-badge {
-    @apply px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide text-[10px];
-    background-color: rgba(255, 100, 100, 0.12);
-    color: var(--text-error);
-}
-
-.lt-carousel-optional-badge {
-    @apply px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide text-[10px] border;
-    background-color: var(--background-primary);
-    color: var(--text-muted);
-    border-color: var(--background-modifier-border);
-}
-
-/* Description */
-.lt-carousel-description {
-    @apply text-sm mb-5 leading-relaxed;
-    color: var(--text-muted);
-}
-
-/* Editor container */
-.lt-carousel-editor {
-    @apply flex-1 mt-3;
-}
-
-/* Input + "Use default" button wrapper (unified container) */
-.lt-carousel-input-with-default {
-    @apply flex items-stretch rounded-lg border-2 transition-all duration-200;
-    background-color: var(--background-primary);
-    border-color: var(--background-modifier-border);
-    overflow: hidden;
-}
-
-.lt-carousel-input-with-default:focus-within {
-    border-color: var(--interactive-accent);
-    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.15);
-}
-
-/* Input inside the unified container - remove its own border */
-.lt-carousel-input-with-default .lt-editor-input {
-    @apply border-0 rounded-none flex-1 px-4 py-3;
-    background-color: transparent;
-    box-shadow: none;
-    outline: none;
-}
-
-.lt-carousel-input-with-default .lt-editor-input:focus {
-    border-color: transparent;
-    box-shadow: none;
-    outline: none;
-}
-
-/* Select inside the unified container - remove its own border */
-.lt-carousel-input-with-default .lt-editor-select {
-    @apply border-0 rounded-none flex-1 px-4 py-3;
-    background-color: transparent;
-    box-shadow: none;
-    outline: none;
-    min-height: 48px;
-}
-
-.lt-carousel-input-with-default .lt-editor-select:focus {
-    border-color: transparent;
-    box-shadow: none;
-    outline: none;
-}
-
-/* "Use default" button as integrated suffix */
-.lt-carousel-default-btn {
-    @apply px-4 py-3 cursor-pointer whitespace-nowrap;
-    @apply transition-all duration-200 flex-shrink-0;
-    @apply flex items-center justify-center;
-    @apply text-xs font-medium tracking-wide;
-    background-color: transparent;
-    color: var(--text-muted);
-    border: none;
-    border-left: 1px solid var(--background-modifier-border);
-    opacity: 0.7;
-    height: auto;
-}
-
-.lt-carousel-default-btn:hover {
-    background-color: var(--background-modifier-hover);
-    color: var(--text-accent);
-    opacity: 1;
-}
-
-/* Enhanced editor inputs within carousel */
-.lt-carousel-editor .lt-editor-input {
-    @apply px-4 py-3 text-base rounded-lg border-2 transition-all duration-200;
-    background-color: var(--background-primary);
-    border-color: var(--background-modifier-border);
-    line-height: 1.6;
-}
-
-.lt-carousel-editor .lt-editor-select {
-    @apply px-3 py-2 text-base rounded-lg border-2 transition-all duration-200;
-    background-color: var(--background-primary);
-    border-color: var(--background-modifier-border);
-    line-height: 1.4;
-    height: auto;
-}
-
-.lt-carousel-editor .lt-editor-select:focus {
-    border-color: var(--interactive-accent);
-    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.15);
-}
-
-.lt-carousel-editor .lt-editor-input:focus {
-    border-color: var(--interactive-accent);
-    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.15);
-}
-
-.lt-carousel-editor .lt-editor-number-wrapper {
-    @apply flex items-center gap-3;
-}
-
-.lt-carousel-editor .lt-editor-slider {
-    @apply h-4 rounded-full cursor-pointer appearance-none;
-    flex: 3; /* More space for slider */
-    /* Use a gradient to create a thin track line centered in the element */
-    background: linear-gradient(
-        to bottom,
-        transparent calc(50% - 3px),
-        var(--background-modifier-border) calc(50% - 3px),
-        var(--background-modifier-border) calc(50% + 3px),
-        transparent calc(50% + 3px)
-    );
-}
-
-.lt-carousel-editor .lt-editor-slider::-webkit-slider-thumb {
-    @apply w-4 h-4 rounded-full cursor-pointer appearance-none transition-transform duration-150;
-    background-color: var(--interactive-accent);
-}
-
-.lt-carousel-editor .lt-editor-slider:hover::-webkit-slider-thumb {
-    @apply scale-110;
-}
-
-.lt-carousel-editor .lt-editor-slider::-moz-range-thumb {
-    @apply w-4 h-4 rounded-full cursor-pointer border-0;
-    background-color: var(--interactive-accent);
-}
-
-.lt-carousel-editor .lt-editor-slider:hover::-moz-range-thumb {
-    @apply scale-110;
-}
-
-.lt-carousel-editor .lt-editor-input--number {
-    @apply text-center py-2 px-2 text-sm;
-    flex: 1;
-    min-width: 60px; /* Ensure minimum readability */
-}
-
-/* When input is inside the default button wrapper - constrain width */
-.lt-carousel-editor .lt-carousel-input-with-default .lt-editor-input--number {
-    @apply flex-none py-3 px-4;
-    width: 60px;
-    min-width: auto;
-    height: auto;
-}
-
-/* Input + button wrapper inside number wrapper - constrain width */
-.lt-carousel-editor .lt-editor-number-wrapper .lt-carousel-input-with-default {
-    @apply flex-shrink-0;
-    max-width: 180px;
-}
-
-/* Button for empty state */
-.lt-carousel-btn {
-    @apply px-6 py-3 rounded-xl font-semibold cursor-pointer text-sm;
-    @apply transition-all duration-200 border-2 text-center;
-    border-color: var(--background-modifier-border);
-}
-
-.lt-carousel-btn:hover {
-    @apply -translate-y-0.5 shadow-lg;
-}
-
-.lt-carousel-btn--secondary {
-    background-color: var(--background-secondary);
-    color: var(--text-muted);
-}
-
-.lt-carousel-btn--secondary:hover {
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-}
-
-/* Progress section */
-.lt-carousel-progress {
-    @apply mt-6 pt-5 border-t;
-    border-color: var(--background-modifier-border);
-}
-
-.lt-carousel-progress-bar {
-    @apply h-2.5 rounded-full overflow-hidden;
-    background-color: var(--background-modifier-border);
-}
-
-.lt-carousel-progress-fill {
-    @apply h-full rounded-full transition-all duration-700 ease-out;
-    background: linear-gradient(
-        90deg,
-        var(--interactive-accent) 0%,
-        var(--interactive-accent-hover, var(--interactive-accent)) 50%,
-        var(--interactive-accent) 100%
-    );
-    background-size: 200% 100%;
-    animation: lt-progress-shimmer 2s ease-in-out infinite;
-}
-
-@keyframes lt-progress-shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
-}
-
-.lt-carousel-progress-text {
-    @apply text-xs text-center mt-3 font-medium;
-    color: var(--text-muted);
-}
-
-/* Empty state */
-.lt-carousel-empty {
-    @apply flex flex-col items-center justify-center py-12 px-8 text-center;
-}
-
-.lt-carousel-empty-icon {
-    @apply text-6xl mb-5 grayscale-[0.3];
-}
-
-.lt-carousel-empty-title {
-    @apply text-xl font-bold mb-3;
-    color: var(--text-normal);
-}
-
-.lt-carousel-empty-text {
-    @apply text-sm mb-8 max-w-sm leading-relaxed;
-    color: var(--text-muted);
-}
-
-/* Animation for card transitions */
-@keyframes lt-carousel-slide-in {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.lt-carousel-card {
-    animation: lt-carousel-slide-in 0.25s ease-out;
-}
-
-/* ========================================
-   CAROUSEL MODAL - RESPONSIVE STYLES
-   ======================================== */
-
-/* Tablet adjustments (medium screens) */
-@media (max-width: 768px) {
-    .lt-carousel-modal {
-        @apply min-w-[320px] max-w-[90vw];
-    }
-
-    .lt-carousel-container {
-        @apply p-6;
-    }
-
-    .lt-carousel-file-name {
-        @apply text-lg mb-4;
-    }
-
-    .lt-carousel-card {
-        @apply p-5 mb-4 min-h-[200px];
-    }
-
-    .lt-carousel-nav-btn {
-        @apply w-9 h-9;
-    }
-
-    .lt-carousel-nav-btn svg {
-        @apply w-4 h-4;
-    }
-
-    .lt-carousel-property-name {
-        @apply text-lg;
-    }
-
-    .lt-carousel-counter {
-        @apply text-xs px-3 py-1;
-    }
-
-    .lt-carousel-progress {
-        @apply mt-4 pt-4;
-    }
-}
-
-/* Mobile adjustments (small screens) - fullscreen modal */
-@media (max-width: 480px) {
-    .lt-carousel-modal {
-        @apply fixed inset-0 min-w-0 max-w-none rounded-none z-[1000];
-        width: 100vw !important;
-        height: 100vh !important;
-        max-height: 100vh !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: none !important;
-        background-color: var(--background-primary) !important;
-    }
-
-    .lt-carousel-modal .modal-close-button {
-        @apply top-3 right-3 z-[1001];
-    }
-
-    .lt-carousel-modal .modal-content {
-        @apply h-full w-full overflow-y-auto p-0;
-        background-color: var(--background-primary);
-    }
-
-    .lt-carousel-container {
-        @apply p-4 pb-8 min-h-full flex flex-col;
-        background-color: var(--background-primary);
-    }
-
-    .lt-carousel-card {
-        @apply flex-1;
-    }
-
-    /* File navigation - stack filter below nav */
-    .lt-carousel-file-nav {
-        @apply gap-2 mb-3 pb-3;
-    }
-
-    .lt-carousel-file-nav-row {
-        @apply gap-2;
-    }
-
-    .lt-carousel-file-nav-btn {
-        @apply w-6 h-6;
-    }
-
-    .lt-carousel-file-nav-btn svg {
+    .lt-control-btn--overlay svg {
         @apply w-3 h-3;
     }
 
-    .lt-carousel-file-counter {
-        @apply px-2;
+    .lt-control-btn-label {
+        @apply text-xs font-medium;
     }
 
-    .lt-carousel-file-position {
+    /* Hide label on very small screens */
+    @media (max-width: 400px) {
+        .lt-control-btn-label {
+            @apply hidden;
+        }
+
+        .lt-control-btn--overlay {
+            @apply w-6 h-6 p-0;
+        }
+    }
+
+    .lt-control-value {
+        @apply text-xs font-medium min-w-[1.25rem] text-center;
+        color: var(--text-normal);
+    }
+
+    .lt-control-slider {
+        @apply w-16 h-1 rounded-full cursor-pointer appearance-none;
+        background-color: var(--background-modifier-border);
+    }
+
+    .lt-control-slider::-webkit-slider-thumb {
+        @apply w-2.5 h-2.5 rounded-full cursor-pointer appearance-none;
+        background-color: var(--interactive-accent);
+    }
+
+    .lt-control-slider::-moz-range-thumb {
+        @apply w-2.5 h-2.5 rounded-full cursor-pointer border-0 appearance-none;
+        background-color: var(--interactive-accent);
+    }
+
+    .lt-control-select {
+        @apply text-xs py-0.5 px-2 rounded cursor-pointer;
+        @apply border-0 outline-none appearance-none;
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 4px center;
+        padding-right: 20px;
+        min-width: 100px;
+    }
+
+    .lt-control-select:hover {
+        background-color: var(--interactive-hover);
+    }
+
+    .lt-control-select:focus {
+        outline: 1px solid var(--interactive-accent);
+    }
+
+    /* ========================================
+   GRID LAYOUT
+   ======================================== */
+
+    .lt-grid {
+        @apply grid gap-4;
+        /* CSS custom property set by JS */
+        --lt-grid-columns: 2;
+        grid-template-columns: repeat(var(--lt-grid-columns), 1fr);
+    }
+
+    /* ========================================
+   CARD COMPONENT
+   ======================================== */
+
+    .lt-card {
+        @apply rounded-lg p-4 overflow-hidden;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        min-height: 200px;
+    }
+
+    .lt-card:hover {
+        border-color: var(--background-modifier-border-hover);
+    }
+
+    /* Card content should fill available space */
+    .lt-card > .lt-section {
+        @apply h-full flex flex-col min-h-0;
+    }
+
+    /* ========================================
+   MAXIMIZED CARD STATE
+   ======================================== */
+
+    /* Container when a card is maximized */
+    .lt-container--has-maximized {
+        @apply relative;
+    }
+
+    .lt-container--has-maximized .lt-grid {
+        @apply relative;
+    }
+
+    /* Hidden cards when another is maximized */
+    .lt-card--hidden {
+        @apply hidden;
+    }
+
+    /* Maximized card - fullscreen overlay */
+    .lt-card--maximized {
+        @apply fixed inset-4 z-50 p-6 flex flex-col overflow-auto shadow-2xl;
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        min-height: auto;
+    }
+
+    .lt-card--maximized > .lt-section {
+        @apply flex-1 flex flex-col;
+    }
+
+    /* Maximized card header adjustments */
+    .lt-card--maximized .lt-section-header {
+        @apply mb-4 pb-3;
+    }
+
+    .lt-card--maximized .lt-section-title {
+        @apply text-base;
+    }
+
+    /* Maximize button styling when maximized */
+    .lt-card--maximized .lt-maximize-btn {
+        @apply opacity-100;
+    }
+
+    /* Backdrop overlay */
+    .lt-container--has-maximized::before {
+        content: '';
+        @apply fixed inset-0 z-40 pointer-events-none;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    /* ========================================
+   COLUMN CONFIGURATION CARD
+   ======================================== */
+
+    .lt-config-card {
+        @apply flex flex-col items-center justify-center;
+    }
+
+    .lt-config-card-header {
+        @apply flex flex-col items-center gap-1 mb-4;
+    }
+
+    .lt-config-card-title {
+        @apply text-base font-semibold;
+        color: var(--text-normal);
+    }
+
+    .lt-config-card-subtitle {
+        @apply text-sm;
+        color: var(--text-muted);
+    }
+
+    .lt-config-card-options {
+        @apply grid gap-2 w-full max-w-[400px];
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+
+    .lt-config-option {
+        @apply flex flex-col items-center gap-2 p-3 rounded-lg cursor-pointer;
+        @apply transition-all duration-150;
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-config-option:hover {
+        background-color: var(--background-modifier-hover);
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-config-option:focus {
+        @apply outline-none;
+        border-color: var(--interactive-accent);
+        box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+    }
+
+    .lt-config-option-icon {
+        @apply w-6 h-6;
+        color: var(--text-muted);
+    }
+
+    .lt-config-option-icon svg {
+        @apply w-6 h-6;
+    }
+
+    .lt-config-option:hover .lt-config-option-icon {
+        color: var(--interactive-accent);
+    }
+
+    .lt-config-option-label {
+        @apply text-xs font-medium text-center;
+        color: var(--text-normal);
+    }
+
+    /* Scale configuration section */
+    .lt-config-scale-section {
+        @apply w-full;
+    }
+
+    .lt-scale-form {
+        @apply flex flex-col gap-3;
+    }
+
+    .lt-scale-info {
+        @apply text-sm text-center;
+        color: var(--text-muted);
+    }
+
+    .lt-scale-inputs {
+        @apply flex items-center justify-center gap-4;
+    }
+
+    .lt-scale-input-group {
+        @apply flex items-center gap-2;
+    }
+
+    .lt-scale-label {
+        @apply text-sm font-medium;
+        color: var(--text-muted);
+    }
+
+    .lt-scale-input {
+        @apply w-20 px-2 py-1 rounded text-sm text-center;
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-scale-input:focus {
+        @apply outline-none;
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-scale-input::placeholder {
+        color: var(--text-faint);
+    }
+
+    .lt-scale-presets {
+        @apply flex items-center justify-center gap-2 flex-wrap;
+    }
+
+    .lt-scale-presets-label {
         @apply text-xs;
+        color: var(--text-muted);
     }
 
-    .lt-carousel-file-remaining {
-        @apply text-[10px];
+    .lt-scale-preset-btn {
+        @apply px-2 py-0.5 text-xs rounded cursor-pointer;
+        @apply transition-colors duration-150;
+        background-color: var(--background-modifier-hover);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-muted);
     }
 
-    .lt-carousel-filter-row {
-        @apply flex-wrap justify-center;
+    .lt-scale-preset-btn:hover {
+        background-color: var(--interactive-hover);
+        border-color: var(--interactive-accent);
+        color: var(--text-normal);
     }
 
-    .lt-carousel-filter-label {
-        @apply text-[10px];
+    .lt-scale-buttons {
+        @apply flex items-center justify-center gap-3 mt-2;
     }
 
-    .lt-carousel-filter-select {
-        @apply text-[10px] pl-1.5 pr-5 py-0.5;
+    .lt-scale-btn {
+        @apply px-4 py-1.5 text-sm font-medium rounded cursor-pointer;
+        @apply transition-colors duration-150;
+        border: 1px solid var(--background-modifier-border);
     }
 
-    /* Title */
-    .lt-carousel-file-name {
-        @apply text-base mb-3;
+    .lt-scale-btn--secondary {
+        background-color: var(--background-primary);
+        color: var(--text-muted);
     }
 
-    /* Card */
-    .lt-carousel-card {
-        @apply p-4 mb-3 min-h-[180px] rounded-lg;
+    .lt-scale-btn--secondary:hover {
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
     }
 
-    /* Navigation */
-    .lt-carousel-nav {
-        @apply mb-3;
+    .lt-scale-btn--primary {
+        background-color: var(--interactive-accent);
+        border-color: var(--interactive-accent);
+        color: var(--text-on-accent);
     }
 
-    .lt-carousel-nav-btn {
-        @apply w-8 h-8;
+    .lt-scale-btn--primary:hover {
+        opacity: 0.9;
     }
 
-    .lt-carousel-nav-btn svg {
+    /* ========================================
+   SCALE MODAL (for context menu)
+   ======================================== */
+
+    .lt-scale-modal-overlay {
+        @apply fixed inset-0 z-50 flex items-center justify-center;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .lt-scale-modal {
+        @apply flex flex-col gap-4 p-5 rounded-lg shadow-xl;
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        min-width: 280px;
+    }
+
+    .lt-scale-modal-header {
+        @apply text-base font-semibold;
+        color: var(--text-normal);
+    }
+
+    .lt-scale-modal-form {
+        @apply flex flex-col gap-3;
+    }
+
+    .lt-scale-modal-input-group {
+        @apply flex items-center gap-3;
+    }
+
+    .lt-scale-modal-input-group span {
+        @apply text-sm font-medium w-10;
+        color: var(--text-muted);
+    }
+
+    .lt-scale-modal-input {
+        @apply flex-1 px-3 py-2 rounded text-sm;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-scale-modal-input:focus {
+        @apply outline-none;
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-scale-modal-input::placeholder {
+        color: var(--text-faint);
+    }
+
+    .lt-scale-modal-buttons {
+        @apply flex items-center justify-end gap-2 mt-2;
+    }
+
+    .lt-scale-modal-btn {
+        @apply px-4 py-2 text-sm font-medium rounded cursor-pointer;
+        @apply transition-colors duration-150;
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-scale-modal-btn--secondary {
+        background-color: var(--background-secondary);
+        color: var(--text-normal);
+    }
+
+    .lt-scale-modal-btn--secondary:hover {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-scale-modal-btn--primary {
+        background-color: var(--interactive-accent);
+        border-color: var(--interactive-accent);
+        color: var(--text-on-accent);
+    }
+
+    .lt-scale-modal-btn--primary:hover {
+        opacity: 0.9;
+    }
+
+    /* Scale modal mobile responsive styles */
+    @media (max-width: 480px) {
+        .lt-scale-modal {
+            @apply mx-3;
+            min-width: auto;
+            width: calc(100vw - 24px);
+            max-width: 320px;
+        }
+
+        .lt-scale-modal-header {
+            @apply text-sm;
+        }
+
+        .lt-scale-modal-input-group {
+            @apply gap-2;
+        }
+
+        .lt-scale-modal-input {
+            @apply px-2 py-1.5 text-sm;
+        }
+
+        .lt-scale-modal-btn {
+            @apply px-3 py-1.5 text-xs;
+        }
+    }
+
+    /* ========================================
+   CARD POPOVER (two-column context menu)
+   ======================================== */
+
+    .lt-card-popover-overlay {
+        @apply fixed inset-0 z-50;
+        background-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .lt-card-popover {
+        @apply fixed flex flex-col rounded-lg shadow-xl;
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        min-width: 576px;
+        max-width: 692px;
+        max-height: 484px;
+    }
+
+    .lt-card-popover-header {
+        @apply flex items-center justify-between gap-3 px-4 py-3;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-card-popover-btn {
+        @apply flex items-center gap-2 px-3 py-1.5 text-sm rounded cursor-pointer;
+        @apply transition-colors duration-150;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-card-popover-btn:hover {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-card-popover-btn--warning {
+        color: var(--text-error);
+    }
+
+    .lt-card-popover-body {
+        @apply flex flex-1 overflow-hidden;
+    }
+
+    .lt-card-popover-column {
+        @apply flex flex-col py-3;
+    }
+
+    .lt-card-popover-column--left {
+        @apply flex-1;
+        border-right: 1px solid var(--background-modifier-border);
+        min-width: 180px;
+    }
+
+    .lt-card-popover-column--right {
+        @apply flex-1;
+        min-width: 120px;
+    }
+
+    .lt-card-popover-column-title {
+        @apply px-4 pb-2 text-xs font-medium uppercase tracking-wide;
+        color: var(--text-muted);
+    }
+
+    .lt-card-popover-type-list {
+        @apply flex-1 overflow-y-auto px-2;
+    }
+
+    .lt-card-popover-type-item {
+        @apply flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer;
+        @apply transition-colors duration-100;
+        color: var(--text-normal);
+    }
+
+    .lt-card-popover-type-item:hover {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-card-popover-type-item--selected {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-card-popover-type-icon {
+        @apply flex items-center justify-center w-4 h-4;
+        color: var(--text-muted);
+    }
+
+    .lt-card-popover-type-item--selected .lt-card-popover-type-icon {
+        color: var(--text-accent);
+    }
+
+    .lt-card-popover-type-label {
+        @apply flex-1 text-sm;
+    }
+
+    .lt-card-popover-type-check {
+        @apply flex items-center justify-center w-4 h-4;
+        color: var(--text-accent);
+    }
+
+    .lt-card-popover-options {
+        @apply flex flex-col gap-3 px-2;
+    }
+
+    .lt-card-popover-option-group {
+        @apply flex flex-col gap-1;
+    }
+
+    .lt-card-popover-option-group label {
+        @apply text-xs font-medium;
+        color: var(--text-muted);
+    }
+
+    .lt-card-popover-select {
+        @apply text-sm rounded cursor-pointer;
+        background-color: var(--interactive-normal);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-card-popover-select:hover {
+        background-color: var(--interactive-hover);
+    }
+
+    .lt-card-popover-select:focus {
+        @apply outline-none;
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-card-popover-no-options {
+        @apply text-sm italic px-4;
+        color: var(--text-muted);
+    }
+
+    /* Card popover mobile responsive styles */
+    @media (max-width: 640px) {
+        .lt-card-popover {
+            @apply rounded-lg;
+            min-width: auto;
+            max-width: calc(100vw - 24px);
+            max-height: calc(100vh - 24px);
+            width: calc(100vw - 24px);
+        }
+
+        .lt-card-popover-header {
+            @apply flex-wrap gap-2 px-3 py-2;
+        }
+
+        .lt-card-popover-btn {
+            @apply px-2 py-1 text-xs;
+        }
+
+        .lt-card-popover-body {
+            @apply flex-col;
+        }
+
+        .lt-card-popover-column--left {
+            @apply border-r-0;
+            border-bottom: 1px solid var(--background-modifier-border);
+            min-width: auto;
+            max-height: 200px;
+        }
+
+        .lt-card-popover-column--right {
+            min-width: auto;
+        }
+
+        .lt-card-popover-column-title {
+            @apply px-3 pb-1 text-[10px];
+        }
+
+        .lt-card-popover-type-list {
+            @apply px-1;
+        }
+
+        .lt-card-popover-type-item {
+            @apply px-2 py-1;
+        }
+
+        .lt-card-popover-type-label {
+            @apply text-xs;
+        }
+
+        .lt-card-popover-options {
+            @apply gap-2 px-1;
+        }
+
+        .lt-card-popover-option-group label {
+            @apply text-[10px];
+        }
+
+        .lt-card-popover-select {
+            @apply text-xs;
+        }
+
+        .lt-card-popover-no-options {
+            @apply text-xs px-3;
+        }
+    }
+
+    /* Card popover extra small screens - near fullscreen */
+    @media (max-width: 480px) {
+        .lt-card-popover {
+            @apply fixed inset-3 rounded-lg;
+            width: auto !important;
+            height: auto !important;
+            max-width: none;
+            max-height: none;
+            left: 12px !important;
+            top: 12px !important;
+            right: 12px;
+            bottom: 12px;
+        }
+
+        .lt-card-popover-header {
+            @apply justify-start;
+        }
+
+        .lt-card-popover-body {
+            @apply flex-1 overflow-hidden;
+        }
+
+        .lt-card-popover-column--left {
+            @apply flex-none;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .lt-card-popover-column--right {
+            @apply flex-1 overflow-y-auto;
+        }
+    }
+
+    /* Overlay context menu variant */
+    .lt-card-popover--overlay {
+        @apply w-auto min-w-[240px] max-w-[300px];
+    }
+
+    .lt-card-popover--overlay .lt-card-popover-header {
+        @apply flex items-center justify-between gap-4 flex-nowrap;
+    }
+
+    .lt-card-popover--overlay .lt-card-popover-title {
+        @apply text-sm font-semibold truncate flex-1 min-w-0;
+        color: var(--text-normal);
+    }
+
+    .lt-card-popover-body--single {
+        @apply p-4;
+    }
+
+    .lt-card-popover-body--single .lt-card-popover-type-list {
+        @apply gap-1;
+    }
+
+    /* ========================================
+   SECTION (inside cards)
+   ======================================== */
+
+    /* Section */
+    .lt-section {
+        @apply mb-0;
+    }
+
+    .lt-section-header {
+        @apply flex items-center justify-between mb-3 pb-2;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-section-title {
+        @apply text-sm font-semibold uppercase tracking-wide;
+        color: var(--text-muted);
+    }
+
+    .lt-section-actions {
+        @apply flex items-center gap-1;
+    }
+
+    /* Play button */
+    .lt-play-btn {
+        @apply w-6 h-6 flex items-center justify-center rounded cursor-pointer;
+        @apply transition-all duration-150 opacity-60;
+        color: var(--text-muted);
+    }
+
+    .lt-play-btn:hover {
+        @apply opacity-100;
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
+    }
+
+    .lt-play-btn:focus {
+        @apply outline-none opacity-100;
+        box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+    }
+
+    .lt-play-btn svg {
         @apply w-4 h-4;
     }
 
+    /* Playing state - pulsing animation */
+    .lt-play-btn--playing {
+        @apply opacity-100;
+        color: var(--interactive-accent);
+        animation: lt-pulse 1s ease-in-out infinite;
+    }
+
+    .lt-play-btn--playing:hover {
+        color: var(--interactive-accent);
+    }
+
+    @keyframes lt-pulse {
+        0%,
+        100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    /* Maximize button */
+    .lt-maximize-btn {
+        @apply w-6 h-6 flex items-center justify-center rounded cursor-pointer;
+        @apply transition-colors duration-150 opacity-60;
+        color: var(--text-muted);
+    }
+
+    .lt-maximize-btn:hover {
+        @apply opacity-100;
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
+    }
+
+    .lt-maximize-btn:focus {
+        @apply outline-none opacity-100;
+        box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+    }
+
+    .lt-maximize-btn svg {
+        @apply w-4 h-4;
+    }
+
+    /* ========================================
+   HEATMAP VISUALIZATION
+   ======================================== */
+
+    .lt-heatmap {
+        @apply flex flex-col gap-2 overflow-x-auto;
+    }
+
+    .lt-heatmap-wrapper {
+        @apply flex gap-1;
+    }
+
+    .lt-heatmap-grid {
+        @apply flex gap-0.5;
+    }
+
+    /* Grid templates for monthly/quarterly heatmaps - must be after base .lt-heatmap-grid to override display */
+    .lt-heatmap-grid--monthly,
+    .lt-heatmap-grid--quarterly {
+        @apply grid;
+    }
+
+    .lt-heatmap-grid--monthly {
+        grid-template-columns: repeat(12, 1fr);
+    }
+
+    .lt-heatmap-grid--quarterly {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .lt-heatmap-week {
+        @apply flex flex-col gap-0.5;
+    }
+
+    .lt-heatmap-cell {
+        @apply w-3 h-3 rounded-sm cursor-pointer;
+        @apply transition-all duration-150;
+        background-color: var(--background-modifier-border);
+    }
+
+    .lt-heatmap-cell:hover {
+        @apply ring-2 ring-offset-1;
+        --tw-ring-color: var(--interactive-accent);
+        --tw-ring-offset-color: var(--background-primary);
+    }
+
+    /* Placeholder cell for grid layout when showEmptyValues is false */
+    /* Shows the grid background but is non-interactive (no hover, no tooltip) */
+    .lt-heatmap-placeholder {
+        @apply block rounded-sm flex-shrink-0;
+        background-color: var(--lt-heatmap-empty, var(--background-modifier-border));
+        pointer-events: none;
+    }
+
+    .lt-heatmap-cell--has-data:hover {
+        @apply scale-110;
+    }
+
+    /* Heatmap color levels */
+    .lt-heatmap-cell--level-0 {
+        background-color: var(--lt-heatmap-empty, var(--background-modifier-border));
+    }
+
+    .lt-heatmap-cell--level-1 {
+        background-color: var(--lt-heatmap-level-1, #9be9a8);
+    }
+
+    .lt-heatmap-cell--level-2 {
+        background-color: var(--lt-heatmap-level-2, #40c463);
+    }
+
+    .lt-heatmap-cell--level-3 {
+        background-color: var(--lt-heatmap-level-3, #30a14e);
+    }
+
+    .lt-heatmap-cell--level-4 {
+        background-color: var(--lt-heatmap-level-4, #216e39);
+    }
+
+    /* Dark theme heatmap colors */
+    .theme-dark .lt-heatmap-cell--level-1 {
+        background-color: var(--lt-heatmap-level-1, #0e4429);
+    }
+
+    .theme-dark .lt-heatmap-cell--level-2 {
+        background-color: var(--lt-heatmap-level-2, #006d32);
+    }
+
+    .theme-dark .lt-heatmap-cell--level-3 {
+        background-color: var(--lt-heatmap-level-3, #26a641);
+    }
+
+    .theme-dark .lt-heatmap-cell--level-4 {
+        background-color: var(--lt-heatmap-level-4, #39d353);
+    }
+
+    /* Heatmap labels */
+    .lt-heatmap-months {
+        @apply flex items-center text-xs mb-1;
+        color: var(--text-muted);
+    }
+
+    .lt-heatmap-month-labels {
+        /* Gap is set dynamically in JS to match config.cellGap */
+        @apply flex;
+    }
+
+    .lt-heatmap-month-slot {
+        /* Width is set dynamically in JS to match config.cellSize */
+        /* Allow text to overflow into adjacent empty slots */
+        @apply flex-shrink-0 overflow-visible;
+    }
+
+    .lt-heatmap-month-label {
+        @apply text-xs;
+        color: var(--text-muted);
+    }
+
+    .lt-heatmap-month-spacer {
+        @apply flex-shrink-0;
+    }
+
+    .lt-heatmap-days {
+        /* Gap is set dynamically in JS to match config.cellGap */
+        @apply flex flex-col text-xs pr-1;
+        color: var(--text-muted);
+    }
+
+    .lt-heatmap-day-label {
+        @apply text-xs text-right;
+        color: var(--text-muted);
+    }
+
+    .lt-heatmap-legend {
+        @apply flex items-center gap-1 text-xs mt-2;
+        color: var(--text-muted);
+    }
+
+    /* Heatmap grid variants */
+    .lt-heatmap-grid--weekly,
+    .lt-heatmap-grid--yearly {
+        @apply flex-row flex-wrap;
+    }
+
+    .lt-heatmap-grid--monthly,
+    .lt-heatmap-grid--quarterly {
+        @apply gap-1;
+    }
+
+    /* ========================================
+   CHART VISUALIZATION
+   ======================================== */
+
+    .lt-chart {
+        @apply w-full flex-1;
+        min-height: 150px; /* Minimum height for chart visibility */
+    }
+
+    .lt-chart-header {
+        @apply flex items-center justify-between mb-3;
+    }
+
+    .lt-chart-title {
+        @apply text-sm font-medium;
+        color: var(--text-normal);
+    }
+
+    .lt-chart-canvas {
+        @apply w-full;
+        max-height: 100%;
+    }
+
+    /* ========================================
+   TAG CLOUD VISUALIZATION
+   ======================================== */
+
+    .lt-tag-cloud {
+        @apply flex flex-wrap gap-2;
+    }
+
+    .lt-tag {
+        @apply px-2 py-1 rounded-full cursor-pointer;
+        @apply transition-all duration-150;
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
+    }
+
+    .lt-tag:hover {
+        @apply scale-105;
+        background-color: var(--interactive-accent);
+        color: var(--text-on-accent);
+    }
+
+    /* Tag size variants */
+    .lt-tag--xs {
+        @apply text-xs;
+    }
+
+    .lt-tag--sm {
+        @apply text-sm;
+    }
+
+    .lt-tag--md {
+        @apply text-base;
+    }
+
+    .lt-tag--lg {
+        @apply text-lg;
+    }
+
+    .lt-tag--xl {
+        @apply text-xl;
+    }
+
+    /* ========================================
+   TIMELINE VISUALIZATION
+   ======================================== */
+
+    .lt-timeline {
+        @apply relative py-8 px-4;
+        height: 80px; /* Fixed compact height for timeline */
+    }
+
+    .lt-timeline-line {
+        @apply absolute left-4 right-4 h-0.5;
+        top: 50%;
+        background-color: var(--background-modifier-border);
+    }
+
+    .lt-timeline-point {
+        @apply absolute w-3 h-3 rounded-full cursor-pointer;
+        @apply transition-all duration-150;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background-color: var(--lt-timeline-point-color, var(--interactive-accent));
+    }
+
+    .lt-timeline-point:hover {
+        @apply scale-150;
+        box-shadow: 0 0 0 4px var(--background-modifier-hover);
+    }
+
+    .lt-timeline-label {
+        @apply absolute text-xs whitespace-nowrap;
+        bottom: 10px;
+        color: var(--text-muted);
+    }
+
+    .lt-timeline-label--start {
+        left: 1rem;
+    }
+
+    .lt-timeline-label--end {
+        right: 1rem;
+    }
+
+    /* ========================================
+   SHARED COMPONENTS
+   ======================================== */
+
+    /* Tooltip */
+    .lt-tooltip {
+        @apply fixed z-50 px-3 py-2 rounded-lg shadow-lg;
+        @apply text-sm pointer-events-none;
+        @apply opacity-0 transition-opacity duration-150;
+        transform: translate(-50%, -100%);
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-tooltip--visible {
+        @apply opacity-100;
+    }
+
+    .lt-tooltip-title {
+        @apply font-medium mb-1;
+    }
+
+    .lt-tooltip-value {
+        color: var(--text-accent);
+    }
+
+    .lt-tooltip-subtitle {
+        @apply text-xs mt-1;
+        color: var(--text-muted);
+    }
+
+    /* Empty state */
+    .lt-empty {
+        @apply flex flex-col items-center justify-center py-12 text-center;
+        color: var(--text-muted);
+    }
+
+    .lt-empty-icon {
+        @apply text-4xl mb-4 opacity-50;
+    }
+
+    .lt-empty-text {
+        @apply text-sm;
+    }
+
+    /* Loading state */
+    .lt-loading {
+        @apply flex items-center justify-center py-8;
+    }
+
+    .lt-loading-spinner {
+        @apply w-6 h-6 animate-spin rounded-full;
+        border: 2px solid var(--background-modifier-border);
+        border-top-color: var(--interactive-accent);
+    }
+
+    /* Error state */
+    .lt-error {
+        @apply flex flex-col items-center justify-center py-8 text-center;
+        color: var(--text-error);
+    }
+
+    .lt-error-icon {
+        @apply text-2xl mb-2;
+    }
+
+    .lt-error-message {
+        @apply text-sm font-medium;
+    }
+
+    .lt-error-details {
+        @apply text-xs mt-1;
+        color: var(--text-muted);
+    }
+
+    /* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+
+    /* Embedded view (smaller space) */
+    .lt-embedded .lt-heatmap-cell {
+        @apply w-2.5 h-2.5;
+    }
+
+    .lt-embedded .lt-chart {
+        @apply p-2;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 640px) {
+        .lt-container {
+            @apply p-2 gap-3;
+        }
+
+        .lt-control-bar {
+            @apply flex-wrap gap-2;
+        }
+
+        .lt-control-bar-right {
+            @apply gap-2;
+        }
+
+        .lt-control-slider {
+            @apply w-16;
+        }
+
+        .lt-grid {
+            @apply gap-3;
+            /* Force single column on mobile */
+            grid-template-columns: 1fr !important;
+        }
+
+        .lt-card {
+            @apply p-3;
+            min-height: auto;
+        }
+
+        .lt-heatmap-cell {
+            @apply w-2 h-2;
+        }
+
+        .lt-tag-cloud {
+            @apply gap-1;
+        }
+
+        .lt-tag {
+            @apply px-1.5 py-0.5 text-xs;
+        }
+
+        .lt-timeline {
+            @apply px-2;
+        }
+    }
+
+    /* ========================================
+   PROPERTY DEFINITIONS (Settings Tab)
+   ======================================== */
+
+    .lt-property-definitions-container {
+        @apply mb-4;
+    }
+
+    .lt-property-definitions-empty {
+        @apply text-sm py-4 px-3 rounded;
+        color: var(--text-muted);
+        background-color: var(--background-secondary);
+    }
+
+    .lt-property-definition-item {
+        @apply mb-4 pb-4 rounded cursor-grab transition-all duration-150;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-property-definition-item--dragging {
+        @apply opacity-50 cursor-grabbing;
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-property-definition-item--drag-over {
+        @apply border-t-2;
+        border-top-color: var(--interactive-accent);
+    }
+
+    .lt-property-header {
+        @apply py-1;
+    }
+
+    .lt-property-header .setting-item-control {
+        @apply gap-2;
+    }
+
+    .lt-property-drag-handle {
+        @apply p-1 cursor-grab;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: var(--text-faint);
+    }
+
+    .lt-property-drag-handle:hover {
+        color: var(--text-muted);
+        background-color: var(--background-modifier-hover) !important;
+    }
+
+    .lt-property-drag-handle:active {
+        @apply cursor-grabbing;
+    }
+
+    .lt-property-chevron {
+        @apply p-1;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .lt-property-chevron:hover {
+        background-color: var(--background-modifier-hover) !important;
+    }
+
+    .lt-property-name-input {
+        @apply w-40;
+    }
+
+    .lt-property-details {
+        @apply ml-8 mt-2 pl-4;
+        border-left: 2px solid var(--background-modifier-border);
+    }
+
+    .lt-property-type-options {
+        @apply mt-2;
+    }
+
+    .lt-constraint-input {
+        @apply w-20;
+    }
+
+    /* Value Mapping */
+    .lt-value-mapping-container {
+        @apply mt-2 p-3 rounded;
+        background-color: var(--background-primary-alt);
+    }
+
+    .lt-value-mapping-empty {
+        @apply text-sm italic opacity-80;
+        color: var(--text-muted);
+    }
+
+    .lt-value-mapping-list {
+        @apply flex flex-col gap-2 mt-2;
+    }
+
+    .lt-value-mapping-arrow {
+        @apply text-sm opacity-60 mx-2;
+        color: var(--text-muted);
+    }
+
+    /* ========================================
+   PROPERTY MAPPINGS (Note Filtering)
+   ======================================== */
+
+    .lt-mappings-container {
+        @apply mt-4 pt-4;
+        border-top: 1px dashed var(--background-modifier-border);
+    }
+
+    .lt-mappings-empty {
+        @apply text-xs py-2 px-3 rounded mt-2 italic;
+        color: var(--text-muted);
+        background-color: var(--background-primary-alt);
+    }
+
+    .lt-mappings-list {
+        @apply mt-2;
+    }
+
+    .lt-mapping-item {
+        @apply py-1;
+    }
+
+    .lt-mapping-item .setting-item-control {
+        @apply gap-2;
+    }
+
+    .lt-mapping-value-input {
+        @apply w-40;
+    }
+
+    /* ========================================
+   PROPERTY EDITORS
+   ======================================== */
+
+    .lt-editor-input {
+        @apply w-full px-2 py-1.5 rounded text-sm;
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-editor-input:focus {
+        @apply outline-none;
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-editor-input--compact {
+        @apply px-1.5 py-1;
+    }
+
+    .lt-editor-input--number {
+        @apply w-24;
+    }
+
+    .lt-editor-input--date {
+        @apply w-40;
+    }
+
+    .lt-editor-input--invalid {
+        border-color: var(--text-error);
+    }
+
+    .lt-editor-select {
+        @apply w-full px-2 py-1.5 rounded text-sm cursor-pointer;
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+        line-height: 1.4;
+        height: auto;
+    }
+
+    .lt-editor-select:focus {
+        @apply outline-none;
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-editor-select--compact {
+        @apply px-1.5 py-1;
+    }
+
+    /* Number editor with slider */
+    .lt-editor-number-wrapper {
+        @apply flex items-center gap-3;
+    }
+
+    .lt-editor-slider {
+        @apply flex-1 h-4 rounded-full cursor-pointer appearance-none;
+        /* Use a gradient to create a thin track line centered in the element */
+        background: linear-gradient(
+            to bottom,
+            transparent calc(50% - 4px),
+            var(--background-modifier-border) calc(50% - 4px),
+            var(--background-modifier-border) calc(50% + 4px),
+            transparent calc(50% + 4px)
+        );
+    }
+
+    .lt-editor-slider::-webkit-slider-thumb {
+        @apply w-4 h-4 rounded-full cursor-pointer appearance-none;
+        background-color: var(--interactive-accent);
+    }
+
+    .lt-editor-slider::-moz-range-thumb {
+        @apply w-4 h-4 rounded-full cursor-pointer border-0 appearance-none;
+        background-color: var(--interactive-accent);
+    }
+
+    /* Boolean toggle */
+    .lt-editor-toggle {
+        @apply inline-flex items-center cursor-pointer rounded-full;
+        @apply transition-colors duration-200;
+        width: 44px;
+        height: 24px;
+        padding: 2px;
+        background-color: var(--background-modifier-border);
+    }
+
+    .lt-editor-toggle:focus {
+        @apply outline-none;
+        box-shadow: 0 0 0 2px var(--interactive-accent);
+    }
+
+    .lt-editor-toggle--on {
+        background-color: var(--interactive-accent);
+    }
+
+    .lt-editor-toggle-track {
+        @apply relative w-full h-full;
+    }
+
+    .lt-editor-toggle-thumb {
+        @apply absolute w-5 h-5 rounded-full;
+        @apply transition-transform duration-200;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .lt-editor-toggle--on .lt-editor-toggle-thumb {
+        transform: translateX(20px);
+    }
+
+    .lt-editor-checkbox-wrapper {
+        @apply flex items-center cursor-pointer;
+    }
+
+    .lt-editor-checkbox {
+        @apply w-4 h-4 cursor-pointer;
+    }
+
+    /* List/Tags editor */
+    .lt-editor-list {
+        @apply flex flex-wrap items-center gap-1 p-1 rounded min-h-[32px];
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-editor-list:focus-within {
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-editor-list--compact {
+        @apply min-h-[28px] p-0.5;
+    }
+
+    .lt-editor-list-pills {
+        @apply flex flex-wrap gap-1;
+    }
+
+    .lt-editor-list-pill {
+        @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs;
+        background-color: var(--interactive-accent);
+        color: var(--text-on-accent);
+    }
+
+    .lt-editor-list-pill-text {
+        @apply max-w-[100px] truncate;
+    }
+
+    .lt-editor-list-pill-remove {
+        @apply cursor-pointer opacity-70 hover:opacity-100 font-bold;
+    }
+
+    .lt-editor-list-input {
+        @apply flex-1 min-w-[60px] px-1 py-0.5 text-sm bg-transparent border-none;
+        color: var(--text-normal);
+    }
+
+    .lt-editor-list-input:focus {
+        @apply outline-none;
+    }
+
+    .lt-editor-list-suggestions {
+        @apply absolute z-50 mt-1 rounded-lg shadow-lg overflow-hidden max-h-40 overflow-y-auto;
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        min-width: 120px;
+    }
+
+    .lt-editor-list-suggestion {
+        @apply px-3 py-2 text-sm cursor-pointer;
+        color: var(--text-normal);
+    }
+
+    .lt-editor-list-suggestion:hover {
+        background-color: var(--background-modifier-hover);
+    }
+
+    /* ========================================
+   CAPTURE MODAL
+   ======================================== */
+
+    .lt-capture-modal {
+        @apply flex flex-col gap-4;
+        max-width: 500px;
+    }
+
+    .lt-capture-header {
+        @apply flex items-center justify-between pb-3;
+        @apply transition-colors duration-300;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-capture-header--success {
+        background-color: rgba(0, 200, 100, 0.1);
+    }
+
+    .lt-capture-nav {
+        @apply flex items-center gap-2;
+    }
+
+    .lt-capture-nav-btn {
+        @apply w-8 h-8 flex items-center justify-center rounded cursor-pointer;
+        @apply transition-colors duration-150;
+        background-color: var(--background-modifier-hover);
+        color: var(--text-muted);
+        border: none;
+    }
+
+    .lt-capture-nav-btn:hover:not(:disabled) {
+        background-color: var(--interactive-hover);
+        color: var(--text-normal);
+    }
+
+    .lt-capture-nav-btn:disabled {
+        @apply opacity-50 cursor-not-allowed;
+    }
+
+    .lt-capture-nav-count {
+        @apply text-sm px-2;
+        color: var(--text-muted);
+    }
+
+    .lt-capture-title {
+        @apply text-lg font-semibold;
+        color: var(--text-normal);
+    }
+
+    .lt-capture-form {
+        @apply flex flex-col gap-4;
+    }
+
+    .lt-capture-empty {
+        @apply text-sm py-4 text-center;
+        color: var(--text-muted);
+    }
+
+    .lt-capture-field {
+        @apply flex flex-col gap-1;
+    }
+
+    .lt-capture-field--invalid .lt-capture-editor {
+        border-color: var(--text-error);
+    }
+
+    .lt-capture-label {
+        @apply text-sm font-medium;
+        color: var(--text-normal);
+    }
+
+    .lt-capture-required {
+        color: var(--text-error);
+    }
+
+    .lt-capture-description {
+        @apply text-xs mb-1;
+        color: var(--text-muted);
+    }
+
+    .lt-capture-editor {
+        @apply relative;
+    }
+
+    .lt-capture-error {
+        @apply text-xs mt-1;
+        color: var(--text-error);
+    }
+
+    .lt-capture-actions {
+        @apply flex justify-end gap-3 pt-3;
+        border-top: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-capture-btn {
+        @apply px-4 py-2 rounded font-medium cursor-pointer;
+        @apply transition-colors duration-150;
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-capture-btn:disabled {
+        @apply opacity-50 cursor-not-allowed;
+    }
+
+    .lt-capture-btn--primary {
+        background-color: var(--interactive-accent);
+        color: var(--text-on-accent);
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-capture-btn--primary:hover:not(:disabled) {
+        background-color: var(--interactive-accent-hover);
+    }
+
+    .lt-capture-btn--secondary {
+        background-color: var(--background-secondary);
+        color: var(--text-muted);
+    }
+
+    .lt-capture-btn--secondary:hover:not(:disabled) {
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
+    }
+
+    /* ========================================
+   GRID VIEW (Editing)
+   ======================================== */
+
+    .lt-edit-grid-container {
+        @apply p-4;
+    }
+
+    .lt-edit-grid {
+        @apply grid gap-4;
+        grid-template-columns: repeat(var(--lt-grid-columns, 2), 1fr);
+    }
+
+    .lt-edit-card {
+        @apply rounded-lg overflow-hidden;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-edit-card--dirty {
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-edit-card-header {
+        @apply px-4 py-3;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-edit-card-title {
+        @apply text-base font-semibold cursor-pointer;
+        color: var(--text-accent);
+    }
+
+    .lt-edit-card-title:hover {
+        @apply underline;
+    }
+
+    .lt-edit-card-body {
+        @apply p-4 flex flex-col gap-3;
+    }
+
+    .lt-edit-card-row {
+        @apply flex items-start gap-3;
+    }
+
+    .lt-edit-card-label {
+        @apply text-sm font-medium w-28 flex-shrink-0 pt-1.5;
+        color: var(--text-muted);
+    }
+
+    .lt-edit-card-value {
+        @apply flex-1;
+    }
+
+    .lt-edit-card-footer {
+        @apply px-4 py-3 flex justify-end gap-2;
+        border-top: 1px solid var(--background-modifier-border);
+    }
+
+    /* ========================================
+   GRID VIEW (BasesView) - Table Layout
+   ======================================== */
+
+    .lt-grid-view-container {
+        @apply p-2 relative;
+    }
+
+    .lt-grid-view-table-wrapper {
+        overflow-x: auto;
+    }
+
+    /* Fixed header wrapper - positioned at top when scrolled */
+    .lt-grid-view-fixed-header-wrapper {
+        @apply absolute left-0 right-0 z-[100] overflow-x-auto overflow-y-hidden pointer-events-none;
+        /* Hide scrollbar since we sync with main table */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .lt-grid-view-fixed-header-wrapper::-webkit-scrollbar {
+        display: none;
+    }
+
+    .lt-grid-view-table--fixed {
+        @apply pointer-events-auto;
+    }
+
+    .lt-grid-view-table {
+        @apply w-full border-collapse text-sm;
+        min-width: max-content;
+    }
+
+    .lt-grid-view-empty {
+        @apply text-sm py-8 px-4 text-center rounded;
+        color: var(--text-muted);
+        background-color: var(--background-secondary);
+    }
+
+    /* Table header */
+    .lt-grid-view-table thead {
+        /* Sticky is handled via JS with fixed header clone */
+    }
+
+    .lt-grid-view-th {
+        @apply px-2 py-1.5 text-left text-xs font-semibold whitespace-nowrap;
+        background-color: var(--background-secondary);
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--background-modifier-border);
+    }
+
+    .lt-grid-view-th--note {
+        @apply sticky left-0 z-30 min-w-[180px] w-[180px];
+        background-color: var(--background-secondary);
+    }
+
+    .lt-grid-view-th-content {
+        @apply flex items-center gap-0.5;
+    }
+
+    .lt-grid-view-th-name {
+        @apply truncate;
+        max-width: 120px;
+    }
+
+    .lt-grid-view-th-required {
+        @apply text-xs;
+        color: var(--text-error);
+    }
+
+    .lt-grid-view-th--base {
+        @apply sticky z-[25] italic min-w-[120px] w-[120px];
+        background-color: var(--background-primary-alt);
+        color: var(--text-faint);
+    }
+
+    /* Table rows - fixed height for virtual scrolling */
+    .lt-grid-view-tr {
+        @apply transition-colors duration-100;
+        height: 32px;
+    }
+
+    .lt-grid-view-tr:hover {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-grid-view-tr--has-issues {
+        background-color: rgba(255, 100, 100, 0.05);
+    }
+
+    .lt-grid-view-tr--has-issues:hover {
+        background-color: rgba(255, 100, 100, 0.1);
+    }
+
+    /* Virtual scrolling spacers */
+    .lt-grid-view-spacer {
+        @apply p-0 border-0;
+    }
+
+    .lt-grid-view-spacer td {
+        @apply p-0 border-0;
+    }
+
+    /* Table cells */
+    .lt-grid-view-td {
+        @apply px-2 py-1 align-middle;
+        border-bottom: 1px solid var(--background-modifier-border);
+        min-width: 100px;
+        max-width: 200px;
+    }
+
+    .lt-grid-view-td--note {
+        @apply font-medium sticky left-0 z-[5] min-w-[180px] w-[180px];
+        background-color: var(--background-primary);
+    }
+
+    .lt-grid-view-tr:hover .lt-grid-view-td--note {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-grid-view-td--na {
+        @apply text-center;
+    }
+
+    .lt-grid-view-td--invalid {
+        background-color: rgba(255, 100, 100, 0.1);
+    }
+
+    .lt-grid-view-td--base {
+        @apply sticky z-[4] min-w-[120px] w-[120px];
+        background-color: var(--background-primary-alt);
+    }
+
+    .lt-grid-view-tr:hover .lt-grid-view-td--base {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-grid-view-td--empty {
+        @apply text-center;
+    }
+
+    .lt-grid-view-na {
+        @apply text-xs;
+        color: var(--text-faint);
+    }
+
+    .lt-grid-view-empty-value {
+        @apply text-xs;
+        color: var(--text-faint);
+    }
+
+    .lt-grid-view-readonly-value {
+        @apply text-xs truncate block;
+        color: var(--text-muted);
+        max-width: 180px;
+    }
+
+    .lt-grid-view-note-link {
+        @apply cursor-pointer truncate block;
+        color: var(--text-accent);
+        max-width: 160px;
+    }
+
+    .lt-grid-view-note-link:hover {
+        @apply underline;
+    }
+
+    /* Compact editors in table cells */
+    .lt-grid-view-td .lt-editor-input {
+        @apply px-1.5 py-0.5 text-xs;
+        min-height: 24px;
+        line-height: 1.4;
+    }
+
+    .lt-grid-view-td .lt-editor-select {
+        @apply px-1.5 py-0.5 text-xs;
+        min-height: 24px;
+        line-height: 1.4;
+    }
+
+    .lt-grid-view-td .lt-editor-toggle {
+        @apply scale-75 origin-left;
+    }
+
+    .lt-grid-view-td .lt-editor-list {
+        @apply min-h-[24px] p-0.5;
+    }
+
+    .lt-grid-view-td .lt-editor-list-pill {
+        @apply text-[10px] px-1.5 py-0;
+    }
+
+    .lt-grid-view-td .lt-editor-list-input {
+        @apply text-xs min-w-[40px];
+    }
+
+    .lt-grid-view-td .lt-editor-number-wrapper {
+        @apply gap-1;
+    }
+
+    .lt-grid-view-td .lt-editor-slider {
+        @apply h-3;
+        background: linear-gradient(
+            to bottom,
+            transparent calc(50% - 2px),
+            var(--background-modifier-border) calc(50% - 2px),
+            var(--background-modifier-border) calc(50% + 2px),
+            transparent calc(50% + 2px)
+        );
+    }
+
+    .lt-grid-view-td .lt-editor-slider::-webkit-slider-thumb {
+        @apply w-3 h-3;
+    }
+
+    .lt-grid-view-td .lt-editor-slider::-moz-range-thumb {
+        @apply w-3 h-3;
+    }
+
+    .lt-grid-view-td .lt-editor-input--number {
+        @apply w-12 text-center;
+    }
+
+    /* ========================================
+   GRID VIEW - MOBILE CARD LAYOUT
+   ======================================== */
+
+    /* Mobile: transform table into card-based layout */
+    @media (max-width: 640px) {
+        .lt-grid-view-container {
+            @apply p-2;
+        }
+
+        /* Hide the table on mobile */
+        .lt-grid-view-table-wrapper,
+        .lt-grid-view-fixed-header-wrapper {
+            @apply hidden;
+        }
+
+        /* Show the mobile card container */
+        .lt-grid-view-mobile-container {
+            @apply flex flex-col gap-3;
+        }
+    }
+
+    /* Desktop: hide mobile container */
+    .lt-grid-view-mobile-container {
+        @apply hidden;
+    }
+
+    @media (max-width: 640px) {
+        .lt-grid-view-mobile-container {
+            @apply flex;
+        }
+    }
+
+    /* Mobile card styles */
+    .lt-grid-view-card {
+        @apply rounded-lg overflow-hidden;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-grid-view-card--has-issues {
+        border-color: rgba(255, 100, 100, 0.3);
+        background-color: rgba(255, 100, 100, 0.02);
+    }
+
+    .lt-grid-view-card-header {
+        @apply flex items-center justify-between px-3 py-2;
+        background-color: var(--background-primary-alt);
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-grid-view-card-title {
+        @apply text-sm font-semibold truncate cursor-pointer;
+        color: var(--text-accent);
+        max-width: calc(100% - 40px);
+    }
+
+    .lt-grid-view-card-title:active {
+        @apply underline;
+    }
+
+    .lt-grid-view-card-toggle {
+        @apply w-7 h-7 flex items-center justify-center rounded cursor-pointer;
+        @apply transition-transform duration-200;
+        color: var(--text-muted);
+    }
+
+    .lt-grid-view-card-toggle:active {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-grid-view-card-toggle--collapsed {
+        transform: rotate(-90deg);
+    }
+
+    .lt-grid-view-card-body {
+        @apply flex flex-col;
+    }
+
+    .lt-grid-view-card-body--collapsed {
+        @apply hidden;
+    }
+
+    .lt-grid-view-card-row {
+        @apply flex flex-col gap-1 px-3 py-2;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-grid-view-card-row:last-child {
+        border-bottom: none;
+    }
+
+    .lt-grid-view-card-row--na {
+        @apply opacity-50;
+    }
+
+    .lt-grid-view-card-label {
+        @apply flex items-center gap-1 text-xs font-medium;
+        color: var(--text-muted);
+    }
+
+    .lt-grid-view-card-label-required {
+        color: var(--text-error);
+    }
+
+    .lt-grid-view-card-value {
+        @apply mt-1;
+    }
+
+    .lt-grid-view-card-na {
+        @apply text-xs italic;
+        color: var(--text-faint);
+    }
+
+    /* Mobile card editors - larger touch targets */
+    .lt-grid-view-card-value .lt-editor-input {
+        @apply w-full px-3 py-2 text-sm;
+        min-height: 40px;
+        line-height: 1.4;
+    }
+
+    .lt-grid-view-card-value .lt-editor-select {
+        @apply w-full px-3 py-2 text-sm;
+        min-height: 40px;
+        line-height: 1.4;
+    }
+
+    .lt-grid-view-card-value .lt-editor-toggle {
+        @apply scale-100;
+    }
+
+    .lt-grid-view-card-value .lt-editor-list {
+        @apply min-h-[40px] p-1.5;
+    }
+
+    .lt-grid-view-card-value .lt-editor-list-pill {
+        @apply text-xs px-2 py-0.5;
+    }
+
+    .lt-grid-view-card-value .lt-editor-list-input {
+        @apply text-sm min-w-[80px];
+    }
+
+    .lt-grid-view-card-value .lt-editor-number-wrapper {
+        @apply flex-col gap-2;
+    }
+
+    .lt-grid-view-card-value .lt-editor-slider {
+        @apply h-5 w-full;
+        background: linear-gradient(
+            to bottom,
+            transparent calc(50% - 3px),
+            var(--background-modifier-border) calc(50% - 3px),
+            var(--background-modifier-border) calc(50% + 3px),
+            transparent calc(50% + 3px)
+        );
+    }
+
+    .lt-grid-view-card-value .lt-editor-slider::-webkit-slider-thumb {
+        @apply w-5 h-5;
+    }
+
+    .lt-grid-view-card-value .lt-editor-slider::-moz-range-thumb {
+        @apply w-5 h-5;
+    }
+
+    .lt-grid-view-card-value .lt-editor-input--number {
+        @apply w-full text-center;
+    }
+
+    /* Mobile empty state */
+    .lt-grid-view-mobile-empty {
+        @apply text-sm py-8 px-4 text-center rounded;
+        color: var(--text-muted);
+        background-color: var(--background-secondary);
+    }
+
+    /* ========================================
+   CAROUSEL MODAL (Property Capture)
+   ======================================== */
+
+    .lt-carousel-modal {
+        @apply p-0 max-w-[520px] min-w-[420px] overflow-hidden;
+    }
+
+    .lt-carousel-modal .modal-content {
+        @apply p-0 overflow-hidden;
+    }
+
+    .lt-carousel-container {
+        @apply flex flex-col p-8 overflow-hidden;
+    }
+
+    /* File navigation (batch mode) */
+    .lt-carousel-file-nav {
+        @apply flex flex-col gap-3 mb-4 pb-4;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-carousel-file-nav-row {
+        @apply flex items-center justify-center gap-3;
+    }
+
+    .lt-carousel-file-nav-btn {
+        @apply w-7 h-7 flex items-center justify-center rounded-full cursor-pointer;
+        @apply transition-all duration-150 bg-transparent border;
+        color: var(--text-muted);
+        border-color: var(--background-modifier-border);
+    }
+
+    .lt-carousel-file-nav-btn:hover:not(:disabled) {
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
+    }
+
+    .lt-carousel-file-nav-btn:disabled {
+        @apply cursor-not-allowed opacity-30;
+    }
+
+    .lt-carousel-file-counter {
+        @apply flex flex-col items-center px-3;
+    }
+
+    .lt-carousel-file-position {
+        @apply text-sm font-medium;
+        color: var(--text-muted);
+    }
+
+    .lt-carousel-file-remaining {
+        @apply text-xs;
+        color: var(--text-accent);
+    }
+
+    .lt-carousel-filter-row {
+        @apply flex items-center justify-center gap-2;
+    }
+
+    .lt-carousel-filter-label {
+        @apply text-xs;
+        color: var(--text-muted);
+    }
+
+    .lt-carousel-filter-select {
+        @apply text-xs pl-2 pr-6 py-1 rounded;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    /* Title with date/weekday */
+    .lt-carousel-file-name {
+        @apply text-xl font-bold text-center mb-6 tracking-tight;
+        color: var(--text-normal);
+    }
+
+    /* Card (main content area) */
+    .lt-carousel-card {
+        @apply flex flex-col rounded-xl p-6 mb-6 min-h-[220px] shadow-md;
+        background: linear-gradient(
+            145deg,
+            var(--background-secondary) 0%,
+            var(--background-primary-alt) 100%
+        );
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    /* Navigation row */
+    .lt-carousel-nav {
+        @apply flex items-center justify-between mb-5;
+    }
+
+    .lt-carousel-nav-btn {
+        @apply w-10 h-10 flex items-center justify-center rounded-full cursor-pointer;
+        @apply transition-all duration-200 bg-transparent border;
+        color: var(--text-muted);
+        border-color: var(--background-modifier-border);
+    }
+
+    .lt-carousel-nav-btn:hover:not(:disabled) {
+        @apply scale-105;
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
+        border-color: var(--text-muted);
+    }
+
+    .lt-carousel-nav-btn:disabled {
+        @apply opacity-20 cursor-not-allowed scale-100;
+    }
+
+    .lt-carousel-nav-btn--done {
+        background-color: var(--interactive-accent);
+        color: var(--text-on-accent);
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-carousel-nav-btn--done:hover {
+        @apply scale-110;
+        background-color: var(--interactive-accent-hover, var(--interactive-accent));
+        border-color: var(--interactive-accent-hover, var(--interactive-accent));
+    }
+
+    .lt-carousel-nav-btn svg {
+        @apply w-5 h-5;
+    }
+
     .lt-carousel-counter {
-        @apply text-[10px] px-2 py-1;
+        @apply text-sm font-semibold px-4 py-1.5 rounded-full border;
+        background-color: var(--background-primary);
+        color: var(--text-muted);
+        border-color: var(--background-modifier-border);
     }
 
     /* Property label */
     .lt-carousel-label {
-        @apply flex-wrap gap-2 mb-2;
+        @apply flex items-center gap-3 mb-3;
     }
 
     .lt-carousel-property-name {
-        @apply text-base;
+        @apply text-xl font-bold tracking-tight;
+        color: var(--text-normal);
     }
 
-    .lt-carousel-required-badge,
+    .lt-carousel-required-badge {
+        @apply px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide text-[10px];
+        background-color: rgba(255, 100, 100, 0.12);
+        color: var(--text-error);
+    }
+
     .lt-carousel-optional-badge {
-        @apply text-[8px] px-2 py-0.5;
+        @apply px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide text-[10px] border;
+        background-color: var(--background-primary);
+        color: var(--text-muted);
+        border-color: var(--background-modifier-border);
     }
 
     /* Description */
     .lt-carousel-description {
-        @apply text-xs mb-3;
+        @apply text-sm mb-5 leading-relaxed;
+        color: var(--text-muted);
     }
 
-    /* Editor */
+    /* Editor container */
     .lt-carousel-editor {
-        @apply mt-2;
+        @apply flex-1 mt-3;
     }
 
-    /* Input with default button wrapper on mobile */
+    /* Input + "Use default" button wrapper (unified container) */
     .lt-carousel-input-with-default {
-        @apply rounded;
+        @apply flex items-stretch rounded-lg border-2 transition-all duration-200;
+        background-color: var(--background-primary);
+        border-color: var(--background-modifier-border);
+        overflow: hidden;
     }
 
-    /* "Use default" button on mobile */
+    .lt-carousel-input-with-default:focus-within {
+        border-color: var(--interactive-accent);
+        box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.15);
+    }
+
+    /* Input inside the unified container - remove its own border */
+    .lt-carousel-input-with-default .lt-editor-input {
+        @apply border-0 rounded-none flex-1 px-4 py-3;
+        background-color: transparent;
+        box-shadow: none;
+        outline: none;
+    }
+
+    .lt-carousel-input-with-default .lt-editor-input:focus {
+        border-color: transparent;
+        box-shadow: none;
+        outline: none;
+    }
+
+    /* Select inside the unified container - remove its own border */
+    .lt-carousel-input-with-default .lt-editor-select {
+        @apply border-0 rounded-none flex-1 px-4 py-3;
+        background-color: transparent;
+        box-shadow: none;
+        outline: none;
+        min-height: 48px;
+    }
+
+    .lt-carousel-input-with-default .lt-editor-select:focus {
+        border-color: transparent;
+        box-shadow: none;
+        outline: none;
+    }
+
+    /* "Use default" button as integrated suffix */
     .lt-carousel-default-btn {
-        @apply text-[10px] px-2 py-1;
+        @apply px-4 py-3 cursor-pointer whitespace-nowrap;
+        @apply transition-all duration-200 flex-shrink-0;
+        @apply flex items-center justify-center;
+        @apply text-xs font-medium tracking-wide;
+        background-color: transparent;
+        color: var(--text-muted);
+        border: none;
+        border-left: 1px solid var(--background-modifier-border);
+        opacity: 0.7;
+        height: auto;
     }
 
+    .lt-carousel-default-btn:hover {
+        background-color: var(--background-modifier-hover);
+        color: var(--text-accent);
+        opacity: 1;
+    }
+
+    /* Enhanced editor inputs within carousel */
     .lt-carousel-editor .lt-editor-input {
-        @apply px-3 py-2 text-sm;
-    }
-
-    .lt-carousel-editor .lt-editor-number-wrapper {
-        @apply gap-2 flex-wrap;
-    }
-
-    .lt-carousel-editor .lt-editor-slider {
-        @apply w-full;
-        flex: none;
-        order: 1;
-    }
-
-    .lt-carousel-editor .lt-editor-input--number {
-        @apply w-full text-center py-1.5 text-sm;
-        flex: none;
-        order: 2;
-    }
-
-    /* On mobile, the input-with-default in number wrapper should be full width */
-    .lt-carousel-editor .lt-editor-number-wrapper .lt-carousel-input-with-default {
-        @apply w-full;
-        order: 2;
+        @apply px-4 py-3 text-base rounded-lg border-2 transition-all duration-200;
+        background-color: var(--background-primary);
+        border-color: var(--background-modifier-border);
+        line-height: 1.6;
     }
 
     .lt-carousel-editor .lt-editor-select {
-        @apply text-sm py-2;
+        @apply px-3 py-2 text-base rounded-lg border-2 transition-all duration-200;
+        background-color: var(--background-primary);
+        border-color: var(--background-modifier-border);
+        line-height: 1.4;
+        height: auto;
     }
 
-    .lt-carousel-editor .lt-editor-toggle {
-        @apply scale-90;
+    .lt-carousel-editor .lt-editor-select:focus {
+        border-color: var(--interactive-accent);
+        box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.15);
     }
 
-    .lt-carousel-editor .lt-editor-list {
-        @apply text-xs;
+    .lt-carousel-editor .lt-editor-input:focus {
+        border-color: var(--interactive-accent);
+        box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.15);
     }
 
-    .lt-carousel-editor .lt-editor-list-pill {
-        @apply text-[10px] px-1.5;
+    .lt-carousel-editor .lt-editor-number-wrapper {
+        @apply flex items-center gap-3;
     }
 
-    /* Progress */
+    .lt-carousel-editor .lt-editor-slider {
+        @apply h-4 rounded-full cursor-pointer appearance-none;
+        flex: 3; /* More space for slider */
+        /* Use a gradient to create a thin track line centered in the element */
+        background: linear-gradient(
+            to bottom,
+            transparent calc(50% - 3px),
+            var(--background-modifier-border) calc(50% - 3px),
+            var(--background-modifier-border) calc(50% + 3px),
+            transparent calc(50% + 3px)
+        );
+    }
+
+    .lt-carousel-editor .lt-editor-slider::-webkit-slider-thumb {
+        @apply w-4 h-4 rounded-full cursor-pointer appearance-none transition-transform duration-150;
+        background-color: var(--interactive-accent);
+    }
+
+    .lt-carousel-editor .lt-editor-slider:hover::-webkit-slider-thumb {
+        @apply scale-110;
+    }
+
+    .lt-carousel-editor .lt-editor-slider::-moz-range-thumb {
+        @apply w-4 h-4 rounded-full cursor-pointer border-0;
+        background-color: var(--interactive-accent);
+    }
+
+    .lt-carousel-editor .lt-editor-slider:hover::-moz-range-thumb {
+        @apply scale-110;
+    }
+
+    .lt-carousel-editor .lt-editor-input--number {
+        @apply text-center py-2 px-2 text-sm;
+        flex: 1;
+        min-width: 60px; /* Ensure minimum readability */
+    }
+
+    /* When input is inside the default button wrapper - constrain width */
+    .lt-carousel-editor .lt-carousel-input-with-default .lt-editor-input--number {
+        @apply flex-none py-3 px-4;
+        width: 60px;
+        min-width: auto;
+        height: auto;
+    }
+
+    /* Input + button wrapper inside number wrapper - constrain width */
+    .lt-carousel-editor .lt-editor-number-wrapper .lt-carousel-input-with-default {
+        @apply flex-shrink-0;
+        max-width: 180px;
+    }
+
+    /* Button for empty state */
+    .lt-carousel-btn {
+        @apply px-6 py-3 rounded-xl font-semibold cursor-pointer text-sm;
+        @apply transition-all duration-200 border-2 text-center;
+        border-color: var(--background-modifier-border);
+    }
+
+    .lt-carousel-btn:hover {
+        @apply -translate-y-0.5 shadow-lg;
+    }
+
+    .lt-carousel-btn--secondary {
+        background-color: var(--background-secondary);
+        color: var(--text-muted);
+    }
+
+    .lt-carousel-btn--secondary:hover {
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
+    }
+
+    /* Progress section */
     .lt-carousel-progress {
-        @apply mt-3 pt-3;
+        @apply mt-6 pt-5 border-t;
+        border-color: var(--background-modifier-border);
     }
 
     .lt-carousel-progress-bar {
-        @apply h-2;
+        @apply h-2.5 rounded-full overflow-hidden;
+        background-color: var(--background-modifier-border);
+    }
+
+    .lt-carousel-progress-fill {
+        @apply h-full rounded-full transition-all duration-700 ease-out;
+        background: linear-gradient(
+            90deg,
+            var(--interactive-accent) 0%,
+            var(--interactive-accent-hover, var(--interactive-accent)) 50%,
+            var(--interactive-accent) 100%
+        );
+        background-size: 200% 100%;
+        animation: lt-progress-shimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes lt-progress-shimmer {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
     }
 
     .lt-carousel-progress-text {
-        @apply text-[10px] mt-2;
+        @apply text-xs text-center mt-3 font-medium;
+        color: var(--text-muted);
     }
 
     /* Empty state */
     .lt-carousel-empty {
-        @apply py-8 px-4;
+        @apply flex flex-col items-center justify-center py-12 px-8 text-center;
     }
 
     .lt-carousel-empty-icon {
-        @apply text-4xl mb-3;
+        @apply text-6xl mb-5 grayscale-[0.3];
     }
 
     .lt-carousel-empty-title {
-        @apply text-lg mb-2;
+        @apply text-xl font-bold mb-3;
+        color: var(--text-normal);
     }
 
     .lt-carousel-empty-text {
-        @apply text-xs mb-6;
+        @apply text-sm mb-8 max-w-sm leading-relaxed;
+        color: var(--text-muted);
     }
 
-    .lt-carousel-btn {
-        @apply px-4 py-2 text-xs;
+    /* Animation for card transitions */
+    @keyframes lt-carousel-slide-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
-}
 
-/* ========================================
+    .lt-carousel-card {
+        animation: lt-carousel-slide-in 0.25s ease-out;
+    }
+
+    /* ========================================
+   CAROUSEL MODAL - RESPONSIVE STYLES
+   ======================================== */
+
+    /* Tablet adjustments (medium screens) */
+    @media (max-width: 768px) {
+        .lt-carousel-modal {
+            @apply min-w-[320px] max-w-[90vw];
+        }
+
+        .lt-carousel-container {
+            @apply p-6;
+        }
+
+        .lt-carousel-file-name {
+            @apply text-lg mb-4;
+        }
+
+        .lt-carousel-card {
+            @apply p-5 mb-4 min-h-[200px];
+        }
+
+        .lt-carousel-nav-btn {
+            @apply w-9 h-9;
+        }
+
+        .lt-carousel-nav-btn svg {
+            @apply w-4 h-4;
+        }
+
+        .lt-carousel-property-name {
+            @apply text-lg;
+        }
+
+        .lt-carousel-counter {
+            @apply text-xs px-3 py-1;
+        }
+
+        .lt-carousel-progress {
+            @apply mt-4 pt-4;
+        }
+    }
+
+    /* Mobile adjustments (small screens) - fullscreen modal */
+    @media (max-width: 480px) {
+        .lt-carousel-modal {
+            @apply fixed inset-0 min-w-0 max-w-none rounded-none z-[1000];
+            width: 100vw !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            background-color: var(--background-primary) !important;
+        }
+
+        .lt-carousel-modal .modal-close-button {
+            @apply top-3 right-3 z-[1001];
+        }
+
+        .lt-carousel-modal .modal-content {
+            @apply h-full w-full overflow-y-auto p-0;
+            background-color: var(--background-primary);
+        }
+
+        .lt-carousel-container {
+            @apply p-4 pb-8 min-h-full flex flex-col;
+            background-color: var(--background-primary);
+        }
+
+        .lt-carousel-card {
+            @apply flex-1;
+        }
+
+        /* File navigation - stack filter below nav */
+        .lt-carousel-file-nav {
+            @apply gap-2 mb-3 pb-3;
+        }
+
+        .lt-carousel-file-nav-row {
+            @apply gap-2;
+        }
+
+        .lt-carousel-file-nav-btn {
+            @apply w-6 h-6;
+        }
+
+        .lt-carousel-file-nav-btn svg {
+            @apply w-3 h-3;
+        }
+
+        .lt-carousel-file-counter {
+            @apply px-2;
+        }
+
+        .lt-carousel-file-position {
+            @apply text-xs;
+        }
+
+        .lt-carousel-file-remaining {
+            @apply text-[10px];
+        }
+
+        .lt-carousel-filter-row {
+            @apply flex-wrap justify-center;
+        }
+
+        .lt-carousel-filter-label {
+            @apply text-[10px];
+        }
+
+        .lt-carousel-filter-select {
+            @apply text-[10px] pl-1.5 pr-5 py-0.5;
+        }
+
+        /* Title */
+        .lt-carousel-file-name {
+            @apply text-base mb-3;
+        }
+
+        /* Card */
+        .lt-carousel-card {
+            @apply p-4 mb-3 min-h-[180px] rounded-lg;
+        }
+
+        /* Navigation */
+        .lt-carousel-nav {
+            @apply mb-3;
+        }
+
+        .lt-carousel-nav-btn {
+            @apply w-8 h-8;
+        }
+
+        .lt-carousel-nav-btn svg {
+            @apply w-4 h-4;
+        }
+
+        .lt-carousel-counter {
+            @apply text-[10px] px-2 py-1;
+        }
+
+        /* Property label */
+        .lt-carousel-label {
+            @apply flex-wrap gap-2 mb-2;
+        }
+
+        .lt-carousel-property-name {
+            @apply text-base;
+        }
+
+        .lt-carousel-required-badge,
+        .lt-carousel-optional-badge {
+            @apply text-[8px] px-2 py-0.5;
+        }
+
+        /* Description */
+        .lt-carousel-description {
+            @apply text-xs mb-3;
+        }
+
+        /* Editor */
+        .lt-carousel-editor {
+            @apply mt-2;
+        }
+
+        /* Input with default button wrapper on mobile */
+        .lt-carousel-input-with-default {
+            @apply rounded;
+        }
+
+        /* "Use default" button on mobile */
+        .lt-carousel-default-btn {
+            @apply text-[10px] px-2 py-1;
+        }
+
+        .lt-carousel-editor .lt-editor-input {
+            @apply px-3 py-2 text-sm;
+        }
+
+        .lt-carousel-editor .lt-editor-number-wrapper {
+            @apply gap-2 flex-wrap;
+        }
+
+        .lt-carousel-editor .lt-editor-slider {
+            @apply w-full;
+            flex: none;
+            order: 1;
+        }
+
+        .lt-carousel-editor .lt-editor-input--number {
+            @apply w-full text-center py-1.5 text-sm;
+            flex: none;
+            order: 2;
+        }
+
+        /* On mobile, the input-with-default in number wrapper should be full width */
+        .lt-carousel-editor .lt-editor-number-wrapper .lt-carousel-input-with-default {
+            @apply w-full;
+            order: 2;
+        }
+
+        .lt-carousel-editor .lt-editor-select {
+            @apply text-sm py-2;
+        }
+
+        .lt-carousel-editor .lt-editor-toggle {
+            @apply scale-90;
+        }
+
+        .lt-carousel-editor .lt-editor-list {
+            @apply text-xs;
+        }
+
+        .lt-carousel-editor .lt-editor-list-pill {
+            @apply text-[10px] px-1.5;
+        }
+
+        /* Progress */
+        .lt-carousel-progress {
+            @apply mt-3 pt-3;
+        }
+
+        .lt-carousel-progress-bar {
+            @apply h-2;
+        }
+
+        .lt-carousel-progress-text {
+            @apply text-[10px] mt-2;
+        }
+
+        /* Empty state */
+        .lt-carousel-empty {
+            @apply py-8 px-4;
+        }
+
+        .lt-carousel-empty-icon {
+            @apply text-4xl mb-3;
+        }
+
+        .lt-carousel-empty-title {
+            @apply text-lg mb-2;
+        }
+
+        .lt-carousel-empty-text {
+            @apply text-xs mb-6;
+        }
+
+        .lt-carousel-btn {
+            @apply px-4 py-2 text-xs;
+        }
+    }
+
+    /* ========================================
    PROPERTY SELECTION MODAL (Overlay)
    ======================================== */
 
-.lt-property-selection-modal {
-    @apply p-0 overflow-hidden;
-    max-width: min(480px, calc(100vw - 32px));
-    min-width: min(380px, calc(100vw - 32px));
-}
-
-.lt-property-selection-modal .modal-content {
-    @apply p-6 overflow-hidden;
-}
-
-.lt-property-selection-title {
-    @apply text-lg font-bold mb-2;
-    color: var(--text-normal);
-}
-
-.lt-property-selection-description {
-    @apply text-sm mb-5;
-    color: var(--text-muted);
-}
-
-.lt-property-selection-type-row,
-.lt-property-selection-name-row {
-    @apply flex items-center gap-3 mb-4;
-}
-
-.lt-property-selection-label {
-    @apply text-sm font-medium w-24 shrink-0;
-    color: var(--text-normal);
-}
-
-.lt-property-selection-select {
-    @apply flex-1 px-3 rounded text-sm;
-    height: 36px;
-    line-height: 36px;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-property-selection-select:focus {
-    border-color: var(--interactive-accent);
-    outline: none;
-}
-
-.lt-property-selection-input {
-    @apply flex-1 px-3 rounded text-sm;
-    height: 36px;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-property-selection-input:focus {
-    border-color: var(--interactive-accent);
-    outline: none;
-}
-
-.lt-property-selection-list {
-    @apply flex flex-col gap-1 overflow-y-auto mb-5 p-1;
-    max-height: min(300px, 40vh);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
-}
-
-.lt-property-selection-item {
-    @apply flex items-center gap-3 px-3 py-2 rounded cursor-pointer;
-    @apply transition-all duration-100;
-}
-
-.lt-property-selection-item:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-property-selection-item--selected {
-    background-color: var(
-        --background-modifier-active-hover,
-        rgba(var(--interactive-accent-rgb), 0.1)
-    );
-}
-
-.lt-property-selection-checkbox {
-    @apply w-4 h-4 shrink-0 cursor-pointer;
-}
-
-.lt-property-selection-item-label {
-    @apply text-sm cursor-pointer flex-1;
-    color: var(--text-normal);
-}
-
-.lt-property-selection-buttons {
-    @apply flex justify-end gap-3;
-}
-
-.lt-property-selection-btn {
-    @apply px-4 py-2 rounded font-medium text-sm;
-    @apply transition-all duration-150 cursor-pointer;
-}
-
-.lt-property-selection-btn--cancel {
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-property-selection-btn--cancel:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-property-selection-btn--confirm {
-    background-color: var(--interactive-accent);
-    border: 1px solid var(--interactive-accent);
-    color: var(--text-on-accent);
-}
-
-.lt-property-selection-btn--confirm:hover:not(:disabled) {
-    filter: brightness(1.1);
-}
-
-.lt-property-selection-btn--confirm:disabled {
-    @apply opacity-50 cursor-not-allowed;
-}
-
-/* Responsive styles for property selection modal */
-@media (max-width: 480px) {
     .lt-property-selection-modal {
-        min-width: calc(100vw - 24px);
-        max-width: calc(100vw - 24px);
+        @apply p-0 overflow-hidden;
+        max-width: min(480px, calc(100vw - 32px));
+        min-width: min(380px, calc(100vw - 32px));
     }
 
     .lt-property-selection-modal .modal-content {
-        @apply p-4;
+        @apply p-6 overflow-hidden;
     }
 
     .lt-property-selection-title {
-        @apply text-base mb-1;
+        @apply text-lg font-bold mb-2;
+        color: var(--text-normal);
     }
 
     .lt-property-selection-description {
-        @apply text-xs mb-4;
+        @apply text-sm mb-5;
+        color: var(--text-muted);
     }
 
     .lt-property-selection-type-row,
     .lt-property-selection-name-row {
-        @apply flex-col items-stretch gap-2 mb-3;
+        @apply flex items-center gap-3 mb-4;
     }
 
     .lt-property-selection-label {
-        @apply w-auto;
+        @apply text-sm font-medium w-24 shrink-0;
+        color: var(--text-normal);
     }
 
-    .lt-property-selection-select,
+    .lt-property-selection-select {
+        @apply flex-1 px-3 rounded text-sm;
+        height: 36px;
+        line-height: 36px;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-property-selection-select:focus {
+        border-color: var(--interactive-accent);
+        outline: none;
+    }
+
     .lt-property-selection-input {
-        height: 40px;
-        line-height: 40px;
+        @apply flex-1 px-3 rounded text-sm;
+        height: 36px;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-property-selection-input:focus {
+        border-color: var(--interactive-accent);
+        outline: none;
     }
 
     .lt-property-selection-list {
-        max-height: min(250px, 35vh);
-        @apply mb-4;
+        @apply flex flex-col gap-1 overflow-y-auto mb-5 p-1;
+        max-height: min(300px, 40vh);
+        border: 1px solid var(--background-modifier-border);
+        border-radius: var(--radius-s);
     }
 
     .lt-property-selection-item {
-        @apply px-2 py-2;
+        @apply flex items-center gap-3 px-3 py-2 rounded cursor-pointer;
+        @apply transition-all duration-100;
+    }
+
+    .lt-property-selection-item:hover {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-property-selection-item--selected {
+        background-color: var(
+            --background-modifier-active-hover,
+            rgba(var(--interactive-accent-rgb), 0.1)
+        );
+    }
+
+    .lt-property-selection-checkbox {
+        @apply w-4 h-4 shrink-0 cursor-pointer;
+    }
+
+    .lt-property-selection-item-label {
+        @apply text-sm cursor-pointer flex-1;
+        color: var(--text-normal);
     }
 
     .lt-property-selection-buttons {
-        @apply flex-col gap-2;
+        @apply flex justify-end gap-3;
     }
 
     .lt-property-selection-btn {
-        @apply w-full text-center py-3;
+        @apply px-4 py-2 rounded font-medium text-sm;
+        @apply transition-all duration-150 cursor-pointer;
     }
-}
 
-/* ========================================
+    .lt-property-selection-btn--cancel {
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-property-selection-btn--cancel:hover {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-property-selection-btn--confirm {
+        background-color: var(--interactive-accent);
+        border: 1px solid var(--interactive-accent);
+        color: var(--text-on-accent);
+    }
+
+    .lt-property-selection-btn--confirm:hover:not(:disabled) {
+        filter: brightness(1.1);
+    }
+
+    .lt-property-selection-btn--confirm:disabled {
+        @apply opacity-50 cursor-not-allowed;
+    }
+
+    /* Responsive styles for property selection modal */
+    @media (max-width: 480px) {
+        .lt-property-selection-modal {
+            min-width: calc(100vw - 24px);
+            max-width: calc(100vw - 24px);
+        }
+
+        .lt-property-selection-modal .modal-content {
+            @apply p-4;
+        }
+
+        .lt-property-selection-title {
+            @apply text-base mb-1;
+        }
+
+        .lt-property-selection-description {
+            @apply text-xs mb-4;
+        }
+
+        .lt-property-selection-type-row,
+        .lt-property-selection-name-row {
+            @apply flex-col items-stretch gap-2 mb-3;
+        }
+
+        .lt-property-selection-label {
+            @apply w-auto;
+        }
+
+        .lt-property-selection-select,
+        .lt-property-selection-input {
+            height: 40px;
+            line-height: 40px;
+        }
+
+        .lt-property-selection-list {
+            max-height: min(250px, 35vh);
+            @apply mb-4;
+        }
+
+        .lt-property-selection-item {
+            @apply px-2 py-2;
+        }
+
+        .lt-property-selection-buttons {
+            @apply flex-col gap-2;
+        }
+
+        .lt-property-selection-btn {
+            @apply w-full text-center py-3;
+        }
+    }
+
+    /* ========================================
    OVERLAY EDIT MODAL
    ======================================== */
 
-.lt-overlay-edit-modal {
-    @apply p-0;
-    max-width: min(520px, calc(100vw - 32px));
-    min-width: min(420px, calc(100vw - 32px));
-    max-height: min(600px, calc(100vh - 80px));
-    display: flex;
-    flex-direction: column;
-}
-
-.lt-overlay-edit-modal .modal-content {
-    @apply p-0 flex flex-col min-h-0;
-    flex: 1;
-    overflow: hidden;
-}
-
-/* Header */
-.lt-overlay-edit-header {
-    @apply flex items-center justify-between px-6 py-4 shrink-0;
-    border-bottom: 1px solid var(--background-modifier-border);
-    background-color: var(--background-primary);
-}
-
-.lt-overlay-edit-title {
-    @apply text-lg font-bold m-0;
-    color: var(--text-normal);
-}
-
-.lt-overlay-edit-close {
-    @apply w-8 h-8 flex items-center justify-center rounded-full;
-    @apply cursor-pointer transition-colors duration-150;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-}
-
-.lt-overlay-edit-close:hover {
-    background-color: var(--background-modifier-hover);
-    color: var(--text-normal);
-}
-
-.lt-overlay-edit-close svg {
-    @apply w-4 h-4;
-}
-
-/* Content */
-.lt-overlay-edit-content {
-    @apply flex-1 overflow-y-auto px-6 py-5 min-h-0;
-}
-
-/* Sections */
-.lt-overlay-edit-section {
-    @apply mb-5;
-}
-
-.lt-overlay-edit-section:last-of-type {
-    @apply mb-0;
-}
-
-.lt-overlay-edit-label {
-    @apply block text-sm font-medium mb-2;
-    color: var(--text-normal);
-}
-
-.lt-overlay-edit-label-row {
-    @apply flex items-center justify-between mb-2;
-}
-
-.lt-overlay-edit-label-hint {
-    @apply text-xs;
-    color: var(--text-muted);
-}
-
-/* Name input */
-.lt-overlay-edit-input {
-    @apply w-full px-3 rounded text-sm;
-    height: 40px;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-overlay-edit-input:focus {
-    border-color: var(--interactive-accent);
-    outline: none;
-}
-
-.lt-overlay-edit-input::placeholder {
-    color: var(--text-faint);
-}
-
-/* Chart type grid */
-.lt-overlay-edit-type-grid {
-    @apply grid gap-2;
-    grid-template-columns: repeat(3, 1fr);
-}
-
-.lt-overlay-edit-type-btn {
-    @apply flex flex-col items-center justify-center gap-2 p-3 rounded-lg;
-    @apply cursor-pointer transition-all duration-150;
-    @apply min-h-[72px];
-    background-color: var(--background-secondary);
-    border: 2px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-overlay-edit-type-btn:hover {
-    background-color: var(--background-modifier-hover);
-    border-color: var(--background-modifier-border-hover);
-}
-
-.lt-overlay-edit-type-btn--selected {
-    background-color: rgba(var(--interactive-accent-rgb), 0.1);
-    border-color: var(--interactive-accent);
-}
-
-.lt-overlay-edit-type-btn--selected:hover {
-    background-color: rgba(var(--interactive-accent-rgb), 0.15);
-}
-
-.lt-overlay-edit-type-icon {
-    @apply w-6 h-6 flex items-center justify-center shrink-0;
-    @apply overflow-visible;
-    color: var(--text-muted);
-}
-
-.lt-overlay-edit-type-btn--selected .lt-overlay-edit-type-icon {
-    color: var(--interactive-accent);
-}
-
-.lt-overlay-edit-type-icon svg {
-    @apply w-5 h-5;
-}
-
-.lt-overlay-edit-type-label {
-    @apply text-xs font-medium;
-}
-
-.lt-overlay-edit-type-check {
-    @apply absolute top-1 right-1 w-4 h-4;
-    color: var(--interactive-accent);
-}
-
-.lt-overlay-edit-type-btn {
-    @apply relative;
-}
-
-.lt-overlay-edit-type-check svg {
-    @apply w-4 h-4;
-}
-
-/* Property list */
-.lt-overlay-edit-property-list {
-    @apply flex flex-col gap-1 overflow-y-auto p-1 rounded-lg;
-    max-height: min(200px, 30vh);
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-}
-
-.lt-overlay-edit-property-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer;
-    @apply transition-all duration-100;
-}
-
-.lt-overlay-edit-property-item:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-overlay-edit-property-item--selected {
-    background-color: rgba(var(--interactive-accent-rgb), 0.1);
-}
-
-.lt-overlay-edit-checkbox {
-    @apply w-4 h-4 shrink-0 cursor-pointer;
-    accent-color: var(--interactive-accent);
-}
-
-.lt-overlay-edit-property-label {
-    @apply text-sm cursor-pointer flex-1;
-    color: var(--text-normal);
-}
-
-/* Reference lines */
-.lt-overlay-edit-reflines-list {
-    @apply flex flex-col gap-2.5;
-}
-
-.lt-overlay-edit-reflines-empty {
-    @apply text-sm text-center py-4;
-    color: var(--text-muted);
-}
-
-.lt-overlay-edit-refline-row {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-md;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-}
-
-.lt-overlay-edit-refline-name {
-    @apply text-sm flex-1;
-    color: var(--text-normal);
-}
-
-.lt-overlay-edit-refline-toggle {
-    @apply w-4 h-4 shrink-0 cursor-pointer;
-    accent-color: var(--interactive-accent);
-}
-
-.lt-overlay-edit-refline-input {
-    @apply px-2.5 py-1.5 rounded text-sm;
-    width: 100px;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-overlay-edit-refline-input:focus {
-    border-color: var(--interactive-accent);
-    outline: none;
-}
-
-.lt-overlay-edit-refline-input:disabled {
-    @apply opacity-50 cursor-not-allowed;
-    background-color: var(--background-secondary);
-}
-
-.lt-overlay-edit-refline-input::placeholder {
-    color: var(--text-faint);
-}
-
-/* Error message */
-.lt-overlay-edit-error {
-    @apply text-xs mt-3 opacity-0 transition-opacity duration-150;
-    color: var(--text-error);
-    height: 0;
-    overflow: hidden;
-}
-
-.lt-overlay-edit-error--visible {
-    @apply opacity-100;
-    height: auto;
-}
-
-/* Footer */
-.lt-overlay-edit-footer {
-    @apply flex items-center justify-between px-6 py-4 gap-4 shrink-0;
-    border-top: 1px solid var(--background-modifier-border);
-    background-color: var(--background-primary);
-}
-
-.lt-overlay-edit-footer-left,
-.lt-overlay-edit-footer-right {
-    @apply flex items-center gap-3;
-}
-
-/* Buttons */
-.lt-overlay-edit-btn {
-    @apply flex items-center justify-center gap-2 px-4 py-2.5 rounded-md;
-    @apply font-medium text-sm cursor-pointer transition-all duration-150;
-    border: none;
-}
-
-.lt-overlay-edit-btn svg {
-    @apply w-4 h-4;
-}
-
-.lt-overlay-edit-btn--primary {
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-}
-
-.lt-overlay-edit-btn--primary:hover:not(:disabled) {
-    filter: brightness(1.1);
-}
-
-.lt-overlay-edit-btn--primary:disabled {
-    @apply opacity-50 cursor-not-allowed;
-}
-
-.lt-overlay-edit-btn--secondary {
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    color: var(--text-normal);
-}
-
-.lt-overlay-edit-btn--secondary:hover {
-    background-color: var(--background-modifier-hover);
-}
-
-.lt-overlay-edit-btn--danger {
-    background-color: transparent;
-    color: var(--text-error);
-}
-
-.lt-overlay-edit-btn--danger:hover {
-    background-color: rgba(var(--color-red-rgb, 255, 0, 0), 0.1);
-}
-
-/* Responsive styles - fullscreen on mobile */
-@media (max-width: 520px) {
     .lt-overlay-edit-modal {
-        @apply fixed inset-0 min-w-full max-w-full min-h-screen max-h-screen rounded-none m-0;
+        @apply p-0;
+        max-width: min(520px, calc(100vw - 32px));
+        min-width: min(420px, calc(100vw - 32px));
+        max-height: min(600px, calc(100vh - 80px));
+        display: flex;
+        flex-direction: column;
     }
 
+    .lt-overlay-edit-modal .modal-content {
+        @apply p-0 flex flex-col min-h-0;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    /* Header */
     .lt-overlay-edit-header {
-        @apply px-4 py-3;
+        @apply flex items-center justify-between px-6 py-4 shrink-0;
+        border-bottom: 1px solid var(--background-modifier-border);
+        background-color: var(--background-primary);
     }
 
     .lt-overlay-edit-title {
-        @apply text-base;
+        @apply text-lg font-bold m-0;
+        color: var(--text-normal);
     }
 
-    .lt-overlay-edit-content {
-        @apply px-4 py-4;
+    .lt-overlay-edit-close {
+        @apply w-8 h-8 flex items-center justify-center rounded-full;
+        @apply cursor-pointer transition-colors duration-150;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
     }
 
-    .lt-overlay-edit-type-grid {
-        grid-template-columns: repeat(3, 1fr);
-        @apply gap-1.5;
+    .lt-overlay-edit-close:hover {
+        background-color: var(--background-modifier-hover);
+        color: var(--text-normal);
     }
 
-    .lt-overlay-edit-type-btn {
-        @apply p-2 min-h-[60px];
-    }
-
-    .lt-overlay-edit-type-icon svg {
+    .lt-overlay-edit-close svg {
         @apply w-4 h-4;
     }
 
+    /* Content */
+    .lt-overlay-edit-content {
+        @apply flex-1 overflow-y-auto px-6 py-5 min-h-0;
+    }
+
+    /* Sections */
+    .lt-overlay-edit-section {
+        @apply mb-5;
+    }
+
+    .lt-overlay-edit-section:last-of-type {
+        @apply mb-0;
+    }
+
+    .lt-overlay-edit-label {
+        @apply block text-sm font-medium mb-2;
+        color: var(--text-normal);
+    }
+
+    .lt-overlay-edit-label-row {
+        @apply flex items-center justify-between mb-2;
+    }
+
+    .lt-overlay-edit-label-hint {
+        @apply text-xs;
+        color: var(--text-muted);
+    }
+
+    /* Name input */
+    .lt-overlay-edit-input {
+        @apply w-full px-3 rounded text-sm;
+        height: 40px;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-overlay-edit-input:focus {
+        border-color: var(--interactive-accent);
+        outline: none;
+    }
+
+    .lt-overlay-edit-input::placeholder {
+        color: var(--text-faint);
+    }
+
+    /* Chart type grid */
+    .lt-overlay-edit-type-grid {
+        @apply grid gap-2;
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .lt-overlay-edit-type-btn {
+        @apply flex flex-col items-center justify-center gap-2 p-3 rounded-lg;
+        @apply cursor-pointer transition-all duration-150;
+        @apply min-h-[72px];
+        background-color: var(--background-secondary);
+        border: 2px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-overlay-edit-type-btn:hover {
+        background-color: var(--background-modifier-hover);
+        border-color: var(--background-modifier-border-hover);
+    }
+
+    .lt-overlay-edit-type-btn--selected {
+        background-color: rgba(var(--interactive-accent-rgb), 0.1);
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-overlay-edit-type-btn--selected:hover {
+        background-color: rgba(var(--interactive-accent-rgb), 0.15);
+    }
+
     .lt-overlay-edit-type-icon {
+        @apply w-6 h-6 flex items-center justify-center shrink-0;
+        @apply overflow-visible;
+        color: var(--text-muted);
+    }
+
+    .lt-overlay-edit-type-btn--selected .lt-overlay-edit-type-icon {
+        color: var(--interactive-accent);
+    }
+
+    .lt-overlay-edit-type-icon svg {
         @apply w-5 h-5;
     }
 
     .lt-overlay-edit-type-label {
-        @apply text-[10px];
+        @apply text-xs font-medium;
     }
 
+    .lt-overlay-edit-type-check {
+        @apply absolute top-1 right-1 w-4 h-4;
+        color: var(--interactive-accent);
+    }
+
+    .lt-overlay-edit-type-btn {
+        @apply relative;
+    }
+
+    .lt-overlay-edit-type-check svg {
+        @apply w-4 h-4;
+    }
+
+    /* Property list */
     .lt-overlay-edit-property-list {
-        max-height: min(180px, 25vh);
+        @apply flex flex-col gap-1 overflow-y-auto p-1 rounded-lg;
+        max-height: min(200px, 30vh);
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
     }
 
     .lt-overlay-edit-property-item {
-        @apply px-2 py-2;
+        @apply flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer;
+        @apply transition-all duration-100;
     }
 
+    .lt-overlay-edit-property-item:hover {
+        background-color: var(--background-modifier-hover);
+    }
+
+    .lt-overlay-edit-property-item--selected {
+        background-color: rgba(var(--interactive-accent-rgb), 0.1);
+    }
+
+    .lt-overlay-edit-checkbox {
+        @apply w-4 h-4 shrink-0 cursor-pointer;
+        accent-color: var(--interactive-accent);
+    }
+
+    .lt-overlay-edit-property-label {
+        @apply text-sm cursor-pointer flex-1;
+        color: var(--text-normal);
+    }
+
+    /* Reference lines */
+    .lt-overlay-edit-reflines-list {
+        @apply flex flex-col gap-2.5;
+    }
+
+    .lt-overlay-edit-reflines-empty {
+        @apply text-sm text-center py-4;
+        color: var(--text-muted);
+    }
+
+    .lt-overlay-edit-refline-row {
+        @apply flex items-center gap-3 px-3 py-2.5 rounded-md;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-overlay-edit-refline-name {
+        @apply text-sm flex-1;
+        color: var(--text-normal);
+    }
+
+    .lt-overlay-edit-refline-toggle {
+        @apply w-4 h-4 shrink-0 cursor-pointer;
+        accent-color: var(--interactive-accent);
+    }
+
+    .lt-overlay-edit-refline-input {
+        @apply px-2.5 py-1.5 rounded text-sm;
+        width: 100px;
+        background-color: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-overlay-edit-refline-input:focus {
+        border-color: var(--interactive-accent);
+        outline: none;
+    }
+
+    .lt-overlay-edit-refline-input:disabled {
+        @apply opacity-50 cursor-not-allowed;
+        background-color: var(--background-secondary);
+    }
+
+    .lt-overlay-edit-refline-input::placeholder {
+        color: var(--text-faint);
+    }
+
+    /* Error message */
+    .lt-overlay-edit-error {
+        @apply text-xs mt-3 opacity-0 transition-opacity duration-150;
+        color: var(--text-error);
+        height: 0;
+        overflow: hidden;
+    }
+
+    .lt-overlay-edit-error--visible {
+        @apply opacity-100;
+        height: auto;
+    }
+
+    /* Footer */
     .lt-overlay-edit-footer {
-        @apply flex-col-reverse gap-3 px-4 py-3;
+        @apply flex items-center justify-between px-6 py-4 gap-4 shrink-0;
+        border-top: 1px solid var(--background-modifier-border);
+        background-color: var(--background-primary);
     }
 
     .lt-overlay-edit-footer-left,
     .lt-overlay-edit-footer-right {
-        @apply w-full;
+        @apply flex items-center gap-3;
     }
 
-    .lt-overlay-edit-footer-right {
-        @apply flex-col;
-    }
-
+    /* Buttons */
     .lt-overlay-edit-btn {
-        @apply w-full justify-center py-3;
+        @apply flex items-center justify-center gap-2 px-4 py-2.5 rounded-md;
+        @apply font-medium text-sm cursor-pointer transition-all duration-150;
+        border: none;
+    }
+
+    .lt-overlay-edit-btn svg {
+        @apply w-4 h-4;
+    }
+
+    .lt-overlay-edit-btn--primary {
+        background-color: var(--interactive-accent);
+        color: var(--text-on-accent);
+    }
+
+    .lt-overlay-edit-btn--primary:hover:not(:disabled) {
+        filter: brightness(1.1);
+    }
+
+    .lt-overlay-edit-btn--primary:disabled {
+        @apply opacity-50 cursor-not-allowed;
+    }
+
+    .lt-overlay-edit-btn--secondary {
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-overlay-edit-btn--secondary:hover {
+        background-color: var(--background-modifier-hover);
     }
 
     .lt-overlay-edit-btn--danger {
-        @apply w-auto;
+        background-color: transparent;
+        color: var(--text-error);
     }
-}
+
+    .lt-overlay-edit-btn--danger:hover {
+        background-color: rgba(var(--color-red-rgb, 255, 0, 0), 0.1);
+    }
+
+    /* Responsive styles - fullscreen on mobile */
+    @media (max-width: 520px) {
+        .lt-overlay-edit-modal {
+            @apply fixed inset-0 min-w-full max-w-full min-h-screen max-h-screen rounded-none m-0;
+        }
+
+        .lt-overlay-edit-header {
+            @apply px-4 py-3;
+        }
+
+        .lt-overlay-edit-title {
+            @apply text-base;
+        }
+
+        .lt-overlay-edit-content {
+            @apply px-4 py-4;
+        }
+
+        .lt-overlay-edit-type-grid {
+            grid-template-columns: repeat(3, 1fr);
+            @apply gap-1.5;
+        }
+
+        .lt-overlay-edit-type-btn {
+            @apply p-2 min-h-[60px];
+        }
+
+        .lt-overlay-edit-type-icon svg {
+            @apply w-4 h-4;
+        }
+
+        .lt-overlay-edit-type-icon {
+            @apply w-5 h-5;
+        }
+
+        .lt-overlay-edit-type-label {
+            @apply text-[10px];
+        }
+
+        .lt-overlay-edit-property-list {
+            max-height: min(180px, 25vh);
+        }
+
+        .lt-overlay-edit-property-item {
+            @apply px-2 py-2;
+        }
+
+        .lt-overlay-edit-footer {
+            @apply flex-col-reverse gap-3 px-4 py-3;
+        }
+
+        .lt-overlay-edit-footer-left,
+        .lt-overlay-edit-footer-right {
+            @apply w-full;
+        }
+
+        .lt-overlay-edit-footer-right {
+            @apply flex-col;
+        }
+
+        .lt-overlay-edit-btn {
+            @apply w-full justify-center py-3;
+        }
+
+        .lt-overlay-edit-btn--danger {
+            @apply w-auto;
+        }
+    }
+} /* End @layer lt-components */

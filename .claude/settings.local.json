@@ -5,7 +5,9 @@
       "Bash(cat:*)",
       "Bash(wc:*)",
       "Bash(ls:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(gh api:*)",
+      "Bash(gh pr view:*)"
     ]
   }
 }
