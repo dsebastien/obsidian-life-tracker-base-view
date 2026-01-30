@@ -1,3 +1,8 @@
+## [2.6.2](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.6.1...2.6.2) (2026-01-30)
+
+### Features
+
+* **all:** added release and validate scripts ([f941b68](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/f941b6800121c216928861f3d0740031cffa4da6))
 ## [2.6.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.6.0...2.6.1) (2026-01-30)
 
 ### Features
