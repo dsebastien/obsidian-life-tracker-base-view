@@ -87,9 +87,12 @@ jobs:
                   echo "=== Changelog for ${{ steps.version.outputs.version }} ==="
                   head -100 CHANGELOG.md
 
+            - name: Format code
+              run: bun run format
+
             - name: Commit release changes
               run: |
-                  git add package.json versions.json manifest.json CHANGELOG.md
+                  git add package.json versions.json manifest.json CHANGELOG.md docs/release-notes.md
                   git commit -m "chore(release): ${{ steps.version.outputs.version }}" || echo "No changes to commit"
                   git push origin HEAD:${{ steps.version.outputs.branch }}
 
