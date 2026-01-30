@@ -602,6 +602,19 @@ export class ColumnConfigService {
     }
 
     /**
+     * Check if a property should have its individual visualizations hidden.
+     * Returns true if the property is in at least one overlay with hideIndividualVisualizations enabled.
+     */
+    shouldHideIndividualVisualization(propertyId: BasesPropertyId): boolean {
+        const overlays = this.getOverlayConfigsArray()
+        return overlays.some(
+            (overlay) =>
+                overlay.hideIndividualVisualizations === true &&
+                overlay.propertyIds.includes(propertyId)
+        )
+    }
+
+    /**
      * Clean up overlays that reference properties that no longer exist.
      * If an overlay loses properties, it's adjusted. If it drops below 2 properties, it's deleted.
      */

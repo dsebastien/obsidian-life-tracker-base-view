@@ -3203,6 +3203,32 @@
         color: var(--text-normal);
     }
 
+    /* Hide individual toggle */
+    .lt-overlay-edit-toggle-row {
+        @apply flex items-start gap-3 px-3 py-3 rounded-md;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-overlay-edit-toggle {
+        @apply w-4 h-4 shrink-0 cursor-pointer mt-0.5;
+        accent-color: var(--interactive-accent);
+    }
+
+    .lt-overlay-edit-toggle-label-container {
+        @apply flex flex-col gap-0.5;
+    }
+
+    .lt-overlay-edit-toggle-label {
+        @apply text-sm font-medium cursor-pointer;
+        color: var(--text-normal);
+    }
+
+    .lt-overlay-edit-toggle-description {
+        @apply text-xs;
+        color: var(--text-muted);
+    }
+
     /* Reference lines */
     .lt-overlay-edit-reflines-list {
         @apply flex flex-col gap-2.5;

@@ -716,18 +716,28 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     )
                     this.cacheService.setDataPoints(propertyId, dataPoints)
 
-                    // Render all visualizations for this property
-                    for (const effectiveConfig of effectiveConfigs) {
-                        this.renderConfiguredColumn(
-                            effectiveConfig.config,
-                            displayName,
-                            dataPoints,
-                            effectiveConfigs.length > 1 // canRemove: only if multiple visualizations
-                        )
+                    // Check if individual visualizations should be hidden (property is in an overlay)
+                    const shouldHideIndividual =
+                        this.columnConfigService.shouldHideIndividualVisualization(propertyId)
+
+                    // Render all visualizations for this property (unless hidden by overlay)
+                    if (!shouldHideIndividual) {
+                        for (const effectiveConfig of effectiveConfigs) {
+                            this.renderConfiguredColumn(
+                                effectiveConfig.config,
+                                displayName,
+                                dataPoints,
+                                effectiveConfigs.length > 1 // canRemove: only if multiple visualizations
+                            )
+                        }
                     }
                 } else {
-                    // No configuration - show config card
-                    this.renderUnconfiguredColumn(propertyId, displayName)
+                    // No configuration - show config card (unless property is in an overlay with hidden individuals)
+                    const shouldHideIndividual =
+                        this.columnConfigService.shouldHideIndividualVisualization(propertyId)
+                    if (!shouldHideIndividual) {
+                        this.renderUnconfiguredColumn(propertyId, displayName)
+                    }
                 }
             }
 
@@ -1113,7 +1123,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     displayName: result.displayName,
                     visualizationType: result.visualizationType,
                     propertyIds: result.propertyIds,
-                    referenceLines: result.referenceLines
+                    referenceLines: result.referenceLines,
+                    hideIndividualVisualizations: result.hideIndividualVisualizations
                 })
                 this.onDataUpdated()
             },

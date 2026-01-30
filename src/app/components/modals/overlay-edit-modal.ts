@@ -23,6 +23,7 @@ export interface OverlayEditResult {
     visualizationType: VisualizationType
     propertyIds: BasesPropertyId[]
     referenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
+    hideIndividualVisualizations: boolean
 }
 
 /**
@@ -56,6 +57,7 @@ export class OverlayEditModal extends Modal {
     private visualizationType: VisualizationType
     private selectedPropertyIds: Set<BasesPropertyId>
     private referenceLines: Map<BasesPropertyId, ReferenceLineConfig>
+    private hideIndividualVisualizations: boolean
 
     // DOM elements
     private nameInputEl: HTMLInputElement | null = null
@@ -79,6 +81,7 @@ export class OverlayEditModal extends Modal {
         this.displayName = overlayConfig.displayName
         this.visualizationType = overlayConfig.visualizationType
         this.selectedPropertyIds = new Set(overlayConfig.propertyIds)
+        this.hideIndividualVisualizations = overlayConfig.hideIndividualVisualizations ?? false
 
         // Initialize reference lines from config
         this.referenceLines = new Map()
@@ -130,6 +133,9 @@ export class OverlayEditModal extends Modal {
 
         // Properties section
         this.renderPropertiesSection(content)
+
+        // Hide individual visualizations section
+        this.renderHideIndividualSection(content)
 
         // Reference lines section
         this.renderReferenceLinesSection(content)
@@ -319,6 +325,36 @@ export class OverlayEditModal extends Modal {
         })
     }
 
+    private renderHideIndividualSection(container: HTMLElement): void {
+        const section = container.createDiv({ cls: 'lt-overlay-edit-section' })
+
+        const row = section.createDiv({ cls: 'lt-overlay-edit-toggle-row' })
+
+        // Toggle
+        const toggle = row.createEl('input', {
+            type: 'checkbox',
+            cls: 'lt-overlay-edit-toggle'
+        })
+        toggle.checked = this.hideIndividualVisualizations
+        toggle.id = 'overlay-hide-individual'
+
+        // Label and description
+        const labelContainer = row.createDiv({ cls: 'lt-overlay-edit-toggle-label-container' })
+        labelContainer.createEl('label', {
+            cls: 'lt-overlay-edit-toggle-label',
+            text: 'Hide individual visualizations',
+            attr: { for: 'overlay-hide-individual' }
+        })
+        labelContainer.createDiv({
+            cls: 'lt-overlay-edit-toggle-description',
+            text: 'Hide the separate cards for each property in this overlay'
+        })
+
+        toggle.addEventListener('change', () => {
+            this.hideIndividualVisualizations = toggle.checked
+        })
+    }
+
     private renderFooter(container: HTMLElement): void {
         const footer = container.createDiv({ cls: 'lt-overlay-edit-footer' })
 
@@ -468,7 +504,8 @@ export class OverlayEditModal extends Modal {
             displayName: this.displayName.trim(),
             visualizationType: this.visualizationType,
             propertyIds: Array.from(this.selectedPropertyIds),
-            referenceLines: Object.keys(referenceLines).length > 0 ? referenceLines : undefined
+            referenceLines: Object.keys(referenceLines).length > 0 ? referenceLines : undefined,
+            hideIndividualVisualizations: this.hideIndividualVisualizations
         }
 
         this.callbacks.onSave(result)

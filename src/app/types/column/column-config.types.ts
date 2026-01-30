@@ -146,6 +146,8 @@ export interface OverlayVisualizationConfig {
     colorScheme?: ChartColorScheme
     /** Reference line configurations per property ID (for overlays with multiple properties) */
     referenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
+    /** Hide individual visualizations for properties in this overlay (default: false) */
+    hideIndividualVisualizations?: boolean
 }
 
 /**

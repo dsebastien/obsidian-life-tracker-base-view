@@ -75,6 +75,22 @@ Stored in view config under `columnConfigs` key as `Record<PropertyId, ColumnVis
 | `heatmapShowMonthLabels` | Optional heatmap month labels visibility |
 | `heatmapShowDayLabels`   | Optional heatmap day labels visibility   |
 
+## Overlay Config (Per-View)
+
+Stored in view config under `overlayConfigs` key as `Record<OverlayId, OverlayVisualizationConfig>`.
+
+| Field                          | Description                                               |
+| ------------------------------ | --------------------------------------------------------- |
+| `id`                           | Unique overlay ID (UUID)                                  |
+| `propertyIds`                  | Array of property IDs (minimum 2)                         |
+| `visualizationType`            | Chart type (LineChart, BarChart, AreaChart only)          |
+| `displayName`                  | User-defined overlay name                                 |
+| `configuredAt`                 | Timestamp                                                 |
+| `scale`                        | Optional {min, max} for Y-axis                            |
+| `colorScheme`                  | Optional color scheme                                     |
+| `referenceLines`               | Optional per-property reference line configs              |
+| `hideIndividualVisualizations` | Hide individual property cards when true (default: false) |
+
 ## Scale Presets
 
 Available via context menu: `0-1`, `0-5`, `1-5`, `0-10`, `1-10`, `0-100`, or auto-detect.

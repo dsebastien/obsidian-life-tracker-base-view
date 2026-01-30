@@ -78,6 +78,9 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - When a property in an overlay is removed from Base, it is automatically removed from the overlay
 - If an overlay drops below 2 properties after cleanup, the overlay is deleted entirely
 - Overlays are rendered after all individual property visualizations
+- Overlays can optionally hide individual property visualizations via `hideIndividualVisualizations` setting
+- When a property is in multiple overlays, it is hidden if ANY overlay has `hideIndividualVisualizations` enabled
+- Data points are still cached for hidden properties (needed for overlay rendering)
 
 ## Property Removal Cleanup
 
