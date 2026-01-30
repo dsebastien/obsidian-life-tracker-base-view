@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env bun
 /**
  * Calculates the next semantic version based on conventional commits since the last tag.
  *
@@ -7,7 +7,7 @@
  * - feat: -> minor bump
  * - fix:, docs:, chore:, style:, refactor:, perf:, test:, build:, ci: -> patch bump
  *
- * Usage: npx tsx scripts/calculate-next-version.ts
+ * Usage: bun scripts/calculate-next-version.ts
  * Output: Prints the suggested next version to stdout
  */
 

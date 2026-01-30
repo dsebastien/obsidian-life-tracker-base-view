@@ -71,7 +71,7 @@ fi
 
 # Calculate suggested next version based on conventional commits
 print_step "Analyzing commits to determine next version..."
-SUGGESTED_VERSION=$(npx tsx scripts/calculate-next-version.ts 2>/dev/null)
+SUGGESTED_VERSION=$(bun scripts/calculate-next-version.ts 2>/dev/null)
 
 if [ -z "$SUGGESTED_VERSION" ]; then
     print_warning "Could not determine suggested version from commits"
@@ -81,7 +81,7 @@ fi
 # Show commit analysis
 echo ""
 print_info "Version analysis:"
-npx tsx scripts/calculate-next-version.ts --verbose 2>/dev/null | while IFS= read -r line; do
+bun scripts/calculate-next-version.ts --verbose 2>/dev/null | while IFS= read -r line; do
     echo "  $line"
 done
 
