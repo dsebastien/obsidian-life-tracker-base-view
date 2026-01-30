@@ -1,3 +1,8 @@
+## [2.6.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.6.0...2.6.1) (2026-01-30)
+
+### Features
+
+* **all:** isolated styles and removed tw reset ([c1f9059](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c1f9059f13ff490895d07d0e76508b332027b756))
 ## [2.6.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.5.0...2.6.0) (2026-01-05)
 
 ### Features
