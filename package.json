@@ -61,7 +61,7 @@
         "release:changelog": "bun scripts/generate-changelog.ts",
         "release:zip": "bun scripts/create-release-zip.ts",
         "release": "./scripts/release.sh",
-        "validate": "bun run tsc && bun test && bun run lint"
+        "validate": "bun run --parallel tsc test lint"
     },
     "devDependencies": {
         "@commitlint/cli": "^20.1.0",
