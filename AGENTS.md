@@ -52,9 +52,10 @@ You **cannot** self-verify UI behavior — Obsidian is a GUI app and agents do n
 
 **IMPORTANT**:
 
-- Whenever making plans, DO NOT include timing information (e.g., 1-3 weeks, etc) UNLESS asked explicitly
+- **NO TIMING IN PLANS**: Plans MUST NEVER include timing information (e.g., "1-3 weeks", "Phase 1 takes X days"). Focus only on what needs to be done, not when
 - Whenever making plans, store or update those in `documentation/plans`
 - Whenever making plans, focus on actionable information
+- **Clarity over grammar**: Always prioritize clarity and conciseness over perfect grammar. Terse, clear documentation is better than verbose, grammatically perfect text
 
 History is maintained in `documentation/history/yyyy-mm-dd.md` files, organized chronologically. Each file documents:
 
