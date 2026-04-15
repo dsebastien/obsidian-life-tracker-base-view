@@ -73,7 +73,6 @@ export async function syncToDocsReleaseNotes(): Promise<void> {
     }
 
     // Check if docs folder exists
-    const docsDir = Bun.file('docs')
     try {
         const stat = await Bun.file('docs/README.md').exists()
         if (!stat) {
