@@ -1,3 +1,8 @@
+---
+title: Property capture
+nav_order: 11
+---
+
 # Property Capture
 
 The Property Capture feature provides a streamlined interface for entering data into your notes.

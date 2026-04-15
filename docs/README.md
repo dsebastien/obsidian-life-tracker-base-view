@@ -1,3 +1,9 @@
+---
+title: Overview
+nav_order: 1
+permalink: /
+---
+
 # Life Tracker
 
 Capture and visualize the data that matters in your life. This Obsidian plugin adds custom Base View types that transform your tracked data into beautiful visualizations.

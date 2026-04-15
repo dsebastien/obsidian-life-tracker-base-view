@@ -1,0 +1,25 @@
+title: Life tracker base view
+description: Documentation for the Life tracker base view Obsidian plugin.
+url: https://dsebastien.github.io
+baseurl: /obsidian-life-tracker-base-view
+
+remote_theme: just-the-docs/just-the-docs
+
+plugins:
+    - jekyll-remote-theme
+
+aux_links:
+    GitHub: https://github.com/dsebastien/obsidian-life-tracker-base-view
+
+search_enabled: true
+search:
+    heading_level: 3
+    previews: 2
+    preview_words_before: 5
+    preview_words_after: 10
+
+heading_anchors: true
+color_scheme: light
+
+exclude:
+    - SUMMARY.md

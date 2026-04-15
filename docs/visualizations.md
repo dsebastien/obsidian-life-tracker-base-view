@@ -1,3 +1,8 @@
+---
+title: Visualizations
+nav_order: 12
+---
+
 # Visualizations
 
 Life Tracker supports 12 visualization types, each suited for different kinds of data.

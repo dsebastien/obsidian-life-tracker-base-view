@@ -1,3 +1,8 @@
+---
+title: Overlays
+nav_order: 10
+---
+
 # Overlay Charts
 
 Overlay charts combine multiple properties on a single visualization, making it easy to spot correlations and patterns.

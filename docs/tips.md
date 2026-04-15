@@ -1,3 +1,8 @@
+---
+title: Tips & best practices
+nav_order: 90
+---
+
 # Tips and Best Practices
 
 ## Data Organization
