@@ -60,7 +60,7 @@ export class ListEditor extends BasePropertyEditor {
 
         this.inputEl.addEventListener('blur', () => {
             // Delay to allow click on suggestion
-            setTimeout(() => {
+            window.setTimeout(() => {
                 this.hideSuggestions()
                 this.notifyCommit()
             }, 150)

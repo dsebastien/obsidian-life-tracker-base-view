@@ -83,7 +83,7 @@ export class GridView extends BasesView implements FileProvider {
     private baseSelectedProperties: string[] = []
 
     // Debounce timers per file:property for auto-save
-    private saveTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+    private saveTimers: Map<string, number> = new Map()
 
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
@@ -1307,11 +1307,11 @@ export class GridView extends BasesView implements FileProvider {
         // Clear existing timer
         const existingTimer = this.saveTimers.get(timerKey)
         if (existingTimer) {
-            clearTimeout(existingTimer)
+            window.clearTimeout(existingTimer)
         }
 
         // Set new timer
-        const timer = setTimeout(() => {
+        const timer = window.setTimeout(() => {
             this.savePropertyImmediate(file, definition, value)
             this.saveTimers.delete(timerKey)
         }, GridView.AUTO_SAVE_DEBOUNCE_MS)
@@ -1356,7 +1356,7 @@ export class GridView extends BasesView implements FileProvider {
      */
     private clearAllTimers(): void {
         for (const timer of this.saveTimers.values()) {
-            clearTimeout(timer)
+            window.clearTimeout(timer)
         }
         this.saveTimers.clear()
     }

@@ -46,7 +46,7 @@ export class PropertyCaptureModal extends Modal {
     private filledProperties: Set<string> = new Set()
 
     // Debounce timer for auto-save
-    private saveDebounceTimer: ReturnType<typeof setTimeout> | null = null
+    private saveDebounceTimer: number | null = null
 
     // DOM elements (named to avoid shadowing Modal's containerEl)
     private wrapperEl: HTMLElement | null = null
@@ -82,7 +82,7 @@ export class PropertyCaptureModal extends Modal {
     override onClose(): void {
         // Clear any pending save
         if (this.saveDebounceTimer) {
-            clearTimeout(this.saveDebounceTimer)
+            window.clearTimeout(this.saveDebounceTimer)
             // Perform immediate save of any pending changes
             this.saveCurrentPropertyImmediate()
         }
@@ -505,7 +505,7 @@ export class PropertyCaptureModal extends Modal {
         }
 
         // Focus the editor
-        setTimeout(() => {
+        window.setTimeout(() => {
             this.currentEditor?.focus()
         }, 50)
     }
@@ -603,9 +603,9 @@ export class PropertyCaptureModal extends Modal {
      */
     private debouncedSave(): void {
         if (this.saveDebounceTimer) {
-            clearTimeout(this.saveDebounceTimer)
+            window.clearTimeout(this.saveDebounceTimer)
         }
-        this.saveDebounceTimer = setTimeout(() => {
+        this.saveDebounceTimer = window.setTimeout(() => {
             this.saveCurrentPropertyImmediate()
         }, AUTO_SAVE_DEBOUNCE_MS)
     }
@@ -649,7 +649,7 @@ export class PropertyCaptureModal extends Modal {
 
         // Ensure any pending save completes
         if (this.saveDebounceTimer) {
-            clearTimeout(this.saveDebounceTimer)
+            window.clearTimeout(this.saveDebounceTimer)
             this.saveCurrentPropertyImmediate()
         }
 
@@ -671,7 +671,7 @@ export class PropertyCaptureModal extends Modal {
 
         // Ensure any pending save completes
         if (this.saveDebounceTimer) {
-            clearTimeout(this.saveDebounceTimer)
+            window.clearTimeout(this.saveDebounceTimer)
             this.saveCurrentPropertyImmediate()
         }
 
@@ -755,7 +755,7 @@ export class PropertyCaptureModal extends Modal {
 
         // Save immediately before navigating
         if (this.saveDebounceTimer) {
-            clearTimeout(this.saveDebounceTimer)
+            window.clearTimeout(this.saveDebounceTimer)
         }
         this.saveCurrentPropertyImmediate()
 
@@ -788,7 +788,7 @@ export class PropertyCaptureModal extends Modal {
     private navigatePrevFile(): void {
         // Save current property
         if (this.saveDebounceTimer) {
-            clearTimeout(this.saveDebounceTimer)
+            window.clearTimeout(this.saveDebounceTimer)
             this.saveCurrentPropertyImmediate()
         }
 
@@ -822,7 +822,7 @@ export class PropertyCaptureModal extends Modal {
     private navigateNextFile(): void {
         // Save current property
         if (this.saveDebounceTimer) {
-            clearTimeout(this.saveDebounceTimer)
+            window.clearTimeout(this.saveDebounceTimer)
             this.saveCurrentPropertyImmediate()
         }
 
@@ -856,7 +856,7 @@ export class PropertyCaptureModal extends Modal {
     private handleNextFile(): void {
         // Save current property
         if (this.saveDebounceTimer) {
-            clearTimeout(this.saveDebounceTimer)
+            window.clearTimeout(this.saveDebounceTimer)
             this.saveCurrentPropertyImmediate()
         }
 
@@ -901,7 +901,7 @@ export class PropertyCaptureModal extends Modal {
         new Notice(`All ${this.getTotalFiles()} files are complete!`)
 
         // Close after a short delay
-        setTimeout(() => {
+        window.setTimeout(() => {
             this.close()
         }, 600)
     }
@@ -912,7 +912,7 @@ export class PropertyCaptureModal extends Modal {
     private handleDone(): void {
         // Ensure any pending save completes
         if (this.saveDebounceTimer) {
-            clearTimeout(this.saveDebounceTimer)
+            window.clearTimeout(this.saveDebounceTimer)
             this.saveCurrentPropertyImmediate()
         }
 
@@ -929,7 +929,7 @@ export class PropertyCaptureModal extends Modal {
         new Notice(message)
 
         // Small delay to let confetti show before closing
-        setTimeout(() => {
+        window.setTimeout(() => {
             this.close()
         }, 600)
     }
@@ -954,7 +954,7 @@ export class PropertyCaptureModal extends Modal {
         })
 
         // Second burst slightly delayed
-        setTimeout(() => {
+        window.setTimeout(() => {
             void confetti({
                 particleCount: 50,
                 spread: 100,

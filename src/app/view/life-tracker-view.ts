@@ -132,7 +132,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
     // ResizeObserver for handling viewport changes
     private resizeObserver: ResizeObserver | null = null
-    private resizeTimeout: ReturnType<typeof setTimeout> | null = null
+    private resizeTimeout: number | null = null
 
     constructor(controller: QueryController, scrollEl: HTMLElement, plugin: LifeTrackerPlugin) {
         super(controller)
@@ -193,9 +193,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.resizeObserver = new ResizeObserver(() => {
             // Debounce resize events to avoid excessive updates
             if (this.resizeTimeout) {
-                clearTimeout(this.resizeTimeout)
+                window.clearTimeout(this.resizeTimeout)
             }
-            this.resizeTimeout = setTimeout(() => {
+            this.resizeTimeout = window.setTimeout(() => {
                 // Notify all visualizations of size change
                 for (const viz of this.visualizations.values()) {
                     viz.visualization.handleResize()
@@ -211,7 +211,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      */
     private cleanupResizeObserver(): void {
         if (this.resizeTimeout) {
-            clearTimeout(this.resizeTimeout)
+            window.clearTimeout(this.resizeTimeout)
             this.resizeTimeout = null
         }
         if (this.resizeObserver) {
@@ -984,14 +984,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         })
 
         // Add long-touch support for context menu
-        let longTouchTimer: ReturnType<typeof setTimeout> | null = null
+        let longTouchTimer: number | null = null
         let touchStartPos: { x: number; y: number } | null = null
 
         cardEl.addEventListener('touchstart', (event) => {
             const touch = event.touches[0]
             if (touch) {
                 touchStartPos = { x: touch.clientX, y: touch.clientY }
-                longTouchTimer = setTimeout(() => {
+                longTouchTimer = window.setTimeout(() => {
                     event.preventDefault()
                     this.handleCardContextMenu(
                         event,
@@ -1012,7 +1012,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     const dx = Math.abs(touch.clientX - touchStartPos.x)
                     const dy = Math.abs(touch.clientY - touchStartPos.y)
                     if (dx > 10 || dy > 10) {
-                        clearTimeout(longTouchTimer)
+                        window.clearTimeout(longTouchTimer)
                         longTouchTimer = null
                     }
                 }
@@ -1021,7 +1021,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         cardEl.addEventListener('touchend', () => {
             if (longTouchTimer) {
-                clearTimeout(longTouchTimer)
+                window.clearTimeout(longTouchTimer)
                 longTouchTimer = null
             }
             touchStartPos = null
@@ -1029,7 +1029,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         cardEl.addEventListener('touchcancel', () => {
             if (longTouchTimer) {
-                clearTimeout(longTouchTimer)
+                window.clearTimeout(longTouchTimer)
                 longTouchTimer = null
             }
             touchStartPos = null
@@ -1050,14 +1050,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         })
 
         // Add long-touch support for context menu
-        let longTouchTimer: ReturnType<typeof setTimeout> | null = null
+        let longTouchTimer: number | null = null
         let touchStartPos: { x: number; y: number } | null = null
 
         cardEl.addEventListener('touchstart', (event) => {
             const touch = event.touches[0]
             if (touch) {
                 touchStartPos = { x: touch.clientX, y: touch.clientY }
-                longTouchTimer = setTimeout(() => {
+                longTouchTimer = window.setTimeout(() => {
                     event.preventDefault()
                     this.handleOverlayContextMenu(event, overlayConfig)
                 }, 500) // 500ms long press
@@ -1072,7 +1072,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     const dx = Math.abs(touch.clientX - touchStartPos.x)
                     const dy = Math.abs(touch.clientY - touchStartPos.y)
                     if (dx > 10 || dy > 10) {
-                        clearTimeout(longTouchTimer)
+                        window.clearTimeout(longTouchTimer)
                         longTouchTimer = null
                     }
                 }
@@ -1081,7 +1081,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         cardEl.addEventListener('touchend', () => {
             if (longTouchTimer) {
-                clearTimeout(longTouchTimer)
+                window.clearTimeout(longTouchTimer)
                 longTouchTimer = null
             }
             touchStartPos = null
@@ -1089,7 +1089,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         cardEl.addEventListener('touchcancel', () => {
             if (longTouchTimer) {
-                clearTimeout(longTouchTimer)
+                window.clearTimeout(longTouchTimer)
                 longTouchTimer = null
             }
             touchStartPos = null

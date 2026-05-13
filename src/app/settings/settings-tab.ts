@@ -656,7 +656,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                         }
 
                         // Wait a bit for any pending onChange handlers to complete
-                        await new Promise((resolve) => setTimeout(resolve, 50))
+                        await new Promise((resolve) => window.setTimeout(resolve, 50))
 
                         await this.plugin.updateSettings((draft) => {
                             const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
@@ -745,7 +745,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                     }
 
                     // Wait a bit for any pending onChange handlers to complete
-                    await new Promise((resolve) => setTimeout(resolve, 50))
+                    await new Promise((resolve) => window.setTimeout(resolve, 50))
 
                     await this.plugin.updateSettings((draft) => {
                         const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
