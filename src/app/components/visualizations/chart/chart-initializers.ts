@@ -13,16 +13,14 @@ import type {
     PointTooltipContext
 } from '../../../types'
 import { getColorWithAlpha, getBooleanColor, getChartColorScheme } from '../../../../utils'
+import type { Chart as ChartJsChart } from 'chart.js'
+import type { AnnotationOptions } from 'chartjs-plugin-annotation'
 
 /**
- * Chart.js constructor type.
- * Uses 'any' because Chart.js is dynamically imported and its type system
- * is extremely complex with many generic parameters that vary by chart type.
- * The Chart constructor accepts different configurations depending on chart type,
- * making a precise type definition impractical.
+ * Chart.js constructor type. We pin to `typeof ChartJsChart` (a type-only import) so the
+ * dynamically loaded `chart.js` module surfaces in our signatures without runtime cost.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js has complex generic types that vary by chart type, making precise typing impractical
-type ChartClass = any
+type ChartClass = typeof ChartJsChart
 
 /**
  * Initialize pie/doughnut/polarArea chart
@@ -212,7 +210,7 @@ export function initCartesianChart(
     const chartJsType = chartConfig.chartType === 'line' ? 'line' : chartConfig.chartType
 
     // Build annotation configuration if reference lines exist
-    const annotations: Record<string, unknown> = {}
+    const annotations: Record<string, AnnotationOptions> = {}
 
     if (referenceLines && referenceLines.length > 0) {
         referenceLines.forEach((line, index) => {
@@ -226,7 +224,6 @@ export function initCartesianChart(
                 label: {
                     display: true,
                     content: line.label,
-                    enabled: true,
                     position: 'end',
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     color: 'white',
@@ -444,7 +441,14 @@ export function initBubbleChart(
                             const y = context.parsed.y
                             // Return empty string for null/undefined values
                             if (y === null || y === undefined) return ''
-                            const r = context.raw?.r ?? 0
+                            const raw = context.raw
+                            const r =
+                                raw &&
+                                typeof raw === 'object' &&
+                                'r' in raw &&
+                                typeof raw.r === 'number'
+                                    ? raw.r
+                                    : 0
                             // Calculate count from radius (reverse the formula)
                             const count = Math.round(((r - 5) / 25) * 10) || 1
                             return `Value: ${y.toFixed(2)}, Entries: ~${count}`

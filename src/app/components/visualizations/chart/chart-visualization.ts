@@ -409,10 +409,8 @@ export class ChartVisualization extends BaseVisualization {
                     ? getBooleanColor(label)
                     : colors[index % colors.length]!
             })
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js types don't fully reflect that colors can be arrays
-            ;(dataset as any).backgroundColor = backgroundColors
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js types don't fully reflect that colors can be arrays
-            ;(dataset as any).borderColor = borderColors
+            dataset.backgroundColor = backgroundColors
+            dataset.borderColor = borderColors
         }
 
         this.chart!.update()
@@ -440,8 +438,7 @@ export class ChartVisualization extends BaseVisualization {
         // Update chart data in place
         const dataset = this.chart!.data.datasets[0]
         if (dataset) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js scatter data type is different from cartesian
-            ;(dataset as any).data = newScatterData.points
+            dataset.data = newScatterData.points
         }
 
         this.chart!.update()
@@ -470,8 +467,7 @@ export class ChartVisualization extends BaseVisualization {
         // Update chart data in place
         const dataset = this.chart!.data.datasets[0]
         if (dataset) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.js bubble data type is different from cartesian
-            ;(dataset as any).data = newBubbleData.points
+            dataset.data = newBubbleData.points
         }
 
         this.chart!.update()
@@ -599,9 +595,13 @@ export class ChartVisualization extends BaseVisualization {
         this.animationState = 'playing'
         this.updatePlayButtonIcon()
 
-        // Store original data if not already stored
+        // Store original data if not already stored.
+        // Animation is only ever triggered for cartesian/area chart types (see
+        // `supportsAnimation` above), so every dataset.data here is `(number | null)[]`.
         if (this.originalData.length === 0) {
-            this.originalData = this.chart.data.datasets.map((ds) => [...ds.data])
+            this.originalData = this.chart.data.datasets.map((ds) => [
+                ...(ds.data as (number | null)[])
+            ])
         }
 
         const totalPoints = this.originalData[0]?.length ?? 0
