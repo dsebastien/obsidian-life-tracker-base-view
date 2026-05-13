@@ -53,8 +53,6 @@ export default tseslint.config(
             // Obsidian methods are dynamically added to prototypes
             '@typescript-eslint/no-unsafe-enum-comparison': 'off',
             'no-prototype-builtins': 'off',
-            // Disable dependency ban rule - lint-staged is intentionally used
-            'depend/ban-dependencies': 'off',
             // Allow confirm for delete confirmations
             'no-alert': 'off',
             // Disable sentence case rule - it has false positives for already-correct text

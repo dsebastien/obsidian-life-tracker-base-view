@@ -1,0 +1,18 @@
+# Repo-scoped Git configuration with config-based hooks (Git 2.54+).
+#
+# Activate once per clone:
+#
+#   git config --local include.path ../.gitconfig
+#
+# (Path is relative to .git/, so `../.gitconfig` resolves to the repo root.)
+#
+# After that, the hooks below run automatically on `git commit`.
+
+[hook "format-staged"]
+    event = pre-commit
+    command = scripts/git-hooks/format-staged.sh
+
+[hook "commitlint"]
+    event = commit-msg
+    # Git appends the commit-msg file path as the trailing arg, which becomes the value of --edit.
+    command = bunx commitlint --edit

@@ -28,6 +28,38 @@ Thank you for your interest in contributing to this project!
 bun install
 ```
 
+## Git hooks (Git 2.54+)
+
+This repo uses [Git's built-in config-based hooks](https://github.blog/open-source/git/highlights-from-git-2-54/) (introduced in **Git 2.54**) instead of Husky + `lint-staged`. The hook definitions live in a tracked `.gitconfig` file at the repo root and are committed to source control.
+
+### Enable the hooks once per clone
+
+After the first `bun install`, run:
+
+```bash
+bun run setup
+```
+
+That script runs `git config --local --replace-all include.path ../.gitconfig` — the path is relative to `.git/`, so `../.gitconfig` resolves to the repo root. Git then reads the tracked `.gitconfig`, picking up:
+
+- **`pre-commit` → `scripts/git-hooks/format-staged.sh`** — runs Prettier over the staged files and re-stages them.
+- **`commit-msg` → `bunx commitlint --edit`** — validates the commit message against `commitlint.config.ts`.
+
+Confirm the hooks are wired up:
+
+```bash
+git hook list pre-commit
+git hook list commit-msg
+```
+
+### Requirements
+
+- Git **≥ 2.54** is required for config-based hooks. Older Git versions silently ignore them, so the hooks won't run (but nothing will break).
+
+### Why not Husky?
+
+Husky + `lint-staged` together pull in ~80 transitive deps and require a `prepare` post-install script to inject shims into `.git/hooks/`. Git 2.54 provides the same functionality natively, the hook config is plain text in version control, and there's no install-time magic.
+
 ## Development Workflow
 
 ### Create a Branch
