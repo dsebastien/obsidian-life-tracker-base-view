@@ -121,8 +121,13 @@ export function supportsReferenceLine(vizType: VisualizationType): boolean {
 export type ColumnConfigMap = Record<BasesPropertyId, ColumnVisualizationConfig[]>
 
 /**
- * Legacy format for migration (single config per property)
- * @deprecated Used only for migrating old config format
+ * Legacy on-disk format from earlier plugin versions: a single visualization config per
+ * property, instead of the array-of-configs `ColumnConfigMap` used by the current version.
+ *
+ * Still consumed by `ColumnConfigService.migrateToArrayFormat` to read configs persisted
+ * by older versions and convert them on first load. New writes always use
+ * `ColumnConfigMap`, so this type is not "deprecated" — it intentionally describes the V1
+ * shape and stays as long as we have to read it from existing vaults.
  */
 export type LegacyColumnConfigMap = Record<BasesPropertyId, Omit<ColumnVisualizationConfig, 'id'>>
 

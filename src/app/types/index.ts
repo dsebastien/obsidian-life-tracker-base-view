@@ -84,7 +84,6 @@ export {
 } from './property'
 export type {
     ObsidianPropertyType,
-    PropertyType,
     MappingType,
     NumberRange,
     PropertyDefaultValue,

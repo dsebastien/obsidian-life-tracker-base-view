@@ -7,7 +7,6 @@ export {
 } from './property-definition.types'
 export type {
     ObsidianPropertyType,
-    PropertyType,
     MappingType,
     NumberRange,
     PropertyDefaultValue,

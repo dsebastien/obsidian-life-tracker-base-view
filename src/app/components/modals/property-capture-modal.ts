@@ -721,8 +721,7 @@ export class PropertyCaptureModal extends Modal {
                 '.lt-editor-input, .lt-editor-select, .lt-editor-toggle, .lt-editor-list'
             )
             if (input) {
-                const inputWrapper = document.createElement('div')
-                inputWrapper.className = 'lt-carousel-input-with-default'
+                const inputWrapper = createDiv({ cls: 'lt-carousel-input-with-default' })
                 input.parentNode?.insertBefore(inputWrapper, input)
                 inputWrapper.appendChild(input)
                 const btn = inputWrapper.createEl('button', {

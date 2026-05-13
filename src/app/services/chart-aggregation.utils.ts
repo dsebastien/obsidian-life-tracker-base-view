@@ -661,8 +661,8 @@ export function aggregateForOverlayChart(
         }
 
         // Create data array aligned to unified labels (null for missing time periods)
-        const data: (number | null)[] = new Array(labels.length).fill(null)
-        const filePaths: string[][] = new Array(labels.length).fill(null).map(() => [])
+        const data: (number | null)[] = new Array<number | null>(labels.length).fill(null)
+        const filePaths: string[][] = Array.from({ length: labels.length }, () => [])
 
         for (const [key, group] of grouped) {
             const index = timeKeyToIndex.get(key)

@@ -1,5 +1,6 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
+import { TimeGranularity } from '../../../types'
 import type { HeatmapConfig, HeatmapData, VisualizationDataPoint } from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
@@ -151,15 +152,15 @@ export class HeatmapVisualization extends BaseVisualization {
         const newMax = newData.maxDate
 
         switch (this.heatmapConfig.granularity) {
-            case 'daily':
-            case 'weekly':
+            case TimeGranularity.Daily:
+            case TimeGranularity.Weekly:
                 // Check if min/max are within same week range
                 return isSameMonth(oldMin, newMin) && isSameMonth(oldMax, newMax)
-            case 'monthly':
-            case 'quarterly':
+            case TimeGranularity.Monthly:
+            case TimeGranularity.Quarterly:
                 // Check if within same year range
                 return isSameYear(oldMin, newMin) && isSameYear(oldMax, newMax)
-            case 'yearly':
+            case TimeGranularity.Yearly:
                 // For yearly, only re-render if years changed
                 return (
                     oldMin.getFullYear() === newMin.getFullYear() &&

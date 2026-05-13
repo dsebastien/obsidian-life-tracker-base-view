@@ -16,12 +16,6 @@ export type ObsidianPropertyType =
     | 'tags' // Array of tags (special rendering in Obsidian)
 
 /**
- * Alias for backwards compatibility
- * @deprecated Use ObsidianPropertyType instead
- */
-export type PropertyType = ObsidianPropertyType
-
-/**
  * All available property types
  */
 export const PROPERTY_TYPES: ObsidianPropertyType[] = [

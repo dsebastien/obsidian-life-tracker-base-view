@@ -42,16 +42,19 @@ export class FrontmatterService {
      * Uses app.fileManager.processFrontMatter for safe updates
      */
     async write(file: TFile, values: Record<string, unknown>): Promise<void> {
-        await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-            for (const [key, value] of Object.entries(values)) {
-                if (value === null || value === undefined || value === '') {
-                    // Remove the property if value is empty
-                    delete frontmatter[key]
-                } else {
-                    frontmatter[key] = value
+        await this.app.fileManager.processFrontMatter(
+            file,
+            (frontmatter: Record<string, unknown>) => {
+                for (const [key, value] of Object.entries(values)) {
+                    if (value === null || value === undefined || value === '') {
+                        // Remove the property if value is empty
+                        delete frontmatter[key]
+                    } else {
+                        frontmatter[key] = value
+                    }
                 }
             }
-        })
+        )
     }
 
     /**
