@@ -56,7 +56,6 @@
         "release:update-version": "bun scripts/update-version.ts",
         "release:version-bump": "bun scripts/version-bump.ts",
         "release:changelog": "bun scripts/generate-changelog.ts",
-        "release:zip": "bun scripts/create-release-zip.ts",
         "release": "./scripts/release.sh",
         "validate": "bun run --parallel tsc test lint"
     },
