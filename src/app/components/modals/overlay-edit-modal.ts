@@ -6,6 +6,7 @@ import {
     type OverlayVisualizationConfig,
     type ReferenceLineConfig
 } from '../../types'
+import { ConfirmModal } from './confirm-modal'
 
 /**
  * Property info for selection
@@ -513,14 +514,18 @@ export class OverlayEditModal extends Modal {
     }
 
     private handleDelete(): void {
-        // Show confirmation
-        const confirmed = confirm(
-            `Delete overlay "${this.overlayConfig.displayName}"?\n\nThis action cannot be undone.`
-        )
-
-        if (confirmed) {
-            this.callbacks.onDelete()
-            this.close()
-        }
+        new ConfirmModal(
+            this.app,
+            `Delete overlay "${this.overlayConfig.displayName}"?\n\nThis action cannot be undone.`,
+            () => {
+                this.callbacks.onDelete()
+                this.close()
+            },
+            {
+                title: 'Delete overlay',
+                confirmText: 'Delete',
+                destructive: true
+            }
+        ).open()
     }
 }
