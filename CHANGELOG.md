@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.6.2...2.7.0) (2026-05-13)
 
+### Features
+
+* **all:** added docs ([3ad0787](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/3ad0787ce660ce535d9b6b8c2dbccd2bc18202e3))
+* **all:** added release notes update ([5cf6acb](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/5cf6acb2bf9bc1974df51d928a65eafb904eaf79))
+* **all:** added support for hiding individual charts when there is an overlay ([2323c2c](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/2323c2cdee6d3306f0232927e27e98ba726bd3f9)), closes [#71](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/71)
+* **all:** updated release script ([71511da](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/71511daf0c430ab07e1b6b8d0c5b1c7fbc9c09bf))
+* **all:** updated scripts ([81dd38e](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/81dd38e2c2a0d49a93654e2a6a5c89cf4d7bd2d0))
 
 ## [2.6.2](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.6.1...2.6.2) (2026-01-30)
 
@@ -198,4 +206,5 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 

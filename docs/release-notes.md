@@ -1,9 +1,14 @@
----
-title: Release notes
-nav_order: 98
----
-
 # Release Notes
+
+## 2.7.0 (2026-05-13)
+
+### Features
+
+- **all:** added docs
+- **all:** added release notes update
+- **all:** added support for hiding individual charts when there is an overlay
+- **all:** updated release script
+- **all:** updated scripts
 
 ## 2.6.2 (2026-01-30)
 
