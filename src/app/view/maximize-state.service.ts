@@ -49,7 +49,7 @@ export class MaximizeStateService {
 
         // Clean up any existing escape handler first
         if (this.escapeHandler) {
-            document.removeEventListener('keydown', this.escapeHandler)
+            activeDocument.removeEventListener('keydown', this.escapeHandler)
             this.escapeHandler = null
         }
 
@@ -64,7 +64,7 @@ export class MaximizeStateService {
                     this.handleMaximizeToggle(this.maximizedPropertyId, false)
                 }
             }
-            document.addEventListener('keydown', this.escapeHandler)
+            activeDocument.addEventListener('keydown', this.escapeHandler)
 
             // Add maximized class to container
             this.containerEl.classList.add('lt-container--has-maximized')
@@ -148,7 +148,7 @@ export class MaximizeStateService {
      */
     cleanup(): void {
         if (this.escapeHandler) {
-            document.removeEventListener('keydown', this.escapeHandler)
+            activeDocument.removeEventListener('keydown', this.escapeHandler)
             this.escapeHandler = null
         }
         this.maximizedPropertyId = null

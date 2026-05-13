@@ -30,7 +30,10 @@ export default tseslint.config(
                 createDiv: 'readonly',
                 createEl: 'readonly',
                 createSpan: 'readonly',
-                createFragment: 'readonly'
+                createFragment: 'readonly',
+                // Obsidian popout-window-aware globals
+                activeWindow: 'readonly',
+                activeDocument: 'readonly'
             },
             parserOptions: {
                 projectService: true,

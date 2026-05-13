@@ -239,7 +239,7 @@ function interpolateColor(color1: string, color2: string, ratio: number): string
  * Check if current theme is dark
  */
 export function isDarkTheme(): boolean {
-    return document.body.classList.contains('theme-dark')
+    return activeDocument.body.classList.contains('theme-dark')
 }
 
 /**

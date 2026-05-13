@@ -74,7 +74,7 @@ export function showCardContextMenu(
     }
 
     // Create overlay
-    const overlay = document.body.createDiv({ cls: 'lt-card-popover-overlay' })
+    const overlay = activeDocument.body.createDiv({ cls: 'lt-card-popover-overlay' })
 
     // Create popover container
     const popover = overlay.createDiv({ cls: 'lt-card-popover' })
@@ -84,7 +84,7 @@ export function showCardContextMenu(
 
     // Close function
     const close = (): void => {
-        document.removeEventListener('keydown', handleEscape)
+        activeDocument.removeEventListener('keydown', handleEscape)
         overlay.remove()
     }
 
@@ -94,7 +94,7 @@ export function showCardContextMenu(
         }
     }
 
-    document.addEventListener('keydown', handleEscape)
+    activeDocument.addEventListener('keydown', handleEscape)
 
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
@@ -517,7 +517,7 @@ function showCustomScaleModal(
     onConfirm: (scale: ScaleConfig | undefined) => void
 ): void {
     // Create modal overlay
-    const overlay = document.body.createDiv({ cls: 'lt-scale-modal-overlay' })
+    const overlay = activeDocument.body.createDiv({ cls: 'lt-scale-modal-overlay' })
 
     const modal = overlay.createDiv({ cls: 'lt-scale-modal' })
 
@@ -560,7 +560,7 @@ function showCustomScaleModal(
 
     // Cleanup function to remove overlay and event listener
     const cleanup = (): void => {
-        document.removeEventListener('keydown', handleEscape)
+        activeDocument.removeEventListener('keydown', handleEscape)
         overlay.remove()
     }
 
@@ -605,7 +605,7 @@ function showCustomScaleModal(
         }
     })
 
-    document.addEventListener('keydown', handleEscape)
+    activeDocument.addEventListener('keydown', handleEscape)
 
     // Focus min input
     minInput.focus()
@@ -618,7 +618,7 @@ function showReferenceLineModal(
     currentReferenceLine: ReferenceLineConfig | undefined,
     onConfirm: (referenceLine: ReferenceLineConfig) => void
 ): void {
-    const overlay = document.body.createDiv({ cls: 'lt-scale-modal-overlay' })
+    const overlay = activeDocument.body.createDiv({ cls: 'lt-scale-modal-overlay' })
     const modal = overlay.createDiv({ cls: 'lt-scale-modal' })
 
     modal.createDiv({ cls: 'lt-scale-modal-header', text: 'Configure reference line' })
@@ -654,7 +654,7 @@ function showReferenceLineModal(
     }
 
     const cleanup = (): void => {
-        document.removeEventListener('keydown', handleEscape)
+        activeDocument.removeEventListener('keydown', handleEscape)
         overlay.remove()
     }
 
@@ -691,6 +691,6 @@ function showReferenceLineModal(
         if (e.target === overlay) cleanup()
     })
 
-    document.addEventListener('keydown', handleEscape)
+    activeDocument.addEventListener('keydown', handleEscape)
     valueInput.focus()
 }

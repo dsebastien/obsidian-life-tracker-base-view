@@ -650,7 +650,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                     .setTooltip('Add value mapping')
                     .onClick(async () => {
                         // Blur any focused input to trigger onChange before adding new mapping
-                        const activeElement = document.activeElement as HTMLElement
+                        const activeElement = activeDocument.activeElement as HTMLElement
                         if (activeElement && activeElement.blur) {
                             activeElement.blur()
                         }
@@ -739,7 +739,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                 .setTooltip('Remove mapping')
                 .onClick(async () => {
                     // Blur any focused input to trigger onChange before deleting
-                    const activeElement = document.activeElement as HTMLElement
+                    const activeElement = activeDocument.activeElement as HTMLElement
                     if (activeElement && activeElement.blur) {
                         activeElement.blur()
                     }
