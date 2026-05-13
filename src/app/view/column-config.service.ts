@@ -38,8 +38,8 @@ function isLegacyFormat(
     if (!firstKey) return false
 
     // Use Object.values to get the first value without type issues
-    const values = Object.values(configs)
-    const firstValue = values[0]
+    const values: unknown[] = Object.values(configs)
+    const firstValue: unknown = values[0]
     // Legacy format: value is an object with visualizationType property
     // New format: value is an array
     return firstValue !== undefined && !Array.isArray(firstValue)

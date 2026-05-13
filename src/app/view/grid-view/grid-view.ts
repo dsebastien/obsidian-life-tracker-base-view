@@ -523,7 +523,7 @@ export class GridView extends BasesView implements FileProvider {
         let ticking = false
         this.mobileScrollHandler = (): void => {
             if (!ticking) {
-                requestAnimationFrame(() => {
+                window.requestAnimationFrame(() => {
                     this.updateVisibleMobileCards()
                     ticking = false
                 })
@@ -872,7 +872,7 @@ export class GridView extends BasesView implements FileProvider {
         let ticking = false
         this.scrollHandler = () => {
             if (!ticking) {
-                requestAnimationFrame(() => {
+                window.requestAnimationFrame(() => {
                     this.updateVisibleRows()
                     this.updateFixedHeader()
                     ticking = false

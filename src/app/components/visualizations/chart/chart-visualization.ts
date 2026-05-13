@@ -547,7 +547,7 @@ export class ChartVisualization extends BaseVisualization {
             this.canvasEl.removeAttribute('height')
 
             // Use requestAnimationFrame to ensure layout is complete before resize
-            requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
                 if (this.chart) {
                     this.chart.resize()
                 }

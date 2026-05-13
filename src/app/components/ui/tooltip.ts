@@ -42,7 +42,7 @@ export class Tooltip {
         this.visible = true
 
         // Adjust position if tooltip goes off screen
-        requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
             this.adjustPosition()
         })
     }

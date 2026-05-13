@@ -15,9 +15,11 @@
    UTILITY CLASSES
    ======================================== */
 
-    /* Visibility toggle - use instead of inline style.display */
-    .lt-hidden {
-        display: none !important;
+    /* Visibility toggle - use instead of inline style.display.
+       Doubled class bumps specificity (0,2,0) so it beats neighbouring
+       display-setting classes (.lt-grid, .lt-flex, etc.) regardless of source order. */
+    .lt-hidden.lt-hidden {
+        display: none;
     }
 
     /* Layout utilities - use instead of inline style.display */
@@ -758,14 +760,14 @@
 
     /* Card popover extra small screens - near fullscreen */
     @media (max-width: 480px) {
-        .lt-card-popover {
+        .lt-card-popover.lt-card-popover {
             @apply fixed inset-3 rounded-lg;
-            width: auto !important;
-            height: auto !important;
+            width: auto;
+            height: auto;
             max-width: none;
             max-height: none;
-            left: 12px !important;
-            top: 12px !important;
+            left: 12px;
+            top: 12px;
             right: 12px;
             bottom: 12px;
         }
@@ -918,7 +920,7 @@
     /* Grid templates for monthly/quarterly heatmaps - must be after base .lt-heatmap-grid to override display */
     .lt-heatmap-grid--monthly,
     .lt-heatmap-grid--quarterly {
-        @apply grid;
+        @apply grid gap-1;
     }
 
     .lt-heatmap-grid--monthly {
@@ -1041,11 +1043,6 @@
     .lt-heatmap-grid--weekly,
     .lt-heatmap-grid--yearly {
         @apply flex-row flex-wrap;
-    }
-
-    .lt-heatmap-grid--monthly,
-    .lt-heatmap-grid--quarterly {
-        @apply gap-1;
     }
 
     /* ========================================
@@ -1262,10 +1259,11 @@
             @apply w-16;
         }
 
-        .lt-grid {
+        /* Force single column on mobile — doubled class to beat the base
+           desktop .lt-grid rule defined later in source order. */
+        .lt-grid.lt-grid {
             @apply gap-3;
-            /* Force single column on mobile */
-            grid-template-columns: 1fr !important;
+            grid-template-columns: 1fr;
         }
 
         .lt-card {
@@ -1327,30 +1325,33 @@
         @apply gap-2;
     }
 
-    .lt-property-drag-handle {
+    /* Drag handle / chevron live inside .setting-item-control, whose default
+       button styles (specificity 0,1,1) we need to beat. Doubled class
+       gives 0,2,0 which wins. */
+    .lt-property-drag-handle.lt-property-drag-handle {
         @apply p-1 cursor-grab;
-        background: transparent !important;
-        box-shadow: none !important;
+        background: transparent;
+        box-shadow: none;
         color: var(--text-faint);
     }
 
-    .lt-property-drag-handle:hover {
+    .lt-property-drag-handle.lt-property-drag-handle:hover {
         color: var(--text-muted);
-        background-color: var(--background-modifier-hover) !important;
+        background-color: var(--background-modifier-hover);
     }
 
     .lt-property-drag-handle:active {
         @apply cursor-grabbing;
     }
 
-    .lt-property-chevron {
+    .lt-property-chevron.lt-property-chevron {
         @apply p-1;
-        background: transparent !important;
-        box-shadow: none !important;
+        background: transparent;
+        box-shadow: none;
     }
 
-    .lt-property-chevron:hover {
-        background-color: var(--background-modifier-hover) !important;
+    .lt-property-chevron.lt-property-chevron:hover {
+        background-color: var(--background-modifier-hover);
     }
 
     .lt-property-name-input {
@@ -2260,7 +2261,9 @@
         color: var(--text-normal);
     }
 
-    /* Card (main content area) */
+    /* Card (main content area).
+       Merged with the slide-in animation definition that was previously
+       declared as a separate `.lt-carousel-card` rule below. */
     .lt-carousel-card {
         @apply flex flex-col rounded-xl p-6 mb-6 min-h-[220px] shadow-md;
         background: linear-gradient(
@@ -2269,6 +2272,7 @@
             var(--background-primary-alt) 100%
         );
         border: 1px solid var(--background-modifier-border);
+        animation: lt-carousel-slide-in 0.25s ease-out;
     }
 
     /* Navigation row */
@@ -2583,10 +2587,6 @@
         }
     }
 
-    .lt-carousel-card {
-        animation: lt-carousel-slide-in 0.25s ease-out;
-    }
-
     /* ========================================
    CAROUSEL MODAL - RESPONSIVE STYLES
    ======================================== */
@@ -2632,15 +2632,17 @@
 
     /* Mobile adjustments (small screens) - fullscreen modal */
     @media (max-width: 480px) {
-        .lt-carousel-modal {
+        /* Fullscreen modal on mobile — doubled class beats Obsidian's
+           default `.modal` styling. */
+        .lt-carousel-modal.lt-carousel-modal {
             @apply fixed inset-0 min-w-0 max-w-none rounded-none z-[1000];
-            width: 100vw !important;
-            height: 100vh !important;
-            max-height: 100vh !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            background-color: var(--background-primary) !important;
+            width: 100vw;
+            height: 100vh;
+            max-height: 100vh;
+            margin: 0;
+            padding: 0;
+            border: none;
+            background-color: var(--background-primary);
         }
 
         .lt-carousel-modal .modal-close-button {
@@ -2655,10 +2657,6 @@
         .lt-carousel-container {
             @apply p-4 pb-8 min-h-full flex flex-col;
             background-color: var(--background-primary);
-        }
-
-        .lt-carousel-card {
-            @apply flex-1;
         }
 
         /* File navigation - stack filter below nav */
@@ -2707,9 +2705,10 @@
             @apply text-base mb-3;
         }
 
-        /* Card */
+        /* Card — merged: `flex-1` from the carousel-container block above
+           plus mobile sizing overrides. */
         .lt-carousel-card {
-            @apply p-4 mb-3 min-h-[180px] rounded-lg;
+            @apply flex-1 p-4 mb-3 min-h-[180px] rounded-lg;
         }
 
         /* Navigation */
@@ -3120,7 +3119,7 @@
 
     .lt-overlay-edit-type-btn {
         @apply flex flex-col items-center justify-center gap-2 p-3 rounded-lg;
-        @apply cursor-pointer transition-all duration-150;
+        @apply cursor-pointer transition-all duration-150 relative;
         @apply min-h-[72px];
         background-color: var(--background-secondary);
         border: 2px solid var(--background-modifier-border);
@@ -3162,10 +3161,6 @@
     .lt-overlay-edit-type-check {
         @apply absolute top-1 right-1 w-4 h-4;
         color: var(--interactive-accent);
-    }
-
-    .lt-overlay-edit-type-btn {
-        @apply relative;
     }
 
     .lt-overlay-edit-type-check svg {

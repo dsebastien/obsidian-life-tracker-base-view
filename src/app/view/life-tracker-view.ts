@@ -743,7 +743,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
             // Schedule next batch if more properties to render
             if (index < propertiesToRender.length) {
-                this.pendingRenderFrame = requestAnimationFrame(renderBatch)
+                this.pendingRenderFrame = window.requestAnimationFrame(renderBatch)
             } else {
                 this.pendingRenderFrame = null
                 // After all properties are rendered, render overlay charts
@@ -752,7 +752,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         }
 
         // Start rendering
-        this.pendingRenderFrame = requestAnimationFrame(renderBatch)
+        this.pendingRenderFrame = window.requestAnimationFrame(renderBatch)
     }
 
     /**
