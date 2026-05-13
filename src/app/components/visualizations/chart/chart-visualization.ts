@@ -39,7 +39,7 @@ export class ChartVisualization extends BaseVisualization {
     private bubbleChartData: BubbleChartData | null = null
     private chartContainer: HTMLElement | null = null
     private originalData: (number | null)[][] = []
-    private animationInterval: ReturnType<typeof setInterval> | null = null
+    private animationInterval: number | null = null
     private currentAnimationIndex: number = 0
     private overlayReferenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
 
@@ -624,7 +624,7 @@ export class ChartVisualization extends BaseVisualization {
         const intervalMs = Math.max(30, this.animationDuration / totalPoints)
 
         // Progressively reveal data points from oldest (index 0) to newest
-        this.animationInterval = setInterval(() => {
+        this.animationInterval = window.setInterval(() => {
             if (!this.chart || this.animationState !== 'playing') {
                 this.clearAnimationInterval()
                 return
@@ -656,7 +656,7 @@ export class ChartVisualization extends BaseVisualization {
      */
     private clearAnimationInterval(): void {
         if (this.animationInterval) {
-            clearInterval(this.animationInterval)
+            window.clearInterval(this.animationInterval)
             this.animationInterval = null
         }
     }
