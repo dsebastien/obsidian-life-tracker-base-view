@@ -179,6 +179,34 @@ Configure presets in **Settings → Life Tracker → Visualization presets** by 
 
 **How presets work with overrides**: When you add a property column to a Life Tracker Base View, the plugin checks for matching presets and applies them automatically. However, you can always override the preset configuration for that specific property in that specific view using the right-click context menu. Your per-view overrides take precedence over presets, giving you global defaults with local flexibility.
 
+## Installation
+
+### Community plugins (recommended)
+
+1. In Obsidian, go to **Settings → Community plugins**.
+2. Disable **Restricted mode** if it's enabled.
+3. Select **Browse**, search for **Life Tracker**, install it, then enable it.
+
+You can also browse the catalog on the [Obsidian Community](https://community.obsidian.md/) website.
+
+### Manual installation
+
+If the plugin isn't listed in the community catalog yet (or you want a specific version):
+
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/dsebastien/obsidian-life-tracker-base-view/releases).
+2. Copy them into `<Vault>/.obsidian/plugins/life-tracker/`.
+3. Reload Obsidian and enable **Life Tracker** in **Settings → Community plugins**.
+
+### BRAT (bleeding edge)
+
+[BRAT](https://github.com/TfTHacker/obsidian42-brat) (Beta Reviewers Auto-update Tool) installs plugins straight from a GitHub repo and keeps them updated automatically. Use this if you want the latest commits — **things might break**.
+
+1. Install **Obsidian42 - BRAT** from **Settings → Community plugins → Browse** and enable it.
+2. Run **BRAT: Add a beta plugin for testing** from the command palette.
+3. Paste `https://github.com/dsebastien/obsidian-life-tracker-base-view`.
+4. Select the latest version and confirm.
+5. Enable **Life Tracker** in **Settings → Community plugins**.
+
 ## Roadmap
 
 See the issues & discussions in this repositories.
