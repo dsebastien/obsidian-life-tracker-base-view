@@ -392,26 +392,50 @@ export function validateTags(value: unknown, definition: PropertyDefinition): Va
 }
 
 /**
- * Parse a value into a list of strings
+ * Parse a value into a list of strings.
+ *
+ * YAML deserializes `field:` (empty value) into `[null]`; some plugins also insert
+ * `undefined` entries. Filter both out before/after stringification so they don't
+ * surface as literal "null"/"undefined" chips.
  */
 export function parseListValue(value: unknown): string[] {
-    if (Array.isArray(value)) {
-        return value.map(String)
+    if (value === null || value === undefined) {
+        return []
     }
-    return String(value)
-        .split(',')
-        .map((v) => v.trim())
-        .filter(Boolean)
+    if (Array.isArray(value)) {
+        return value
+            .filter((v) => v !== null && v !== undefined && v !== '')
+            .map(String)
+            .filter((v) => v !== 'null' && v !== 'undefined')
+    }
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        return String(value)
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean)
+    }
+    return []
 }
 
 /**
- * Parse a value into a list of tags
+ * Parse a value into a list of tags.
+ *
+ * See {@link parseListValue} for the empty-frontmatter rationale.
  */
 export function parseTagsValue(value: unknown): string[] {
-    if (Array.isArray(value)) {
-        return value.map(String)
+    if (value === null || value === undefined) {
+        return []
     }
-    return String(value)
-        .split(/[,\s]+/)
-        .filter(Boolean)
+    if (Array.isArray(value)) {
+        return value
+            .filter((v) => v !== null && v !== undefined && v !== '')
+            .map(String)
+            .filter((v) => v !== 'null' && v !== 'undefined')
+    }
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        return String(value)
+            .split(/[,\s]+/)
+            .filter(Boolean)
+    }
+    return []
 }
