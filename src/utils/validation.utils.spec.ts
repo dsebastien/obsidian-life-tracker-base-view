@@ -277,6 +277,32 @@ describe('validation.utils', () => {
         test('filters empty values', () => {
             expect(parseListValue('a, , b')).toEqual(['a', 'b'])
         })
+
+        test('returns empty array for null', () => {
+            expect(parseListValue(null)).toEqual([])
+        })
+
+        test('returns empty array for undefined', () => {
+            expect(parseListValue(undefined)).toEqual([])
+        })
+
+        test('filters null entries from arrays (YAML empty value)', () => {
+            expect(parseListValue([null])).toEqual([])
+            expect(parseListValue(['a', null, 'b'])).toEqual(['a', 'b'])
+        })
+
+        test('filters undefined entries from arrays', () => {
+            expect(parseListValue([undefined])).toEqual([])
+            expect(parseListValue(['a', undefined, 'b'])).toEqual(['a', 'b'])
+        })
+
+        test('filters empty string entries from arrays', () => {
+            expect(parseListValue(['a', '', 'b'])).toEqual(['a', 'b'])
+        })
+
+        test('filters literal "null" and "undefined" string entries', () => {
+            expect(parseListValue(['a', 'null', 'undefined', 'b'])).toEqual(['a', 'b'])
+        })
     })
 
     describe('parseTagsValue', () => {
@@ -290,6 +316,35 @@ describe('validation.utils', () => {
 
         test('returns array as-is', () => {
             expect(parseTagsValue(['#tag1', '#tag2'])).toEqual(['#tag1', '#tag2'])
+        })
+
+        test('returns empty array for null', () => {
+            expect(parseTagsValue(null)).toEqual([])
+        })
+
+        test('returns empty array for undefined', () => {
+            expect(parseTagsValue(undefined)).toEqual([])
+        })
+
+        test('filters null entries from arrays (YAML empty value)', () => {
+            expect(parseTagsValue([null])).toEqual([])
+            expect(parseTagsValue(['#tag1', null, '#tag2'])).toEqual(['#tag1', '#tag2'])
+        })
+
+        test('filters undefined entries from arrays', () => {
+            expect(parseTagsValue([undefined])).toEqual([])
+            expect(parseTagsValue(['#tag1', undefined, '#tag2'])).toEqual(['#tag1', '#tag2'])
+        })
+
+        test('filters empty string entries from arrays', () => {
+            expect(parseTagsValue(['#tag1', '', '#tag2'])).toEqual(['#tag1', '#tag2'])
+        })
+
+        test('filters literal "null" and "undefined" string entries', () => {
+            expect(parseTagsValue(['#tag1', 'null', 'undefined', '#tag2'])).toEqual([
+                '#tag1',
+                '#tag2'
+            ])
         })
     })
 
