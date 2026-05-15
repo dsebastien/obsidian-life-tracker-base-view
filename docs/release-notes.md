@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.7.3 (2026-05-15)
+
+### Bug Fixes
+
+- **plugin:** filter null/undefined from multi-value property parsing
+
 ## 2.7.2 (2026-05-14)
 
 ## 2.7.1 (2026-05-13)
