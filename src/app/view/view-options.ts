@@ -1,4 +1,3 @@
-// Obsidian v1.10.3 seemingly replaced ViewOption with BasesAllOptions
 import type { BasesAllOptions } from 'obsidian'
 import { TimeGranularity } from '../types'
 
