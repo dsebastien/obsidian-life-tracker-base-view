@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.7.4 (2026-05-16)
+
+### Bug Fixes
+
+- **plugin:** update view option type definition ([#84](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/84))
+
 ## 2.7.3 (2026-05-15)
 
 ### Bug Fixes
