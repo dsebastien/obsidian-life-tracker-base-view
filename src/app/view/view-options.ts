@@ -1,4 +1,5 @@
-import type { ViewOption } from 'obsidian'
+// Obsidian v1.10.3 seemingly replaced ViewOption with BasesAllOptions
+import type { BasesAllOptions } from 'obsidian'
 import { TimeGranularity } from '../types'
 
 /**
@@ -19,7 +20,7 @@ export const DEFAULT_GRID_COLUMNS = 2
 /**
  * Get view options for Life Tracker view configuration
  */
-export function getLifeTrackerViewOptions(): ViewOption[] {
+export function getLifeTrackerViewOptions(): BasesAllOptions[] {
     return [
         // Date anchor configuration
         {

@@ -1,4 +1,5 @@
-import type { ViewOption } from 'obsidian'
+// Obsidian v1.10.3 seemingly replaced ViewOption with BasesAllOptions
+import type { BasesAllOptions } from 'obsidian'
 import {
     BATCH_FILTER_MODE_OPTIONS,
     DEFAULT_BATCH_FILTER_MODE,
@@ -10,7 +11,7 @@ import {
 /**
  * Get view options for Grid View configuration
  */
-export function getGridViewOptions(): ViewOption[] {
+export function getGridViewOptions(): BasesAllOptions[] {
     return [
         // Filtering options
         {
