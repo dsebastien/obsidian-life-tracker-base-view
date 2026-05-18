@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.8.0 (2026-05-18)
+
+### Features
+
+- **all:** enable reordering charts in the Life Tracker base view
+
 ## 2.7.4 (2026-05-16)
 
 ### Bug Fixes
