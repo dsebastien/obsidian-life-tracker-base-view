@@ -64,6 +64,22 @@ Filter visualizations to show specific date ranges:
 
 Adjust the number of columns (1-6) to control card density.
 
+### Reorder Cards
+
+By default, cards appear in the order defined by your Base's property list, with overlay charts at the end.
+
+To customize the order:
+
+1. Hover over a card — a small grip handle (⋮⋮) appears in the top-left corner
+2. Drag the handle to move the card to a new position
+3. The new order is saved automatically for the current view
+
+Both property cards and overlay cards can be reordered, so you can place overlays before, between, or after individual property cards. Drag-and-drop works on both desktop (mouse) and mobile (touch).
+
+When a custom order is in effect, a **Reset order** button appears in the controls bar. Click it to revert to the default order. New properties or overlays added later automatically appear at the end of your custom order, so they're never lost.
+
+**Note**: The custom order is saved per view. Different Bases — and different views inside the same Base — keep their own orderings independently.
+
 ### Animation Controls
 
 - **Play/Pause**: Control chart animations

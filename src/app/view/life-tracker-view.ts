@@ -38,6 +38,10 @@ import { createEmptyState, EMPTY_STATE_MESSAGES } from '../components/ui/empty-s
 import { createColumnConfigCard } from '../components/ui/column-config-card'
 import { showCardContextMenu, type HeatmapMenuConfig } from '../components/ui/card-context-menu'
 import { createGridControls, DEFAULT_GRID_SETTINGS } from '../components/ui/grid-controls'
+import {
+    createDragReorderController,
+    type DragReorderController
+} from '../components/ui/card-drag-handle'
 import { DEFAULT_GRID_COLUMNS } from './view-options'
 import {
     DATA_ATTR_FULL,
@@ -50,6 +54,13 @@ import {
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
 import { getVisualizationConfig } from './visualization-config.helper'
+import {
+    computeEffectiveOrder,
+    orderSignature,
+    readManualOrder,
+    writeManualOrder
+} from './card-order.service'
+import { MANUAL_ORDER_KEY, serializeOrderItem, type OrderedCardItem } from './card-order.types'
 import {
     PropertySelectionModal,
     type SelectableProperty
@@ -110,6 +121,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // Flag to skip re-render when only grid settings change
     private isUpdatingGridSettings = false
 
+    // Flag to skip re-render when we persist a drag-drop reorder
+    // (DOM is already in the right state, no need to re-render)
+    private isUpdatingManualOrder = false
+
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
 
@@ -130,9 +145,22 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // Track previous time frame for change detection
     private previousTimeFrame: TimeFrame | null = null
 
+    // Signature of the last rendered card order, used to detect order changes
+    // (e.g., user dragged a card, or a property/overlay was added/removed).
+    private previousOrderSignature: string | null = null
+
+    // Full effective order from the last render (all items, including those
+    // hidden by an overlay's `hideIndividualVisualizations` setting). We use
+    // this to preserve hidden entries' positions when persisting a drag-drop
+    // result, since the DOM only contains the visible subset.
+    private currentEffectiveOrder: OrderedCardItem[] = []
+
     // ResizeObserver for handling viewport changes
     private resizeObserver: ResizeObserver | null = null
     private resizeTimeout: number | null = null
+
+    // Drag-and-drop controller for reordering cards in the grid
+    private dragController: DragReorderController | null = null
 
     constructor(controller: QueryController, scrollEl: HTMLElement, plugin: LifeTrackerPlugin) {
         super(controller)
@@ -330,8 +358,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      * Called when data changes - main render logic
      */
     override onDataUpdated(): void {
-        // Skip full re-render if we're just updating grid settings
-        if (this.isUpdatingGridSettings) {
+        // Skip full re-render if we're just updating grid settings or the
+        // manual card order (drag-drop already moved the DOM nodes in place).
+        if (this.isUpdatingGridSettings || this.isUpdatingManualOrder) {
             return
         }
 
@@ -345,6 +374,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Get entries and properties
         const entries = this.data.data
         const propertyIds = this.config.getOrder()
+        const overlayConfigs = this.columnConfigService.getOverlayConfigsArray()
+        const manualOrder = readManualOrder(this.config.get(MANUAL_ORDER_KEY))
+        const effectiveOrder = computeEffectiveOrder({
+            propertyIds,
+            overlayIds: overlayConfigs.map((o) => o.id),
+            manualOrder
+        })
+        const newOrderSignature = orderSignature(effectiveOrder)
 
         // Start new cache cycle (invalidates stale cached data if entries changed)
         this.cacheService.startRenderCycle(entries)
@@ -368,7 +405,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.previousHeatmapSettings.colorScheme !== currentHeatmapSettings.colorScheme)
 
         // Check if we can do an incremental update (same structure, just data changed)
-        const canIncrementalUpdate = this.canDoIncrementalUpdate(entries, propertyIds)
+        const canIncrementalUpdate = this.canDoIncrementalUpdate(
+            entries,
+            propertyIds,
+            newOrderSignature
+        )
 
         // Get current time frame from config
         const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
@@ -391,6 +432,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Update tracking for full re-render path
         this.previousHeatmapSettings = currentHeatmapSettings
         this.previousTimeFrame = currentTimeFrame
+        this.previousOrderSignature = newOrderSignature
+        this.currentEffectiveOrder = effectiveOrder
 
         // Full re-render path
         this.maximizeService.cleanup()
@@ -439,12 +482,22 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     this.applyGridSettings()
                 }
             },
-            () => this.openCreateOverlayModal()
+            {
+                onCreateOverlay: () => this.openCreateOverlayModal(),
+                onResetCardOrder: () => this.resetCardOrder(),
+                showResetOrder: manualOrder !== null
+            }
         )
 
         // Create grid container
         this.gridEl = this.containerEl.createDiv({ cls: 'lt-grid' })
         this.applyGridSettings()
+
+        // Set up drag-and-drop reordering on the new grid
+        this.dragController?.destroy()
+        this.dragController = createDragReorderController(this.gridEl, {
+            onReorder: (visibleOrder) => this.applyManualOrder(visibleOrder)
+        })
 
         // Resolve date anchors for all entries (cache them for reuse)
         const anchorConfig = this.getDateAnchorConfig()
@@ -470,7 +523,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.columnConfigService.cleanupOrphanedConfigs(currentPropertyIds)
 
         // Use async batched rendering to prevent UI freezing
-        void this.renderPropertiesAsync(propertyIds, filteredEntries, dateAnchors, renderCycle)
+        void this.renderCardsAsync(effectiveOrder, filteredEntries, dateAnchors, renderCycle)
     }
 
     /**
@@ -499,7 +552,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     /**
      * Check if we can do an incremental update (structure unchanged, only data values changed)
      */
-    private canDoIncrementalUpdate(entries: BasesEntry[], propertyIds: BasesPropertyId[]): boolean {
+    private canDoIncrementalUpdate(
+        entries: BasesEntry[],
+        propertyIds: BasesPropertyId[],
+        newOrderSignature: string
+    ): boolean {
         // Can't do incremental if no existing visualizations
         if (this.visualizations.size === 0) return false
 
@@ -509,6 +566,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Check if time frame has changed
         const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
         if (this.previousTimeFrame !== null && this.previousTimeFrame !== currentTimeFrame) {
+            return false
+        }
+
+        // Card order changed (drag-drop, or reset, or property/overlay added/removed
+        // in a way that shifts the order) — needs a full re-render so the DOM
+        // matches the new sequence.
+        if (
+            this.previousOrderSignature !== null &&
+            this.previousOrderSignature !== newOrderSignature
+        ) {
             return false
         }
 
@@ -621,7 +688,20 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     }
 
     /**
-     * Perform incremental update - update existing visualizations with new data
+     * Perform incremental update - update existing visualizations with new data.
+     *
+     * Skips visualizations whose data is still in the cache: `startRenderCycle`
+     * already cleared the cache for any property whose entries changed, so a
+     * cache hit here means the data hasn't changed and the chart is already
+     * up to date. This avoids needlessly re-aggregating and re-drawing every
+     * chart on spurious `onDataUpdated` calls (e.g., after a drag-drop reorder
+     * triggers `config.set('manualOrder', ...)`).
+     *
+     * Overlay visualizations are skipped here too — their `propertyId` is the
+     * overlay's UUID, which doesn't map to any frontmatter property, so the
+     * per-property `createDataPoints` flow doesn't apply. Overlays are
+     * re-rendered when the structure changes (which forces the full-render
+     * path, not this one).
      */
     private performIncrementalUpdate(entries: BasesEntry[]): void {
         // Get date anchors (use cache)
@@ -632,7 +712,35 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             this.cacheService.setDateAnchors(dateAnchors)
         }
 
-        // Filter entries based on time frame
+        // Get showEmptyValues setting
+        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
+
+        const overlayIds = new Set<string>(
+            this.columnConfigService.getOverlayConfigsArray().map((o) => o.id)
+        )
+
+        // Determine which visualizations actually need to be updated.
+        const stale: Array<{
+            propertyId: BasesPropertyId
+            propertyDisplayName: string
+            visualization: BaseVisualization
+        }> = []
+        for (const viz of this.visualizations.values()) {
+            // Overlays are managed by the full re-render path, not here.
+            if (overlayIds.has(String(viz.propertyId))) continue
+
+            // Cache hit = entries unchanged since the cache was populated, so
+            // the chart is already showing the right data. Skip.
+            const cached = this.cacheService.getDataPoints(viz.propertyId)
+            if (cached) continue
+
+            stale.push(viz)
+        }
+
+        if (stale.length === 0) return
+
+        // Only compute the filtered entries once, and only if we actually
+        // have work to do (this is non-trivial for large vaults).
         const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
         const timeFrameDateRange = getTimeFrameDateRange(currentTimeFrame)
         const filteredEntries = this.filterEntriesByTimeFrame(
@@ -641,12 +749,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             timeFrameDateRange
         )
 
-        // Get showEmptyValues setting
-        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
-
-        this.visualizations.forEach((viz) => {
-            // Update each visualization with new data (already filtered based on showEmptyValues)
-            // Extract property name from propertyId (strips namespace like "note." or "file.")
+        for (const viz of stale) {
             const propertyName = extractPropertyName(String(viz.propertyId))
             const propertyDefinition =
                 this.plugin.settings.propertyDefinitions.find((def) => def.name === propertyName) ??
@@ -662,14 +765,17 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             )
             this.cacheService.setDataPoints(viz.propertyId, dataPoints)
             viz.visualization.update(dataPoints)
-        })
+        }
     }
 
     /**
-     * Render properties asynchronously in batches to prevent UI freezing
+     * Render cards (property visualizations + overlay charts) asynchronously
+     * in batches to prevent UI freezing. The order is determined by the
+     * effective order computed in `onDataUpdated` (manual order merged with
+     * any newly added items appended at the end).
      */
-    private async renderPropertiesAsync(
-        propertiesToRender: BasesPropertyId[],
+    private async renderCardsAsync(
+        orderedCards: OrderedCardItem[],
         entries: BasesEntry[],
         dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>,
         renderCycle: number
@@ -682,77 +788,94 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 return
             }
 
-            const batchEnd = Math.min(index + RENDER_BATCH_SIZE, propertiesToRender.length)
+            const batchEnd = Math.min(index + RENDER_BATCH_SIZE, orderedCards.length)
 
-            // Render a batch of properties
+            // Render a batch of cards
             for (; index < batchEnd; index++) {
-                const propertyId = propertiesToRender[index]
-                if (!propertyId) continue
+                const item = orderedCards[index]
+                if (!item) continue
 
-                const displayName = this.config.getDisplayName(propertyId)
-                const effectiveConfigs = this.columnConfigService.getEffectiveConfigs(
-                    propertyId,
-                    displayName
-                )
-
-                if (effectiveConfigs.length > 0) {
-                    // Has configuration(s) (local overrides or global preset)
-                    const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
-
-                    // Extract property name from propertyId (strips namespace like "note." or "file.")
-                    const propertyName = extractPropertyName(String(propertyId))
-                    const propertyDefinition =
-                        this.plugin.settings.propertyDefinitions.find(
-                            (def) => def.name === propertyName
-                        ) ?? null
-
-                    const dataPoints = this.aggregationService.createDataPoints(
-                        entries,
-                        propertyId,
-                        displayName,
-                        propertyDefinition,
-                        dateAnchors,
-                        showEmptyValues
-                    )
-                    this.cacheService.setDataPoints(propertyId, dataPoints)
-
-                    // Check if individual visualizations should be hidden (property is in an overlay)
-                    const shouldHideIndividual =
-                        this.columnConfigService.shouldHideIndividualVisualization(propertyId)
-
-                    // Render all visualizations for this property (unless hidden by overlay)
-                    if (!shouldHideIndividual) {
-                        for (const effectiveConfig of effectiveConfigs) {
-                            this.renderConfiguredColumn(
-                                effectiveConfig.config,
-                                displayName,
-                                dataPoints,
-                                effectiveConfigs.length > 1 // canRemove: only if multiple visualizations
-                            )
-                        }
-                    }
+                if (item.kind === 'property') {
+                    this.renderPropertyCard(item.id, entries, dateAnchors)
                 } else {
-                    // No configuration - show config card (unless property is in an overlay with hidden individuals)
-                    const shouldHideIndividual =
-                        this.columnConfigService.shouldHideIndividualVisualization(propertyId)
-                    if (!shouldHideIndividual) {
-                        this.renderUnconfiguredColumn(propertyId, displayName)
+                    const overlayConfig = this.columnConfigService.getOverlayConfig(item.id)
+                    if (overlayConfig) {
+                        this.renderOverlayCard(overlayConfig, entries, dateAnchors)
                     }
                 }
             }
 
-            // Schedule next batch if more properties to render
-            if (index < propertiesToRender.length) {
+            // Schedule next batch if more items to render
+            if (index < orderedCards.length) {
                 this.pendingRenderFrame = window.requestAnimationFrame(renderBatch)
             } else {
                 this.pendingRenderFrame = null
-                // After all properties are rendered, render overlay charts
-                this.renderOverlays(entries, dateAnchors, renderCycle)
             }
         }
 
         // Start rendering
         this.pendingRenderFrame = window.requestAnimationFrame(renderBatch)
+    }
+
+    /**
+     * Render a single property card (one or more configured visualizations,
+     * or the unconfigured-property config card). Extracted from the render
+     * loop so it can be called from `renderCardsAsync` for both property
+     * and overlay items.
+     */
+    private renderPropertyCard(
+        propertyId: BasesPropertyId,
+        entries: BasesEntry[],
+        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>
+    ): void {
+        const displayName = this.config.getDisplayName(propertyId)
+        const effectiveConfigs = this.columnConfigService.getEffectiveConfigs(
+            propertyId,
+            displayName
+        )
+
+        if (effectiveConfigs.length > 0) {
+            const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
+
+            // Extract property name from propertyId (strips namespace like "note." or "file.")
+            const propertyName = extractPropertyName(String(propertyId))
+            const propertyDefinition =
+                this.plugin.settings.propertyDefinitions.find((def) => def.name === propertyName) ??
+                null
+
+            const dataPoints = this.aggregationService.createDataPoints(
+                entries,
+                propertyId,
+                displayName,
+                propertyDefinition,
+                dateAnchors,
+                showEmptyValues
+            )
+            this.cacheService.setDataPoints(propertyId, dataPoints)
+
+            // Check if individual visualizations should be hidden (property is in an overlay)
+            const shouldHideIndividual =
+                this.columnConfigService.shouldHideIndividualVisualization(propertyId)
+
+            // Render all visualizations for this property (unless hidden by overlay)
+            if (!shouldHideIndividual) {
+                for (const effectiveConfig of effectiveConfigs) {
+                    this.renderConfiguredColumn(
+                        effectiveConfig.config,
+                        displayName,
+                        dataPoints,
+                        effectiveConfigs.length > 1 // canRemove: only if multiple visualizations
+                    )
+                }
+            }
+        } else {
+            // No configuration - show config card (unless property is in an overlay with hidden individuals)
+            const shouldHideIndividual =
+                this.columnConfigService.shouldHideIndividualVisualization(propertyId)
+            if (!shouldHideIndividual) {
+                this.renderUnconfiguredColumn(propertyId, displayName)
+            }
+        }
     }
 
     /**
@@ -762,29 +885,6 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         if (this.pendingRenderFrame !== null) {
             cancelAnimationFrame(this.pendingRenderFrame)
             this.pendingRenderFrame = null
-        }
-    }
-
-    /**
-     * Render overlay charts (multi-property visualizations)
-     */
-    private renderOverlays(
-        entries: BasesEntry[],
-        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>,
-        renderCycle: number
-    ): void {
-        // Check if this render cycle is still current
-        if (renderCycle !== this.currentRenderCycle) {
-            return
-        }
-
-        if (!this.gridEl) return
-
-        // Get all overlay configs
-        const overlayConfigs = this.columnConfigService.getOverlayConfigsArray()
-
-        for (const overlayConfig of overlayConfigs) {
-            this.renderOverlayCard(overlayConfig, entries, dateAnchors)
         }
     }
 
@@ -903,6 +1003,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Render with the pre-aggregated chart data
         visualization.renderChartData(chartData)
 
+        // Attach the drag handle AFTER render — renderChartData calls
+        // `this.containerEl.empty()` internally and would wipe the handle if
+        // we attached it before.
+        this.dragController?.attachHandle(cardEl, {
+            kind: 'overlay',
+            id: overlayConfig.id
+        })
+
         // Store in visualizations map using overlay ID
         // Use overlay ID as propertyId for maximize functionality (overlays are independent visualizations)
         this.visualizations.set(overlayConfig.id, {
@@ -954,6 +1062,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Render and store by visualization ID
         visualization.render(dataPoints)
+
+        // Attach the drag handle AFTER render() — every visualization calls
+        // `this.containerEl.empty()` as its first step, which would wipe the
+        // handle if we attached it earlier. Same applies to the overlay
+        // render path below.
+        this.dragController?.attachHandle(cardEl, {
+            kind: 'property',
+            id: columnConfig.propertyId
+        })
+
         this.visualizations.set(columnConfig.id, {
             propertyId: columnConfig.propertyId,
             propertyDisplayName: displayName,
@@ -1559,7 +1677,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private renderUnconfiguredColumn(propertyId: BasesPropertyId, displayName: string): void {
         if (!this.gridEl) return
 
-        createColumnConfigCard(this.gridEl, displayName, (result) => {
+        const cardEl = createColumnConfigCard(this.gridEl, displayName, (result) => {
             // Save config and re-render
             this.columnConfigService.saveColumnConfig(
                 propertyId,
@@ -1569,6 +1687,50 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             )
             this.onDataUpdated()
         })
+        // Drag handle marks the card with data-card-kind / data-card-id so it
+        // participates in reordering. We intentionally do NOT set
+        // data-property-id here — that attribute is what the maximize service
+        // uses to identify maximizable cards, and unconfigured cards must
+        // never be maximized (see MaximizeStateService).
+        this.dragController?.attachHandle(cardEl, { kind: 'property', id: propertyId })
+    }
+
+    /**
+     * Persist a new manual card order after a drag-drop. The DOM only
+     * contains the visible cards, so we merge in any items from the
+     * current effective order that weren't rendered (e.g., property cards
+     * hidden by an overlay's `hideIndividualVisualizations`) at the end —
+     * preserving them in storage so the order stays stable across renders.
+     */
+    private applyManualOrder(visibleOrder: OrderedCardItem[]): void {
+        const seen = new Set<string>(visibleOrder.map(serializeOrderItem))
+        const merged: OrderedCardItem[] = [...visibleOrder]
+        for (const item of this.currentEffectiveOrder) {
+            const key = serializeOrderItem(item)
+            if (seen.has(key)) continue
+            seen.add(key)
+            merged.push(item)
+        }
+
+        // Update local tracking BEFORE config.set, in case config.set fires
+        // onDataUpdated synchronously (mirrors the isUpdatingGridSettings
+        // pattern used for grid-settings changes).
+        this.currentEffectiveOrder = merged
+        this.previousOrderSignature = orderSignature(merged)
+        this.isUpdatingManualOrder = true
+        this.config.set(MANUAL_ORDER_KEY, writeManualOrder(merged))
+        this.isUpdatingManualOrder = false
+    }
+
+    /**
+     * Clear the per-view manual card order, reverting to the natural order
+     * (Obsidian's property order, then overlays at the end).
+     */
+    private resetCardOrder(): void {
+        this.config.set(MANUAL_ORDER_KEY, null)
+        // Force a full re-render so the DOM matches the natural order.
+        this.previousOrderSignature = null
+        this.onDataUpdated()
     }
 
     /**
@@ -1681,5 +1843,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         this.maximizeService.cleanup()
         this.destroyVisualizations()
+
+        this.dragController?.destroy()
+        this.dragController = null
     }
 }

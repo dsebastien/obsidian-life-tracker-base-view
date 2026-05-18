@@ -28,6 +28,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
 - **Time frame selection**: filter visualizations to show specific date ranges (all time, last 7/30/90/365 days, this week/month/quarter/year, etc.)
 - **Grid layout controls**: adjustable columns (1-6)
+- **Drag-and-drop reordering**: rearrange any card (property or overlay) by dragging its grip handle; the custom order is saved per view and works on desktop and mobile
 - **Visualization presets**: auto-apply settings to properties by name pattern
 - **Scale configuration**: auto-detect or manual min/max for numeric visualizations
 - **Reference lines**: add horizontal target lines to cartesian charts (line, bar, area) to track values against goals (e.g., weight target)

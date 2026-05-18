@@ -77,10 +77,20 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Legends are always shown for overlay charts (to identify each property's line/bar)
 - When a property in an overlay is removed from Base, it is automatically removed from the overlay
 - If an overlay drops below 2 properties after cleanup, the overlay is deleted entirely
-- Overlays are rendered after all individual property visualizations
+- By default, overlays render after all individual property visualizations. Once the user reorders cards via drag-and-drop, overlays follow the saved manual order (see Card Ordering)
 - Overlays can optionally hide individual property visualizations via `hideIndividualVisualizations` setting
 - When a property is in multiple overlays, it is hidden if ANY overlay has `hideIndividualVisualizations` enabled
 - Data points are still cached for hidden properties (needed for overlay rendering)
+
+## Card Ordering
+
+- Default order: Obsidian's property order (from `BasesViewConfig.getOrder()`), followed by overlay cards in their stored order
+- Users can override the default by drag-and-drop on any card (property or overlay) using the grip handle in the card's top-left corner. The override is saved per Base view (in `manualOrder` under the view's config), so different `.base` files and different views of the same `.base` file each have their own order
+- Reconciliation rules when a manual order is present:
+    - Entries in the manual order whose target no longer exists (property removed from Base, overlay deleted) are dropped silently
+    - New properties or overlays that aren't in the manual order yet are appended at the end of the natural order, so they're always discoverable
+- A "Reset order" button appears in the controls bar whenever a manual order is set; clicking it clears `manualOrder` and reverts to the default
+- Drag-and-drop uses Pointer events so it works identically on desktop (mouse) and mobile (touch)
 
 ## Property Removal Cleanup
 

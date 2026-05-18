@@ -21,14 +21,30 @@ export const DEFAULT_GRID_SETTINGS: GridSettings = {
 export type CreateOverlayCallback = () => void
 
 /**
+ * Callback for the "Reset card order" button. Should clear the per-view
+ * manual order and trigger a re-render.
+ */
+export type ResetCardOrderCallback = () => void
+
+/**
+ * Optional callbacks for the grid controls bar.
+ */
+export interface GridControlsCallbacks {
+    onCreateOverlay?: CreateOverlayCallback
+    /** Only invoked when `showResetOrder` is true (i.e., a manual order is set) */
+    onResetCardOrder?: ResetCardOrderCallback
+    /** Whether to show the "Reset card order" button */
+    showResetOrder?: boolean
+}
+
+/**
  * Creates a control bar for adjusting grid layout
- * @param onCreateOverlay - Optional callback for "Create overlay" button. If not provided, button is hidden.
  */
 export function createGridControls(
     container: HTMLElement,
     initialSettings: GridSettings,
     onChange: GridSettingsChangeCallback,
-    onCreateOverlay?: CreateOverlayCallback
+    callbacks: GridControlsCallbacks = {}
 ): HTMLElement {
     const settings = { ...initialSettings }
 
@@ -39,8 +55,13 @@ export function createGridControls(
     createTimeFrameControl(controlsLeft, settings, onChange)
 
     // Create overlay button (only if callback provided)
-    if (onCreateOverlay) {
-        createOverlayButton(controlsLeft, onCreateOverlay)
+    if (callbacks.onCreateOverlay) {
+        createOverlayButton(controlsLeft, callbacks.onCreateOverlay)
+    }
+
+    // Reset card order button (only shown when a manual order is currently set)
+    if (callbacks.showResetOrder && callbacks.onResetCardOrder) {
+        createResetOrderButton(controlsLeft, callbacks.onResetCardOrder)
     }
 
     // Right side: columns control
@@ -48,6 +69,21 @@ export function createGridControls(
     createColumnsControl(controlsRight, settings, onChange)
 
     return controlBar
+}
+
+/**
+ * Creates the "Reset card order" button — only visible when a manual order
+ * has been set, since otherwise there's nothing to reset.
+ */
+function createResetOrderButton(container: HTMLElement, onClick: ResetCardOrderCallback): void {
+    const btn = container.createEl('button', {
+        cls: 'lt-control-btn lt-control-btn--reset-order',
+        attr: { 'aria-label': 'Reset card order to default' }
+    })
+    setIcon(btn, 'rotate-ccw')
+    btn.createSpan({ cls: 'lt-control-btn-label', text: 'Reset order' })
+
+    btn.addEventListener('click', onClick)
 }
 
 /**

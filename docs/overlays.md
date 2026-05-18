@@ -60,6 +60,10 @@ Each property in an overlay can have its own reference line:
 
 Overlay charts always show a legend to identify each property's line/bar/area. The legend uses the property display names.
 
+## Positioning an Overlay
+
+By default, overlay cards appear at the end of the grid, after all individual property cards. To move an overlay before or between property cards, drag the grip handle (⋮⋮) in the overlay's top-left corner to a new position. See [Reorder Cards](usage.html#reorder-cards) for details.
+
 ## Data Requirements
 
 - All properties must have compatible numeric data
