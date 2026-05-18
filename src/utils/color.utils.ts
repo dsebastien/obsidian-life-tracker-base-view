@@ -48,7 +48,9 @@ export function getHeatmapColor(level: 0 | 1 | 2 | 3 | 4, scheme: HeatmapColorSc
 }
 
 /**
- * Get color level based on value and range
+ * Map a value in [min, max] to a heatmap intensity level. Level 0 means
+ * "no data" (null); any present value is at least level 1 so cells at min
+ * stay visible.
  */
 export function getColorLevelForValue(
     value: number | null,
@@ -56,11 +58,10 @@ export function getColorLevelForValue(
     max: number
 ): 0 | 1 | 2 | 3 | 4 {
     if (value === null || value === undefined) return 0
-    if (max === min) return value > 0 ? 4 : 0
+    if (max === min) return 4
 
     const normalized = (value - min) / (max - min)
 
-    if (normalized <= 0) return 0
     if (normalized <= 0.25) return 1
     if (normalized <= 0.5) return 2
     if (normalized <= 0.75) return 3

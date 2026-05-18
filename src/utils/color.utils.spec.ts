@@ -83,8 +83,8 @@ describe('color-utils', () => {
             expect(getColorLevelForValue(null, 0, 100)).toBe(0)
         })
 
-        test('returns 0 for value at min', () => {
-            expect(getColorLevelForValue(0, 0, 100)).toBe(0)
+        test('returns 1 for value at min (present data is always visible)', () => {
+            expect(getColorLevelForValue(0, 0, 100)).toBe(1)
         })
 
         test('returns 1 for values <= 25%', () => {
@@ -107,18 +107,20 @@ describe('color-utils', () => {
             expect(getColorLevelForValue(80, 0, 100)).toBe(4)
         })
 
-        test('handles equal min and max with positive value', () => {
+        test('handles equal min and max', () => {
             expect(getColorLevelForValue(50, 50, 50)).toBe(4)
-        })
-
-        test('handles equal min and max with zero value', () => {
-            expect(getColorLevelForValue(0, 0, 0)).toBe(0)
+            expect(getColorLevelForValue(0, 0, 0)).toBe(4)
         })
 
         test('handles negative ranges', () => {
             expect(getColorLevelForValue(0, -100, 100)).toBe(2)
-            expect(getColorLevelForValue(-100, -100, 100)).toBe(0)
+            expect(getColorLevelForValue(-100, -100, 100)).toBe(1)
             expect(getColorLevelForValue(100, -100, 100)).toBe(4)
+        })
+
+        test('cells at min are visible when min > 0 (e.g. year ranges)', () => {
+            expect(getColorLevelForValue(2025, 2025, 2026)).toBe(1)
+            expect(getColorLevelForValue(2026, 2025, 2026)).toBe(4)
         })
     })
 
