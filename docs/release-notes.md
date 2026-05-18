@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.8.1 (2026-05-18)
+
+### Bug Fixes
+
+- **all:** fixed issue with previous year data colors in heatmaps
+
 ## 2.8.0 (2026-05-18)
 
 ### Features
