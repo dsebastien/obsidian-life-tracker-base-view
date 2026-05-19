@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.9.0 (2026-05-19)
+
+### Features
+
+- **all:** automatically show newest data in heatmap visualizations
+
 ## 2.8.1 (2026-05-18)
 
 ### Bug Fixes
