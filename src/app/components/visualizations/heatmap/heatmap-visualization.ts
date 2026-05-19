@@ -27,6 +27,7 @@ export class HeatmapVisualization extends BaseVisualization {
     private tooltip: Tooltip | null = null
     private gridEl: HTMLElement | null = null
     private heatmapData: HeatmapData | null = null
+    private pendingScrollFrame: number | null = null
 
     constructor(
         containerEl: HTMLElement,
@@ -94,6 +95,24 @@ export class HeatmapVisualization extends BaseVisualization {
 
         // Create legend
         this.createLegend(heatmapEl)
+
+        // Scroll horizontally to the end so the freshest data is visible.
+        // Defer to next frame so the browser has computed layout/scrollWidth.
+        this.scrollToEnd(heatmapEl)
+    }
+
+    /**
+     * Scroll the heatmap container horizontally to its end so the most recent
+     * data is in view when the visualization first appears.
+     */
+    private scrollToEnd(scrollEl: HTMLElement): void {
+        if (this.pendingScrollFrame !== null) {
+            window.cancelAnimationFrame(this.pendingScrollFrame)
+        }
+        this.pendingScrollFrame = window.requestAnimationFrame(() => {
+            this.pendingScrollFrame = null
+            scrollEl.scrollLeft = scrollEl.scrollWidth
+        })
     }
 
     /**
@@ -233,6 +252,10 @@ export class HeatmapVisualization extends BaseVisualization {
      * Clean up resources
      */
     override destroy(): void {
+        if (this.pendingScrollFrame !== null) {
+            window.cancelAnimationFrame(this.pendingScrollFrame)
+            this.pendingScrollFrame = null
+        }
         this.tooltip?.destroy()
         this.tooltip = null
         this.gridEl = null
