@@ -303,7 +303,8 @@ export class ColumnConfigService {
                 displayName,
                 configuredAt: 0, // Not persisted
                 scale: preset.scale,
-                colorScheme: preset.colorScheme
+                colorScheme: preset.colorScheme,
+                aggregationMethod: preset.aggregationMethod
             }
             return { config: configFromPreset, isFromPreset: true }
         }
@@ -336,7 +337,8 @@ export class ColumnConfigService {
                 displayName,
                 configuredAt: 0,
                 scale: preset.scale,
-                colorScheme: preset.colorScheme
+                colorScheme: preset.colorScheme,
+                aggregationMethod: preset.aggregationMethod
             }
             return [{ config: configFromPreset, isFromPreset: true }]
         }

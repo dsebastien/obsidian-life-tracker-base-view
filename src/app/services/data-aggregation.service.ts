@@ -1,6 +1,7 @@
 import type { BasesEntry, BasesPropertyId } from 'obsidian'
 import {
     TimeGranularity,
+    type AggregationMethod,
     type BubbleChartData,
     type ChartData,
     type HeatmapCell,
@@ -212,9 +213,16 @@ export class DataAggregationService {
         dataPoints: VisualizationDataPoint[],
         propertyId: BasesPropertyId,
         displayName: string,
-        granularity: TimeGranularity
+        granularity: TimeGranularity,
+        aggregationMethod?: AggregationMethod
     ): ChartData {
-        return chartAggregation(dataPoints, propertyId, displayName, granularity)
+        return chartAggregation(
+            dataPoints,
+            propertyId,
+            displayName,
+            granularity,
+            aggregationMethod
+        )
     }
 
     /**
@@ -258,9 +266,16 @@ export class DataAggregationService {
         dataPoints: VisualizationDataPoint[],
         propertyId: BasesPropertyId,
         displayName: string,
-        granularity: TimeGranularity
+        granularity: TimeGranularity,
+        aggregationMethod?: AggregationMethod
     ): ChartData {
-        return this.aggregateForChart(dataPoints, propertyId, displayName, granularity)
+        return this.aggregateForChart(
+            dataPoints,
+            propertyId,
+            displayName,
+            granularity,
+            aggregationMethod
+        )
     }
 
     /**
@@ -283,9 +298,16 @@ export class DataAggregationService {
         dataPoints: VisualizationDataPoint[],
         propertyId: BasesPropertyId,
         displayName: string,
-        granularity: TimeGranularity
+        granularity: TimeGranularity,
+        aggregationMethod?: AggregationMethod
     ): BubbleChartData {
-        return bubbleChartAggregation(dataPoints, propertyId, displayName, granularity)
+        return bubbleChartAggregation(
+            dataPoints,
+            propertyId,
+            displayName,
+            granularity,
+            aggregationMethod
+        )
     }
 
     /**
@@ -319,9 +341,15 @@ export class DataAggregationService {
     aggregateForOverlayChart(
         propertiesData: OverlayPropertyData[],
         overlayDisplayName: string,
-        granularity: TimeGranularity
+        granularity: TimeGranularity,
+        aggregationMethod?: AggregationMethod
     ): ChartData {
-        return overlayChartAggregation(propertiesData, overlayDisplayName, granularity)
+        return overlayChartAggregation(
+            propertiesData,
+            overlayDisplayName,
+            granularity,
+            aggregationMethod
+        )
     }
 
     /**

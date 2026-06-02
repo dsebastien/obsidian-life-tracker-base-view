@@ -79,7 +79,7 @@ Adjust layout options including number of columns, empty date display, default c
 ### Right-click context menu
 
 ![Customize visualizations](documentation/screenshots/customize-visualizations.png)
-Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), color scheme, and reference lines, add another visualization for the same property, maximize, or reset configuration.
+Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), color scheme, reference lines, and aggregation method (average or sum — useful when multiple entries share a date, e.g. summing workout calories per day), add another visualization for the same property, maximize, or reset configuration.
 
 ### Maximize view
 

@@ -3,6 +3,8 @@ import type { BasesPropertyId } from 'obsidian'
 import type { LifeTrackerPlugin } from '../../plugin'
 import {
     VisualizationType,
+    DEFAULT_AGGREGATION_METHOD,
+    type AggregationMethod,
     type OverlayVisualizationConfig,
     type ReferenceLineConfig
 } from '../../types'
@@ -25,6 +27,7 @@ export interface OverlayEditResult {
     propertyIds: BasesPropertyId[]
     referenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
     hideIndividualVisualizations: boolean
+    aggregationMethod: AggregationMethod | undefined
 }
 
 /**
@@ -59,6 +62,7 @@ export class OverlayEditModal extends Modal {
     private selectedPropertyIds: Set<BasesPropertyId>
     private referenceLines: Map<BasesPropertyId, ReferenceLineConfig>
     private hideIndividualVisualizations: boolean
+    private aggregationMethod: AggregationMethod
 
     // DOM elements
     private nameInputEl: HTMLInputElement | null = null
@@ -83,6 +87,7 @@ export class OverlayEditModal extends Modal {
         this.visualizationType = overlayConfig.visualizationType
         this.selectedPropertyIds = new Set(overlayConfig.propertyIds)
         this.hideIndividualVisualizations = overlayConfig.hideIndividualVisualizations ?? false
+        this.aggregationMethod = overlayConfig.aggregationMethod ?? DEFAULT_AGGREGATION_METHOD
 
         // Initialize reference lines from config
         this.referenceLines = new Map()
@@ -137,6 +142,9 @@ export class OverlayEditModal extends Modal {
 
         // Hide individual visualizations section
         this.renderHideIndividualSection(content)
+
+        // Aggregation method section
+        this.renderAggregationMethodSection(content)
 
         // Reference lines section
         this.renderReferenceLinesSection(content)
@@ -356,6 +364,34 @@ export class OverlayEditModal extends Modal {
         })
     }
 
+    private renderAggregationMethodSection(container: HTMLElement): void {
+        const section = container.createDiv({ cls: 'lt-overlay-edit-section' })
+
+        section.createEl('label', {
+            cls: 'lt-overlay-edit-label',
+            text: 'Aggregation method'
+        })
+        section.createDiv({
+            cls: 'lt-overlay-edit-toggle-description',
+            text: 'How to combine multiple values within the same time period.'
+        })
+
+        const select = section.createEl('select', { cls: 'lt-overlay-edit-input' })
+
+        const averageOption = select.createEl('option', { value: 'average', text: 'Average' })
+        const sumOption = select.createEl('option', { value: 'sum', text: 'Sum' })
+
+        if (this.aggregationMethod === 'sum') {
+            sumOption.selected = true
+        } else {
+            averageOption.selected = true
+        }
+
+        select.addEventListener('change', () => {
+            this.aggregationMethod = select.value as AggregationMethod
+        })
+    }
+
     private renderFooter(container: HTMLElement): void {
         const footer = container.createDiv({ cls: 'lt-overlay-edit-footer' })
 
@@ -506,7 +542,11 @@ export class OverlayEditModal extends Modal {
             visualizationType: this.visualizationType,
             propertyIds: Array.from(this.selectedPropertyIds),
             referenceLines: Object.keys(referenceLines).length > 0 ? referenceLines : undefined,
-            hideIndividualVisualizations: this.hideIndividualVisualizations
+            hideIndividualVisualizations: this.hideIndividualVisualizations,
+            aggregationMethod:
+                this.aggregationMethod === DEFAULT_AGGREGATION_METHOD
+                    ? undefined
+                    : this.aggregationMethod
         }
 
         this.callbacks.onSave(result)

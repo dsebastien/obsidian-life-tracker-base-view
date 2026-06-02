@@ -1,5 +1,9 @@
 import type { VisualizationType } from '../visualization/visualization-type.intf'
-import type { ScaleConfig, ReferenceLineConfig } from '../column/column-config.types'
+import type {
+    ScaleConfig,
+    ReferenceLineConfig,
+    AggregationMethod
+} from '../column/column-config.types'
 import type { PropertyDefinition } from '../property/property-definition.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
 
@@ -20,6 +24,8 @@ export interface PropertyVisualizationPreset {
     colorScheme?: ChartColorScheme
     /** Reference line configuration for cartesian charts */
     referenceLine?: ReferenceLineConfig
+    /** How to combine multiple values within a time period (cartesian/bubble charts) */
+    aggregationMethod?: AggregationMethod
 }
 
 export interface PluginSettings {

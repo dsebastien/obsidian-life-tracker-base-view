@@ -1,6 +1,10 @@
 import type { BasesPropertyId } from 'obsidian'
 import type { VisualizationType } from '../visualization/visualization-type.intf'
-import type { ScaleConfig, ReferenceLineConfig } from '../column/column-config.types'
+import type {
+    ScaleConfig,
+    ReferenceLineConfig,
+    AggregationMethod
+} from '../column/column-config.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
 
 /**
@@ -11,6 +15,7 @@ export type CardMenuAction =
     | { type: 'configureScale'; scale: ScaleConfig | undefined }
     | { type: 'configureColorScheme'; colorScheme: ChartColorScheme | undefined }
     | { type: 'configureReferenceLine'; referenceLine: ReferenceLineConfig }
+    | { type: 'configureAggregationMethod'; aggregationMethod: AggregationMethod | undefined }
     | { type: 'configureHeatmapCellSize'; cellSize: number | undefined }
     | { type: 'configureHeatmapShowMonthLabels'; showMonthLabels: boolean | undefined }
     | { type: 'configureHeatmapShowDayLabels'; showDayLabels: boolean | undefined }

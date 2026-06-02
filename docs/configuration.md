@@ -21,12 +21,13 @@ Control how long chart animations play (in milliseconds).
 
 Auto-apply visualization settings based on property names.
 
-| Field   | Description                          |
-| ------- | ------------------------------------ |
-| Pattern | Text to match against property names |
-| Type    | Visualization type to apply          |
-| Scale   | Optional min/max range               |
-| Color   | Optional color scheme                |
+| Field       | Description                                          |
+| ----------- | ---------------------------------------------------- |
+| Pattern     | Text to match against property names                 |
+| Type        | Visualization type to apply                          |
+| Scale       | Optional min/max range                               |
+| Color       | Optional color scheme                                |
+| Aggregation | Average (default) or Sum for line/bar/area/bubble    |
 
 **Example**: Pattern `mood` with Heatmap type and 1-5 scale applies to all properties containing "mood" in the name.
 
@@ -71,27 +72,29 @@ Configured via the view's settings panel (gear icon).
 
 Stored per view, per visualization. Access via right-click context menu.
 
-| Setting         | Description                                |
-| --------------- | ------------------------------------------ |
-| Type            | Visualization type                         |
-| Scale           | Min/max range (auto or preset)             |
-| Color scheme    | Color palette (green, blue, purple, etc.)  |
-| Reference line  | Target line with value and label           |
-| Heatmap options | Cell size, day/month labels (heatmap only) |
+| Setting         | Description                                                                |
+| --------------- | -------------------------------------------------------------------------- |
+| Type            | Visualization type                                                         |
+| Scale           | Min/max range (auto or preset)                                             |
+| Color scheme    | Color palette (green, blue, purple, etc.)                                  |
+| Reference line  | Target line with value and label                                           |
+| Aggregation     | Average (default) or Sum — line, bar, area, radar, and bubble charts only  |
+| Heatmap options | Cell size, day/month labels (heatmap only)                                 |
 
 ## Overlay Config
 
 Stored per view. Access via overlay card context menu.
 
-| Setting                        | Description                           |
-| ------------------------------ | ------------------------------------- |
-| Display name                   | User-defined overlay name             |
-| Chart type                     | Line, Bar, or Area                    |
-| Properties                     | Array of property IDs (minimum 2)     |
-| Scale                          | Shared Y-axis min/max                 |
-| Color scheme                   | Color palette                         |
-| Reference lines                | Per-property target lines             |
-| Hide individual visualizations | Hide separate cards for overlay props |
+| Setting                        | Description                                          |
+| ------------------------------ | ---------------------------------------------------- |
+| Display name                   | User-defined overlay name                            |
+| Chart type                     | Line, Bar, or Area                                   |
+| Properties                     | Array of property IDs (minimum 2)                    |
+| Scale                          | Shared Y-axis min/max                                |
+| Color scheme                   | Color palette                                        |
+| Reference lines                | Per-property target lines                            |
+| Aggregation                    | Average (default) or Sum — applied to all properties |
+| Hide individual visualizations | Hide separate cards for overlay props                |
 
 ## Scale Presets
 

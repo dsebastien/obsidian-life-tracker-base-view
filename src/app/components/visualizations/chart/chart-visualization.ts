@@ -123,7 +123,8 @@ export class ChartVisualization extends BaseVisualization {
                 data,
                 this.propertyId,
                 this.displayName,
-                this.chartConfig.granularity
+                this.chartConfig.granularity,
+                this.chartConfig.aggregationMethod
             )
 
             if (this.bubbleChartData.points.length === 0) {
@@ -148,7 +149,8 @@ export class ChartVisualization extends BaseVisualization {
                     data,
                     this.propertyId,
                     this.displayName,
-                    this.chartConfig.granularity
+                    this.chartConfig.granularity,
+                    this.chartConfig.aggregationMethod
                 )
             }
 
@@ -452,7 +454,8 @@ export class ChartVisualization extends BaseVisualization {
             data,
             this.propertyId,
             this.displayName,
-            this.chartConfig.granularity
+            this.chartConfig.granularity,
+            this.chartConfig.aggregationMethod
         )
 
         if (newBubbleData.points.length === 0) {
@@ -493,7 +496,8 @@ export class ChartVisualization extends BaseVisualization {
                 data,
                 this.propertyId,
                 this.displayName,
-                this.chartConfig.granularity
+                this.chartConfig.granularity,
+                this.chartConfig.aggregationMethod
             )
         }
 

@@ -2,7 +2,15 @@ import { test, expect, describe } from 'bun:test'
 import type { BasesPropertyId } from 'obsidian'
 import type { VisualizationDataPoint } from '../types'
 import { TimeGranularity } from '../types'
-import { hasListData, aggregateListForChart, aggregateForPieChart } from './chart-aggregation.utils'
+import {
+    hasListData,
+    aggregateListForChart,
+    aggregateForPieChart,
+    aggregateForChart,
+    aggregateForBubbleChart,
+    aggregateForOverlayChart,
+    type OverlayPropertyData
+} from './chart-aggregation.utils'
 
 /**
  * Helper to create a test data point
@@ -279,5 +287,138 @@ describe('aggregateForPieChart with list data', () => {
         const result = aggregateForPieChart(dataPoints, propertyId, displayName)
 
         expect(result.isBooleanData).toBe(false)
+    })
+})
+
+describe('aggregateForChart aggregation method (issue #89)', () => {
+    const propertyId = 'workout-calories' as BasesPropertyId
+    const displayName = 'Workout calories'
+
+    // Three workouts on day 1, one workout on day 2
+    const dataPoints = [
+        createDataPoint('workout1.md', '2025-01-01', { numericValue: 100 }),
+        createDataPoint('workout2.md', '2025-01-01', { numericValue: 200 }),
+        createDataPoint('workout3.md', '2025-01-01', { numericValue: 300 }),
+        createDataPoint('workout4.md', '2025-01-02', { numericValue: 50 })
+    ]
+
+    test('defaults to average (preserves prior behavior)', () => {
+        const result = aggregateForChart(dataPoints, propertyId, displayName, TimeGranularity.Daily)
+        // Day 1 average = (100+200+300)/3 = 200, Day 2 = 50
+        expect(result.datasets[0]?.data).toEqual([200, 50])
+    })
+
+    test('explicit average matches default', () => {
+        const result = aggregateForChart(
+            dataPoints,
+            propertyId,
+            displayName,
+            TimeGranularity.Daily,
+            'average'
+        )
+        expect(result.datasets[0]?.data).toEqual([200, 50])
+    })
+
+    test('sum totals values within a time period', () => {
+        const result = aggregateForChart(
+            dataPoints,
+            propertyId,
+            displayName,
+            TimeGranularity.Daily,
+            'sum'
+        )
+        // Day 1 sum = 600, Day 2 sum = 50
+        expect(result.datasets[0]?.data).toEqual([600, 50])
+    })
+
+    test('sum still produces one entry per file path per period', () => {
+        const result = aggregateForChart(
+            dataPoints,
+            propertyId,
+            displayName,
+            TimeGranularity.Daily,
+            'sum'
+        )
+        expect(result.datasets[0]?.filePaths[0]).toEqual([
+            'workout1.md',
+            'workout2.md',
+            'workout3.md'
+        ])
+    })
+})
+
+describe('aggregateForBubbleChart aggregation method (issue #89)', () => {
+    const propertyId = 'workout-calories' as BasesPropertyId
+    const displayName = 'Workout calories'
+
+    const dataPoints = [
+        createDataPoint('workout1.md', '2025-01-01', { numericValue: 100 }),
+        createDataPoint('workout2.md', '2025-01-01', { numericValue: 200 }),
+        createDataPoint('workout3.md', '2025-01-02', { numericValue: 50 })
+    ]
+
+    test('default uses average for y value', () => {
+        const result = aggregateForBubbleChart(
+            dataPoints,
+            propertyId,
+            displayName,
+            TimeGranularity.Daily
+        )
+        // Day 1 average y = 150, day 2 = 50
+        const ys = result.points.map((p) => p.y)
+        expect(ys).toEqual([150, 50])
+    })
+
+    test('sum produces totalled y value', () => {
+        const result = aggregateForBubbleChart(
+            dataPoints,
+            propertyId,
+            displayName,
+            TimeGranularity.Daily,
+            'sum'
+        )
+        const ys = result.points.map((p) => p.y)
+        expect(ys).toEqual([300, 50])
+    })
+})
+
+describe('aggregateForOverlayChart aggregation method (issue #89)', () => {
+    const propertyA = 'a' as BasesPropertyId
+    const propertyB = 'b' as BasesPropertyId
+
+    const propertiesData: OverlayPropertyData[] = [
+        {
+            propertyId: propertyA,
+            displayName: 'A',
+            dataPoints: [
+                createDataPoint('a1.md', '2025-01-01', { numericValue: 10 }),
+                createDataPoint('a2.md', '2025-01-01', { numericValue: 30 })
+            ]
+        },
+        {
+            propertyId: propertyB,
+            displayName: 'B',
+            dataPoints: [
+                createDataPoint('b1.md', '2025-01-01', { numericValue: 5 }),
+                createDataPoint('b2.md', '2025-01-01', { numericValue: 5 })
+            ]
+        }
+    ]
+
+    test('defaults to average', () => {
+        const result = aggregateForOverlayChart(propertiesData, 'Overlay', TimeGranularity.Daily)
+        expect(result.datasets[0]?.data).toEqual([20]) // average of A: 10,30
+        expect(result.datasets[1]?.data).toEqual([5]) // average of B: 5,5
+    })
+
+    test('sum applies to all overlay datasets', () => {
+        const result = aggregateForOverlayChart(
+            propertiesData,
+            'Overlay',
+            TimeGranularity.Daily,
+            'sum'
+        )
+        expect(result.datasets[0]?.data).toEqual([40]) // sum A
+        expect(result.datasets[1]?.data).toEqual([10]) // sum B
     })
 })

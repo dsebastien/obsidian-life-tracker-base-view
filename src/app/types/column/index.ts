@@ -7,7 +7,10 @@ export {
     supportsReferenceLine,
     OVERLAY_SUPPORTED_TYPES,
     supportsOverlay,
-    generateVisualizationId
+    generateVisualizationId,
+    DEFAULT_AGGREGATION_METHOD,
+    AGGREGATION_METHOD_SUPPORTED_TYPES,
+    supportsAggregationMethod
 } from './column-config.types'
 export type {
     ScaleConfig,
@@ -16,7 +19,8 @@ export type {
     ColumnConfigMap,
     LegacyColumnConfigMap,
     OverlayVisualizationConfig,
-    OverlayConfigMap
+    OverlayConfigMap,
+    AggregationMethod
 } from './column-config.types'
 export type { ColumnConfigResult } from './column-config-result.intf'
 export type { ColumnConfigCallback } from './column-config-callback.intf'

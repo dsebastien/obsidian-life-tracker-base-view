@@ -30,10 +30,11 @@ export function getVisualizationConfig(
         embeddedHeight
     }
 
-    // Extract scale, color scheme, and reference line from column config if present
+    // Extract scale, color scheme, reference line, and aggregation method from column config if present
     const scale = columnConfig.scale
     const colorScheme = columnConfig.colorScheme
     const referenceLine = columnConfig.referenceLine
+    const aggregationMethod = columnConfig.aggregationMethod
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
@@ -77,7 +78,8 @@ export function getVisualizationConfig(
                 fill: false, // Line charts don't have fill
                 scale,
                 colorScheme,
-                referenceLine
+                referenceLine,
+                aggregationMethod
             } as ChartConfig
 
         case VisualizationType.AreaChart:
@@ -90,7 +92,8 @@ export function getVisualizationConfig(
                 fill: true, // Area charts have fill
                 scale,
                 colorScheme,
-                referenceLine
+                referenceLine,
+                aggregationMethod
             } as ChartConfig
 
         case VisualizationType.BarChart:
@@ -102,7 +105,8 @@ export function getVisualizationConfig(
                 tension: 0.3,
                 scale,
                 colorScheme,
-                referenceLine
+                referenceLine,
+                aggregationMethod
             } as ChartConfig
 
         case VisualizationType.PieChart:
@@ -118,7 +122,8 @@ export function getVisualizationConfig(
                 showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
                 tension: 0.3,
                 scale,
-                colorScheme
+                colorScheme,
+                aggregationMethod
             } as ChartConfig
 
         case VisualizationType.TagCloud:

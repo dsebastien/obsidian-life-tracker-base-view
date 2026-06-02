@@ -6,8 +6,11 @@ import {
     supportsScale,
     supportsColorScheme,
     supportsReferenceLine,
+    supportsAggregationMethod,
+    DEFAULT_AGGREGATION_METHOD,
     type ScaleConfig,
     type ReferenceLineConfig,
+    type AggregationMethod,
     type CardMenuCallback
 } from '../../types'
 import type { ChartColorScheme } from '../../../utils'
@@ -56,6 +59,7 @@ export function showCardContextMenu(
     currentColorScheme: ChartColorScheme | undefined,
     currentHeatmapConfig: HeatmapMenuConfig | undefined,
     currentReferenceLine: ReferenceLineConfig | undefined,
+    currentAggregationMethod: AggregationMethod | undefined,
     isFromPreset: boolean,
     isMaximized: boolean,
     canRemove: boolean,
@@ -171,10 +175,17 @@ export function showCardContextMenu(
         const hasScale = supportsScale(vizType)
         const hasColorScheme = supportsColorScheme(vizType)
         const hasReferenceLine = supportsReferenceLine(vizType)
+        const hasAggregationMethod = supportsAggregationMethod(vizType)
 
         const hasHeatmapConfig = vizType === VisualizationType.Heatmap
 
-        if (!hasScale && !hasColorScheme && !hasReferenceLine && !hasHeatmapConfig) {
+        if (
+            !hasScale &&
+            !hasColorScheme &&
+            !hasReferenceLine &&
+            !hasAggregationMethod &&
+            !hasHeatmapConfig
+        ) {
             optionsContent.createDiv({
                 cls: 'lt-card-popover-no-options',
                 text: 'No options for this type'
@@ -323,6 +334,39 @@ export function showCardContextMenu(
                     })
                 })
             }
+        }
+
+        // Aggregation method dropdown (cartesian/bubble charts)
+        if (hasAggregationMethod) {
+            const aggGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            aggGroup.createEl('label', { text: 'Aggregation' })
+
+            const aggSelect = aggGroup.createEl('select', { cls: 'lt-card-popover-select' })
+
+            const averageOption = aggSelect.createEl('option', {
+                value: 'average',
+                text: 'Average'
+            })
+            const sumOption = aggSelect.createEl('option', {
+                value: 'sum',
+                text: 'Sum'
+            })
+
+            const effective = currentAggregationMethod ?? DEFAULT_AGGREGATION_METHOD
+            if (effective === 'sum') {
+                sumOption.selected = true
+            } else {
+                averageOption.selected = true
+            }
+
+            aggSelect.addEventListener('change', () => {
+                const value = aggSelect.value as AggregationMethod
+                close()
+                onAction({
+                    type: 'configureAggregationMethod',
+                    aggregationMethod: value === DEFAULT_AGGREGATION_METHOD ? undefined : value
+                })
+            })
         }
 
         // Heatmap-specific options

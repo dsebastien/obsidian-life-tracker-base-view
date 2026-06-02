@@ -2,6 +2,8 @@ import type { BasesPropertyId } from 'obsidian'
 import { compareAsc } from 'date-fns'
 import {
     TimeGranularity,
+    DEFAULT_AGGREGATION_METHOD,
+    type AggregationMethod,
     type BubbleChartData,
     type BubblePoint,
     type ChartData,
@@ -61,13 +63,25 @@ function capitalizeFirst(value: string): string {
 }
 
 /**
+ * Combine a set of numeric values using the configured aggregation method.
+ * 'sum' returns the total; 'average' returns the arithmetic mean.
+ * Empty input yields 0 to keep downstream chart math safe.
+ */
+function combineValues(values: number[], method: AggregationMethod): number {
+    if (values.length === 0) return 0
+    const total = values.reduce((a, b) => a + b, 0)
+    return method === 'sum' ? total : total / values.length
+}
+
+/**
  * Aggregate data for chart visualization (line, bar, area).
  */
 export function aggregateForChart(
     dataPoints: VisualizationDataPoint[],
     propertyId: BasesPropertyId,
     displayName: string,
-    granularity: TimeGranularity
+    granularity: TimeGranularity,
+    aggregationMethod: AggregationMethod = DEFAULT_AGGREGATION_METHOD
 ): ChartData {
     // Filter to points with valid dates (need date for x-axis)
     const validPoints = dataPoints.filter((p) => p.dateAnchor !== null)
@@ -98,7 +112,7 @@ export function aggregateForChart(
     const sortedGroups = [...grouped.values()].sort((a, b) => compareAsc(a.date, b.date))
     const resultGroups = sortedGroups.map((g) => ({
         date: g.date,
-        value: g.values.reduce((a, b) => a + b, 0) / g.values.length,
+        value: combineValues(g.values, aggregationMethod),
         filePaths: g.filePaths
     }))
 
@@ -435,7 +449,8 @@ export function aggregateForBubbleChart(
     dataPoints: VisualizationDataPoint[],
     propertyId: BasesPropertyId,
     displayName: string,
-    granularity: TimeGranularity
+    granularity: TimeGranularity,
+    aggregationMethod: AggregationMethod = DEFAULT_AGGREGATION_METHOD
 ): BubbleChartData {
     // Filter to points with valid dates (need date for x-axis)
     const validPoints = dataPoints.filter((p) => p.dateAnchor !== null)
@@ -481,7 +496,7 @@ export function aggregateForBubbleChart(
     for (const group of sortedGroups) {
         const x = ((group.date.getTime() - minTime) / timeRange) * 100
 
-        const y = group.values.reduce((a, b) => a + b, 0) / group.values.length
+        const y = combineValues(group.values, aggregationMethod)
         // Radius proportional to count, min 5, max 30
         const r = 5 + (group.filePaths.length / maxCount) * 25
 
@@ -602,7 +617,8 @@ export interface OverlayPropertyData {
 export function aggregateForOverlayChart(
     propertiesData: OverlayPropertyData[],
     overlayDisplayName: string,
-    granularity: TimeGranularity
+    granularity: TimeGranularity,
+    aggregationMethod: AggregationMethod = DEFAULT_AGGREGATION_METHOD
 ): ChartData {
     if (propertiesData.length === 0) {
         return {
@@ -667,8 +683,7 @@ export function aggregateForOverlayChart(
         for (const [key, group] of grouped) {
             const index = timeKeyToIndex.get(key)
             if (index !== undefined) {
-                // Calculate average for this time period
-                data[index] = group.values.reduce((a, b) => a + b, 0) / group.values.length
+                data[index] = combineValues(group.values, aggregationMethod)
                 filePaths[index] = group.filePaths
             }
         }

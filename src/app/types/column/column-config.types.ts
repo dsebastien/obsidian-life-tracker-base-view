@@ -26,6 +26,18 @@ export interface ReferenceLineConfig {
 }
 
 /**
+ * How multiple data points in the same time period are combined into a single value.
+ * - 'average': arithmetic mean (default — preserves previous behavior)
+ * - 'sum': add the values together (e.g., total workout calories across multiple sessions per day)
+ */
+export type AggregationMethod = 'average' | 'sum'
+
+/**
+ * Default aggregation method when none is configured.
+ */
+export const DEFAULT_AGGREGATION_METHOD: AggregationMethod = 'average'
+
+/**
  * Configuration for a single visualization
  */
 export interface ColumnVisualizationConfig {
@@ -51,6 +63,8 @@ export interface ColumnVisualizationConfig {
     heatmapShowDayLabels?: boolean
     /** Reference line configuration for cartesian charts */
     referenceLine?: ReferenceLineConfig
+    /** How to combine multiple values within a time period (cartesian/bubble charts) */
+    aggregationMethod?: AggregationMethod
 }
 
 /**
@@ -115,6 +129,27 @@ export function supportsReferenceLine(vizType: VisualizationType): boolean {
 }
 
 /**
+ * Visualization types that aggregate multiple values per time period and therefore
+ * support choosing between average and sum aggregation.
+ * Pie/scatter/tag-cloud/timeline either count occurrences or plot raw points, so
+ * sum vs average doesn't apply.
+ */
+export const AGGREGATION_METHOD_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.LineChart,
+    VisualizationType.BarChart,
+    VisualizationType.AreaChart,
+    VisualizationType.RadarChart,
+    VisualizationType.BubbleChart
+]
+
+/**
+ * Check if a visualization type supports choosing the aggregation method
+ */
+export function supportsAggregationMethod(vizType: VisualizationType): boolean {
+    return AGGREGATION_METHOD_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
  * Map of property IDs to their visualization configs (supports multiple per property)
  * Stored in view config to persist across sessions
  */
@@ -153,6 +188,8 @@ export interface OverlayVisualizationConfig {
     referenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
     /** Hide individual visualizations for properties in this overlay (default: false) */
     hideIndividualVisualizations?: boolean
+    /** How to combine multiple values within a time period (default: 'average') */
+    aggregationMethod?: AggregationMethod
 }
 
 /**

@@ -1,7 +1,11 @@
 import type { BasesPropertyId } from 'obsidian'
 import type { TimeGranularity } from './time-granularity.intf'
 import type { ResolvedDateAnchor } from '../view/date-anchor.types'
-import type { ScaleConfig, ReferenceLineConfig } from '../column/column-config.types'
+import type {
+    ScaleConfig,
+    ReferenceLineConfig,
+    AggregationMethod
+} from '../column/column-config.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
 
 /**
@@ -223,6 +227,8 @@ export interface ChartConfig extends VisualizationConfig {
     colorScheme?: ChartColorScheme
     /** Reference line configuration for cartesian charts */
     referenceLine?: ReferenceLineConfig
+    /** How to combine multiple values within a time period (cartesian/bubble charts) */
+    aggregationMethod?: AggregationMethod
 }
 
 /**

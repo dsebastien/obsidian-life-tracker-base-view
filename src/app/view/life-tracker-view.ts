@@ -962,7 +962,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const chartData = this.aggregationService.aggregateForOverlayChart(
             propertiesData,
             overlayConfig.displayName,
-            granularity
+            granularity,
+            overlayConfig.aggregationMethod
         )
 
         // Create the card element
@@ -986,7 +987,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             displayName: overlayConfig.displayName,
             configuredAt: overlayConfig.configuredAt,
             scale: overlayConfig.scale,
-            colorScheme: overlayConfig.colorScheme
+            colorScheme: overlayConfig.colorScheme,
+            aggregationMethod: overlayConfig.aggregationMethod
         }
 
         // Get chart config using the standard helper
@@ -1259,7 +1261,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     visualizationType: result.visualizationType,
                     propertyIds: result.propertyIds,
                     referenceLines: result.referenceLines,
-                    hideIndividualVisualizations: result.hideIndividualVisualizations
+                    hideIndividualVisualizations: result.hideIndividualVisualizations,
+                    aggregationMethod: result.aggregationMethod
                 })
                 this.onDataUpdated()
             },
@@ -1416,6 +1419,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.colorScheme,
             heatmapConfig,
             vizConfig.referenceLine,
+            vizConfig.aggregationMethod,
             isFromPreset,
             isMaximized,
             canRemove,
@@ -1531,6 +1535,32 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         propertyId,
                         visualizationId,
                         { referenceLine: action.referenceLine }
+                    )
+                }
+                this.onDataUpdated()
+                break
+
+            case 'configureAggregationMethod':
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        const newId = this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme,
+                            preset.referenceLine
+                        )
+                        this.columnConfigService.updateVisualizationConfig(propertyId, newId, {
+                            aggregationMethod: action.aggregationMethod
+                        })
+                    }
+                } else {
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { aggregationMethod: action.aggregationMethod }
                     )
                 }
                 this.onDataUpdated()

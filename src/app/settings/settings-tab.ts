@@ -9,6 +9,8 @@ import {
     SCALE_PRESETS_RECORD,
     supportsScale,
     supportsColorScheme,
+    supportsAggregationMethod,
+    DEFAULT_AGGREGATION_METHOD,
     PROPERTY_TYPES,
     PROPERTY_TYPE_LABELS,
     MAPPING_TYPE_LABELS,
@@ -17,8 +19,17 @@ import {
     type PropertyVisualizationPreset,
     type PropertyDefinition,
     type ObsidianPropertyType,
-    type MappingType
+    type MappingType,
+    type AggregationMethod
 } from '../types'
+
+/**
+ * Aggregation method options for the preset dropdown
+ */
+const AGGREGATION_METHOD_OPTIONS: Record<string, string> = {
+    average: 'Average',
+    sum: 'Sum'
+}
 
 /**
  * Color scheme options for the preset dropdown
@@ -1087,6 +1098,9 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                         if (!supportsColorScheme(p.visualizationType)) {
                             p.colorScheme = undefined
                         }
+                        if (!supportsAggregationMethod(p.visualizationType)) {
+                            p.aggregationMethod = undefined
+                        }
                     })
                     this.display()
                 })
@@ -1139,6 +1153,23 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                         await this.plugin.updatePreset(preset.id, (p) => {
                             p.colorScheme =
                                 value === 'default' ? undefined : (value as ChartColorScheme)
+                        })
+                    })
+            })
+        }
+
+        // Aggregation method dropdown (only for chart types that aggregate)
+        if (supportsAggregationMethod(preset.visualizationType)) {
+            setting.addDropdown((dropdown) => {
+                dropdown
+                    .addOptions(AGGREGATION_METHOD_OPTIONS)
+                    .setValue(preset.aggregationMethod ?? DEFAULT_AGGREGATION_METHOD)
+                    .onChange(async (value) => {
+                        await this.plugin.updatePreset(preset.id, (p) => {
+                            p.aggregationMethod =
+                                value === DEFAULT_AGGREGATION_METHOD
+                                    ? undefined
+                                    : (value as AggregationMethod)
                         })
                     })
             })
