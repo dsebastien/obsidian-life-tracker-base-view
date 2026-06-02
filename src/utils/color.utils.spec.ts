@@ -83,13 +83,15 @@ describe('color-utils', () => {
             expect(getColorLevelForValue(null, 0, 100)).toBe(0)
         })
 
-        test('returns 1 for value at min (present data is always visible)', () => {
-            expect(getColorLevelForValue(0, 0, 100)).toBe(1)
+        test('returns 0 for value 0 on a 0-based scale (zero means absence)', () => {
+            expect(getColorLevelForValue(0, 0, 100)).toBe(0)
+            expect(getColorLevelForValue(0, 0, 5)).toBe(0)
         })
 
-        test('returns 1 for values <= 25%', () => {
+        test('returns 1 for values <= 25% on a 0-based scale', () => {
             expect(getColorLevelForValue(25, 0, 100)).toBe(1)
             expect(getColorLevelForValue(10, 0, 100)).toBe(1)
+            expect(getColorLevelForValue(1, 0, 5)).toBe(1)
         })
 
         test('returns 2 for values <= 50%', () => {
@@ -109,7 +111,8 @@ describe('color-utils', () => {
 
         test('handles equal min and max', () => {
             expect(getColorLevelForValue(50, 50, 50)).toBe(4)
-            expect(getColorLevelForValue(0, 0, 0)).toBe(4)
+            // value=0, min=0 falls under the "zero-on-zero-scale" rule
+            expect(getColorLevelForValue(0, 0, 0)).toBe(0)
         })
 
         test('handles negative ranges', () => {
@@ -121,6 +124,18 @@ describe('color-utils', () => {
         test('cells at min are visible when min > 0 (e.g. year ranges)', () => {
             expect(getColorLevelForValue(2025, 2025, 2026)).toBe(1)
             expect(getColorLevelForValue(2026, 2025, 2026)).toBe(4)
+        })
+
+        test('issue #87: scale starting at 0 renders 0 as empty, 1 as level 1', () => {
+            // Reporter: blue scheme, scale 0-5, entries of 0 or 1 should
+            // render differently — 0 = empty, 1 = first colored level.
+            expect(getColorLevelForValue(0, 0, 5)).toBe(0)
+            expect(getColorLevelForValue(1, 0, 5)).toBe(1)
+        })
+
+        test('value 0 with non-zero min still maps to a colored level', () => {
+            // Negative-range case: 0 is in the middle of the scale, not absence.
+            expect(getColorLevelForValue(0, -100, 100)).toBe(2)
         })
     })
 

@@ -48,9 +48,14 @@ export function getHeatmapColor(level: 0 | 1 | 2 | 3 | 4, scheme: HeatmapColorSc
 }
 
 /**
- * Map a value in [min, max] to a heatmap intensity level. Level 0 means
- * "no data" (null); any present value is at least level 1 so cells at min
- * stay visible.
+ * Map a value in [min, max] to a heatmap intensity level.
+ *
+ * - null/undefined → 0 (empty).
+ * - When the scale floor is 0, value 0 also → 0. "Zero count" on a 0-based
+ *   scale means absence (issue #87).
+ * - Otherwise, present values map to levels 1-4 so cells at min stay
+ *   visible (issue #76 — e.g. year-range heatmaps where min is the
+ *   earliest year, not "no data").
  */
 export function getColorLevelForValue(
     value: number | null,
@@ -58,6 +63,7 @@ export function getColorLevelForValue(
     max: number
 ): 0 | 1 | 2 | 3 | 4 {
     if (value === null || value === undefined) return 0
+    if (min === 0 && value === 0) return 0
     if (max === min) return 4
 
     const normalized = (value - min) / (max - min)
