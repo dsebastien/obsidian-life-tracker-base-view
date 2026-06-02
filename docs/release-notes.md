@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.11.0 (2026-06-02)
+
+### Features
+
+- **plugin:** support sum aggregation for chart visualizations
+
 ## 2.10.0 (2026-06-02)
 
 ### Features
