@@ -40,18 +40,19 @@ Configure trackable properties for the capture command. See [Property Capture](p
 
 Configured via the view's settings panel (gear icon).
 
-| Option            | Default  | Description                         |
-| ----------------- | -------- | ----------------------------------- |
-| Granularity       | daily    | Time grouping (daily to yearly)     |
-| Time frame        | all_time | Date range filter                   |
-| Date anchor       | (auto)   | Property to use for date resolution |
-| Grid columns      | 3        | Number of columns (1-6)             |
-| Show legend       | true     | Display chart legends               |
-| Show empty dates  | true     | Include dates with no data          |
-| Cell size         | 12       | Heatmap cell size in pixels         |
-| Show day labels   | true     | Day labels on heatmaps              |
-| Show month labels | true     | Month labels on heatmaps            |
-| Embedded height   | 400      | Height when embedded (pixels)       |
+| Option               | Default  | Description                                                        |
+| -------------------- | -------- | ------------------------------------------------------------------ |
+| Granularity          | daily    | Time grouping (daily to yearly)                                    |
+| Time frame           | all_time | Date range filter                                                  |
+| Date anchor          | (auto)   | Property to use for date resolution                                |
+| Grid columns         | 3        | Number of columns (1-6)                                            |
+| Show legend          | true     | Display chart legends                                              |
+| Show empty dates     | true     | Include dates with no data                                         |
+| Hide header controls | false    | Hide the time frame / overlay / columns toolbar for a compact view |
+| Cell size            | 12       | Heatmap cell size in pixels                                        |
+| Show day labels      | true     | Day labels on heatmaps                                             |
+| Show month labels    | true     | Month labels on heatmaps                                           |
+| Embedded height      | 400      | Height when embedded (pixels)                                      |
 
 ## Grid View Options
 

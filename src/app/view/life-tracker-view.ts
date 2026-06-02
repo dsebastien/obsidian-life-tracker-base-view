@@ -142,6 +142,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         colorScheme: string | undefined
     } | null = null
 
+    // Track previous control-bar visibility to force a full re-render when toggled
+    private previousHideControlBar: boolean | null = null
+
     // Track previous time frame for change detection
     private previousTimeFrame: TimeFrame | null = null
 
@@ -456,38 +459,42 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.gridSettings.columns = savedColumns ?? DEFAULT_GRID_COLUMNS
         this.gridSettings.timeFrame = savedTimeFrame ?? TimeFrame.AllTime
 
-        // Create control bar at the top
-        createGridControls(
-            this.containerEl,
-            this.gridSettings,
-            (settings) => {
-                const timeFrameChanged = this.gridSettings.timeFrame !== settings.timeFrame
-                this.gridSettings = settings
+        // Create control bar at the top (hidden when the user opted out)
+        const hideControlBar = (this.config.get('hideControlBar') as boolean) ?? false
+        this.previousHideControlBar = hideControlBar
+        if (!hideControlBar) {
+            createGridControls(
+                this.containerEl,
+                this.gridSettings,
+                (settings) => {
+                    const timeFrameChanged = this.gridSettings.timeFrame !== settings.timeFrame
+                    this.gridSettings = settings
 
-                // Set flag to prevent full re-render when config.set triggers onDataUpdated
-                this.isUpdatingGridSettings = true
+                    // Set flag to prevent full re-render when config.set triggers onDataUpdated
+                    this.isUpdatingGridSettings = true
 
-                // Persist grid settings to view config
-                this.config.set('gridColumns', settings.columns)
-                this.config.set('timeFrame', settings.timeFrame)
+                    // Persist grid settings to view config
+                    this.config.set('gridColumns', settings.columns)
+                    this.config.set('timeFrame', settings.timeFrame)
 
-                // Reset flag after config updates
-                this.isUpdatingGridSettings = false
+                    // Reset flag after config updates
+                    this.isUpdatingGridSettings = false
 
-                if (timeFrameChanged) {
-                    // Time frame changed - need full re-render to filter data
-                    this.onDataUpdated()
-                } else {
-                    // Just columns changed - apply CSS changes, no full re-render needed
-                    this.applyGridSettings()
+                    if (timeFrameChanged) {
+                        // Time frame changed - need full re-render to filter data
+                        this.onDataUpdated()
+                    } else {
+                        // Just columns changed - apply CSS changes, no full re-render needed
+                        this.applyGridSettings()
+                    }
+                },
+                {
+                    onCreateOverlay: () => this.openCreateOverlayModal(),
+                    onResetCardOrder: () => this.resetCardOrder(),
+                    showResetOrder: manualOrder !== null
                 }
-            },
-            {
-                onCreateOverlay: () => this.openCreateOverlayModal(),
-                onResetCardOrder: () => this.resetCardOrder(),
-                showResetOrder: manualOrder !== null
-            }
-        )
+            )
+        }
 
         // Create grid container
         this.gridEl = this.containerEl.createDiv({ cls: 'lt-grid' })
@@ -566,6 +573,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Check if time frame has changed
         const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
         if (this.previousTimeFrame !== null && this.previousTimeFrame !== currentTimeFrame) {
+            return false
+        }
+
+        // The control bar is built in the full re-render path, so toggling its
+        // visibility from the view settings panel must invalidate the fast path.
+        const currentHideControlBar = (this.config.get('hideControlBar') as boolean) ?? false
+        if (
+            this.previousHideControlBar !== null &&
+            this.previousHideControlBar !== currentHideControlBar
+        ) {
             return false
         }
 

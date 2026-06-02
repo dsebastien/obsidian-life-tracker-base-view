@@ -64,6 +64,12 @@ export function getLifeTrackerViewOptions(): BasesAllOptions[] {
                     key: 'showEmptyValues',
                     displayName: 'Show empty values',
                     default: false
+                },
+                {
+                    type: 'toggle',
+                    key: 'hideControlBar',
+                    displayName: 'Hide header controls',
+                    default: false
                 }
             ]
         },
