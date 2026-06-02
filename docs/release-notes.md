@@ -1,5 +1,15 @@
 # Release Notes
 
+## 2.10.0 (2026-06-02)
+
+### Features
+
+- **all:** added option to hide header buttons
+
+### Bug Fixes
+
+- **all:** fixed heatmap colors
+
 ## 2.9.0 (2026-05-19)
 
 ### Features
