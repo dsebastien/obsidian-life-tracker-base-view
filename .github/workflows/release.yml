@@ -116,6 +116,7 @@ jobs:
 
             - name: Generate artifact attestations
               uses: actions/attest-build-provenance@v3
+              continue-on-error: true
               with:
                   subject-path: |
                       dist/main.js
@@ -123,7 +124,7 @@ jobs:
                       dist/styles.css
 
             - name: Create GitHub Release
-              uses: softprops/action-gh-release@v2
+              uses: softprops/action-gh-release@v3
               with:
                   tag_name: ${{ steps.version.outputs.tag }}
                   name: ${{ steps.version.outputs.version }}
