@@ -82,8 +82,12 @@ export class GridView extends BasesView implements FileProvider {
     // Base-selected properties (not matching any property definition)
     private baseSelectedProperties: string[] = []
 
-    // Debounce timers per file:property for auto-save
-    private saveTimers: Map<string, number> = new Map()
+    // Pending debounced saves per file:property (file/definition kept so
+    // pending edits can be flushed to disk before any teardown)
+    private saveTimers: Map<
+        string,
+        { timerId: number; file: TFile; definition: PropertyDefinition }
+    > = new Map()
 
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
@@ -271,9 +275,12 @@ export class GridView extends BasesView implements FileProvider {
             return
         }
 
-        // Clean up existing editors and timers
+        // Flush pending edits to disk before teardown so typed-but-unsaved
+        // values are never lost when an external change triggers a re-render
+        this.flushPendingSaves()
+
+        // Clean up existing editors
         this.destroyEditors()
-        this.clearAllTimers()
         this.cleanupVirtualScrolling()
         this.containerEl.empty()
         this.originalValues.clear()
@@ -1307,16 +1314,16 @@ export class GridView extends BasesView implements FileProvider {
         // Clear existing timer
         const existingTimer = this.saveTimers.get(timerKey)
         if (existingTimer) {
-            window.clearTimeout(existingTimer)
+            window.clearTimeout(existingTimer.timerId)
         }
 
         // Set new timer
-        const timer = window.setTimeout(() => {
+        const timerId = window.setTimeout(() => {
             this.savePropertyImmediate(file, definition, value)
             this.saveTimers.delete(timerKey)
         }, GridView.AUTO_SAVE_DEBOUNCE_MS)
 
-        this.saveTimers.set(timerKey, timer)
+        this.saveTimers.set(timerKey, { timerId, file, definition })
     }
 
     /**
@@ -1325,7 +1332,8 @@ export class GridView extends BasesView implements FileProvider {
     private savePropertyImmediate(
         file: TFile,
         definition: PropertyDefinition,
-        value: unknown
+        value: unknown,
+        updateCooldown = true
     ): void {
         // Validate value before saving
         const validation = this.frontmatterService.validate(value, definition)
@@ -1334,8 +1342,12 @@ export class GridView extends BasesView implements FileProvider {
             return
         }
 
-        // Track save time to prevent re-renders during cooldown
-        this.lastSaveTimestamp = Date.now()
+        // Track save time to prevent re-renders during cooldown. Skipped when
+        // flushing before a re-render: the editors are torn down anyway, and
+        // the cooldown would swallow the data update from this very write.
+        if (updateCooldown) {
+            this.lastSaveTimestamp = Date.now()
+        }
 
         void this.frontmatterService
             .write(file, { [definition.name]: value })
@@ -1352,11 +1364,16 @@ export class GridView extends BasesView implements FileProvider {
     }
 
     /**
-     * Clear all pending save timers
+     * Flush pending debounced saves to disk immediately.
+     * Called before any teardown (re-render, unload) so edits still waiting on
+     * the debounce are never lost. Uses the latest value from currentValues,
+     * which is updated on every editor change.
      */
-    private clearAllTimers(): void {
-        for (const timer of this.saveTimers.values()) {
-            window.clearTimeout(timer)
+    private flushPendingSaves(): void {
+        for (const { timerId, file, definition } of this.saveTimers.values()) {
+            window.clearTimeout(timerId)
+            const value = this.currentValues.get(file.path)?.[definition.name]
+            this.savePropertyImmediate(file, definition, value, false)
         }
         this.saveTimers.clear()
     }
@@ -1423,7 +1440,7 @@ export class GridView extends BasesView implements FileProvider {
         }
 
         this.cleanupVirtualScrolling()
-        this.clearAllTimers()
+        this.flushPendingSaves()
         this.destroyEditors()
     }
 }
