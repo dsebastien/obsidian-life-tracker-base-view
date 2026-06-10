@@ -15,4 +15,8 @@ export interface ChartDatasetConfig {
     borderWidth?: number
     tension?: number
     fill?: boolean
+    /** Dash pattern for the line (used by the moving-average overlay) */
+    borderDash?: number[]
+    /** Point radius; 0 hides the points (used by the moving-average overlay) */
+    pointRadius?: number
 }

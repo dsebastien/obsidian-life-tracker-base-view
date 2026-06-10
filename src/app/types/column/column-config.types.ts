@@ -65,6 +65,8 @@ export interface ColumnVisualizationConfig {
     referenceLine?: ReferenceLineConfig
     /** How to combine multiple values within a time period (cartesian/bubble charts) */
     aggregationMethod?: AggregationMethod
+    /** Rolling mean window for line/area charts; undefined = off (issue #101) */
+    movingAveragePeriod?: number
 }
 
 /**
@@ -148,6 +150,26 @@ export const AGGREGATION_METHOD_SUPPORTED_TYPES: VisualizationType[] = [
 export function supportsAggregationMethod(vizType: VisualizationType): boolean {
     return AGGREGATION_METHOD_SUPPORTED_TYPES.includes(vizType)
 }
+
+/**
+ * Visualization types that support a moving-average overlay (issue #101)
+ */
+export const MOVING_AVERAGE_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.LineChart,
+    VisualizationType.AreaChart
+]
+
+/**
+ * Check if a visualization type supports a moving-average overlay
+ */
+export function supportsMovingAverage(vizType: VisualizationType): boolean {
+    return MOVING_AVERAGE_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
+ * Window sizes offered for the moving average in the UI
+ */
+export const MOVING_AVERAGE_PERIOD_OPTIONS = [7, 14, 30]
 
 /**
  * Types rendered on a canvas by Chart.js — the only ones that can export an

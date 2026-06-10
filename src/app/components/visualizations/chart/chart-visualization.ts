@@ -21,6 +21,7 @@ import {
     initRadarChart,
     initScatterChart
 } from './chart-initializers'
+import { computeMovingAverage, computeTrend } from '../../../services/chart-aggregation.utils'
 
 /**
  * Shared aggregation service instance for all chart visualizations
@@ -153,6 +154,9 @@ export class ChartVisualization extends BaseVisualization {
                     this.chartConfig.granularity,
                     this.chartConfig.aggregationMethod
                 )
+
+                // Append the moving-average overlay when configured (issue #101)
+                this.applyMovingAverage(this.chartData)
             }
 
             if (this.chartData.labels.length === 0) {
@@ -170,6 +174,9 @@ export class ChartVisualization extends BaseVisualization {
         // Create section header
         this.createSectionHeader(this.displayName)
 
+        // Trend arrow next to the title (issue #101)
+        this.renderTrendIndicator()
+
         // Create chart container (auto-height, no scrolling)
         this.chartContainer = this.containerEl.createDiv({ cls: 'lt-chart' })
 
@@ -178,6 +185,63 @@ export class ChartVisualization extends BaseVisualization {
 
         // Initialize chart (async, errors handled internally)
         void this.initChart()
+    }
+
+    /**
+     * Append the configured moving-average dataset (issue #101).
+     * Only applies to single-dataset numeric charts: list data and overlays
+     * already carry multiple datasets.
+     */
+    private applyMovingAverage(chartData: ChartData): void {
+        const period = this.chartConfig.movingAveragePeriod
+        if (!period || period < 2) return
+        if (chartData.datasets.length !== 1) return
+
+        const source = chartData.datasets[0]
+        if (!source) return
+
+        chartData.datasets.push({
+            label: `${period}-period average`,
+            data: computeMovingAverage(source.data, period),
+            filePaths: chartData.labels.map(() => []),
+            isMovingAverage: true
+        })
+    }
+
+    /**
+     * Render the ↑/↓/→ trend arrow in the section header (issue #101).
+     * Idempotent; only shown for single-dataset cartesian charts with
+     * enough data to compare two windows.
+     */
+    private renderTrendIndicator(): void {
+        const headerEl = this.containerEl.querySelector<HTMLElement>('.lt-section-header')
+        if (!headerEl) return
+
+        headerEl.querySelector('.lt-trend-indicator')?.remove()
+
+        if (!this.chartData || !this.isCartesianType()) return
+
+        const sources = this.chartData.datasets.filter((d) => !d.isMovingAverage)
+        const source = sources[0]
+        if (!source || sources.length !== 1) return
+
+        const trend = computeTrend(source.data)
+        if (!trend) return
+
+        const arrow = trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'
+        const sign = trend.changePercent > 0 ? '+' : ''
+        const description = `${sign}${trend.changePercent.toFixed(1)}% vs previous ${trend.periodCount} ${
+            trend.periodCount === 1 ? 'period' : 'periods'
+        }`
+
+        headerEl.createSpan({
+            cls: `lt-trend-indicator lt-trend-indicator--${trend.direction}`,
+            text: arrow,
+            attr: {
+                'aria-label': `Trend: ${description}`,
+                'title': description
+            }
+        })
     }
 
     /**
@@ -500,6 +564,11 @@ export class ChartVisualization extends BaseVisualization {
                 this.chartConfig.granularity,
                 this.chartConfig.aggregationMethod
             )
+
+            // Keep the moving-average overlay in sync (issue #101). A
+            // dataset-count change (toggling the option) falls through to
+            // the full re-render below.
+            this.applyMovingAverage(newChartData)
         }
 
         if (newChartData.labels.length === 0) {
@@ -537,6 +606,9 @@ export class ChartVisualization extends BaseVisualization {
         this.originalData = []
 
         this.chart!.update()
+
+        // Trend may have changed with the data (issue #101)
+        this.renderTrendIndicator()
     }
 
     /**

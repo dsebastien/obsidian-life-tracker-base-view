@@ -207,6 +207,24 @@ export function initCartesianChart(
     const datasets: ChartDatasetConfig[] = chartData.datasets.map((dataset, index) => {
         const color = colors[index % colors.length]!
 
+        // The synthetic moving-average dataset (issue #101) reuses its
+        // source dataset's color but renders as a thin dashed line without
+        // points or fill, so it reads as an annotation rather than data
+        if (dataset.isMovingAverage) {
+            const sourceColor = colors[0]!
+            return {
+                label: dataset.label,
+                data: dataset.data,
+                backgroundColor: 'transparent',
+                borderColor: getColorWithAlpha(sourceColor, 0.7),
+                borderWidth: 1.5,
+                borderDash: [6, 4],
+                pointRadius: 0,
+                tension: chartConfig.tension,
+                fill: false
+            }
+        }
+
         return {
             label: dataset.label,
             data: dataset.data,

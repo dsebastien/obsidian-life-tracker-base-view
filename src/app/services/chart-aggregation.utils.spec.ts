@@ -10,6 +10,8 @@ import {
     aggregateForScatterChart,
     aggregateForBubbleChart,
     aggregateForOverlayChart,
+    computeMovingAverage,
+    computeTrend,
     type OverlayPropertyData
 } from './chart-aggregation.utils'
 
@@ -529,5 +531,64 @@ describe('missing values are gaps, not zeros (issue #92)', () => {
         expect(result.labels).toHaveLength(2)
         expect(result.datasets[0]?.data).toEqual([8, null])
         expect(result.datasets[1]?.data).toEqual([3, 4])
+    })
+})
+
+describe('computeMovingAverage (issue #101)', () => {
+    test('trailing window clamped at the start', () => {
+        const result = computeMovingAverage([2, 4, 6, 8], 3)
+        expect(result).toEqual([2, 3, 4, 6])
+    })
+
+    test('nulls are skipped within the window, not treated as 0', () => {
+        const result = computeMovingAverage([10, null, 20], 3)
+        expect(result).toEqual([10, 10, 15])
+    })
+
+    test('window with only nulls yields null', () => {
+        const result = computeMovingAverage([null, null, 6], 2)
+        expect(result).toEqual([null, null, 6])
+    })
+})
+
+describe('computeTrend (issue #101)', () => {
+    test('upward trend over two windows', () => {
+        const trend = computeTrend([1, 1, 2, 2])
+        expect(trend?.direction).toBe('up')
+        expect(trend?.changePercent).toBe(100)
+        expect(trend?.periodCount).toBe(2)
+    })
+
+    test('downward trend', () => {
+        const trend = computeTrend([4, 4, 2, 2])
+        expect(trend?.direction).toBe('down')
+        expect(trend?.changePercent).toBe(-50)
+    })
+
+    test('small change is flat', () => {
+        const trend = computeTrend([100, 100, 101, 101])
+        expect(trend?.direction).toBe('flat')
+    })
+
+    test('window capped at 7 periods', () => {
+        const values = new Array<number | null>(20).fill(5)
+        const trend = computeTrend(values)
+        expect(trend?.periodCount).toBe(7)
+        expect(trend?.direction).toBe('flat')
+    })
+
+    test('returns null when there is not enough data', () => {
+        expect(computeTrend([5])).toBeNull()
+        expect(computeTrend([])).toBeNull()
+    })
+
+    test('returns null when the previous window mean is 0', () => {
+        expect(computeTrend([0, 0, 5, 5])).toBeNull()
+    })
+
+    test('nulls inside windows are ignored', () => {
+        const trend = computeTrend([2, null, 4, null])
+        expect(trend?.direction).toBe('up')
+        expect(trend?.changePercent).toBe(100)
     })
 })

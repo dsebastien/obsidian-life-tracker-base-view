@@ -928,6 +928,13 @@
         color: var(--text-muted);
     }
 
+    /* Trend arrow next to the title (issue #101). Deliberately neutral in
+       color: whether up is "good" depends on the tracked metric. */
+    .lt-trend-indicator {
+        @apply ml-1.5 text-sm font-semibold cursor-help;
+        color: var(--text-muted);
+    }
+
     .lt-section-actions {
         @apply flex items-center gap-1;
     }

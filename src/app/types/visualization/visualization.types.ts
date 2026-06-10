@@ -28,6 +28,17 @@ export interface VisualizationDataPoint {
 }
 
 /**
+ * Direction and magnitude of the recent trend in a chart's data,
+ * comparing the last N periods against the previous N (issue #101)
+ */
+export interface TrendInfo {
+    direction: 'up' | 'down' | 'flat'
+    changePercent: number
+    /** Number of periods in each compared window */
+    periodCount: number
+}
+
+/**
  * Tabular representation of what a visualization currently displays,
  * used for CSV export (issue #102)
  */
@@ -93,6 +104,8 @@ export interface ChartDataset {
     filePaths: string[][]
     /** Property ID this dataset represents (used in overlay charts for click handling) */
     propertyId?: BasesPropertyId
+    /** Marks the synthetic moving-average dataset (dashed styling, issue #101) */
+    isMovingAverage?: boolean
 }
 
 /**
@@ -252,6 +265,8 @@ export interface ChartConfig extends VisualizationConfig {
     referenceLine?: ReferenceLineConfig
     /** How to combine multiple values within a time period (cartesian/bubble charts) */
     aggregationMethod?: AggregationMethod
+    /** Rolling mean window for line/area charts; undefined = off (issue #101) */
+    movingAveragePeriod?: number
 }
 
 /**

@@ -15,6 +15,7 @@ import {
     type TagCloudItem,
     type TimelineData,
     type TimelinePoint,
+    type TrendInfo,
     type VisualizationDataPoint
 } from '../types'
 import { formatDateByGranularity } from '../../utils'
@@ -71,6 +72,57 @@ function combineValues(values: number[], method: AggregationMethod): number {
     if (values.length === 0) return 0
     const total = values.reduce((a, b) => a + b, 0)
     return method === 'sum' ? total : total / values.length
+}
+
+/**
+ * Trailing moving average over a chart dataset (issue #101).
+ * Each slot is the mean of the non-null values in the window ending at that
+ * slot (clamped at the start of the data); slots whose window contains no
+ * values stay null, so gaps in the source data don't become zeros.
+ */
+export function computeMovingAverage(values: (number | null)[], period: number): (number | null)[] {
+    return values.map((_, index) => {
+        const start = Math.max(0, index - period + 1)
+        const window = values.slice(start, index + 1).filter((v): v is number => v !== null)
+        if (window.length === 0) return null
+        return window.reduce((a, b) => a + b, 0) / window.length
+    })
+}
+
+/**
+ * Change below this magnitude (in percent) is reported as a flat trend
+ */
+const TREND_FLAT_THRESHOLD_PERCENT = 2
+
+/**
+ * Compare the mean of the last N periods against the previous N periods
+ * (issue #101). N is min(7, half the data). Returns null when there is not
+ * enough data, either window is empty, or the previous mean is 0 (percent
+ * change would be undefined).
+ */
+export function computeTrend(values: (number | null)[]): TrendInfo | null {
+    const periodCount = Math.min(7, Math.floor(values.length / 2))
+    if (periodCount < 1) return null
+
+    const mean = (slice: (number | null)[]): number | null => {
+        const numbers = slice.filter((v): v is number => v !== null)
+        if (numbers.length === 0) return null
+        return numbers.reduce((a, b) => a + b, 0) / numbers.length
+    }
+
+    const recent = mean(values.slice(-periodCount))
+    const previous = mean(values.slice(-2 * periodCount, -periodCount))
+    if (recent === null || previous === null || previous === 0) return null
+
+    const changePercent = ((recent - previous) / Math.abs(previous)) * 100
+    const direction =
+        Math.abs(changePercent) < TREND_FLAT_THRESHOLD_PERCENT
+            ? 'flat'
+            : changePercent > 0
+              ? 'up'
+              : 'down'
+
+    return { direction, changePercent, periodCount }
 }
 
 /**

@@ -4,6 +4,7 @@ export type { AnimationState } from './animation-state.intf'
 export type {
     VisualizationDataPoint,
     ExportTable,
+    TrendInfo,
     HeatmapData,
     HeatmapCell,
     HeatmapStreakStats,

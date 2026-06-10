@@ -22,6 +22,7 @@ export type {
     AnimationState,
     VisualizationDataPoint,
     ExportTable,
+    TrendInfo,
     HeatmapData,
     HeatmapCell,
     HeatmapStreakStats,
@@ -62,6 +63,8 @@ export {
     DEFAULT_AGGREGATION_METHOD,
     AGGREGATION_METHOD_SUPPORTED_TYPES,
     supportsAggregationMethod,
+    supportsMovingAverage,
+    MOVING_AVERAGE_PERIOD_OPTIONS,
     supportsImageExport
 } from './column'
 export type {

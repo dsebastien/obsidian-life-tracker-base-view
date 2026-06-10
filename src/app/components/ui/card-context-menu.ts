@@ -8,6 +8,8 @@ import {
     supportsReferenceLine,
     supportsAggregationMethod,
     supportsImageExport,
+    supportsMovingAverage,
+    MOVING_AVERAGE_PERIOD_OPTIONS,
     DEFAULT_AGGREGATION_METHOD,
     type ScaleConfig,
     type ReferenceLineConfig,
@@ -93,6 +95,7 @@ export function showCardContextMenu(
     currentHeatmapConfig: HeatmapMenuConfig | undefined,
     currentReferenceLine: ReferenceLineConfig | undefined,
     currentAggregationMethod: AggregationMethod | undefined,
+    currentMovingAveragePeriod: number | undefined,
     isFromPreset: boolean,
     isMaximized: boolean,
     canRemove: boolean,
@@ -241,6 +244,7 @@ export function showCardContextMenu(
         const hasColorScheme = supportsColorScheme(vizType)
         const hasReferenceLine = supportsReferenceLine(vizType)
         const hasAggregationMethod = supportsAggregationMethod(vizType)
+        const hasMovingAverage = supportsMovingAverage(vizType)
 
         const hasHeatmapConfig = vizType === VisualizationType.Heatmap
 
@@ -249,6 +253,7 @@ export function showCardContextMenu(
             !hasColorScheme &&
             !hasReferenceLine &&
             !hasAggregationMethod &&
+            !hasMovingAverage &&
             !hasHeatmapConfig
         ) {
             optionsContent.createDiv({
@@ -430,6 +435,38 @@ export function showCardContextMenu(
                 onAction({
                     type: 'configureAggregationMethod',
                     aggregationMethod: value === DEFAULT_AGGREGATION_METHOD ? undefined : value
+                })
+            })
+        }
+
+        // Moving average dropdown (line/area charts, issue #101)
+        if (hasMovingAverage) {
+            const maGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            maGroup.createEl('label', { text: 'Moving average' })
+
+            const maSelect = maGroup.createEl('select', { cls: 'lt-card-popover-select' })
+
+            const offOption = maSelect.createEl('option', { value: '', text: 'Off' })
+            if (!currentMovingAveragePeriod) {
+                offOption.selected = true
+            }
+
+            for (const period of MOVING_AVERAGE_PERIOD_OPTIONS) {
+                const option = maSelect.createEl('option', {
+                    value: String(period),
+                    text: `${period} periods`
+                })
+                if (currentMovingAveragePeriod === period) {
+                    option.selected = true
+                }
+            }
+
+            maSelect.addEventListener('change', () => {
+                const value = maSelect.value
+                close()
+                onAction({
+                    type: 'configureMovingAverage',
+                    movingAveragePeriod: value === '' ? undefined : parseInt(value, 10)
                 })
             })
         }

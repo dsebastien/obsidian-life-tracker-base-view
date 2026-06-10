@@ -1495,6 +1495,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             heatmapConfig,
             vizConfig.referenceLine,
             vizConfig.aggregationMethod,
+            vizConfig.movingAveragePeriod,
             isFromPreset,
             isMaximized,
             canRemove,
@@ -1636,6 +1637,32 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         propertyId,
                         visualizationId,
                         { aggregationMethod: action.aggregationMethod }
+                    )
+                }
+                this.onDataUpdated()
+                break
+
+            case 'configureMovingAverage':
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        const newId = this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme,
+                            preset.referenceLine
+                        )
+                        this.columnConfigService.updateVisualizationConfig(propertyId, newId, {
+                            movingAveragePeriod: action.movingAveragePeriod
+                        })
+                    }
+                } else {
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { movingAveragePeriod: action.movingAveragePeriod }
                     )
                 }
                 this.onDataUpdated()

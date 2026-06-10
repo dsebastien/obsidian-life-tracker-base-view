@@ -79,7 +79,7 @@ Adjust layout options including number of columns, empty date display, default c
 ### Right-click context menu
 
 ![Customize visualizations](documentation/screenshots/customize-visualizations.png)
-Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), color scheme, reference lines, and aggregation method (average or sum — useful when multiple entries share a date, e.g. summing workout calories per day), add another visualization for the same property, maximize, export the chart as a PNG image or the displayed data as CSV (saved to your attachment folder), or reset configuration.
+Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), color scheme, reference lines, aggregation method (average or sum — useful when multiple entries share a date, e.g. summing workout calories per day), and a moving average for line/area charts (7/14/30 periods, drawn as a dashed line to smooth noisy data), add another visualization for the same property, maximize, export the chart as a PNG image or the displayed data as CSV (saved to your attachment folder), or reset configuration. Line, bar, and area charts also show a small trend arrow (↑/↓/→) next to the title comparing recent periods against the previous ones — hover it for the percentage change.
 
 ### Maximize view
 

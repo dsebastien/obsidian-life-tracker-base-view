@@ -182,6 +182,14 @@ Example uses:
 - Minimum sleep target
 - Exercise duration target
 
+## Moving Average
+
+For line and area charts, enable a moving average from the card's right-click menu (7, 14, or 30 periods). It renders as a thin dashed line in the chart's color, smoothing noisy daily metrics like mood, weight, or steps. Each point is the mean of the recorded values in the trailing window — missing periods are skipped, not counted as 0.
+
+## Trend Indicator
+
+Single-dataset line, bar, and area charts show a small ↑ / ↓ / → arrow next to the card title comparing the average of the most recent periods (up to 7) against the previous ones. Hover the arrow to see the percentage change. The arrow stays neutral in color, since whether "up" is good depends on what you track.
+
 ## Exporting
 
 Right-click any visualization card (long-press on mobile) to export it:

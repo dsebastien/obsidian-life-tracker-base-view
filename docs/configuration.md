@@ -79,6 +79,7 @@ Stored per view, per visualization. Access via right-click context menu.
 | Color scheme    | Color palette (green, blue, purple, etc.)                                 |
 | Reference line  | Target line with value and label                                          |
 | Aggregation     | Average (default) or Sum — line, bar, area, radar, and bubble charts only |
+| Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only           |
 | Heatmap options | Cell size, day/month labels (heatmap only)                                |
 
 ## Overlay Config

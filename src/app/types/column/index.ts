@@ -11,6 +11,8 @@ export {
     DEFAULT_AGGREGATION_METHOD,
     AGGREGATION_METHOD_SUPPORTED_TYPES,
     supportsAggregationMethod,
+    supportsMovingAverage,
+    MOVING_AVERAGE_PERIOD_OPTIONS,
     supportsImageExport
 } from './column-config.types'
 export type {

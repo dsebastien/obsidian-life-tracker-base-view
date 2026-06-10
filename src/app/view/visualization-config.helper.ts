@@ -35,6 +35,7 @@ export function getVisualizationConfig(
     const colorScheme = columnConfig.colorScheme
     const referenceLine = columnConfig.referenceLine
     const aggregationMethod = columnConfig.aggregationMethod
+    const movingAveragePeriod = columnConfig.movingAveragePeriod
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
@@ -79,7 +80,8 @@ export function getVisualizationConfig(
                 scale,
                 colorScheme,
                 referenceLine,
-                aggregationMethod
+                aggregationMethod,
+                movingAveragePeriod
             } as ChartConfig
 
         case VisualizationType.AreaChart:
@@ -93,7 +95,8 @@ export function getVisualizationConfig(
                 scale,
                 colorScheme,
                 referenceLine,
-                aggregationMethod
+                aggregationMethod,
+                movingAveragePeriod
             } as ChartConfig
 
         case VisualizationType.BarChart:
