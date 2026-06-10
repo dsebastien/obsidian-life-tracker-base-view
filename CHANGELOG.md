@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.13.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.12.0...2.13.0) (2026-06-10)
+
+### Features
+
+* **plugin:** add ARIA roles and keyboard navigation across the UI ([7b2727e](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/7b2727ea0c65b77a2fc023cfcc1d8d36f926a0e9)), closes [#110](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/110)
+* **plugin:** add moving average overlay and trend indicators ([a4e3e9d](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a4e3e9daee3ac81740dc946b19f711ce9e9bc33b)), closes [#101](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/101) [#21](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/21) [#101](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/101)
+* **plugin:** anchor the trend arrow to the title and add a trend row ([1e3f595](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1e3f5959dca32bac5fca75858535f0b380920993))
+* **plugin:** export charts as PNG and displayed data as CSV ([c112bb5](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c112bb51641daa49bdd312d4b6ed704aca36173d)), closes [#102](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/102)
+* **plugin:** polish animations across cards and the capture carousel ([fa49a23](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/fa49a232ef185513dc5df7171222378e6202f7ab)), closes [#111](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/111)
+
+### Bug Fixes
+
+* **plugin:** keep date editor values on the local calendar day ([c5f354a](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c5f354a6aa714acff35d6fa1f4f848a77363bbc4)), closes [#94](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/94)
+* **plugin:** keep heatmap legend visible while scrolling ([9f433c4](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/9f433c46a73aaecfa31ca1b88d1ae7f4d4909004))
+* **plugin:** keep heatmap streak stats visible while scrolling ([5585753](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/558575340af0399eca52bed7515237d7bf78b4dc))
+* **plugin:** keep reference lines visible outside the data range ([949a094](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/949a094546645aa1058a46b79d4c014dda257af0))
+* **plugin:** let the visualization options column scroll in the popover ([4eeef9c](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4eeef9cc1b8ca1b7aa901c325f0f39e17597eac5))
+* **plugin:** pin legend and trend/streak rows to the card bottom ([1902e42](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1902e42dacd6457d3d26cda5bf64af56b861e4a3))
+* **plugin:** prevent stale chart instances after rapid re-renders ([d6eeb05](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/d6eeb05bbc007981c455f0d498d4ff19de48727f))
+* **plugin:** resolve batch capture provider by most recent interaction ([c7e5637](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c7e563733f4bc01a32664ad4c169592f7297fa06)), closes [#96](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/96)
+* **plugin:** show a single tooltip on the trend indicator ([917e785](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/917e785b3f260d1fe56b477d6e2095b2eaf4268f))
+* **plugin:** stop leaking viewport listeners on grid view re-renders ([c93106d](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c93106d09f32e3c75a19304e72d0b94b9ccbb7cd)), closes [#93](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/93)
+* **plugin:** stop spurious render cache invalidation after GC ([94799b6](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/94799b63ac9484174d8e5d58c2a6396f434965a8)), closes [#95](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/95)
+* **plugin:** use the Obsidian-styled tooltip on the trend indicator ([ef1f2fb](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/ef1f2fb0643247dbac6f3873635f4fb13da79622))
+
 ## [2.12.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.11.0...2.12.0) (2026-06-10)
 
 ### Features
@@ -270,6 +295,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

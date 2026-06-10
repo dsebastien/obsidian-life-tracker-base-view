@@ -1,5 +1,30 @@
 # Release Notes
 
+## 2.13.0 (2026-06-10)
+
+### Features
+
+- **plugin:** add ARIA roles and keyboard navigation across the UI
+- **plugin:** add moving average overlay and trend indicators [#21](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/21) [#101](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/101)
+- **plugin:** anchor the trend arrow to the title and add a trend row
+- **plugin:** export charts as PNG and displayed data as CSV
+- **plugin:** polish animations across cards and the capture carousel
+
+### Bug Fixes
+
+- **plugin:** keep date editor values on the local calendar day
+- **plugin:** keep heatmap legend visible while scrolling
+- **plugin:** keep heatmap streak stats visible while scrolling
+- **plugin:** keep reference lines visible outside the data range
+- **plugin:** let the visualization options column scroll in the popover
+- **plugin:** pin legend and trend/streak rows to the card bottom
+- **plugin:** prevent stale chart instances after rapid re-renders
+- **plugin:** resolve batch capture provider by most recent interaction
+- **plugin:** show a single tooltip on the trend indicator
+- **plugin:** stop leaking viewport listeners on grid view re-renders
+- **plugin:** stop spurious render cache invalidation after GC
+- **plugin:** use the Obsidian-styled tooltip on the trend indicator
+
 ## 2.12.0 (2026-06-10)
 
 ### Features
