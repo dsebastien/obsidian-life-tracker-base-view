@@ -119,8 +119,9 @@ export class HeatmapVisualization extends BaseVisualization {
         // Create legend (outside the scroll element so it is always visible)
         this.createLegend(heatmapEl)
 
-        // Create streak stats row (issue #100)
-        this.streaksEl = scrollEl.createDiv({ cls: 'lt-heatmap-streaks' })
+        // Create streak stats row (issue #100), also outside the scroll
+        // element so it stays visible at any scroll position
+        this.streaksEl = heatmapEl.createDiv({ cls: 'lt-heatmap-streaks' })
         this.renderStreakStats()
 
         // Scroll horizontally to the end so the freshest data is visible.
