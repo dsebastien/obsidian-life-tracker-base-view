@@ -91,6 +91,10 @@ export class ChartVisualization extends BaseVisualization {
      * Render the chart with data
      */
     override render(data: VisualizationDataPoint[]): void {
+        // A previous chart (if any) is bound to a canvas this render is
+        // about to remove — destroy it so its listeners die with it
+        this.disposeChart()
+
         // Reset all data
         this.chartData = null
         this.pieChartData = null
@@ -248,6 +252,10 @@ export class ChartVisualization extends BaseVisualization {
      * Render the chart with pre-aggregated chart data (used for overlay charts)
      */
     renderChartData(data: ChartData): void {
+        // A previous chart (if any) is bound to a canvas this render is
+        // about to remove — destroy it so its listeners die with it
+        this.disposeChart()
+
         // Reset all data
         this.chartData = null
         this.pieChartData = null
@@ -282,7 +290,8 @@ export class ChartVisualization extends BaseVisualization {
      * Initialize Chart.js
      */
     private async initChart(): Promise<void> {
-        if (!this.canvasEl) return
+        const canvas = this.canvasEl
+        if (!canvas) return
 
         // Check we have appropriate data for the chart type
         if (this.isPieType() && !this.pieChartData) return
@@ -295,7 +304,18 @@ export class ChartVisualization extends BaseVisualization {
             // Use ChartLoaderService for efficient loading (registers only once)
             const { Chart } = await ChartLoaderService.getChartJs()
 
-            const ctx = this.canvasEl.getContext('2d')
+            // The await can outlive this render: a config change can trigger
+            // another render (new canvas) or destroy() before we resume. A
+            // stale init must abort — it would otherwise create a chart
+            // nobody manages, leaving live Chart.js listeners on a chart
+            // that later gets destroyed under their feet (clipArea crash on
+            // a nulled context) or fighting the current chart for the canvas.
+            if (this.canvasEl !== canvas || !canvas.isConnected) return
+
+            // Replace any previous chart instance before binding a new one
+            this.disposeChart()
+
+            const ctx = canvas.getContext('2d')
             if (!ctx) return
 
             // Build chart configuration based on type
@@ -385,7 +405,11 @@ export class ChartVisualization extends BaseVisualization {
             }
         } catch (error) {
             log('Failed to initialize Chart.js', 'error', error)
-            this.showEmptyState('Failed to load chart library')
+            // Only report on the current render: a stale init failing must
+            // not wipe out the chart that replaced it
+            if (this.canvasEl === canvas) {
+                this.showEmptyState('Failed to load chart library')
+            }
         }
     }
 
@@ -682,12 +706,20 @@ export class ChartVisualization extends BaseVisualization {
     /**
      * Clean up resources
      */
-    override destroy(): void {
+    /**
+     * Stop any running animation and destroy the Chart.js instance,
+     * removing its canvas listeners. Safe to call when no chart exists.
+     */
+    private disposeChart(): void {
         this.stopAnimation()
         if (this.chart) {
             this.chart.destroy()
             this.chart = null
         }
+    }
+
+    override destroy(): void {
+        this.disposeChart()
         this.canvasEl = null
         this.chartContainer = null
         this.chartData = null
