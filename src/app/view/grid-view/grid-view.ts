@@ -160,8 +160,15 @@ export class GridView extends BasesView implements FileProvider {
             this.handleSettingsChange(changeInfo)
         })
 
-        // Register as active file provider for batch capture
-        this.plugin.setActiveFileProvider(this)
+        // Register as file provider for batch capture; interacting with the
+        // view marks it as the most recently active provider (issue #96)
+        this.plugin.touchFileProvider(this)
+        this.registerDomEvent(this.containerEl, 'pointerdown', () => {
+            this.plugin.touchFileProvider(this)
+        })
+        this.registerDomEvent(this.containerEl, 'focusin', () => {
+            this.plugin.touchFileProvider(this)
+        })
 
         log('GridView created', 'debug')
     }
@@ -1436,7 +1443,7 @@ export class GridView extends BasesView implements FileProvider {
         log('GridView unloading', 'debug')
 
         // Unregister as file provider
-        this.plugin.setActiveFileProvider(null)
+        this.plugin.removeFileProvider(this)
 
         if (this.unsubscribeSettings) {
             this.unsubscribeSettings()

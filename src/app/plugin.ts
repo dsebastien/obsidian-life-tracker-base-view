@@ -29,31 +29,56 @@ export class LifeTrackerPlugin extends Plugin {
     private settingsChangeListeners: Set<SettingsChangeCallback> = new Set()
 
     /**
-     * Currently active file provider (base view that can provide files for batch capture)
+     * Registered file providers (base views that can provide files for batch
+     * capture), ordered least → most recently active. Several views can be
+     * open at once (split panes); the most recently interacted-with one wins
+     * (issue #96: a single slot meant "last constructed wins", and unloading
+     * any view cleared the provider of the others).
      */
-    private activeFileProvider: FileProvider | null = null
+    private fileProviders: FileProvider[] = []
 
     /**
-     * Register a file provider as active (called when view becomes visible)
+     * Register a file provider, or mark an already-registered one as the
+     * most recently active. Called on view creation and on user interaction
+     * with the view.
      */
-    setActiveFileProvider(provider: FileProvider | null): void {
-        this.activeFileProvider = provider
+    touchFileProvider(provider: FileProvider): void {
+        const index = this.fileProviders.indexOf(provider)
+        if (index !== -1) {
+            this.fileProviders.splice(index, 1)
+        }
+        this.fileProviders.push(provider)
+    }
+
+    /**
+     * Unregister a file provider (called when its view unloads)
+     */
+    removeFileProvider(provider: FileProvider): void {
+        const index = this.fileProviders.indexOf(provider)
+        if (index !== -1) {
+            this.fileProviders.splice(index, 1)
+        }
+    }
+
+    /**
+     * The most recently active file provider (if any)
+     */
+    private getActiveFileProvider(): FileProvider | null {
+        return this.fileProviders[this.fileProviders.length - 1] ?? null
     }
 
     /**
      * Get files from the active file provider (if any)
      */
     getActiveProviderFiles(): TFile[] | null {
-        if (!this.activeFileProvider) return null
-        return this.activeFileProvider.getFiles()
+        return this.getActiveFileProvider()?.getFiles() ?? null
     }
 
     /**
      * Get filter mode from the active file provider (if any)
      */
     getActiveProviderFilterMode(): BatchFilterMode | null {
-        if (!this.activeFileProvider) return null
-        return this.activeFileProvider.getFilterMode()
+        return this.getActiveFileProvider()?.getFilterMode() ?? null
     }
 
     /**
