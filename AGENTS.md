@@ -333,6 +333,15 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Use arrow notation for navigation: **Settings → Community plugins**.
 - Keep in-app strings short, consistent, and free of jargon.
 
+## Visual stability (IMPORTANT)
+
+Cards in the grid all share the same size. The UI MUST stay visually stable — elements must not shift around depending on content or optional features:
+
+- Persistent controls (play/maximize buttons, header elements) MUST keep a fixed position. Optional elements (trend arrow, badges, ...) must never displace them — anchor optional elements inside existing containers (e.g. inside `.lt-section-title`), never as new siblings in a `justify-between` flex row.
+- Footer-style rows (heatmap legend, streak stats, trend row) MUST be pinned to the bottom of the card (`.lt-card` is a flex column; use `mt-auto`), so they sit at the same position on every card regardless of the content height above them.
+- Scrolling MUST be confined to a dedicated scroll element (e.g. `.lt-heatmap-scroll`) so persistent rows stay visible at any scroll position.
+- When adding any new card element, verify it doesn't move existing elements across cards, states (empty/loaded/maximized), or re-renders.
+
 ## Performance
 
 - Keep startup light. Defer heavy work until needed.
