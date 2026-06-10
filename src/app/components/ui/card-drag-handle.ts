@@ -201,10 +201,38 @@ export function createDragReorderController(
             // as last child) then move with insertBefore to first position.
             const handle = headerEl.createDiv({
                 cls: HANDLE_CLASS,
-                attr: { 'aria-label': 'Drag to reorder', 'role': 'button' }
+                attr: {
+                    'aria-label': 'Reorder card (drag, or use arrow keys while focused)',
+                    'role': 'button'
+                }
             })
             setIcon(handle, 'grip-vertical')
             headerEl.insertBefore(handle, headerEl.firstChild)
+
+            // Keyboard alternative to dragging (issue #110): arrows move the
+            // card one position back/forward in reading order
+            handle.tabIndex = 0
+            handle.addEventListener('keydown', (event) => {
+                const backward = event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+                const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown'
+                if (!backward && !forward) return
+                event.preventDefault()
+                event.stopPropagation()
+
+                const cards = Array.from(gridEl.querySelectorAll<HTMLElement>(`[${CARD_ID_ATTR}]`))
+                const index = cards.indexOf(cardEl)
+                const target = cards[backward ? index - 1 : index + 1]
+                if (!target) return
+
+                if (backward) {
+                    target.parentElement?.insertBefore(cardEl, target)
+                } else {
+                    target.parentElement?.insertBefore(cardEl, target.nextSibling)
+                }
+
+                options.onReorder(readGridOrder(gridEl))
+                handle.focus()
+            })
 
             handle.addEventListener('pointerdown', (event) => {
                 // Ignore secondary buttons; let context-menu / right-click work.

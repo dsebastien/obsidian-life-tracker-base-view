@@ -60,6 +60,9 @@ export class PropertySelectionModal extends Modal {
         contentEl.addClass('lt-property-selection-modal')
 
         this.render()
+
+        // Land keyboard users on the first field (issue #110)
+        this.nameInputEl?.focus()
     }
 
     override onClose(): void {

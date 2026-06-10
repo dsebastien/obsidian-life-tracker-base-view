@@ -318,7 +318,7 @@ export class HeatmapVisualization extends BaseVisualization {
 
         const cells = this.gridEl.querySelectorAll(CSS_SELECTOR.HEATMAP_CELL)
 
-        cells.forEach((cell) => {
+        cells.forEach((cell, index) => {
             const cellEl = cell as HTMLElement
 
             // Hover events
@@ -327,39 +327,117 @@ export class HeatmapVisualization extends BaseVisualization {
 
             // Click event
             cellEl.addEventListener('click', () => this.handleCellClick(cellEl))
+
+            // Keyboard access (issue #110): roving tabindex — the first cell
+            // is the Tab stop, arrows move focus, Enter/Space opens the
+            // entries, and focusing shows the tooltip
+            cellEl.tabIndex = index === 0 ? 0 : -1
+            cellEl.setAttribute('role', 'button')
+            const label = this.formatCellTooltip(cellEl)
+            if (label) {
+                cellEl.setAttribute(
+                    'aria-label',
+                    `${label.title}${label.value ? `: ${label.value}` : ''}`
+                )
+            }
+            cellEl.addEventListener('focus', () => this.handleCellFocus(cellEl))
+            cellEl.addEventListener('blur', () => this.handleCellLeave())
+            cellEl.addEventListener('keydown', (e) => this.handleCellKeydown(e, cellEl))
         })
     }
 
     /**
-     * Handle cell hover - show tooltip
+     * Build tooltip content for a cell from its data attributes.
+     * Returns null when the cell has no date.
      */
-    private handleCellHover(event: MouseEvent, cellEl: HTMLElement): void {
-        if (!this.tooltip || !this.heatmapData) return
+    private formatCellTooltip(
+        cellEl: HTMLElement
+    ): { title: string; value?: string; subtitle?: string } | null {
+        if (!this.heatmapData) return null
 
         const dateStr = cellEl.dataset['date']
+        if (!dateStr) return null
+
         const valueStr = cellEl.dataset['value']
         const countStr = cellEl.dataset['count']
-
-        if (!dateStr) return
-
         const date = parseISO(dateStr)
         const value = valueStr ? parseFloat(valueStr) : null
         const count = countStr ? parseInt(countStr, 10) : 0
 
-        const {
-            title,
-            value: tooltipValue,
-            subtitle
-        } = formatHeatmapTooltip(
+        return formatHeatmapTooltip(
             date,
             value,
             count,
             this.displayName,
             this.heatmapConfig.granularity
         )
+    }
+
+    /**
+     * Handle cell hover - show tooltip
+     */
+    private handleCellHover(event: MouseEvent, cellEl: HTMLElement): void {
+        if (!this.tooltip) return
+
+        const content = this.formatCellTooltip(cellEl)
+        if (!content) return
 
         // Position tooltip above the mouse cursor
-        this.tooltip.show(event.clientX, event.clientY - 10, title, tooltipValue, subtitle)
+        this.tooltip.show(
+            event.clientX,
+            event.clientY - 10,
+            content.title,
+            content.value,
+            content.subtitle
+        )
+    }
+
+    /**
+     * Handle cell focus - show tooltip anchored to the cell (keyboard access)
+     */
+    private handleCellFocus(cellEl: HTMLElement): void {
+        if (!this.tooltip) return
+
+        const content = this.formatCellTooltip(cellEl)
+        if (!content) return
+
+        const rect = cellEl.getBoundingClientRect()
+        this.tooltip.show(
+            rect.left + rect.width / 2,
+            rect.top - 10,
+            content.title,
+            content.value,
+            content.subtitle
+        )
+    }
+
+    /**
+     * Keyboard navigation between heatmap cells (issue #110)
+     */
+    private handleCellKeydown(event: KeyboardEvent, cellEl: HTMLElement): void {
+        if (!this.gridEl) return
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            this.handleCellClick(cellEl)
+            return
+        }
+
+        const backward = event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+        const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown'
+        if (!backward && !forward) return
+        event.preventDefault()
+
+        const cells = Array.from(
+            this.gridEl.querySelectorAll<HTMLElement>(CSS_SELECTOR.HEATMAP_CELL)
+        )
+        const index = cells.indexOf(cellEl)
+        const next = cells[backward ? index - 1 : index + 1]
+        if (!next) return
+
+        cellEl.tabIndex = -1
+        next.tabIndex = 0
+        next.focus()
     }
 
     /**

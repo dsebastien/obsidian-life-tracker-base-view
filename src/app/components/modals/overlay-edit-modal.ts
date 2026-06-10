@@ -104,6 +104,9 @@ export class OverlayEditModal extends Modal {
         contentEl.addClass('lt-overlay-edit-modal')
 
         this.render()
+
+        // Land keyboard users on the first field (issue #110)
+        this.nameInputEl?.focus()
     }
 
     override onClose(): void {

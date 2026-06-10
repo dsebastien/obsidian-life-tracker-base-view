@@ -28,7 +28,11 @@ export class BooleanEditor extends BasePropertyEditor {
 
     private renderToggle(container: HTMLElement): void {
         this.toggleEl = container.createDiv({
-            cls: 'lt-editor-toggle'
+            cls: 'lt-editor-toggle',
+            attr: {
+                'role': 'switch',
+                'aria-label': this.config.definition.displayName || this.config.definition.name
+            }
         })
 
         this.updateToggleState()
@@ -83,6 +87,7 @@ export class BooleanEditor extends BasePropertyEditor {
 
         this.toggleEl.empty()
         this.toggleEl.classList.toggle('lt-editor-toggle--on', this.currentValue)
+        this.toggleEl.setAttribute('aria-checked', this.currentValue ? 'true' : 'false')
 
         // Create track
         const track = this.toggleEl.createDiv({ cls: 'lt-editor-toggle-track' })

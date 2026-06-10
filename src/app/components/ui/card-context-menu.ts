@@ -48,6 +48,38 @@ export interface HeatmapMenuConfig {
 }
 
 /**
+ * Trap Tab focus inside a container (issue #110). The listener dies with the
+ * element, but the returned cleanup allows explicit release too.
+ */
+function trapFocus(container: HTMLElement): () => void {
+    const handleKeydown = (e: KeyboardEvent): void => {
+        if (e.key !== 'Tab') return
+
+        const focusables = Array.from(
+            container.querySelectorAll<HTMLElement>(
+                'button, select, input, [tabindex]:not([tabindex="-1"])'
+            )
+        ).filter((el) => !el.hasAttribute('disabled'))
+
+        const first = focusables[0]
+        const last = focusables[focusables.length - 1]
+        if (!first || !last) return
+
+        const active = container.ownerDocument.activeElement
+        if (e.shiftKey && (active === first || !container.contains(active))) {
+            e.preventDefault()
+            last.focus()
+        } else if (!e.shiftKey && active === last) {
+            e.preventDefault()
+            first.focus()
+        }
+    }
+
+    container.addEventListener('keydown', handleKeydown)
+    return (): void => container.removeEventListener('keydown', handleKeydown)
+}
+
+/**
  * Show context menu popover for a visualization card
  * Two-column layout: left = viz type selection, right = options
  * @param canRemove - Whether the "Remove visualization" button should be shown (true when property has 2+ visualizations)
@@ -81,7 +113,11 @@ export function showCardContextMenu(
     const overlay = activeDocument.body.createDiv({ cls: 'lt-card-popover-overlay' })
 
     // Create popover container
-    const popover = overlay.createDiv({ cls: 'lt-card-popover' })
+    const popover = overlay.createDiv({
+        cls: 'lt-card-popover',
+        attr: { 'role': 'dialog', 'aria-modal': 'true', 'aria-label': 'Visualization options' }
+    })
+    const releaseFocusTrap = trapFocus(popover)
 
     // Track selected type for dynamic options
     let selectedType = currentType
@@ -89,6 +125,7 @@ export function showCardContextMenu(
     // Close function
     const close = (): void => {
         activeDocument.removeEventListener('keydown', handleEscape)
+        releaseFocusTrap()
         overlay.remove()
     }
 
@@ -163,7 +200,10 @@ export function showCardContextMenu(
     const leftCol = body.createDiv({ cls: 'lt-card-popover-column lt-card-popover-column--left' })
     leftCol.createDiv({ cls: 'lt-card-popover-column-title', text: 'Visualization' })
 
-    const typeList = leftCol.createDiv({ cls: 'lt-card-popover-type-list' })
+    const typeList = leftCol.createDiv({
+        cls: 'lt-card-popover-type-list',
+        attr: { 'role': 'listbox', 'aria-label': 'Visualization type' }
+    })
 
     // Render options column function (will be called when type changes)
     const renderOptionsColumn = (container: HTMLElement, vizType: VisualizationType): void => {
@@ -474,8 +514,31 @@ export function showCardContextMenu(
 
     // Create type items
     for (const option of CONTEXT_MENU_VISUALIZATION_OPTIONS) {
+        const isSelected = option.type === selectedType
         const item = typeList.createDiv({
-            cls: `lt-card-popover-type-item ${option.type === selectedType ? 'lt-card-popover-type-item--selected' : ''}`
+            cls: `lt-card-popover-type-item ${isSelected ? 'lt-card-popover-type-item--selected' : ''}`,
+            attr: { 'role': 'option', 'aria-selected': isSelected ? 'true' : 'false' }
+        })
+        // Roving tabindex: the selected option is the Tab stop, arrows move
+        // focus within the list (issue #110)
+        item.tabIndex = isSelected ? 0 : -1
+
+        item.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                item.click()
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault()
+                const items = Array.from(
+                    typeList.querySelectorAll<HTMLElement>('.lt-card-popover-type-item')
+                )
+                const index = items.indexOf(item)
+                const next =
+                    e.key === 'ArrowDown'
+                        ? (items[index + 1] ?? items[0])
+                        : (items[index - 1] ?? items[items.length - 1])
+                next?.focus()
+            }
         })
 
         const iconEl = item.createSpan({ cls: 'lt-card-popover-type-icon' })
@@ -511,6 +574,9 @@ export function showCardContextMenu(
             }
         })
     }
+
+    // Move focus into the dialog so keyboard users land inside it
+    addVizBtn.focus()
 
     // Position popover - on mobile (<=480px), CSS handles positioning via inset
     const viewportWidth = window.innerWidth
@@ -563,7 +629,11 @@ function showCustomScaleModal(
     // Create modal overlay
     const overlay = activeDocument.body.createDiv({ cls: 'lt-scale-modal-overlay' })
 
-    const modal = overlay.createDiv({ cls: 'lt-scale-modal' })
+    const modal = overlay.createDiv({
+        cls: 'lt-scale-modal',
+        attr: { 'role': 'dialog', 'aria-modal': 'true', 'aria-label': 'Configure scale' }
+    })
+    trapFocus(modal)
 
     // Header
     modal.createDiv({ cls: 'lt-scale-modal-header', text: 'Configure scale' })
@@ -642,6 +712,14 @@ function showCustomScaleModal(
         cleanup()
     })
 
+    // Enter in the form confirms
+    form.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            confirmBtn.click()
+        }
+    })
+
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -663,7 +741,11 @@ function showReferenceLineModal(
     onConfirm: (referenceLine: ReferenceLineConfig) => void
 ): void {
     const overlay = activeDocument.body.createDiv({ cls: 'lt-scale-modal-overlay' })
-    const modal = overlay.createDiv({ cls: 'lt-scale-modal' })
+    const modal = overlay.createDiv({
+        cls: 'lt-scale-modal',
+        attr: { 'role': 'dialog', 'aria-modal': 'true', 'aria-label': 'Configure reference line' }
+    })
+    trapFocus(modal)
 
     modal.createDiv({ cls: 'lt-scale-modal-header', text: 'Configure reference line' })
 
@@ -729,6 +811,14 @@ function showReferenceLineModal(
         })
 
         cleanup()
+    })
+
+    // Enter in the form confirms
+    form.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            confirmBtn.click()
+        }
     })
 
     overlay.addEventListener('click', (e) => {

@@ -526,11 +526,16 @@ export class PropertyCaptureModal extends Modal {
         // Get progress emoji based on percentage
         const emoji = this.getProgressEmoji(percentage)
 
-        // Progress text: "x/y (n% done! emoji)"
-        this.progressEl.createDiv({
+        // Progress text: "x/y (n% done! emoji)". Announced politely to
+        // assistive technology; the decorative emoji is hidden from it
+        // (issue #110)
+        const textEl = this.progressEl.createDiv({
             cls: 'lt-carousel-progress-text',
-            text: `${filled}/${total} (${percentage}% done! ${emoji})`
+            attr: { 'aria-live': 'polite', 'aria-atomic': 'true' }
         })
+        textEl.createSpan({ text: `${filled}/${total} (${percentage}% done!` })
+        textEl.createSpan({ text: ` ${emoji}`, attr: { 'aria-hidden': 'true' } })
+        textEl.createSpan({ text: ')' })
     }
 
     /**

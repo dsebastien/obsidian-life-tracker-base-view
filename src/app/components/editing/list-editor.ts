@@ -18,6 +18,7 @@ export class ListEditor extends BasePropertyEditor {
     private pillsEl: HTMLElement | null = null
     private suggestionsEl: HTMLElement | null = null
     private currentValues: string[] = []
+    private activeSuggestionIndex = -1
 
     constructor(config: PropertyEditorConfig) {
         super(config)
@@ -40,12 +41,19 @@ export class ListEditor extends BasePropertyEditor {
         this.inputEl = this.wrapperEl.createEl('input', {
             cls: 'lt-editor-list-input',
             type: 'text',
-            placeholder: this.hasAllowedValues() ? 'Select...' : 'Add item...'
+            placeholder: this.hasAllowedValues() ? 'Select...' : 'Add item...',
+            attr: {
+                'role': 'combobox',
+                'aria-autocomplete': 'list',
+                'aria-expanded': 'false',
+                'aria-label': this.config.definition.displayName || this.config.definition.name
+            }
         })
 
         // Suggestions dropdown
         this.suggestionsEl = this.wrapperEl.createDiv({
-            cls: 'lt-editor-list-suggestions lt-hidden'
+            cls: 'lt-editor-list-suggestions lt-hidden',
+            attr: { role: 'listbox' }
         })
 
         this.setupEventHandlers()
@@ -71,10 +79,22 @@ export class ListEditor extends BasePropertyEditor {
         })
 
         this.inputEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                // Move the highlight through visible suggestions (issue #110)
+                const count = this.getSuggestionItems().length
+                if (count > 0) {
+                    e.preventDefault()
+                    const delta = e.key === 'ArrowDown' ? 1 : -1
+                    this.highlightSuggestion((this.activeSuggestionIndex + delta + count) % count)
+                }
+            } else if (e.key === 'Enter') {
                 e.preventDefault()
-                // If input is empty, navigate to next field
-                if (!this.inputEl?.value.trim()) {
+                const active = this.getSuggestionItems()[this.activeSuggestionIndex]
+                if (active && !this.suggestionsEl?.hasClass('lt-hidden')) {
+                    // Add the highlighted suggestion
+                    this.addValue(active.getText())
+                } else if (!this.inputEl?.value.trim()) {
+                    // If input is empty, navigate to next field
                     this.notifyEnterKey()
                 } else {
                     this.addCurrentInput()
@@ -174,11 +194,14 @@ export class ListEditor extends BasePropertyEditor {
 
         this.suggestionsEl.empty()
         this.suggestionsEl.removeClass('lt-hidden')
+        this.inputEl.setAttribute('aria-expanded', 'true')
+        this.activeSuggestionIndex = -1
 
         for (const suggestion of availableSuggestions) {
             const item = this.suggestionsEl.createDiv({
                 cls: 'lt-editor-list-suggestion',
-                text: suggestion
+                text: suggestion,
+                attr: { 'role': 'option', 'aria-selected': 'false' }
             })
 
             item.addEventListener('mousedown', (e) => {
@@ -192,6 +215,29 @@ export class ListEditor extends BasePropertyEditor {
         if (this.suggestionsEl) {
             this.suggestionsEl.addClass('lt-hidden')
         }
+        this.inputEl?.setAttribute('aria-expanded', 'false')
+        this.activeSuggestionIndex = -1
+    }
+
+    private getSuggestionItems(): HTMLElement[] {
+        if (!this.suggestionsEl || this.suggestionsEl.hasClass('lt-hidden')) return []
+        return Array.from(
+            this.suggestionsEl.querySelectorAll<HTMLElement>('.lt-editor-list-suggestion')
+        )
+    }
+
+    private highlightSuggestion(index: number): void {
+        const items = this.getSuggestionItems()
+        this.activeSuggestionIndex = index
+
+        items.forEach((item, i) => {
+            const isActive = i === index
+            item.toggleClass('lt-editor-list-suggestion--active', isActive)
+            item.setAttribute('aria-selected', isActive ? 'true' : 'false')
+            if (isActive) {
+                item.scrollIntoView({ block: 'nearest' })
+            }
+        })
     }
 
     private addCurrentInput(): void {
