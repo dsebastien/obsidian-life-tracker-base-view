@@ -54,3 +54,12 @@ export function setCssProps(el: HTMLElement, props: Record<string, string | numb
         el.style.setProperty(cssKey, typeof value === 'number' ? `${value}px` : value)
     }
 }
+
+/**
+ * Whether the user prefers reduced motion (OS-level accessibility setting).
+ * Use to gate non-essential animations (confetti, chart animations, ...).
+ * CSS animations are gated separately via media queries in styles.src.css.
+ */
+export function prefersReducedMotion(): boolean {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}

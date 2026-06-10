@@ -49,7 +49,14 @@ export {
 export type { TimeFrameDateRange } from './date.utils'
 
 // DOM utilities
-export { CSS_CLASS, CSS_SELECTOR, DATA_ATTR, DATA_ATTR_FULL, setCssProps } from './dom.utils'
+export {
+    CSS_CLASS,
+    CSS_SELECTOR,
+    DATA_ATTR,
+    DATA_ATTR_FULL,
+    prefersReducedMotion,
+    setCssProps
+} from './dom.utils'
 
 // Logging utilities
 export { log } from './log.utils'

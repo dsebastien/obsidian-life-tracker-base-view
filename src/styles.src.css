@@ -3465,3 +3465,35 @@
         }
     }
 } /* End @layer lt-components */
+
+/* ============================================================
+   Accessibility
+   Intentionally unlayered: unlayered author styles take
+   priority over all rules in the lt-* layers above.
+   ============================================================ */
+
+/* Visible focus ring for keyboard navigation. Component rules above suppress
+   the default outline for mouse users; :focus-visible restores a ring for
+   keyboard users only. */
+[class^='lt-']:focus-visible,
+[class*=' lt-']:focus-visible {
+    outline: 2px solid var(--interactive-accent);
+    outline-offset: 2px;
+}
+
+/* Reduced motion: disable decorative animations for users with the OS-level
+   accessibility setting. Confetti and Chart.js animations are gated in
+   TypeScript via prefersReducedMotion(). */
+@media (prefers-reduced-motion: reduce) {
+    .lt-play-btn--playing,
+    .lt-loading-spinner,
+    .lt-carousel-card,
+    .lt-carousel-progress-fill {
+        animation: none;
+    }
+
+    [class^='lt-'],
+    [class*=' lt-'] {
+        transition-duration: 0.01ms;
+    }
+}

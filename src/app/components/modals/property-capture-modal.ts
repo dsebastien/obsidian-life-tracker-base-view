@@ -12,7 +12,7 @@ import {
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
 import { createPropertyEditor } from '../editing/property-editor'
-import { formatFileTitleWithWeekday, log } from '../../../utils'
+import { formatFileTitleWithWeekday, log, prefersReducedMotion } from '../../../utils'
 
 /** Debounce delay for auto-save in milliseconds */
 const AUTO_SAVE_DEBOUNCE_MS = 500
@@ -948,6 +948,9 @@ export class PropertyCaptureModal extends Modal {
     }
 
     private showConfetti(): void {
+        // Respect the OS-level accessibility setting
+        if (prefersReducedMotion()) return
+
         // Get modal position for confetti origin
         const modalRect = this.contentEl.getBoundingClientRect()
         const originX = (modalRect.left + modalRect.width / 2) / window.innerWidth
@@ -985,6 +988,9 @@ export class PropertyCaptureModal extends Modal {
      * Smaller confetti burst for file completion (batch mode)
      */
     private showMiniConfetti(): void {
+        // Respect the OS-level accessibility setting
+        if (prefersReducedMotion()) return
+
         const modalRect = this.contentEl.getBoundingClientRect()
         const originX = (modalRect.left + modalRect.width / 2) / window.innerWidth
         const originY = (modalRect.top + modalRect.height / 2) / window.innerHeight

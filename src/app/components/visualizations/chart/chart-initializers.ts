@@ -12,7 +12,12 @@ import type {
     PieTooltipContext,
     PointTooltipContext
 } from '../../../types'
-import { getColorWithAlpha, getBooleanColor, getChartColorScheme } from '../../../../utils'
+import {
+    getColorWithAlpha,
+    getBooleanColor,
+    getChartColorScheme,
+    prefersReducedMotion
+} from '../../../../utils'
 import type { Chart as ChartJsChart } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
 
@@ -21,6 +26,14 @@ import type { AnnotationOptions } from 'chartjs-plugin-annotation'
  * dynamically loaded `chart.js` module surfaces in our signatures without runtime cost.
  */
 type ChartClass = typeof ChartJsChart
+
+/**
+ * Chart.js animation option honoring the user's reduced-motion preference.
+ * `false` disables all Chart.js animations; `undefined` keeps the defaults.
+ */
+function chartAnimation(): false | undefined {
+    return prefersReducedMotion() ? false : undefined
+}
 
 /**
  * Initialize pie/doughnut/polarArea chart
@@ -73,6 +86,7 @@ export function initPieChart(
             ]
         },
         options: {
+            animation: chartAnimation(),
             responsive: true,
             maintainAspectRatio: true,
             aspectRatio: 2,
@@ -145,6 +159,7 @@ export function initRadarChart(
             datasets
         },
         options: {
+            animation: chartAnimation(),
             responsive: true,
             maintainAspectRatio: true,
             aspectRatio: 2,
@@ -244,6 +259,7 @@ export function initCartesianChart(
             datasets
         },
         options: {
+            animation: chartAnimation(),
             responsive: true,
             maintainAspectRatio: true,
             aspectRatio: 2,
@@ -343,6 +359,7 @@ export function initScatterChart(
             ]
         },
         options: {
+            animation: chartAnimation(),
             responsive: true,
             maintainAspectRatio: true,
             aspectRatio: 2,
@@ -427,6 +444,7 @@ export function initBubbleChart(
             ]
         },
         options: {
+            animation: chartAnimation(),
             responsive: true,
             maintainAspectRatio: true,
             aspectRatio: 2,
