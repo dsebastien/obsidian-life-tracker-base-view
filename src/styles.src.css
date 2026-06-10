@@ -75,7 +75,7 @@
     }
 
     .lt-settings-nav-tab {
-        @apply px-4 py-2 rounded-t cursor-pointer transition-all duration-150;
+        @apply px-4 py-2 rounded-t cursor-pointer transition duration-150;
         color: var(--text-muted);
     }
 
@@ -236,6 +236,24 @@
         background-color: var(--background-secondary);
         border: 1px solid var(--background-modifier-border);
         min-height: 200px;
+        animation: lt-card-enter 0.18s ease-out;
+    }
+
+    @keyframes lt-card-enter {
+        from {
+            opacity: 0;
+            transform: scale(0.97);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Applied transiently by the drag controller while a reordered card
+       travels to its new grid position (FLIP animation) */
+    .lt-card--flip {
+        transition: transform 0.18s ease;
     }
 
     .lt-card:hover {
@@ -271,6 +289,18 @@
         background-color: var(--background-primary);
         border: 1px solid var(--background-modifier-border);
         min-height: auto;
+        animation: lt-card-maximize 0.2s ease-out;
+    }
+
+    @keyframes lt-card-maximize {
+        from {
+            opacity: 0.5;
+            transform: scale(0.96);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
     }
 
     .lt-card--maximized > .lt-section {
@@ -296,6 +326,16 @@
         content: '';
         @apply fixed inset-0 z-40 pointer-events-none;
         background-color: rgba(0, 0, 0, 0.5);
+        animation: lt-backdrop-fade-in 0.2s ease-out;
+    }
+
+    @keyframes lt-backdrop-fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
     }
 
     /* ========================================
@@ -380,7 +420,7 @@
 
     .lt-config-option {
         @apply flex flex-col items-center gap-2 p-3 rounded-lg cursor-pointer;
-        @apply transition-all duration-150;
+        @apply transition duration-150;
         background-color: var(--background-primary);
         border: 1px solid var(--background-modifier-border);
     }
@@ -895,7 +935,7 @@
     /* Play button */
     .lt-play-btn {
         @apply w-6 h-6 flex items-center justify-center rounded cursor-pointer;
-        @apply transition-all duration-150 opacity-60;
+        @apply transition duration-150 opacity-60;
         color: var(--text-muted);
     }
 
@@ -993,7 +1033,7 @@
 
     .lt-heatmap-cell {
         @apply w-3 h-3 rounded-sm cursor-pointer;
-        @apply transition-all duration-150;
+        @apply transition duration-150;
         background-color: var(--background-modifier-border);
     }
 
@@ -1145,7 +1185,7 @@
 
     .lt-tag {
         @apply px-2 py-1 rounded-full cursor-pointer;
-        @apply transition-all duration-150;
+        @apply transition duration-150;
         background-color: var(--background-modifier-hover);
         color: var(--text-normal);
     }
@@ -1194,7 +1234,7 @@
 
     .lt-timeline-point {
         @apply absolute w-3 h-3 rounded-full cursor-pointer;
-        @apply transition-all duration-150;
+        @apply transition duration-150;
         top: 50%;
         transform: translate(-50%, -50%);
         background-color: var(--lt-timeline-point-color, var(--interactive-accent));
@@ -1370,7 +1410,7 @@
     }
 
     .lt-property-definition-item {
-        @apply mb-4 pb-4 rounded cursor-grab transition-all duration-150;
+        @apply mb-4 pb-4 rounded cursor-grab transition duration-150;
         border-bottom: 1px solid var(--background-modifier-border);
     }
 
@@ -2279,7 +2319,7 @@
 
     .lt-carousel-file-nav-btn {
         @apply w-7 h-7 flex items-center justify-center rounded-full cursor-pointer;
-        @apply transition-all duration-150 bg-transparent border;
+        @apply transition duration-150 bg-transparent border;
         color: var(--text-muted);
         border-color: var(--background-modifier-border);
     }
@@ -2350,7 +2390,7 @@
 
     .lt-carousel-nav-btn {
         @apply w-10 h-10 flex items-center justify-center rounded-full cursor-pointer;
-        @apply transition-all duration-200 bg-transparent border;
+        @apply transition duration-200 bg-transparent border;
         color: var(--text-muted);
         border-color: var(--background-modifier-border);
     }
@@ -2425,7 +2465,7 @@
 
     /* Input + "Use default" button wrapper (unified container) */
     .lt-carousel-input-with-default {
-        @apply flex items-stretch rounded-lg border-2 transition-all duration-200;
+        @apply flex items-stretch rounded-lg border-2 transition duration-200;
         background-color: var(--background-primary);
         border-color: var(--background-modifier-border);
         overflow: hidden;
@@ -2468,7 +2508,7 @@
     /* "Use default" button as integrated suffix */
     .lt-carousel-default-btn {
         @apply px-4 py-3 cursor-pointer whitespace-nowrap;
-        @apply transition-all duration-200 flex-shrink-0;
+        @apply transition duration-200 flex-shrink-0;
         @apply flex items-center justify-center;
         @apply text-xs font-medium tracking-wide;
         background-color: transparent;
@@ -2487,14 +2527,14 @@
 
     /* Enhanced editor inputs within carousel */
     .lt-carousel-editor .lt-editor-input {
-        @apply px-4 py-3 text-base rounded-lg border-2 transition-all duration-200;
+        @apply px-4 py-3 text-base rounded-lg border-2 transition duration-200;
         background-color: var(--background-primary);
         border-color: var(--background-modifier-border);
         line-height: 1.6;
     }
 
     .lt-carousel-editor .lt-editor-select {
-        @apply px-3 py-2 text-base rounded-lg border-2 transition-all duration-200;
+        @apply px-3 py-2 text-base rounded-lg border-2 transition duration-200;
         background-color: var(--background-primary);
         border-color: var(--background-modifier-border);
         line-height: 1.4;
@@ -2569,7 +2609,7 @@
     /* Button for empty state */
     .lt-carousel-btn {
         @apply px-6 py-3 rounded-xl font-semibold cursor-pointer text-sm;
-        @apply transition-all duration-200 border-2 text-center;
+        @apply transition duration-200 border-2 text-center;
         border-color: var(--background-modifier-border);
     }
 
@@ -2599,7 +2639,7 @@
     }
 
     .lt-carousel-progress-fill {
-        @apply h-full rounded-full transition-all duration-700 ease-out;
+        @apply h-full rounded-full transition-[width] duration-700 ease-out;
         background: linear-gradient(
             90deg,
             var(--interactive-accent) 0%,
@@ -2652,6 +2692,37 @@
         to {
             opacity: 1;
             transform: translateY(0);
+        }
+    }
+
+    /* Directional slide replayed on property/file navigation (issue #111) */
+    .lt-carousel-card--slide-forward {
+        animation: lt-carousel-slide-forward 0.25s ease-out;
+    }
+
+    .lt-carousel-card--slide-backward {
+        animation: lt-carousel-slide-backward 0.25s ease-out;
+    }
+
+    @keyframes lt-carousel-slide-forward {
+        from {
+            opacity: 0;
+            transform: translateX(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes lt-carousel-slide-backward {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
         }
     }
 
@@ -2977,7 +3048,7 @@
 
     .lt-property-selection-item {
         @apply flex items-center gap-3 px-3 py-2 rounded cursor-pointer;
-        @apply transition-all duration-100;
+        @apply transition duration-100;
     }
 
     .lt-property-selection-item:hover {
@@ -3006,7 +3077,7 @@
 
     .lt-property-selection-btn {
         @apply px-4 py-2 rounded font-medium text-sm;
-        @apply transition-all duration-150 cursor-pointer;
+        @apply transition duration-150 cursor-pointer;
     }
 
     .lt-property-selection-btn--cancel {
@@ -3187,7 +3258,7 @@
 
     .lt-overlay-edit-type-btn {
         @apply flex flex-col items-center justify-center gap-2 p-3 rounded-lg;
-        @apply cursor-pointer transition-all duration-150 relative;
+        @apply cursor-pointer transition duration-150 relative;
         @apply min-h-[72px];
         background-color: var(--background-secondary);
         border: 2px solid var(--background-modifier-border);
@@ -3245,7 +3316,7 @@
 
     .lt-overlay-edit-property-item {
         @apply flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer;
-        @apply transition-all duration-100;
+        @apply transition duration-100;
     }
 
     .lt-overlay-edit-property-item:hover {
@@ -3368,7 +3439,7 @@
     /* Buttons */
     .lt-overlay-edit-btn {
         @apply flex items-center justify-center gap-2 px-4 py-2.5 rounded-md;
-        @apply font-medium text-sm cursor-pointer transition-all duration-150;
+        @apply font-medium text-sm cursor-pointer transition duration-150;
         border: none;
     }
 
@@ -3500,7 +3571,12 @@
     .lt-play-btn--playing,
     .lt-loading-spinner,
     .lt-carousel-card,
-    .lt-carousel-progress-fill {
+    .lt-carousel-card--slide-forward,
+    .lt-carousel-card--slide-backward,
+    .lt-carousel-progress-fill,
+    .lt-card,
+    .lt-card--maximized,
+    .lt-container--has-maximized::before {
         animation: none;
     }
 

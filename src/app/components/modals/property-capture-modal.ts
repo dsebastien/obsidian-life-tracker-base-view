@@ -48,6 +48,11 @@ export class PropertyCaptureModal extends Modal {
     // Debounce timer for auto-save
     private saveDebounceTimer: number | null = null
 
+    // Direction of the last navigation, used to replay the card slide-in
+    // animation toward the right side (issue #111). Null until the user
+    // navigates, so the initial open keeps the default animation.
+    private navDirection: 'forward' | 'backward' | null = null
+
     // DOM elements (named to avoid shadowing Modal's containerEl)
     private wrapperEl: HTMLElement | null = null
     private fileNavEl: HTMLElement | null = null
@@ -401,6 +406,22 @@ export class PropertyCaptureModal extends Modal {
         this.cardEl.empty()
         this.destroyEditor()
 
+        // Replay the slide-in animation in the direction of navigation
+        // (issue #111). Reading offsetWidth forces a reflow so re-adding a
+        // class restarts the animation.
+        if (this.navDirection !== null) {
+            this.cardEl.classList.remove(
+                'lt-carousel-card--slide-forward',
+                'lt-carousel-card--slide-backward'
+            )
+            void this.cardEl.offsetWidth
+            this.cardEl.classList.add(
+                this.navDirection === 'backward'
+                    ? 'lt-carousel-card--slide-backward'
+                    : 'lt-carousel-card--slide-forward'
+            )
+        }
+
         const definition = this.getCurrentDefinition()
         if (!definition) return
 
@@ -665,6 +686,7 @@ export class PropertyCaptureModal extends Modal {
 
     private navigatePrev(): void {
         if (this.isFirstProperty()) return
+        this.navDirection = 'backward'
 
         // Ensure any pending save completes
         if (this.saveDebounceTimer) {
@@ -687,6 +709,7 @@ export class PropertyCaptureModal extends Modal {
 
     private navigateNext(): void {
         if (this.isLastProperty()) return
+        this.navDirection = 'forward'
 
         // Ensure any pending save completes
         if (this.saveDebounceTimer) {
@@ -804,6 +827,8 @@ export class PropertyCaptureModal extends Modal {
      * Navigate to previous file (batch mode, wraps around, skips complete files)
      */
     private navigatePrevFile(): void {
+        this.navDirection = 'backward'
+
         // Save current property
         if (this.saveDebounceTimer) {
             window.clearTimeout(this.saveDebounceTimer)
@@ -838,6 +863,8 @@ export class PropertyCaptureModal extends Modal {
      * Navigate to next file (batch mode, wraps around, skips complete files)
      */
     private navigateNextFile(): void {
+        this.navDirection = 'forward'
+
         // Save current property
         if (this.saveDebounceTimer) {
             window.clearTimeout(this.saveDebounceTimer)

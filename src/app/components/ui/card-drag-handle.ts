@@ -1,8 +1,10 @@
 import { setIcon } from 'obsidian'
 import type { BasesPropertyId } from 'obsidian'
 import type { OrderedCardItem } from '../../view/card-order.types'
+import { prefersReducedMotion, setCssProps } from '../../../utils'
 
 const HANDLE_CLASS = 'lt-card-drag-handle'
+const FLIP_CLASS = 'lt-card--flip'
 const DRAG_GHOST_CLASS = 'lt-card--dragging'
 const DROP_INDICATOR_BEFORE_CLASS = 'lt-card--drop-before'
 const DROP_INDICATOR_AFTER_CLASS = 'lt-card--drop-after'
@@ -35,6 +37,42 @@ export interface DragReorderOptions {
      * the new card order (already reflected in the DOM).
      */
     onReorder: (newOrder: OrderedCardItem[]) => void
+}
+
+/**
+ * FLIP-animate a reorder (issue #111): capture every card's position, run the
+ * DOM mutation, then transition each displaced card from its old position to
+ * its new one. Skipped entirely under prefers-reduced-motion.
+ */
+function animateReorder(gridEl: HTMLElement, mutate: () => void): void {
+    if (prefersReducedMotion()) {
+        mutate()
+        return
+    }
+
+    const cards = Array.from(gridEl.querySelectorAll<HTMLElement>(`[${CARD_ID_ATTR}]`))
+    const before = new Map(cards.map((card) => [card, card.getBoundingClientRect()]))
+
+    mutate()
+
+    for (const card of cards) {
+        const first = before.get(card)
+        if (!first) continue
+
+        const last = card.getBoundingClientRect()
+        const dx = first.left - last.left
+        const dy = first.top - last.top
+        if (dx === 0 && dy === 0) continue
+
+        // Invert: place the card visually back at its old position, then let
+        // the transition play it to its natural (new) position.
+        setCssProps(card, { transform: `translate(${dx}px, ${dy}px)` })
+        window.requestAnimationFrame(() => {
+            card.classList.add(FLIP_CLASS)
+            card.style.removeProperty('transform')
+            window.setTimeout(() => card.classList.remove(FLIP_CLASS), 200)
+        })
+    }
 }
 
 interface DragState {
@@ -154,12 +192,15 @@ export function createDragReorderController(
         if (!wasStarted || !target) return
 
         // Move the dragged card next to the drop target in the DOM right now,
-        // so the user sees the change instantly (no chart re-render).
-        if (target.position === 'before') {
-            target.cardEl.parentElement?.insertBefore(draggedCard, target.cardEl)
-        } else {
-            target.cardEl.parentElement?.insertBefore(draggedCard, target.cardEl.nextSibling)
-        }
+        // so the user sees the change instantly (no chart re-render). The
+        // displaced cards glide to their new positions (issue #111).
+        animateReorder(gridEl, () => {
+            if (target.position === 'before') {
+                target.cardEl.parentElement?.insertBefore(draggedCard, target.cardEl)
+            } else {
+                target.cardEl.parentElement?.insertBefore(draggedCard, target.cardEl.nextSibling)
+            }
+        })
 
         const newOrder = readGridOrder(gridEl)
         const containsDragged = newOrder.some(
@@ -224,11 +265,13 @@ export function createDragReorderController(
                 const target = cards[backward ? index - 1 : index + 1]
                 if (!target) return
 
-                if (backward) {
-                    target.parentElement?.insertBefore(cardEl, target)
-                } else {
-                    target.parentElement?.insertBefore(cardEl, target.nextSibling)
-                }
+                animateReorder(gridEl, () => {
+                    if (backward) {
+                        target.parentElement?.insertBefore(cardEl, target)
+                    } else {
+                        target.parentElement?.insertBefore(cardEl, target.nextSibling)
+                    }
+                })
 
                 options.onReorder(readGridOrder(gridEl))
                 handle.focus()
