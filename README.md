@@ -110,6 +110,8 @@ Invoked in a Life Tracking Base view:
 
 ![Data Entry on a set of notes](documentation/screenshots/data-entry-on-a-set-of-notes.png)
 
+Use the "Life Tracker: Capture today" command to jump straight to today's daily note (named `YYYY-MM-DD`) and start capturing — no need to open the note first.
+
 ### Overlay Charts
 
 Combine multiple properties on a single chart to visualize correlations and patterns:

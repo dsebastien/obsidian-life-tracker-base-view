@@ -1,7 +1,8 @@
 import { Notice, type TFile } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
-import type { BatchFilterMode } from '../types'
+import { TimeGranularity, type BatchFilterMode } from '../types'
 import { PropertyCaptureModal } from '../components/modals/property-capture-modal'
+import { isSameDay, parseDateFromFilename } from '../../utils'
 
 /**
  * Context for the property capture dialog
@@ -44,6 +45,55 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
             new PropertyCaptureModal(plugin, context).open()
         }
     })
+
+    plugin.addCommand({
+        id: 'capture-today',
+        name: 'Capture today',
+        callback: () => {
+            // Check if property definitions are configured
+            if (plugin.settings.propertyDefinitions.length === 0) {
+                new Notice(
+                    'No property definitions configured. Add them in settings > Life Tracker > property definitions.'
+                )
+                return
+            }
+
+            const file = findTodayNote(plugin)
+
+            if (!file) {
+                new Notice(
+                    "No note for today found. Expected a note named after today's date (YYYY-MM-DD)."
+                )
+                return
+            }
+
+            new PropertyCaptureModal(plugin, { mode: 'single-note', file }).open()
+        }
+    })
+}
+
+/**
+ * Find today's daily note: a markdown file whose basename is today's date
+ * in the daily filename pattern (YYYY-MM-DD). When several notes match
+ * (e.g. duplicates across folders), the most recently modified one wins.
+ */
+function findTodayNote(plugin: LifeTrackerPlugin): TFile | null {
+    const today = new Date()
+
+    const candidates = plugin.app.vault.getMarkdownFiles().filter((file) => {
+        const parsed = parseDateFromFilename(file.basename)
+        return (
+            parsed !== null &&
+            parsed.granularity === TimeGranularity.Daily &&
+            isSameDay(parsed.date, today)
+        )
+    })
+
+    if (candidates.length > 1) {
+        candidates.sort((a, b) => b.stat.mtime - a.stat.mtime)
+    }
+
+    return candidates[0] ?? null
 }
 
 /**
