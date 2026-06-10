@@ -231,8 +231,11 @@
    CARD COMPONENT
    ======================================== */
 
+    /* Flex column so footer rows (legend, streak/trend stats) can pin to
+       the card bottom with mt-auto — cards share the same size, and
+       persistent elements must sit at stable positions (visual stability) */
     .lt-card {
-        @apply relative rounded-lg p-4 overflow-hidden;
+        @apply relative flex flex-col rounded-lg p-4 overflow-hidden;
         background-color: var(--background-secondary);
         border: 1px solid var(--background-modifier-border);
         min-height: 200px;
@@ -1011,8 +1014,9 @@
    HEATMAP VISUALIZATION
    ======================================== */
 
+    /* Fills the card so the legend/streak rows can pin to its bottom */
     .lt-heatmap {
-        @apply flex flex-col gap-2;
+        @apply flex-1 flex flex-col gap-2 min-h-0;
     }
 
     /* Horizontal scrolling is confined to the grid: the legend and streak
@@ -1146,8 +1150,11 @@
         color: var(--text-muted);
     }
 
+    /* mt-auto pins the legend (and the streak row after it) to the card
+       bottom: cards share the same size, so footer rows must sit at a
+       stable position regardless of grid height (visual stability) */
     .lt-heatmap-legend {
-        @apply flex items-center gap-1 text-xs mt-2;
+        @apply flex items-center gap-1 text-xs mt-auto;
         color: var(--text-muted);
     }
 
@@ -1156,6 +1163,12 @@
     .lt-chart-trend {
         @apply flex items-center flex-wrap gap-3 text-xs mt-1;
         color: var(--text-muted);
+    }
+
+    /* Pinned to the card bottom (visual stability across same-size cards).
+       The heatmap streak row is pinned via the legend above it. */
+    .lt-chart-trend {
+        @apply mt-auto pt-1;
     }
 
     .lt-heatmap-streaks-item:first-child,
