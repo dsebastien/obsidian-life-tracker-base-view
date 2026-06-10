@@ -670,7 +670,7 @@
         border: 1px solid var(--background-modifier-border);
         min-width: 576px;
         max-width: 692px;
-        max-height: 484px;
+        max-height: min(80vh, 560px);
     }
 
     .lt-card-popover-header {
@@ -709,7 +709,10 @@
     }
 
     .lt-card-popover-column--right {
-        @apply flex-1;
+        /* Scrolls independently: the options list (scale, colors, reference
+           line, aggregation, moving average, heatmap options) can be taller
+           than the popover, and the body clips overflow */
+        @apply flex-1 overflow-y-auto;
         min-width: 120px;
     }
 

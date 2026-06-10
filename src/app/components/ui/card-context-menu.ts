@@ -655,7 +655,11 @@ export function showCardContextMenu(
     // Use responsive dimensions based on viewport
     const isSmallScreen = viewportWidth <= 640
     const popoverWidth = isSmallScreen ? Math.min(viewportWidth - 24, 400) : 605
-    const popoverHeight = isSmallScreen ? Math.min(viewportHeight - 24, 500) : 438
+    // Must match the CSS max-height (min(80vh, 560px)) so the clamping below
+    // keeps the whole popover inside the viewport
+    const popoverHeight = isSmallScreen
+        ? Math.min(viewportHeight - 24, 500)
+        : Math.min(viewportHeight * 0.8, 560)
 
     // Adjust position to keep popover in viewport
     let left = x
