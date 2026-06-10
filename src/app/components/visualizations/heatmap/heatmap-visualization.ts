@@ -104,22 +104,28 @@ export class HeatmapVisualization extends BaseVisualization {
         // Create tooltip
         this.tooltip = new Tooltip(heatmapEl)
 
+        // Only the grid scrolls horizontally. Rows outside the scroll
+        // element (like the legend) stay visible regardless of the scroll
+        // position — the auto scroll-to-end below was pushing them out of
+        // view to the left.
+        const scrollEl = heatmapEl.createDiv({ cls: 'lt-heatmap-scroll' })
+
         // Render the grid
-        this.gridEl = renderHeatmapGrid(heatmapEl, this.heatmapData, this.heatmapConfig)
+        this.gridEl = renderHeatmapGrid(scrollEl, this.heatmapData, this.heatmapConfig)
 
         // Add event listeners
         this.addEventListeners()
 
-        // Create legend
+        // Create legend (outside the scroll element so it is always visible)
         this.createLegend(heatmapEl)
 
         // Create streak stats row (issue #100)
-        this.streaksEl = heatmapEl.createDiv({ cls: 'lt-heatmap-streaks' })
+        this.streaksEl = scrollEl.createDiv({ cls: 'lt-heatmap-streaks' })
         this.renderStreakStats()
 
         // Scroll horizontally to the end so the freshest data is visible.
         // Defer to next frame so the browser has computed layout/scrollWidth.
-        this.scrollToEnd(heatmapEl)
+        this.scrollToEnd(scrollEl)
     }
 
     /**

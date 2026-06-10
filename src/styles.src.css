@@ -1009,7 +1009,13 @@
    ======================================== */
 
     .lt-heatmap {
-        @apply flex flex-col gap-2 overflow-x-auto;
+        @apply flex flex-col gap-2;
+    }
+
+    /* Horizontal scrolling is confined to the grid: the legend and streak
+       rows outside this element stay visible at any scroll position */
+    .lt-heatmap-scroll {
+        @apply overflow-x-auto;
     }
 
     .lt-heatmap-wrapper {
