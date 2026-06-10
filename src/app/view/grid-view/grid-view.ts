@@ -413,6 +413,12 @@ export class GridView extends BasesView implements FileProvider {
      * Setup observer to detect viewport size changes
      */
     private setupViewportObserver(): void {
+        // Remove any previously registered listener first: render() calls
+        // this on every full re-render, and listeners would otherwise
+        // accumulate for the lifetime of the view (issue #93)
+        this.viewportCleanup?.()
+        this.viewportCleanup = null
+
         // Use matchMedia for efficient viewport detection
         const mediaQuery = window.matchMedia(`(max-width: ${GridView.MOBILE_BREAKPOINT - 1}px)`)
 
