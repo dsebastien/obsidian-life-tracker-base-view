@@ -8,6 +8,7 @@ import {
     NumberValue,
     ListValue,
     NullValue,
+    Notice,
     setIcon
 } from 'obsidian'
 import type { LifeTrackerPlugin } from '../../plugin'
@@ -1360,6 +1361,9 @@ export class GridView extends BasesView implements FileProvider {
             })
             .catch((error: unknown) => {
                 log('Failed to save frontmatter', 'error', error)
+                new Notice(
+                    `Failed to save "${definition.displayName || definition.name}" for ${file.basename} — your value was not persisted`
+                )
             })
     }
 

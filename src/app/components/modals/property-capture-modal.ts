@@ -12,7 +12,7 @@ import {
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
 import { createPropertyEditor } from '../editing/property-editor'
-import { formatFileTitleWithWeekday } from '../../../utils'
+import { formatFileTitleWithWeekday, log } from '../../../utils'
 
 /** Debounce delay for auto-save in milliseconds */
 const AUTO_SAVE_DEBOUNCE_MS = 500
@@ -618,14 +618,25 @@ export class PropertyCaptureModal extends Modal {
         const definition = this.getCurrentDefinition()
         if (!file || !definition) return
 
-        // Update saved values with current value
-        this.savedValues[definition.name] = this.currentValue
-
         // Update filled status
         const isFilled =
             this.currentValue !== undefined &&
             this.currentValue !== null &&
             this.currentValue !== ''
+
+        // Empty values pass through (writing them clears the property), but
+        // invalid non-empty values must never reach disk — same gate as the
+        // grid view's auto-save
+        if (isFilled) {
+            const validation = this.frontmatterService.validate(this.currentValue, definition)
+            if (!validation.valid) {
+                log(`Skipping save for ${definition.name}: ${validation.error}`, 'debug')
+                return
+            }
+        }
+
+        // Update saved values with current value
+        this.savedValues[definition.name] = this.currentValue
 
         if (isFilled) {
             this.filledProperties.add(definition.name)
@@ -640,7 +651,10 @@ export class PropertyCaptureModal extends Modal {
                 this.renderProgress()
             })
             .catch((error: unknown) => {
-                console.error('Failed to save property:', error)
+                log('Failed to save property', 'error', error)
+                new Notice(
+                    `Failed to save "${definition.displayName || definition.name}" — your value was not persisted`
+                )
             })
     }
 
