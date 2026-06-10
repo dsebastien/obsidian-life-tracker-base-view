@@ -4,6 +4,7 @@ import type {
     BubbleChartData,
     ChartConfig,
     ChartData,
+    ExportTable,
     PieChartData,
     ReferenceLineConfig,
     ScatterChartData,
@@ -557,6 +558,53 @@ export class ChartVisualization extends BaseVisualization {
                 }
             })
         }
+    }
+
+    /**
+     * PNG data URL of the chart canvas in its current state (issue #102)
+     */
+    getImageDataUrl(): string | null {
+        return this.chart ? this.chart.toBase64Image() : null
+    }
+
+    /**
+     * Tabular view of the currently rendered chart data (issue #102)
+     */
+    override getExportData(): ExportTable | null {
+        if (this.pieChartData) {
+            const data = this.pieChartData
+            return {
+                headers: ['Label', 'Count'],
+                rows: data.labels.map((label, i) => [label, data.values[i] ?? null])
+            }
+        }
+
+        if (this.scatterChartData) {
+            return {
+                headers: ['Time (% of range)', 'Value'],
+                rows: this.scatterChartData.points.map((p) => [p.x, p.y])
+            }
+        }
+
+        if (this.bubbleChartData) {
+            return {
+                headers: ['Time (% of range)', 'Value', 'Radius'],
+                rows: this.bubbleChartData.points.map((p) => [p.x, p.y, p.r])
+            }
+        }
+
+        if (this.chartData) {
+            const data = this.chartData
+            return {
+                headers: ['Period', ...data.datasets.map((d) => d.label)],
+                rows: data.labels.map((label, i) => [
+                    label,
+                    ...data.datasets.map((d) => d.data[i] ?? null)
+                ])
+            }
+        }
+
+        return null
     }
 
     /**

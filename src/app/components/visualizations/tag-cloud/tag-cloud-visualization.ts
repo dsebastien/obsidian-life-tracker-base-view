@@ -1,6 +1,11 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
-import type { TagCloudConfig, TagCloudData, VisualizationDataPoint } from '../../../types'
+import type {
+    ExportTable,
+    TagCloudConfig,
+    TagCloudData,
+    VisualizationDataPoint
+} from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatTagTooltip } from '../../ui/tooltip'
 import { log } from '../../../../utils'
@@ -100,6 +105,17 @@ export class TagCloudVisualization extends BaseVisualization {
     override update(data: VisualizationDataPoint[]): void {
         // Re-render for simplicity
         this.render(data)
+    }
+
+    /**
+     * Tabular view of the currently rendered tags (issue #102)
+     */
+    override getExportData(): ExportTable | null {
+        if (!this.tagCloudData) return null
+        return {
+            headers: ['Tag', 'Frequency'],
+            rows: this.tagCloudData.tags.map((tag) => [tag.tag, tag.frequency])
+        }
     }
 
     /**

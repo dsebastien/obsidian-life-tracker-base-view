@@ -181,3 +181,12 @@ Example uses:
 - Weight goal line
 - Minimum sleep target
 - Exercise duration target
+
+## Exporting
+
+Right-click any visualization card (long-press on mobile) to export it:
+
+- **Export image**: saves a PNG of the chart in its current state. Available for chart types (line, bar, area, pie, doughnut, radar, polar area, scatter, bubble).
+- **Export CSV**: saves the data exactly as displayed — chart periods and values, heatmap dates/values/entry counts, tag frequencies, or timeline points.
+
+Files are saved to your vault's attachment folder, and a notice shows the exact path.

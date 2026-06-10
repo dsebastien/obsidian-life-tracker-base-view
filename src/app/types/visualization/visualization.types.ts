@@ -28,6 +28,15 @@ export interface VisualizationDataPoint {
 }
 
 /**
+ * Tabular representation of what a visualization currently displays,
+ * used for CSV export (issue #102)
+ */
+export interface ExportTable {
+    headers: string[]
+    rows: (string | number | null)[][]
+}
+
+/**
  * Aggregated data for heatmap visualization
  */
 export interface HeatmapData {

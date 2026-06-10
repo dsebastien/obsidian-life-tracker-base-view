@@ -21,6 +21,7 @@ export {
 export type {
     AnimationState,
     VisualizationDataPoint,
+    ExportTable,
     HeatmapData,
     HeatmapCell,
     HeatmapStreakStats,
@@ -60,7 +61,8 @@ export {
     generateVisualizationId,
     DEFAULT_AGGREGATION_METHOD,
     AGGREGATION_METHOD_SUPPORTED_TYPES,
-    supportsAggregationMethod
+    supportsAggregationMethod,
+    supportsImageExport
 } from './column'
 export type {
     ScaleConfig,

@@ -10,7 +10,8 @@ export {
     generateVisualizationId,
     DEFAULT_AGGREGATION_METHOD,
     AGGREGATION_METHOD_SUPPORTED_TYPES,
-    supportsAggregationMethod
+    supportsAggregationMethod,
+    supportsImageExport
 } from './column-config.types'
 export type {
     ScaleConfig,

@@ -21,6 +21,8 @@ export type CardMenuAction =
     | { type: 'configureHeatmapShowDayLabels'; showDayLabels: boolean | undefined }
     | { type: 'resetConfig' }
     | { type: 'toggleMaximize' }
+    | { type: 'exportImage' }
+    | { type: 'exportCsv' }
     | { type: 'addVisualization' }
     | { type: 'removeVisualization' }
     // Overlay chart actions

@@ -1,7 +1,12 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
 import { TimeGranularity } from '../../../types'
-import type { HeatmapConfig, HeatmapData, VisualizationDataPoint } from '../../../types'
+import type {
+    ExportTable,
+    HeatmapConfig,
+    HeatmapData,
+    VisualizationDataPoint
+} from '../../../types'
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
 import { renderHeatmapGrid } from './heatmap-renderer'
@@ -265,6 +270,21 @@ export class HeatmapVisualization extends BaseVisualization {
                 cellEl.dataset['count'] = '0'
             }
         })
+    }
+
+    /**
+     * Tabular view of the currently rendered heatmap cells (issue #102)
+     */
+    override getExportData(): ExportTable | null {
+        if (!this.heatmapData) return null
+        return {
+            headers: ['Date', 'Value', 'Entries'],
+            rows: this.heatmapData.cells.map((cell) => [
+                formatDateISO(cell.date),
+                cell.value,
+                cell.count
+            ])
+        }
     }
 
     /**

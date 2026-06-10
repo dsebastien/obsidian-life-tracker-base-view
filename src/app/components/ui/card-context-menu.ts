@@ -7,6 +7,7 @@ import {
     supportsColorScheme,
     supportsReferenceLine,
     supportsAggregationMethod,
+    supportsImageExport,
     DEFAULT_AGGREGATION_METHOD,
     type ScaleConfig,
     type ReferenceLineConfig,
@@ -180,6 +181,30 @@ export function showCardContextMenu(
     maximizeBtn.addEventListener('click', () => {
         close()
         onAction({ type: 'toggleMaximize' })
+    })
+
+    // Export buttons (issue #102). Image export needs a canvas, so it is
+    // only offered for Chart.js-based types.
+    if (supportsImageExport(currentType)) {
+        const exportImageBtn = header.createEl('button', {
+            cls: 'lt-card-popover-btn'
+        })
+        setIcon(exportImageBtn, 'image')
+        exportImageBtn.createSpan({ text: 'Export image' })
+        exportImageBtn.addEventListener('click', () => {
+            close()
+            onAction({ type: 'exportImage' })
+        })
+    }
+
+    const exportCsvBtn = header.createEl('button', {
+        cls: 'lt-card-popover-btn'
+    })
+    setIcon(exportCsvBtn, 'download')
+    exportCsvBtn.createSpan({ text: 'Export CSV' })
+    exportCsvBtn.addEventListener('click', () => {
+        close()
+        onAction({ type: 'exportCsv' })
     })
 
     // Reset button

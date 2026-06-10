@@ -8,6 +8,8 @@ export interface ChartInstance {
     update: (mode?: string) => void
     resize: () => void
     reset: () => void
+    /** Base64 data URL of the canvas in its current state (PNG by default) */
+    toBase64Image: (type?: string, quality?: number) => string
     data: {
         labels: string[]
         datasets: ChartDatasetConfig[]

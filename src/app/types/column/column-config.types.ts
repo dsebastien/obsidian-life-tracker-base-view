@@ -150,6 +150,29 @@ export function supportsAggregationMethod(vizType: VisualizationType): boolean {
 }
 
 /**
+ * Types rendered on a canvas by Chart.js — the only ones that can export an
+ * image (issue #102). Heatmap, tag cloud and timeline are DOM-based.
+ */
+export const IMAGE_EXPORT_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.LineChart,
+    VisualizationType.BarChart,
+    VisualizationType.AreaChart,
+    VisualizationType.PieChart,
+    VisualizationType.DoughnutChart,
+    VisualizationType.RadarChart,
+    VisualizationType.PolarAreaChart,
+    VisualizationType.ScatterChart,
+    VisualizationType.BubbleChart
+]
+
+/**
+ * Check if a visualization type supports exporting a PNG image
+ */
+export function supportsImageExport(vizType: VisualizationType): boolean {
+    return IMAGE_EXPORT_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
  * Map of property IDs to their visualization configs (supports multiple per property)
  * Stored in view config to persist across sessions
  */

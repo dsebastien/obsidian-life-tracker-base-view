@@ -94,3 +94,6 @@ export {
     isDateLike,
     extractPropertyName
 } from './value.utils'
+
+// Export utilities (CSV / image export)
+export { toCsv, sanitizeFilename } from './export.utils'

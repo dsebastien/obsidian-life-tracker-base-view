@@ -3,6 +3,7 @@ export { TimeGranularity } from './time-granularity.intf'
 export type { AnimationState } from './animation-state.intf'
 export type {
     VisualizationDataPoint,
+    ExportTable,
     HeatmapData,
     HeatmapCell,
     HeatmapStreakStats,

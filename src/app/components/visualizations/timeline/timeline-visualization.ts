@@ -1,6 +1,7 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
 import type {
+    ExportTable,
     TimelineConfig,
     TimelineData,
     VisualizationConfig,
@@ -9,7 +10,7 @@ import type {
 import { DataAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip } from '../../ui/tooltip'
 import { differenceInMilliseconds, parseISO } from 'date-fns'
-import { formatDateByGranularity, getChartColorScheme, log } from '../../../../utils'
+import { formatDateByGranularity, formatDateISO, getChartColorScheme, log } from '../../../../utils'
 
 /**
  * Shared aggregation service instance for all timeline visualizations
@@ -176,6 +177,21 @@ export class TimelineVisualization extends BaseVisualization {
     override update(data: VisualizationDataPoint[]): void {
         // Re-render for simplicity
         this.render(data)
+    }
+
+    /**
+     * Tabular view of the currently rendered timeline points (issue #102)
+     */
+    override getExportData(): ExportTable | null {
+        if (!this.timelineData) return null
+        return {
+            headers: ['Date', 'Label', 'Value'],
+            rows: this.timelineData.points.map((point) => [
+                formatDateISO(point.date),
+                point.label,
+                point.value
+            ])
+        }
     }
 
     /**

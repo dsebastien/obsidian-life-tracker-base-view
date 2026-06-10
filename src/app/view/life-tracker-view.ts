@@ -1,5 +1,7 @@
 import {
     BasesView,
+    Notice,
+    base64ToArrayBuffer,
     type BasesEntry,
     type BasesPropertyId,
     type QueryController,
@@ -48,6 +50,9 @@ import {
     getTimeFrameDateRange,
     isDateInTimeFrame,
     extractPropertyName,
+    log,
+    sanitizeFilename,
+    toCsv,
     type TimeFrameDateRange
 } from '../../utils'
 
@@ -1243,6 +1248,69 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     /**
      * Handle context menu for overlay cards - opens the edit modal
      */
+    /**
+     * Export the current chart canvas as a PNG into the attachment folder
+     * (issue #102)
+     */
+    private async exportVisualizationImage(
+        visualizationId: string,
+        displayName: string
+    ): Promise<void> {
+        const entry = this.visualizations.get(visualizationId)
+        const visualization = entry?.visualization
+
+        if (!(visualization instanceof ChartVisualization)) {
+            new Notice('Image export is only available for chart visualizations')
+            return
+        }
+
+        const dataUrl = visualization.getImageDataUrl()
+        if (!dataUrl) {
+            new Notice('Nothing to export yet')
+            return
+        }
+
+        try {
+            const path = await this.app.fileManager.getAvailablePathForAttachment(
+                `${sanitizeFilename(displayName)}.png`
+            )
+            const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
+            await this.app.vault.createBinary(path, base64ToArrayBuffer(base64))
+            new Notice(`Chart image exported to ${path}`)
+        } catch (error) {
+            log('Failed to export chart image', 'error', error)
+            new Notice('Failed to export chart image')
+        }
+    }
+
+    /**
+     * Export the currently displayed data as a CSV into the attachment
+     * folder (issue #102)
+     */
+    private async exportVisualizationCsv(
+        visualizationId: string,
+        displayName: string
+    ): Promise<void> {
+        const entry = this.visualizations.get(visualizationId)
+        const table = entry?.visualization.getExportData()
+
+        if (!table || table.rows.length === 0) {
+            new Notice('No data to export')
+            return
+        }
+
+        try {
+            const path = await this.app.fileManager.getAvailablePathForAttachment(
+                `${sanitizeFilename(displayName)}.csv`
+            )
+            await this.app.vault.create(path, toCsv(table.headers, table.rows))
+            new Notice(`Data exported to ${path}`)
+        } catch (error) {
+            log('Failed to export CSV', 'error', error)
+            new Notice('Failed to export CSV')
+        }
+    }
+
     private handleOverlayContextMenu(
         _event: MouseEvent | TouchEvent,
         overlayConfig: OverlayVisualizationConfig
@@ -1638,6 +1706,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             case 'toggleMaximize': {
                 const isCurrentlyMaximized = this.maximizeService.isMaximized(propertyId)
                 this.maximizeService.handleMaximizeToggle(propertyId, !isCurrentlyMaximized)
+                break
+            }
+
+            case 'exportImage': {
+                void this.exportVisualizationImage(visualizationId, displayName)
+                break
+            }
+
+            case 'exportCsv': {
+                void this.exportVisualizationCsv(visualizationId, displayName)
                 break
             }
 

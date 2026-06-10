@@ -1,5 +1,5 @@
 import { setIcon, type App, type BasesPropertyId } from 'obsidian'
-import type { VisualizationConfig, VisualizationDataPoint } from '../../types'
+import type { ExportTable, VisualizationConfig, VisualizationDataPoint } from '../../types'
 
 /**
  * Callback for maximize toggle
@@ -154,6 +154,15 @@ export abstract class BaseVisualization {
     handleResize(): void {
         // Default implementation does nothing
         // Subclasses should override this to handle resize (e.g., redraw charts)
+    }
+
+    /**
+     * Tabular representation of what the visualization currently displays,
+     * used for CSV export (issue #102). Subclasses override; null means
+     * nothing is rendered yet.
+     */
+    getExportData(): ExportTable | null {
+        return null
     }
 
     /**
