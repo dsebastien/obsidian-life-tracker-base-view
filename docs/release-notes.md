@@ -1,5 +1,19 @@
 # Release Notes
 
+## 2.12.0 (2026-06-10)
+
+### Features
+
+- **plugin:** add capture today command
+- **plugin:** respect reduced motion preference and restore focus rings
+- **plugin:** show streak stats on heatmaps [#100](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/100)
+
+### Bug Fixes
+
+- **plugin:** flush pending grid view edits before re-render teardown
+- **plugin:** render missing chart values as gaps instead of zeros
+- **plugin:** validate capture modal auto-saves and surface save failures
+
 ## 2.11.0 (2026-06-02)
 
 ### Features
