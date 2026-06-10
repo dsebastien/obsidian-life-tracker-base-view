@@ -150,6 +150,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // Track previous control-bar visibility to force a full re-render when toggled
     private previousHideControlBar: boolean | null = null
 
+    // Track previous trend/streak display toggles to force a full re-render
+    // when changed (visualization configs are only rebuilt on the full path)
+    private previousShowTrend: boolean | null = null
+    private previousShowStreaks: boolean | null = null
+
     // Track previous time frame for change detection
     private previousTimeFrame: TimeFrame | null = null
 
@@ -474,6 +479,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Create control bar at the top (hidden when the user opted out)
         const hideControlBar = (this.config.get('hideControlBar') as boolean) ?? false
         this.previousHideControlBar = hideControlBar
+        this.previousShowTrend = (this.config.get('chartShowTrend') as boolean) ?? true
+        this.previousShowStreaks = (this.config.get('heatmapShowStreaks') as boolean) ?? true
         if (!hideControlBar) {
             createGridControls(
                 this.containerEl,
@@ -595,6 +602,17 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             this.previousHideControlBar !== null &&
             this.previousHideControlBar !== currentHideControlBar
         ) {
+            return false
+        }
+
+        // Trend/streak display toggles only take effect when visualization
+        // configs are rebuilt, which happens on the full re-render path
+        const currentShowTrend = (this.config.get('chartShowTrend') as boolean) ?? true
+        if (this.previousShowTrend !== null && this.previousShowTrend !== currentShowTrend) {
+            return false
+        }
+        const currentShowStreaks = (this.config.get('heatmapShowStreaks') as boolean) ?? true
+        if (this.previousShowStreaks !== null && this.previousShowStreaks !== currentShowStreaks) {
             return false
         }
 

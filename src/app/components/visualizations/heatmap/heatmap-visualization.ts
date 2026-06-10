@@ -317,6 +317,10 @@ export class HeatmapVisualization extends BaseVisualization {
         if (!this.streaksEl || !this.heatmapData) return
 
         this.streaksEl.empty()
+
+        // Toggleable via the "Show streak stats" view option
+        if (this.heatmapConfig.showStreakInfo === false) return
+
         const { currentStreak, longestStreak, activeCount } = this.heatmapData.streaks
         if (activeCount === 0) return
 

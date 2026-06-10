@@ -65,6 +65,7 @@ export function getVisualizationConfig(
                 cellGap: 2,
                 showMonthLabels,
                 showDayLabels,
+                showStreakInfo: (getConfig('heatmapShowStreaks') as boolean) ?? true,
                 scale
             } as HeatmapConfig
         }
@@ -81,7 +82,8 @@ export function getVisualizationConfig(
                 colorScheme,
                 referenceLine,
                 aggregationMethod,
-                movingAveragePeriod
+                movingAveragePeriod,
+                showTrendInfo: (getConfig('chartShowTrend') as boolean) ?? true
             } as ChartConfig
 
         case VisualizationType.AreaChart:
@@ -96,7 +98,8 @@ export function getVisualizationConfig(
                 colorScheme,
                 referenceLine,
                 aggregationMethod,
-                movingAveragePeriod
+                movingAveragePeriod,
+                showTrendInfo: (getConfig('chartShowTrend') as boolean) ?? true
             } as ChartConfig
 
         case VisualizationType.BarChart:
@@ -109,7 +112,8 @@ export function getVisualizationConfig(
                 scale,
                 colorScheme,
                 referenceLine,
-                aggregationMethod
+                aggregationMethod,
+                showTrendInfo: (getConfig('chartShowTrend') as boolean) ?? true
             } as ChartConfig
 
         case VisualizationType.PieChart:

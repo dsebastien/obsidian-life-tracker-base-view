@@ -101,6 +101,12 @@ export function getLifeTrackerViewOptions(): BasesAllOptions[] {
                     default: true
                 },
                 {
+                    type: 'toggle',
+                    key: 'heatmapShowStreaks',
+                    displayName: 'Show streak stats',
+                    default: true
+                },
+                {
                     type: 'dropdown',
                     key: 'heatmapColorScheme',
                     displayName: 'Color scheme',
@@ -141,6 +147,12 @@ export function getLifeTrackerViewOptions(): BasesAllOptions[] {
                     type: 'toggle',
                     key: 'chartShowGrid',
                     displayName: 'Show grid lines',
+                    default: true
+                },
+                {
+                    type: 'toggle',
+                    key: 'chartShowTrend',
+                    displayName: 'Show trend',
                     default: true
                 }
             ]

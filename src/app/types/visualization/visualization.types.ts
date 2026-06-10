@@ -228,6 +228,8 @@ export interface HeatmapConfig extends VisualizationConfig {
     cellGap: number
     showMonthLabels: boolean
     showDayLabels: boolean
+    /** Show the streak stats row below the legend (default true) */
+    showStreakInfo?: boolean
     /** Optional scale configuration for value normalization */
     scale?: ScaleConfig
 }
@@ -267,6 +269,8 @@ export interface ChartConfig extends VisualizationConfig {
     aggregationMethod?: AggregationMethod
     /** Rolling mean window for line/area charts; undefined = off (issue #101) */
     movingAveragePeriod?: number
+    /** Show the trend arrow and trend row (default true) */
+    showTrendInfo?: boolean
 }
 
 /**

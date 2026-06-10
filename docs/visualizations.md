@@ -108,7 +108,7 @@ Best for: Daily patterns over time
 
 **Color schemes**: Green, Blue, Purple, Orange, Red
 
-**Streak stats**: a compact row below the legend shows your current streak, best streak, and total active periods. A period counts toward a streak when it has a recorded value other than 0 (matching the heatmap rendering, where 0 on a 0-based scale shows as empty). The current streak still counts if today's data isn't captured yet.
+**Streak stats**: a compact row below the legend shows your current streak, best streak, and total active periods. A period counts toward a streak when it has a recorded value other than 0 (matching the heatmap rendering, where 0 on a 0-based scale shows as empty). The current streak still counts if today's data isn't captured yet. Toggle the row with the **Show streak stats** view option.
 
 ### Tag Cloud
 
@@ -188,7 +188,7 @@ For line and area charts, enable a moving average from the card's right-click me
 
 ## Trend Indicator
 
-Single-dataset line, bar, and area charts show a small ↑ / ↓ / → arrow next to the card title comparing the average of the most recent periods (up to 7) against the previous ones. Hover the arrow to see the percentage change. The arrow stays neutral in color, since whether "up" is good depends on what you track.
+Single-dataset line, bar, and area charts show a small ↑ / ↓ / → arrow next to the card title, plus a trend row below the chart (e.g. `Trend: ↑ +12.3% · vs previous 7 periods`), comparing the average of the most recent periods (up to 7) against the previous ones. Hover the arrow for the same detail. The display stays neutral in color, since whether "up" is good depends on what you track. Toggle it with the **Show trend** view option.
 
 ## Exporting
 

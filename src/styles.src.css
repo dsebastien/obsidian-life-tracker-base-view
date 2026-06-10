@@ -1151,13 +1151,15 @@
         color: var(--text-muted);
     }
 
-    /* Streak stats row below the legend */
-    .lt-heatmap-streaks {
+    /* Stats rows below visualizations: heatmap streaks and chart trend */
+    .lt-heatmap-streaks,
+    .lt-chart-trend {
         @apply flex items-center flex-wrap gap-3 text-xs mt-1;
         color: var(--text-muted);
     }
 
-    .lt-heatmap-streaks-item:first-child {
+    .lt-heatmap-streaks-item:first-child,
+    .lt-chart-trend-item:first-child {
         @apply font-medium;
         color: var(--text-normal);
     }

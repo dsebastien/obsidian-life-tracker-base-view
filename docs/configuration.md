@@ -53,6 +53,8 @@ Configured via the view's settings panel (gear icon).
 | Cell size            | 12       | Heatmap cell size in pixels                                        |
 | Show day labels      | true     | Day labels on heatmaps                                             |
 | Show month labels    | true     | Month labels on heatmaps                                           |
+| Show streak stats    | true     | Streak row below heatmaps                                          |
+| Show trend           | true     | Trend arrow and trend row on line/bar/area charts                  |
 | Embedded height      | 400      | Height when embedded (pixels)                                      |
 
 ## Grid View Options

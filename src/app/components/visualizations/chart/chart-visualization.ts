@@ -40,6 +40,7 @@ export class ChartVisualization extends BaseVisualization {
     private scatterChartData: ScatterChartData | null = null
     private bubbleChartData: BubbleChartData | null = null
     private chartContainer: HTMLElement | null = null
+    private trendStatsEl: HTMLElement | null = null
     private originalData: (number | null)[][] = []
     private animationInterval: number | null = null
     private currentAnimationIndex: number = 0
@@ -178,14 +179,15 @@ export class ChartVisualization extends BaseVisualization {
         // Create section header
         this.createSectionHeader(this.displayName)
 
-        // Trend arrow next to the title (issue #101)
-        this.renderTrendIndicator()
-
         // Create chart container (auto-height, no scrolling)
         this.chartContainer = this.containerEl.createDiv({ cls: 'lt-chart' })
 
         // Create canvas with aspect ratio for natural sizing
         this.canvasEl = this.chartContainer.createEl('canvas', { cls: 'lt-chart-canvas' })
+
+        // Trend arrow in the title + trend row below the chart (issue #101)
+        this.trendStatsEl = this.containerEl.createDiv({ cls: 'lt-chart-trend' })
+        this.renderTrendInfo()
 
         // Initialize chart (async, errors handled internally)
         void this.initChart()
@@ -213,16 +215,19 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
-     * Render the ↑/↓/→ trend arrow in the section header (issue #101).
+     * Render the trend arrow and the trend row (issue #101).
+     * The arrow lives inside the section title so the play/maximize buttons
+     * never shift; the row below the chart mirrors the heatmap streak row.
      * Idempotent; only shown for single-dataset cartesian charts with
-     * enough data to compare two windows.
+     * enough data to compare two windows, and toggleable via the
+     * "Show trend" view option.
      */
-    private renderTrendIndicator(): void {
-        const headerEl = this.containerEl.querySelector<HTMLElement>('.lt-section-header')
-        if (!headerEl) return
+    private renderTrendInfo(): void {
+        const titleEl = this.containerEl.querySelector<HTMLElement>('.lt-section-title')
+        titleEl?.querySelector('.lt-trend-indicator')?.remove()
+        this.trendStatsEl?.empty()
 
-        headerEl.querySelector('.lt-trend-indicator')?.remove()
-
+        if (this.chartConfig.showTrendInfo === false) return
         if (!this.chartData || !this.isCartesianType()) return
 
         const sources = this.chartData.datasets.filter((d) => !d.isMovingAverage)
@@ -238,13 +243,25 @@ export class ChartVisualization extends BaseVisualization {
             trend.periodCount === 1 ? 'period' : 'periods'
         }`
 
-        // Only `aria-label`: Obsidian renders it as its styled tooltip
-        // (same look as the play button). A native `title` alongside it
-        // would show a second, overlapping tooltip.
-        headerEl.createSpan({
+        // Arrow inside the title: the header is justify-between, so a
+        // sibling element would push the action buttons around. Only
+        // `aria-label` — Obsidian renders it as its styled tooltip.
+        titleEl?.createSpan({
             cls: `lt-trend-indicator lt-trend-indicator--${trend.direction}`,
             text: arrow,
             attr: { 'aria-label': `Trend: ${description}` }
+        })
+
+        // Trend row below the chart, same style as the heatmap streak row
+        this.trendStatsEl?.createSpan({
+            cls: 'lt-chart-trend-item',
+            text: `Trend: ${arrow} ${sign}${trend.changePercent.toFixed(1)}%`
+        })
+        this.trendStatsEl?.createSpan({
+            cls: 'lt-chart-trend-item',
+            text: `vs previous ${trend.periodCount} ${
+                trend.periodCount === 1 ? 'period' : 'periods'
+            }`
         })
     }
 
@@ -632,7 +649,7 @@ export class ChartVisualization extends BaseVisualization {
         this.chart!.update()
 
         // Trend may have changed with the data (issue #101)
-        this.renderTrendIndicator()
+        this.renderTrendInfo()
     }
 
     /**
@@ -722,6 +739,7 @@ export class ChartVisualization extends BaseVisualization {
         this.disposeChart()
         this.canvasEl = null
         this.chartContainer = null
+        this.trendStatsEl = null
         this.chartData = null
         this.pieChartData = null
         this.scatterChartData = null
