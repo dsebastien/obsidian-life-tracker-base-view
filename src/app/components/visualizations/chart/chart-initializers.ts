@@ -242,6 +242,20 @@ export function initCartesianChart(
     // Map chart type (area uses line type)
     const chartJsType = chartConfig.chartType === 'line' ? 'line' : chartConfig.chartType
 
+    // Reference lines outside the data range were invisible: the annotation
+    // plugin does not extend the scale. suggestedMin/Max widen the auto-fit
+    // range to include every reference line value; an explicit user scale
+    // still wins (min/max below override suggested bounds).
+    const referenceValues = (referenceLines ?? []).map((line) => line.value)
+    const suggestedMin =
+        referenceValues.length > 0 && chartConfig.scale?.min == null
+            ? Math.min(...referenceValues)
+            : undefined
+    const suggestedMax =
+        referenceValues.length > 0 && chartConfig.scale?.max == null
+            ? Math.max(...referenceValues)
+            : undefined
+
     // Build annotation configuration if reference lines exist
     const annotations: Record<string, AnnotationOptions> = {}
 
@@ -334,6 +348,8 @@ export function initCartesianChart(
                     beginAtZero: !chartConfig.scale?.min,
                     min: chartConfig.scale?.min ?? undefined,
                     max: chartConfig.scale?.max ?? undefined,
+                    suggestedMin,
+                    suggestedMax,
                     grid: {
                         display: chartConfig.showGrid
                     }
