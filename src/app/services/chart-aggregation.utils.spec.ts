@@ -7,6 +7,7 @@ import {
     aggregateListForChart,
     aggregateForPieChart,
     aggregateForChart,
+    aggregateForScatterChart,
     aggregateForBubbleChart,
     aggregateForOverlayChart,
     type OverlayPropertyData
@@ -420,5 +421,113 @@ describe('aggregateForOverlayChart aggregation method (issue #89)', () => {
         )
         expect(result.datasets[0]?.data).toEqual([40]) // sum A
         expect(result.datasets[1]?.data).toEqual([10]) // sum B
+    })
+})
+
+describe('missing values are gaps, not zeros (issue #92)', () => {
+    test('aggregateForChart: empty entries do not drag the average down', () => {
+        const dataPoints = [
+            createDataPoint('a.md', '2025-01-01', { numericValue: 10 }),
+            createDataPoint('b.md', '2025-01-01', { numericValue: null }),
+            createDataPoint('c.md', '2025-01-01', { numericValue: 20 })
+        ]
+        const result = aggregateForChart(
+            dataPoints,
+            'note.energy' as BasesPropertyId,
+            'Energy',
+            TimeGranularity.Daily
+        )
+        // Average of 10 and 20 — the null entry must not contribute a 0
+        expect(result.datasets[0]?.data).toEqual([15])
+    })
+
+    test('aggregateForChart: a period with only empty entries yields null, not 0', () => {
+        const dataPoints = [
+            createDataPoint('a.md', '2025-01-01', { numericValue: 10 }),
+            createDataPoint('b.md', '2025-01-02', { numericValue: null }),
+            createDataPoint('c.md', '2025-01-03', { numericValue: 30 })
+        ]
+        const result = aggregateForChart(
+            dataPoints,
+            'note.energy' as BasesPropertyId,
+            'Energy',
+            TimeGranularity.Daily
+        )
+        // The empty period keeps its label (showEmptyValues semantics)
+        // but renders as a gap
+        expect(result.labels).toHaveLength(3)
+        expect(result.datasets[0]?.data).toEqual([10, null, 30])
+    })
+
+    test('aggregateForChart: sum ignores empty entries too', () => {
+        const dataPoints = [
+            createDataPoint('a.md', '2025-01-01', { numericValue: 100 }),
+            createDataPoint('b.md', '2025-01-01', { numericValue: null }),
+            createDataPoint('c.md', '2025-01-01', { numericValue: 300 })
+        ]
+        const result = aggregateForChart(
+            dataPoints,
+            'note.calories' as BasesPropertyId,
+            'Calories',
+            TimeGranularity.Daily,
+            'sum'
+        )
+        expect(result.datasets[0]?.data).toEqual([400])
+    })
+
+    test('aggregateForScatterChart: entries without a value are skipped, not plotted at 0', () => {
+        const dataPoints = [
+            createDataPoint('a.md', '2025-01-01', { numericValue: 5 }),
+            createDataPoint('b.md', '2025-01-02', { numericValue: null }),
+            createDataPoint('c.md', '2025-01-03', { numericValue: 7 })
+        ]
+        const result = aggregateForScatterChart(dataPoints, 'note.mood' as BasesPropertyId, 'Mood')
+        expect(result.points).toHaveLength(2)
+        expect(result.points.map((p) => p.y)).toEqual([5, 7])
+        expect(result.filePaths).toEqual(['a.md', 'c.md'])
+    })
+
+    test('aggregateForBubbleChart: entries without a value are skipped', () => {
+        const dataPoints = [
+            createDataPoint('a.md', '2025-01-01', { numericValue: 10 }),
+            createDataPoint('b.md', '2025-01-01', { numericValue: null }),
+            createDataPoint('c.md', '2025-01-02', { numericValue: null })
+        ]
+        const result = aggregateForBubbleChart(
+            dataPoints,
+            'note.steps' as BasesPropertyId,
+            'Steps',
+            TimeGranularity.Daily
+        )
+        // Only 2025-01-01 has a value; the null-only period produces no bubble
+        expect(result.points).toHaveLength(1)
+        expect(result.points[0]?.y).toBe(10)
+        // The valueless entry does not inflate the bubble size
+        expect(result.filePaths[0]).toEqual(['a.md'])
+    })
+
+    test('aggregateForOverlayChart: a period with only empty entries stays null', () => {
+        const propertiesData: OverlayPropertyData[] = [
+            {
+                propertyId: 'note.sleep' as BasesPropertyId,
+                displayName: 'Sleep',
+                dataPoints: [
+                    createDataPoint('a.md', '2025-01-01', { numericValue: 8 }),
+                    createDataPoint('b.md', '2025-01-02', { numericValue: null })
+                ]
+            },
+            {
+                propertyId: 'note.mood' as BasesPropertyId,
+                displayName: 'Mood',
+                dataPoints: [
+                    createDataPoint('a.md', '2025-01-01', { numericValue: 3 }),
+                    createDataPoint('b.md', '2025-01-02', { numericValue: 4 })
+                ]
+            }
+        ]
+        const result = aggregateForOverlayChart(propertiesData, 'Overlay', TimeGranularity.Daily)
+        expect(result.labels).toHaveLength(2)
+        expect(result.datasets[0]?.data).toEqual([8, null])
+        expect(result.datasets[1]?.data).toEqual([3, 4])
     })
 })

@@ -103,16 +103,21 @@ export function aggregateForChart(
         }
 
         const group = grouped.get(key)!
-        // Treat null numeric values as 0 (for entries without values when showEmptyValues is true)
-        group.values.push(point.numericValue ?? 0)
+        // Missing values are skipped, not coerced to 0: a 0 would skew
+        // averages and render fake zero dips (issue #92)
+        if (point.numericValue !== null) {
+            group.values.push(point.numericValue)
+        }
         group.filePaths.push(point.filePath)
     }
 
-    // Sort by date and build result arrays
+    // Sort by date and build result arrays. Periods that exist but have no
+    // values (only empty entries, with showEmptyValues on) yield null, which
+    // Chart.js renders as a gap.
     const sortedGroups = [...grouped.values()].sort((a, b) => compareAsc(a.date, b.date))
     const resultGroups = sortedGroups.map((g) => ({
         date: g.date,
-        value: combineValues(g.values, aggregationMethod),
+        value: g.values.length > 0 ? combineValues(g.values, aggregationMethod) : null,
         filePaths: g.filePaths
     }))
 
@@ -412,8 +417,9 @@ export function aggregateForScatterChart(
     propertyId: BasesPropertyId,
     displayName: string
 ): ScatterChartData {
-    // Filter to points with valid dates (need date for x-axis)
-    const validPoints = dataPoints.filter((p) => p.dateAnchor !== null)
+    // Need a date for the x-axis and a value for the y-axis: entries without
+    // a value are skipped instead of plotted at 0 (issue #92)
+    const validPoints = dataPoints.filter((p) => p.dateAnchor !== null && p.numericValue !== null)
 
     if (validPoints.length === 0) {
         return { propertyId, displayName, points: [], filePaths: [] }
@@ -431,8 +437,7 @@ export function aggregateForScatterChart(
 
     for (const point of validPoints) {
         const x = ((point.dateAnchor!.date.getTime() - minTime) / timeRange) * 100
-        // Treat null numeric values as 0 (for entries without values when showEmptyValues is true)
-        const y = point.numericValue ?? 0
+        const y = point.numericValue!
 
         points.push({ x, y })
         filePaths.push(point.filePath)
@@ -452,8 +457,9 @@ export function aggregateForBubbleChart(
     granularity: TimeGranularity,
     aggregationMethod: AggregationMethod = DEFAULT_AGGREGATION_METHOD
 ): BubbleChartData {
-    // Filter to points with valid dates (need date for x-axis)
-    const validPoints = dataPoints.filter((p) => p.dateAnchor !== null)
+    // Need a date for the x-axis and a value for the y-axis: entries without
+    // a value are skipped instead of aggregated as 0 (issue #92)
+    const validPoints = dataPoints.filter((p) => p.dateAnchor !== null && p.numericValue !== null)
 
     if (validPoints.length === 0) {
         return { propertyId, displayName, points: [], filePaths: [] }
@@ -472,8 +478,7 @@ export function aggregateForBubbleChart(
         }
 
         const group = grouped.get(key)!
-        // Treat null numeric values as 0 (for entries without values when showEmptyValues is true)
-        group.values.push(point.numericValue ?? 0)
+        group.values.push(point.numericValue!)
         group.filePaths.push(point.filePath)
     }
 
@@ -672,7 +677,10 @@ export function aggregateForOverlayChart(
             }
 
             const group = grouped.get(key)!
-            group.values.push(point.numericValue ?? 0)
+            // Missing values are skipped, not coerced to 0 (issue #92)
+            if (point.numericValue !== null) {
+                group.values.push(point.numericValue)
+            }
             group.filePaths.push(point.filePath)
         }
 
@@ -683,7 +691,10 @@ export function aggregateForOverlayChart(
         for (const [key, group] of grouped) {
             const index = timeKeyToIndex.get(key)
             if (index !== undefined) {
-                data[index] = combineValues(group.values, aggregationMethod)
+                // Periods with only empty entries stay null (rendered as a gap)
+                if (group.values.length > 0) {
+                    data[index] = combineValues(group.values, aggregationMethod)
+                }
                 filePaths[index] = group.filePaths
             }
         }

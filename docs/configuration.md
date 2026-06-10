@@ -21,13 +21,13 @@ Control how long chart animations play (in milliseconds).
 
 Auto-apply visualization settings based on property names.
 
-| Field       | Description                                          |
-| ----------- | ---------------------------------------------------- |
-| Pattern     | Text to match against property names                 |
-| Type        | Visualization type to apply                          |
-| Scale       | Optional min/max range                               |
-| Color       | Optional color scheme                                |
-| Aggregation | Average (default) or Sum for line/bar/area/bubble    |
+| Field       | Description                                       |
+| ----------- | ------------------------------------------------- |
+| Pattern     | Text to match against property names              |
+| Type        | Visualization type to apply                       |
+| Scale       | Optional min/max range                            |
+| Color       | Optional color scheme                             |
+| Aggregation | Average (default) or Sum for line/bar/area/bubble |
 
 **Example**: Pattern `mood` with Heatmap type and 1-5 scale applies to all properties containing "mood" in the name.
 
@@ -48,7 +48,7 @@ Configured via the view's settings panel (gear icon).
 | Date anchor          | (auto)   | Property to use for date resolution                                |
 | Grid columns         | 3        | Number of columns (1-6)                                            |
 | Show legend          | true     | Display chart legends                                              |
-| Show empty dates     | true     | Include dates with no data                                         |
+| Show empty dates     | true     | Include dates with no data (rendered as gaps in charts, not zeros) |
 | Hide header controls | false    | Hide the time frame / overlay / columns toolbar for a compact view |
 | Cell size            | 12       | Heatmap cell size in pixels                                        |
 | Show day labels      | true     | Day labels on heatmaps                                             |
@@ -72,14 +72,14 @@ Configured via the view's settings panel (gear icon).
 
 Stored per view, per visualization. Access via right-click context menu.
 
-| Setting         | Description                                                                |
-| --------------- | -------------------------------------------------------------------------- |
-| Type            | Visualization type                                                         |
-| Scale           | Min/max range (auto or preset)                                             |
-| Color scheme    | Color palette (green, blue, purple, etc.)                                  |
-| Reference line  | Target line with value and label                                           |
-| Aggregation     | Average (default) or Sum — line, bar, area, radar, and bubble charts only  |
-| Heatmap options | Cell size, day/month labels (heatmap only)                                 |
+| Setting         | Description                                                               |
+| --------------- | ------------------------------------------------------------------------- |
+| Type            | Visualization type                                                        |
+| Scale           | Min/max range (auto or preset)                                            |
+| Color scheme    | Color palette (green, blue, purple, etc.)                                 |
+| Reference line  | Target line with value and label                                          |
+| Aggregation     | Average (default) or Sum — line, bar, area, radar, and bubble charts only |
+| Heatmap options | Cell size, day/month labels (heatmap only)                                |
 
 ## Overlay Config
 
