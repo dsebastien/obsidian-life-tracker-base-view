@@ -234,13 +234,12 @@ export class ChartVisualization extends BaseVisualization {
             trend.periodCount === 1 ? 'period' : 'periods'
         }`
 
+        // Only `title`: Obsidian renders aria-label as its own styled
+        // tooltip, which overlapped with the native title tooltip
         headerEl.createSpan({
             cls: `lt-trend-indicator lt-trend-indicator--${trend.direction}`,
             text: arrow,
-            attr: {
-                'aria-label': `Trend: ${description}`,
-                'title': description
-            }
+            attr: { title: `Trend: ${description}` }
         })
     }
 
