@@ -12,7 +12,11 @@ import type { ResolvedDateAnchor, VisualizationDataPoint } from '../types'
 export class RenderCacheService {
     private dateAnchorsCache: Map<BasesEntry, ResolvedDateAnchor | null> | null = null
     private dataPointsCache: Map<BasesPropertyId, VisualizationDataPoint[]> = new Map()
-    private cachedEntries: WeakRef<BasesEntry>[] = []
+    // Strong references on purpose: they only pin the *current* entries
+    // (replaced wholesale whenever data changes), so there is no leak.
+    // WeakRefs caused spurious cache invalidation after garbage collection
+    // (issue #95: a collected ref made haveEntriesChanged return true).
+    private cachedEntries: BasesEntry[] = []
 
     /**
      * Start a new render cycle. Invalidates caches if data changed.
@@ -47,12 +51,7 @@ export class RenderCacheService {
 
         // Check if all entries are the same object references
         for (let i = 0; i < entries.length; i++) {
-            const cachedRef = this.cachedEntries[i]
-            const cachedEntry = cachedRef?.deref()
-            const currentEntry = entries[i]
-
-            // If cached entry was garbage collected or doesn't match, entries changed
-            if (!cachedEntry || cachedEntry !== currentEntry) {
+            if (this.cachedEntries[i] !== entries[i]) {
                 return true
             }
         }
@@ -64,7 +63,7 @@ export class RenderCacheService {
      * Update cached entry references
      */
     private updateCachedEntries(entries: BasesEntry[]): void {
-        this.cachedEntries = entries.map((entry) => new WeakRef(entry))
+        this.cachedEntries = [...entries]
     }
 
     /**
