@@ -19,6 +19,7 @@ import {
     startOfQuarter,
     startOfYear,
     getWeeksBetween,
+    formatDateForInput,
     formatDateISO,
     formatDateByGranularity,
     getMonthName
@@ -403,5 +404,32 @@ describe('date-utils', () => {
             const january = new Date(2024, 0, 15)
             expect(getMonthName(january)).toBe('Jan')
         })
+    })
+})
+
+describe('formatDateForInput (issue #94)', () => {
+    test('date-only strings round-trip without timezone shift', () => {
+        expect(formatDateForInput('2024-03-10', false)).toBe('2024-03-10')
+        expect(formatDateForInput('2024-12-31', false)).toBe('2024-12-31')
+        expect(formatDateForInput('2024-01-01', false)).toBe('2024-01-01')
+    })
+
+    test('local datetime near midnight keeps its local date', () => {
+        // Pre-fix, toISOString() shifted this to the previous day in UTC+X
+        expect(formatDateForInput('2024-03-10T00:30', false)).toBe('2024-03-10')
+        expect(formatDateForInput('2024-03-10T23:45', false)).toBe('2024-03-10')
+    })
+
+    test('datetime formatting keeps local wall-clock time', () => {
+        expect(formatDateForInput('2024-03-10T00:30', true)).toBe('2024-03-10T00:30')
+        expect(formatDateForInput('2024-03-10T23:45', true)).toBe('2024-03-10T23:45')
+    })
+
+    test('date-only string formatted as datetime gets local midnight', () => {
+        expect(formatDateForInput('2024-03-10', true)).toBe('2024-03-10T00:00')
+    })
+
+    test('unparseable strings are returned unchanged', () => {
+        expect(formatDateForInput('not-a-date', false)).toBe('not-a-date')
     })
 })

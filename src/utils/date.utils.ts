@@ -11,6 +11,7 @@ import {
     isValid,
     isWithinInterval,
     parse,
+    parseISO,
     setISOWeek,
     startOfDay as dateFnsStartOfDay,
     startOfMonth as dateFnsStartOfMonth,
@@ -257,6 +258,24 @@ export function getWeeksBetween(startDate: Date, endDate: Date): Date[] {
  */
 export function formatDateISO(date: Date): string {
     return format(date, 'yyyy-MM-dd')
+}
+
+/**
+ * Format a date string for a native date / datetime-local input.
+ * ISO strings are parsed as local time (date-only strings = local midnight)
+ * and formatted from local components, so values never shift by a day across
+ * timezones (issue #94: `new Date()` + `toISOString()` round-tripped through
+ * UTC). Returns the original string when unparseable.
+ */
+export function formatDateForInput(value: string, includeTime: boolean): string {
+    let date = parseISO(value)
+    if (!isValid(date)) {
+        date = new Date(value)
+    }
+    if (!isValid(date)) {
+        return value
+    }
+    return includeTime ? format(date, "yyyy-MM-dd'T'HH:mm") : format(date, 'yyyy-MM-dd')
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { ValidationResult, PropertyEditorConfig } from '../../types'
-import { validateDate, validateDatetime, isEmpty } from '../../../utils'
+import { formatDateForInput, validateDate, validateDatetime, isEmpty } from '../../../utils'
 import { BasePropertyEditor } from './base-editor'
 
 /**
@@ -61,26 +61,9 @@ export class DateEditor extends BasePropertyEditor {
             return ''
         }
 
-        const strValue = value
-        const isDatetime = this.config.definition.type === 'datetime'
-
-        // Try to parse and format
-        try {
-            const date = new Date(strValue)
-            if (!isNaN(date.getTime())) {
-                if (isDatetime) {
-                    // Format for datetime-local: YYYY-MM-DDTHH:mm
-                    return date.toISOString().slice(0, 16)
-                } else {
-                    // Format for date: YYYY-MM-DD
-                    return date.toISOString().slice(0, 10)
-                }
-            }
-        } catch {
-            // Return original value if parsing fails
-        }
-
-        return strValue
+        // Local-time parsing and formatting: a UTC round-trip would shift
+        // values by a day in non-UTC timezones (issue #94)
+        return formatDateForInput(value, this.config.definition.type === 'datetime')
     }
 
     getValue(): unknown {
