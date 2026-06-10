@@ -20,12 +20,24 @@ import {
 const sharedAggregationService = new DataAggregationService()
 
 /**
+ * Streak unit label per granularity (singular form)
+ */
+const GRANULARITY_UNIT: Record<TimeGranularity, string> = {
+    [TimeGranularity.Daily]: 'day',
+    [TimeGranularity.Weekly]: 'week',
+    [TimeGranularity.Monthly]: 'month',
+    [TimeGranularity.Quarterly]: 'quarter',
+    [TimeGranularity.Yearly]: 'year'
+}
+
+/**
  * GitHub-contribution-style heatmap visualization
  */
 export class HeatmapVisualization extends BaseVisualization {
     private heatmapConfig: HeatmapConfig
     private tooltip: Tooltip | null = null
     private gridEl: HTMLElement | null = null
+    private streaksEl: HTMLElement | null = null
     private heatmapData: HeatmapData | null = null
     private pendingScrollFrame: number | null = null
 
@@ -96,6 +108,10 @@ export class HeatmapVisualization extends BaseVisualization {
         // Create legend
         this.createLegend(heatmapEl)
 
+        // Create streak stats row (issue #100)
+        this.streaksEl = heatmapEl.createDiv({ cls: 'lt-heatmap-streaks' })
+        this.renderStreakStats()
+
         // Scroll horizontally to the end so the freshest data is visible.
         // Defer to next frame so the browser has computed layout/scrollWidth.
         this.scrollToEnd(heatmapEl)
@@ -154,6 +170,9 @@ export class HeatmapVisualization extends BaseVisualization {
 
         // Update stored data
         this.heatmapData = newData
+
+        // Refresh streak stats (cells changed, so streaks may have too)
+        this.renderStreakStats()
     }
 
     /**
@@ -259,7 +278,36 @@ export class HeatmapVisualization extends BaseVisualization {
         this.tooltip?.destroy()
         this.tooltip = null
         this.gridEl = null
+        this.streaksEl = null
         this.heatmapData = null
+    }
+
+    /**
+     * Render the streak stats row below the legend.
+     * Idempotent: clears and re-renders into the existing element.
+     */
+    private renderStreakStats(): void {
+        if (!this.streaksEl || !this.heatmapData) return
+
+        this.streaksEl.empty()
+        const { currentStreak, longestStreak, activeCount } = this.heatmapData.streaks
+        if (activeCount === 0) return
+
+        const unit = GRANULARITY_UNIT[this.heatmapData.granularity]
+        const withUnit = (n: number): string => `${n} ${unit}${n === 1 ? '' : 's'}`
+
+        this.streaksEl.createSpan({
+            cls: 'lt-heatmap-streaks-item',
+            text: `Streak: ${withUnit(currentStreak)}`
+        })
+        this.streaksEl.createSpan({
+            cls: 'lt-heatmap-streaks-item',
+            text: `Best: ${withUnit(longestStreak)}`
+        })
+        this.streaksEl.createSpan({
+            cls: 'lt-heatmap-streaks-item',
+            text: `Active: ${activeCount}`
+        })
     }
 
     /**

@@ -23,6 +23,7 @@ import {
     extractNumberWithMapping
 } from '../../utils'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
+import { computeHeatmapStreaks } from './heatmap-streak.utils'
 import {
     aggregateForChart as chartAggregation,
     aggregateForPieChart as pieChartAggregation,
@@ -202,7 +203,8 @@ export class DataAggregationService {
             minDate,
             maxDate,
             minValue: minValue === Infinity ? 0 : minValue,
-            maxValue: maxValue === -Infinity ? 1 : maxValue
+            maxValue: maxValue === -Infinity ? 1 : maxValue,
+            streaks: computeHeatmapStreaks(cells, granularity)
         }
     }
 
@@ -216,13 +218,7 @@ export class DataAggregationService {
         granularity: TimeGranularity,
         aggregationMethod?: AggregationMethod
     ): ChartData {
-        return chartAggregation(
-            dataPoints,
-            propertyId,
-            displayName,
-            granularity,
-            aggregationMethod
-        )
+        return chartAggregation(dataPoints, propertyId, displayName, granularity, aggregationMethod)
     }
 
     /**
@@ -368,7 +364,8 @@ export class DataAggregationService {
             minDate: new Date(),
             maxDate: new Date(),
             minValue: 0,
-            maxValue: 1
+            maxValue: 1,
+            streaks: { currentStreak: 0, longestStreak: 0, activeCount: 0 }
         }
     }
 }

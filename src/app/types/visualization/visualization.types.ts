@@ -39,6 +39,20 @@ export interface HeatmapData {
     maxDate: Date
     minValue: number
     maxValue: number
+    streaks: HeatmapStreakStats
+}
+
+/**
+ * Streak statistics for a heatmap (issue #100).
+ * Periods follow the heatmap granularity (days, weeks, ...).
+ */
+export interface HeatmapStreakStats {
+    /** Consecutive active periods reaching the present (0 if the run is broken) */
+    currentStreak: number
+    /** Longest run of consecutive active periods */
+    longestStreak: number
+    /** Total number of active periods */
+    activeCount: number
 }
 
 /**

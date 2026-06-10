@@ -23,6 +23,7 @@ export type {
     VisualizationDataPoint,
     HeatmapData,
     HeatmapCell,
+    HeatmapStreakStats,
     ChartData,
     ChartDataset,
     PieChartData,

@@ -1095,6 +1095,17 @@
         color: var(--text-muted);
     }
 
+    /* Streak stats row below the legend */
+    .lt-heatmap-streaks {
+        @apply flex items-center flex-wrap gap-3 text-xs mt-1;
+        color: var(--text-muted);
+    }
+
+    .lt-heatmap-streaks-item:first-child {
+        @apply font-medium;
+        color: var(--text-normal);
+    }
+
     /* Heatmap grid variants */
     .lt-heatmap-grid--weekly,
     .lt-heatmap-grid--yearly {
