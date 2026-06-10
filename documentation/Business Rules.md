@@ -125,6 +125,30 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Invalid non-empty values never reach disk; writing an empty value clears the property (issue #91)
 - Failed frontmatter writes are surfaced to the user via a Notice
 
+## Batch Capture Provider Resolution
+
+- File providers (views supplying files for batch capture) are kept in a recency-ordered registry; the most recently interacted-with view wins (issue #96)
+- Views register on creation, bump on pointer/focus interaction, and unregister only themselves on unload
+
+## Moving Average
+
+- Only line and area charts support the moving average overlay; offered windows are 7, 14, and 30 periods
+- Only single-dataset numeric charts get the overlay (list data and overlay charts already carry multiple datasets)
+- Missing periods are skipped inside the window, never counted as 0
+- Rendered as a thin dashed line in the dataset's color, without points or fill
+
+## Trend Indicator
+
+- Shown automatically on single-dataset cartesian charts (line, bar, area) with enough data for two comparison windows
+- Compares the mean of the last N periods (N = min(7, half the data)) against the previous N; changes below 2% read as flat
+- The arrow color stays neutral: whether "up" is good depends on the tracked metric (see issue #21)
+
+## Visualization Export
+
+- CSV export serializes exactly what the visualization displays (aggregated values), not raw frontmatter
+- Image export requires a canvas, so it is only offered for Chart.js types
+- Exports are written to the vault's attachment folder via `getAvailablePathForAttachment`
+
 ## Capture Today Command
 
 - Resolves today's note by exact basename match on the daily filename pattern (YYYY-MM-DD)
