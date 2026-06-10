@@ -107,6 +107,33 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Display labels use capitalized first letter (e.g., "Running" not "running")
 - Legends are always shown when multiple datasets exist (list data, overlays)
 
+## Missing Values in Charts
+
+- Missing (null) values are skipped during aggregation, never coerced to 0 — a 0 would skew averages and render fake dips (issue #92)
+- Periods that exist but contain only empty entries yield `null` data points, rendered as gaps by Chart.js
+- Scatter and bubble charts skip valueless entries entirely (no point/bubble at 0)
+
+## Heatmap Streaks
+
+- A period is streak-active when its cell value is non-null and non-zero — consistent with heatmap rendering where 0 on a 0-based scale shows as absence (issue #87)
+- The current streak counts only when the trailing run reaches the current period or the immediately preceding one (today's data may not be captured yet)
+- Consecutiveness is calendar-based per granularity (cells can be sparse)
+
+## Data Entry Safety
+
+- Pending debounced edits MUST be flushed to disk before any editor teardown (re-render, unload) — typed values are never silently discarded (issue #90)
+- Invalid non-empty values never reach disk; writing an empty value clears the property (issue #91)
+- Failed frontmatter writes are surfaced to the user via a Notice
+
+## Capture Today Command
+
+- Resolves today's note by exact basename match on the daily filename pattern (YYYY-MM-DD)
+- When several notes match, the most recently modified one wins
+
+## Reduced Motion
+
+- Decorative animations (confetti, Chart.js animations, CSS keyframe animations) MUST respect the OS-level `prefers-reduced-motion` setting (issue #109)
+
 ## Reference Lines
 
 - Reference lines are only supported for cartesian chart types: LineChart, BarChart, AreaChart
