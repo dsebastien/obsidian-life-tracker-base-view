@@ -9,6 +9,12 @@ nav_order: 3
 
 Access via **Settings → Life Tracker**.
 
+### First Day of the Week
+
+Choose whether weeks start on **Monday** (default) or **Sunday**. Affects weekly
+grouping, heatmap week columns, and the "this week" / "last week" time frames.
+ISO week labels (`YYYY-Www` filenames, week numbers) stay Monday-based.
+
 ### Animation Duration
 
 Control how long chart animations play (in milliseconds).
@@ -21,13 +27,13 @@ Control how long chart animations play (in milliseconds).
 
 Auto-apply visualization settings based on property names.
 
-| Field       | Description                                       |
-| ----------- | ------------------------------------------------- |
-| Pattern     | Text to match against property names              |
-| Type        | Visualization type to apply                       |
-| Scale       | Optional min/max range                            |
-| Color       | Optional color scheme                             |
-| Aggregation | Average (default) or Sum for line/bar/area/bubble |
+| Field       | Description                                               |
+| ----------- | --------------------------------------------------------- |
+| Pattern     | Text to match against property names                      |
+| Type        | Visualization type to apply                               |
+| Scale       | Optional min/max range                                    |
+| Color       | Optional color scheme                                     |
+| Aggregation | Average (default) or Sum for line/bar/area/bubble/heatmap |
 
 **Example**: Pattern `mood` with Heatmap type and 1-5 scale applies to all properties containing "mood" in the name.
 
@@ -74,15 +80,15 @@ Configured via the view's settings panel (gear icon).
 
 Stored per view, per visualization. Access via right-click context menu.
 
-| Setting         | Description                                                               |
-| --------------- | ------------------------------------------------------------------------- |
-| Type            | Visualization type                                                        |
-| Scale           | Min/max range (auto or preset)                                            |
-| Color scheme    | Color palette (green, blue, purple, etc.)                                 |
-| Reference line  | Target line with value and label                                          |
-| Aggregation     | Average (default) or Sum — line, bar, area, radar, and bubble charts only |
-| Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only           |
-| Heatmap options | Cell size, day/month labels (heatmap only)                                |
+| Setting         | Description                                                                    |
+| --------------- | ------------------------------------------------------------------------------ |
+| Type            | Visualization type                                                             |
+| Scale           | Min/max range (auto or preset)                                                 |
+| Color scheme    | Color palette (green, blue, purple, etc.)                                      |
+| Reference line  | Target line with value and label                                               |
+| Aggregation     | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps |
+| Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                |
+| Heatmap options | Cell size, day/month labels (heatmap only)                                     |
 
 ## Overlay Config
 

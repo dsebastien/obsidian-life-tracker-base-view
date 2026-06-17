@@ -66,7 +66,8 @@ export class HeatmapVisualization extends BaseVisualization {
             data,
             this.propertyId,
             this.displayName,
-            this.heatmapConfig.granularity
+            this.heatmapConfig.granularity,
+            this.heatmapConfig.aggregationMethod
         )
 
         // Apply scale override if configured
@@ -153,7 +154,8 @@ export class HeatmapVisualization extends BaseVisualization {
             data,
             this.propertyId,
             this.displayName,
-            this.heatmapConfig.granularity
+            this.heatmapConfig.granularity,
+            this.heatmapConfig.aggregationMethod
         )
 
         // Apply scale override if configured

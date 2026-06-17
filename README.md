@@ -15,7 +15,7 @@ You can find more details and background information here: https://www.knowii.ne
 ### Visualizations
 
 - **12 visualization types**: Heatmap, Line, Bar, Area, Pie, Doughnut, Radar, Polar Area, Scatter, Bubble, Tag Cloud, Timeline
-- **GitHub-style heatmaps** with 5 color schemes (green, blue, purple, orange, red)
+- **GitHub-style heatmaps** with 5 color schemes (green, blue, purple, orange, red) and average/sum aggregation for multi-entry days
 - **Animated charts** with configurable duration and play/pause controls
 - **Interactive elements**: click chart elements to open source notes, hover for detailed tooltips
 - **Supports all property types**: frontmatter properties, Bases formulas, and file metadata (e.g., tags as tag cloud)
@@ -26,6 +26,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Overlay charts**: combine multiple properties on a single chart to visualize correlations (e.g., sleep vs mood, exercise vs energy), with option to hide individual property cards
 - **List property visualization**: list/tag properties automatically visualized with occurrence counts (pie/doughnut) or presence tracking over time (line/bar)
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
+- **First day of the week**: choose Monday (default) or Sunday for week grouping and heatmap columns
 - **Time frame selection**: filter visualizations to show specific date ranges (all time, last 7/30/90/365 days, this week/month/quarter/year, etc.)
 - **Grid layout controls**: adjustable columns (1-6)
 - **Drag-and-drop reordering**: rearrange any card (property or overlay) by dragging its grip handle; the custom order is saved per view and works on desktop and mobile

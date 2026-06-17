@@ -137,6 +137,7 @@ export function supportsReferenceLine(vizType: VisualizationType): boolean {
  * sum vs average doesn't apply.
  */
 export const AGGREGATION_METHOD_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.Heatmap,
     VisualizationType.LineChart,
     VisualizationType.BarChart,
     VisualizationType.AreaChart,

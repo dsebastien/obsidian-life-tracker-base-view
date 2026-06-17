@@ -10,9 +10,25 @@ import {
     formatDateISO,
     getMonthName,
     getWeeksBetween,
+    getWeekStartDay,
     getColorLevelForValue,
     setCssProps
 } from '../../../../utils'
+
+/** Short weekday names indexed by date-fns day-of-week (0 = Sunday). */
+const SHORT_DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+/**
+ * Build the GitHub-style day-label column for the daily heatmap, honoring the
+ * configured week start. Every other row is labeled (rows 0/2/4), the rest are
+ * blank — e.g. Mon/Wed/Fri for a Monday start, Sun/Tue/Thu for a Sunday start.
+ */
+function buildDayLabels(): string[] {
+    const weekStart = getWeekStartDay()
+    return Array.from({ length: 7 }, (_, offset) =>
+        offset % 2 === 0 ? (SHORT_DAY_NAMES[(weekStart + offset) % 7] ?? '') : ''
+    )
+}
 
 /**
  * Build a Map for O(1) cell lookup by date string
@@ -81,7 +97,7 @@ function renderDailyHeatmap(
         const dayLabels = wrapper.createDiv({ cls: 'lt-heatmap-days' })
         // Set gap dynamically to match the grid cell gap
         setCssProps(dayLabels, { gap: config.cellGap })
-        const dayNames = ['Mon', '', 'Wed', '', 'Fri', '', '']
+        const dayNames = buildDayLabels()
         for (const name of dayNames) {
             const labelEl = dayLabels.createDiv({ cls: 'lt-heatmap-day-label' })
             setCssProps(labelEl, { height: config.cellSize, lineHeight: `${config.cellSize}px` })
@@ -101,7 +117,7 @@ function renderDailyHeatmap(
         const weekCol = gridEl.createDiv({ cls: 'lt-heatmap-week' })
         setCssProps(weekCol, { gap: config.cellGap })
 
-        // Render 7 days (Monday to Sunday)
+        // Render 7 days starting from the configured week start
         for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
             const date = addDays(weekStart, dayOffset)
             const dateKey = formatDateISO(date)

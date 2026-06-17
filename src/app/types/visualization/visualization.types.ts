@@ -232,6 +232,8 @@ export interface HeatmapConfig extends VisualizationConfig {
     showStreakInfo?: boolean
     /** Optional scale configuration for value normalization */
     scale?: ScaleConfig
+    /** How to combine multiple values within a cell's time period (issue #98) */
+    aggregationMethod?: AggregationMethod
 }
 
 /**

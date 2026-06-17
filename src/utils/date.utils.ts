@@ -32,6 +32,29 @@ import {
 import { TimeGranularity, TimeFrame, type DatePattern } from '../app/types'
 
 /**
+ * First day of the week, using date-fns' `weekStartsOn` convention.
+ * 0 = Sunday, 1 = Monday. Defaults to Monday (issue #99).
+ *
+ * Note: this only affects week grouping/boundaries used for display
+ * (weekly aggregation buckets, heatmap week columns, "this/last week"
+ * ranges). ISO week parsing/labels (`YYYY-Www` filenames) stay Monday-based
+ * per the ISO-8601 standard.
+ */
+export type WeekStartDay = 0 | 1
+
+let configuredWeekStart: WeekStartDay = 1
+
+/** Set the configured first day of the week (called from plugin settings). */
+export function setWeekStartDay(day: WeekStartDay): void {
+    configuredWeekStart = day
+}
+
+/** Get the configured first day of the week (0 = Sunday, 1 = Monday). */
+export function getWeekStartDay(): WeekStartDay {
+    return configuredWeekStart
+}
+
+/**
  * Supported date patterns for filename parsing
  */
 const DATE_PATTERNS: DatePattern[] = [
@@ -184,10 +207,10 @@ export function isSameDay(a: Date, b: Date): boolean {
 }
 
 /**
- * Check if two dates are in the same week (ISO week, Monday start)
+ * Check if two dates are in the same week (respecting the configured week start)
  */
 export function isSameWeek(a: Date, b: Date): boolean {
-    return dateFnsIsSameWeek(a, b, { weekStartsOn: 1 })
+    return dateFnsIsSameWeek(a, b, { weekStartsOn: configuredWeekStart })
 }
 
 /**
@@ -219,10 +242,10 @@ export function startOfDay(date: Date): Date {
 }
 
 /**
- * Get start of week (Monday)
+ * Get start of week (respecting the configured week start)
  */
 export function startOfWeek(date: Date): Date {
-    return dateFnsStartOfWeek(date, { weekStartsOn: 1 })
+    return dateFnsStartOfWeek(date, { weekStartsOn: configuredWeekStart })
 }
 
 /**
@@ -250,7 +273,10 @@ export function startOfYear(date: Date): Date {
  * Get all weeks between two dates
  */
 export function getWeeksBetween(startDate: Date, endDate: Date): Date[] {
-    return eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 })
+    return eachWeekOfInterval(
+        { start: startDate, end: endDate },
+        { weekStartsOn: configuredWeekStart }
+    )
 }
 
 /**
@@ -385,15 +411,15 @@ export function getTimeFrameDateRange(timeFrame: TimeFrame): TimeFrameDateRange 
 
         case TimeFrame.ThisWeek:
             return {
-                start: dateFnsStartOfWeek(today, { weekStartsOn: 1 }),
-                end: dateFnsEndOfWeek(today, { weekStartsOn: 1 })
+                start: dateFnsStartOfWeek(today, { weekStartsOn: configuredWeekStart }),
+                end: dateFnsEndOfWeek(today, { weekStartsOn: configuredWeekStart })
             }
 
         case TimeFrame.LastWeek: {
             const lastWeek = dateFnsSubDays(today, 7)
             return {
-                start: dateFnsStartOfWeek(lastWeek, { weekStartsOn: 1 }),
-                end: dateFnsEndOfWeek(lastWeek, { weekStartsOn: 1 })
+                start: dateFnsStartOfWeek(lastWeek, { weekStartsOn: configuredWeekStart }),
+                end: dateFnsEndOfWeek(lastWeek, { weekStartsOn: configuredWeekStart })
             }
         }
 

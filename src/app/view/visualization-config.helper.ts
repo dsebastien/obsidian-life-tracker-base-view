@@ -66,7 +66,8 @@ export function getVisualizationConfig(
                 showMonthLabels,
                 showDayLabels,
                 showStreakInfo: (getConfig('heatmapShowStreaks') as boolean) ?? true,
-                scale
+                scale,
+                aggregationMethod
             } as HeatmapConfig
         }
 

@@ -108,6 +108,8 @@ Best for: Daily patterns over time
 
 **Color schemes**: Green, Blue, Purple, Orange, Red
 
+**Aggregation**: when several notes fall in the same cell period, their values are combined by **Average** (default) or **Sum**. Use Sum for counter-style tracking like calories or sessions per day. Set it from the card's right-click menu.
+
 **Streak stats**: a compact row below the legend shows your current streak, best streak, and total active periods. A period counts toward a streak when it has a recorded value other than 0 (matching the heatmap rendering, where 0 on a 0-based scale shows as empty). The current streak still counts if today's data isn't captured yet. Toggle the row with the **Show streak stats** view option.
 
 ### Tag Cloud

@@ -46,9 +46,11 @@ export {
     getMonthName,
     formatFileTitleWithWeekday,
     getTimeFrameDateRange,
-    isDateInTimeFrame
+    isDateInTimeFrame,
+    setWeekStartDay,
+    getWeekStartDay
 } from './date.utils'
-export type { TimeFrameDateRange } from './date.utils'
+export type { TimeFrameDateRange, WeekStartDay } from './date.utils'
 
 // DOM utilities
 export {

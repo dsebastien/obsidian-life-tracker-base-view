@@ -1009,6 +1009,22 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     // ========================================
 
     private renderVisualizationsTab(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName('First day of the week')
+            .setDesc(
+                'Starting day for week grouping and heatmap columns. ISO week labels stay Monday-based.'
+            )
+            .addDropdown((dropdown) => {
+                dropdown
+                    .addOptions({ '1': 'Monday', '0': 'Sunday' })
+                    .setValue(String(this.plugin.settings.weekStartsOn))
+                    .onChange(async (value) => {
+                        await this.plugin.updateSettings((draft) => {
+                            draft.weekStartsOn = value === '0' ? 0 : 1
+                        })
+                    })
+            })
+
         // Animation settings
         new Setting(containerEl).setName('Animation').setHeading()
 

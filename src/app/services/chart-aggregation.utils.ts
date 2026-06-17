@@ -68,7 +68,7 @@ function capitalizeFirst(value: string): string {
  * 'sum' returns the total; 'average' returns the arithmetic mean.
  * Empty input yields 0 to keep downstream chart math safe.
  */
-function combineValues(values: number[], method: AggregationMethod): number {
+export function combineValues(values: number[], method: AggregationMethod): number {
     if (values.length === 0) return 0
     const total = values.reduce((a, b) => a + b, 0)
     return method === 'sum' ? total : total / values.length

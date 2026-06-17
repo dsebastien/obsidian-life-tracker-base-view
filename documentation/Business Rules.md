@@ -113,6 +113,15 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Periods that exist but contain only empty entries yield `null` data points, rendered as gaps by Chart.js
 - Scatter and bubble charts skip valueless entries entirely (no point/bubble at 0)
 
+## Heatmap Aggregation
+
+- Multiple entries falling in the same cell period are combined via the configured aggregation method: `average` (default, preserves prior behavior) or `sum` for counter-style tracking (calories, sessions per day) — issue #98. Same `average | sum` model as charts (#89). Cell min/max (and therefore color scaling) follow the aggregated value.
+
+## Week Start
+
+- Week grouping (weekly granularity buckets), heatmap week columns, and "this week"/"last week" time frames honor a configurable first day of the week (`weekStartsOn`: Monday default, Sunday optional) — issue #99.
+- ISO week parsing and labels (`YYYY-Www` filenames, week numbers) remain Monday-based per ISO-8601 regardless of the setting.
+
 ## Heatmap Streaks
 
 - A period is streak-active when its cell value is non-null and non-zero — consistent with heatmap rendering where 0 on a 0-based scale shows as absence (issue #87)

@@ -6,6 +6,7 @@ import type {
 } from '../column/column-config.types'
 import type { PropertyDefinition } from '../property/property-definition.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
+import type { WeekStartDay } from '../../../utils/date.utils'
 
 /**
  * Global preset for a property name pattern
@@ -52,11 +53,18 @@ export interface PluginSettings {
      * Adds a fun celebration when all properties are saved
      */
     showConfettiOnCapture: boolean
+
+    /**
+     * First day of the week for week grouping and heatmap columns.
+     * 0 = Sunday, 1 = Monday. Defaults to Monday (issue #99).
+     */
+    weekStartsOn: WeekStartDay
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
     visualizationPresets: [],
     animationDuration: 3000,
     propertyDefinitions: [],
-    showConfettiOnCapture: true
+    showConfettiOnCapture: true,
+    weekStartsOn: 1
 }

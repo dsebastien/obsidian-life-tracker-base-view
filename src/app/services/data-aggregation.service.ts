@@ -34,8 +34,10 @@ import {
     aggregateForOverlayChart as overlayChartAggregation,
     aggregateListForChart as listChartAggregation,
     hasListData as checkHasListData,
+    combineValues,
     type OverlayPropertyData
 } from './chart-aggregation.utils'
+import { DEFAULT_AGGREGATION_METHOD } from '../types'
 
 /**
  * Check if a data point has any meaningful data
@@ -137,7 +139,8 @@ export class DataAggregationService {
         dataPoints: VisualizationDataPoint[],
         propertyId: BasesPropertyId,
         displayName: string,
-        granularity: TimeGranularity
+        granularity: TimeGranularity,
+        aggregationMethod: AggregationMethod = DEFAULT_AGGREGATION_METHOD
     ): HeatmapData {
         // Filter to points with dates
         const validPoints = dataPoints.filter((p) => p.dateAnchor !== null)
@@ -176,17 +179,18 @@ export class DataAggregationService {
         let maxValue = -Infinity
 
         for (const { date, values, filePaths } of cellMap.values()) {
-            const avgValue =
-                values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null
+            // Combine multiple entries per period via the configured method
+            // (average by default, sum for counter-style tracking — issue #98)
+            const cellValue = values.length > 0 ? combineValues(values, aggregationMethod) : null
 
-            if (avgValue !== null) {
-                minValue = Math.min(minValue, avgValue)
-                maxValue = Math.max(maxValue, avgValue)
+            if (cellValue !== null) {
+                minValue = Math.min(minValue, cellValue)
+                maxValue = Math.max(maxValue, cellValue)
             }
 
             cells.push({
                 date,
-                value: avgValue,
+                value: cellValue,
                 count: filePaths.length,
                 filePaths
             })

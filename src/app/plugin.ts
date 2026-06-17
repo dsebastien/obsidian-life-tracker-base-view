@@ -8,7 +8,7 @@ import {
     type SettingsChangeInfo
 } from './types'
 import { LifeTrackerPluginSettingTab } from './settings/settings-tab'
-import { log } from '../utils'
+import { log, setWeekStartDay } from '../utils'
 import { produce } from 'immer'
 import type { Draft } from 'immer'
 import { LifeTrackerView, LIFE_TRACKER_VIEW_TYPE } from './view/life-tracker-view'
@@ -134,6 +134,7 @@ export class LifeTrackerPlugin extends Plugin {
         if (!loadedSettings) {
             log('Using default settings', 'debug')
             this.settings = produce(DEFAULT_SETTINGS, (draft) => draft)
+            this.applyWeekStart()
             return
         }
 
@@ -157,9 +158,23 @@ export class LifeTrackerPlugin extends Plugin {
             if (typeof loadedSettings.showConfettiOnCapture === 'boolean') {
                 draft.showConfettiOnCapture = loadedSettings.showConfettiOnCapture
             }
+
+            // Load week start (0 = Sunday, 1 = Monday)
+            if (loadedSettings.weekStartsOn === 0 || loadedSettings.weekStartsOn === 1) {
+                draft.weekStartsOn = loadedSettings.weekStartsOn
+            }
         })
 
+        this.applyWeekStart()
         log(`Settings loaded`, 'debug', loadedSettings)
+    }
+
+    /**
+     * Push the configured week start into the date utilities so week grouping
+     * and heatmap columns honor the user's preference (issue #99).
+     */
+    private applyWeekStart(): void {
+        setWeekStartDay(this.settings.weekStartsOn)
     }
 
     /**
@@ -181,6 +196,7 @@ export class LifeTrackerPlugin extends Plugin {
         changeInfo: SettingsChangeInfo = { type: 'full' }
     ): Promise<void> {
         this.settings = produce(this.settings, updater)
+        this.applyWeekStart()
         await this.saveSettings()
         this.notifySettingsChanged(changeInfo)
     }
