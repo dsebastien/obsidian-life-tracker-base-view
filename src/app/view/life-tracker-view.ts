@@ -82,6 +82,13 @@ import { OverlayEditModal, type EditableProperty } from '../components/modals/ov
 const DATA_ATTR_VISUALIZATION_ID = 'data-visualization-id'
 
 /**
+ * Debounce window (ms) for coalescing bursts of data updates into one rebuild.
+ * Bases fires onDataUpdated for every changed note; while a vault loads or many
+ * notes change at once this avoids re-rendering the dashboard on every event.
+ */
+const REBUILD_DEBOUNCE_MS = 150
+
+/**
  * Number of visualizations to render per animation frame batch
  */
 const RENDER_BATCH_SIZE = 3
@@ -139,6 +146,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // be picked up — the incremental fast path only re-aggregates data and
     // would otherwise ignore config-only changes (issue: color not applying).
     private forceFullRender = false
+
+    // Debounce timer coalescing bursts of onDataUpdated() calls (vault load,
+    // bulk note edits) into a single rebuild so visualizations don't thrash.
+    private dataUpdateDebounceTimer: number | null = null
 
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
@@ -398,15 +409,32 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     }
 
     /**
-     * Called when data changes - main render logic
+     * Called when data changes. Debounced so a burst of updates (vault load,
+     * bulk edits) coalesces into a single rebuild. The synchronous guard runs
+     * here, before scheduling, so the grid-settings / drag-drop fast paths keep
+     * working (their flags are only true during the synchronous config.set).
      */
     override onDataUpdated(): void {
-        // Skip full re-render if we're just updating grid settings or the
-        // manual card order (drag-drop already moved the DOM nodes in place).
+        // Skip rebuild if we're just updating grid settings or the manual card
+        // order (drag-drop already moved the DOM nodes in place).
         if (this.isUpdatingGridSettings || this.isUpdatingManualOrder) {
             return
         }
 
+        if (this.dataUpdateDebounceTimer !== null) {
+            window.clearTimeout(this.dataUpdateDebounceTimer)
+        }
+        this.dataUpdateDebounceTimer = window.setTimeout(() => {
+            this.dataUpdateDebounceTimer = null
+            this.rebuildView()
+        }, REBUILD_DEBOUNCE_MS)
+    }
+
+    /**
+     * Rebuild the view: incremental fast path when the structure is unchanged,
+     * full re-render otherwise. Invoked (debounced) from onDataUpdated.
+     */
+    private rebuildView(): void {
         // Cancel any pending async render
         this.cancelPendingRender()
 
@@ -2095,6 +2123,12 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      * Called when view is unloaded
      */
     override onunload(): void {
+        // Cancel any pending debounced rebuild
+        if (this.dataUpdateDebounceTimer !== null) {
+            window.clearTimeout(this.dataUpdateDebounceTimer)
+            this.dataUpdateDebounceTimer = null
+        }
+
         // Cancel any pending async render
         this.cancelPendingRender()
 
