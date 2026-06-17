@@ -26,6 +26,9 @@ bun = true
 [test]
 coverage = false
 onlyFailures = true
+# Registers the `obsidian` runtime mock before any test module loads (the
+# package is type-only, so value imports fail without it). See src/test-preload.ts.
+preload = ["./src/test-preload.ts"]
 
 [test.reporter]
 dots = true
