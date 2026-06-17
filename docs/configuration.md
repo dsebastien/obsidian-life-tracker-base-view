@@ -90,6 +90,9 @@ Stored per view, per visualization. Access via right-click context menu.
 | Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                |
 | Heatmap options | Cell size, day/month labels (heatmap only)                                     |
 
+Aggregation also applies to overlay charts (set in the overlay's own config,
+where it is shared across all of the overlay's properties — see [Overlay Config](#overlay-config)).
+
 ## Overlay Config
 
 Stored per view. Access via overlay card context menu.

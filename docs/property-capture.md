@@ -23,6 +23,23 @@ Before capturing data, define which properties to track:
 | Constraints | Min/max for numbers, allowed values for text       |
 | Note filter | Folder, tag, or regex pattern to limit scope       |
 
+### Value mapping (text properties)
+
+Text properties can map their values to numbers so they can be charted. Add a
+value mapping under a text property definition and pair each text value with a
+number:
+
+| Text value | Mapped number |
+| ---------- | ------------- |
+| ⭐         | 1             |
+| ⭐⭐       | 2             |
+| ⭐⭐⭐     | 3             |
+
+Your notes keep showing the original text (e.g. the emoji), while
+visualizations and aggregations use the mapped numbers. This is ideal for
+tracking mood, energy, or ratings with emoji or words like `bad` / `ok` /
+`great` and still getting heatmaps, trends, and averages.
+
 ## Capture Command
 
 Use the command **Life Tracker: Capture properties** to open the capture modal.

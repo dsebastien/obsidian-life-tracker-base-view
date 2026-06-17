@@ -33,9 +33,6 @@ src/
       date-grouping.utils.ts       # Time period grouping
     view/
       life-tracker-view.ts         # Main BasesView (visualizations)
-      table-view/
-        table-view.ts              # Table BasesView (spreadsheet editing)
-        table-view-options.ts      # Table view options
       grid-view/
         grid-view.ts               # Grid BasesView (card editing)
         grid-view-options.ts       # Grid view options
@@ -58,7 +55,6 @@ src/
         date-editor.ts             # Date/datetime editor
         list-editor.ts             # Pill/chip list editor
         validation.utils.ts        # Validation functions
-        dirty-state.service.ts     # Track unsaved changes
       modals/
         property-capture-modal.ts  # Capture/edit modal
       visualizations/
@@ -79,7 +75,7 @@ src/
 
 ### Plugin (`plugin.ts`)
 
-- Registers three BasesViews: life-tracker, life-tracker-table, life-tracker-grid
+- Registers two BasesViews: life-tracker, life-tracker-grid
 - Manages immutable settings with immer
 - Notifies views on settings changes
 - Registers capture command
@@ -93,21 +89,14 @@ src/
 - Delegates to services for data processing
 - Creates visualization instances per property
 
-#### TableView (`view/table-view/table-view.ts`)
-
-- Spreadsheet-style editing interface
-- One row per note, one column per property definition
-- Inline editors for all property types
-- Per-row Save/Reset buttons (disabled when clean)
-- Highlights rows with missing/invalid values
-
 #### GridView (`view/grid-view/grid-view.ts`)
 
 - Card-based editing interface
 - One card per note with all property fields
 - Full-size editors (not compact)
-- Per-card Save/Reset buttons
-- Visual indicators for dirty/invalid state
+- Debounced auto-save as you edit (no explicit Save/Reset buttons); pending
+  edits are flushed before teardown
+- Visual indicators for invalid values
 
 ### Property Editors
 

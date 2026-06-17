@@ -493,10 +493,18 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                 })
         })
 
-        // Type dropdown
+        // Type dropdown. 'formula' matching isn't implemented
+        // (PropertyRecognitionService.matchesMapping returns false), so it's
+        // hidden for new mappings; kept visible only if a legacy mapping
+        // already uses it so the stored value still displays.
+        const typeOptions: Record<string, string> = Object.fromEntries(
+            Object.entries(MAPPING_TYPE_LABELS).filter(
+                ([type]) => type !== 'formula' || mapping.type === 'formula'
+            )
+        )
         setting.addDropdown((dropdown) => {
             dropdown
-                .addOptions(MAPPING_TYPE_LABELS)
+                .addOptions(typeOptions)
                 .setValue(mapping.type)
                 .onChange(async (value) => {
                     await this.plugin.updateSettings((draft) => {
