@@ -100,7 +100,7 @@
 
     /* Container - no scrolling, content fits naturally */
     .lt-container {
-        @apply flex flex-col gap-4 p-4 overflow-visible;
+        @apply relative flex flex-col gap-4 p-4 overflow-visible;
     }
 
     /* ========================================
@@ -1345,6 +1345,15 @@
         @apply w-6 h-6 animate-spin rounded-full;
         border: 2px solid var(--background-modifier-border);
         border-top-color: var(--interactive-accent);
+    }
+
+    /* Rebuild overlay: keeps the dashboard visually stable while a full
+       re-render rebuilds cards asynchronously (covers the container with a
+       spinner instead of letting it collapse/flicker). */
+    .lt-rebuild-overlay {
+        @apply absolute inset-0 z-10 flex items-center justify-center;
+        background-color: var(--background-primary);
+        opacity: 0.6;
     }
 
     /* Error state */

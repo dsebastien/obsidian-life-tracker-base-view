@@ -56,6 +56,7 @@ import {
     extractPropertyName,
     log,
     sanitizeFilename,
+    setCssProps,
     toCsv,
     type TimeFrameDateRange
 } from '../../utils'
@@ -150,6 +151,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // Debounce timer coalescing bursts of onDataUpdated() calls (vault load,
     // bulk note edits) into a single rebuild so visualizations don't thrash.
     private dataUpdateDebounceTimer: number | null = null
+
+    // Overlay shown during a full re-render. Reserves the previous content
+    // height and shows a spinner so the dashboard stays visually stable instead
+    // of collapsing and flickering while cards rebuild asynchronously.
+    private rebuildIndicatorEl: HTMLElement | null = null
 
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
@@ -509,17 +515,22 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.previousOrderSignature = newOrderSignature
         this.currentEffectiveOrder = effectiveOrder
 
-        // Full re-render path
+        // Full re-render path. Reserve the current height and overlay a spinner
+        // so the dashboard doesn't collapse/flicker while cards rebuild.
+        const reservedHeight = this.containerEl.offsetHeight
         this.maximizeService.cleanup()
         this.destroyVisualizations()
         this.containerEl.empty()
+        this.beginRebuildIndicator(reservedHeight)
 
         if (entries.length === 0) {
+            this.endRebuildIndicator()
             createEmptyState(this.containerEl, EMPTY_STATE_MESSAGES.noData, '📊')
             return
         }
 
         if (propertyIds.length === 0) {
+            this.endRebuildIndicator()
             createEmptyState(this.containerEl, EMPTY_STATE_MESSAGES.noProperties, '⚙️')
             return
         }
@@ -594,6 +605,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Check if any entries remain after filtering
         if (filteredEntries.length === 0) {
+            this.endRebuildIndicator()
             createEmptyState(this.gridEl, 'No data available for the selected time frame', '📅')
             return
         }
@@ -908,6 +920,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.pendingRenderFrame = window.requestAnimationFrame(renderBatch)
             } else {
                 this.pendingRenderFrame = null
+                // All cards rendered — release the stability overlay/height.
+                this.endRebuildIndicator()
             }
         }
 
@@ -969,6 +983,28 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.renderUnconfiguredColumn(propertyId, displayName)
             }
         }
+    }
+
+    /**
+     * Start the rebuild stability indicator: reserve the previous content
+     * height so the layout doesn't collapse, and overlay a loading spinner.
+     * Call right after emptying the container on the full re-render path.
+     */
+    private beginRebuildIndicator(reservedHeight: number): void {
+        if (reservedHeight > 0) {
+            setCssProps(this.containerEl, { minHeight: reservedHeight })
+        }
+        this.rebuildIndicatorEl = this.containerEl.createDiv({ cls: 'lt-rebuild-overlay' })
+        this.rebuildIndicatorEl.createDiv({ cls: 'lt-loading-spinner' })
+    }
+
+    /**
+     * Remove the rebuild stability indicator and release the reserved height.
+     */
+    private endRebuildIndicator(): void {
+        this.rebuildIndicatorEl?.remove()
+        this.rebuildIndicatorEl = null
+        setCssProps(this.containerEl, { minHeight: '' })
     }
 
     /**
@@ -2131,6 +2167,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Cancel any pending async render
         this.cancelPendingRender()
+        this.endRebuildIndicator()
 
         // Clean up ResizeObserver
         this.cleanupResizeObserver()
