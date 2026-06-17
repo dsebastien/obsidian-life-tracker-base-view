@@ -1,5 +1,20 @@
 # Release Notes
 
+## 2.14.0 (2026-06-17)
+
+### Features
+
+- **plugin:** heatmap sum aggregation and configurable week start ([#98](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/98), [#99](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/99))
+
+### Bug Fixes
+
+- **plugin:** apply per-card config changes without a full-grid rebuild
+- **plugin:** keep the dashboard stable during full re-renders
+
+### Performance Improvements
+
+- **plugin:** debounce visualization rebuilds on data updates
+
 ## 2.13.0 (2026-06-10)
 
 ### Features

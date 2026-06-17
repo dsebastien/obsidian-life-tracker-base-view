@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.14.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.13.0...2.14.0) (2026-06-17)
+
+### Features
+
+* **plugin:** heatmap sum aggregation and configurable week start ([#98](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/98), [#99](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/99)) ([7885489](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/7885489ec6603767e550b5a79f91b25378429587))
+
+### Bug Fixes
+
+* **plugin:** apply per-card config changes without a full-grid rebuild ([2052be7](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/2052be7b9f384a9e0c427f2687063ecc0a549150))
+* **plugin:** keep the dashboard stable during full re-renders ([4000cc8](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4000cc841848fa0599beb1e38ad73ec509b8fb44))
+
+### Performance Improvements
+
+* **plugin:** debounce visualization rebuilds on data updates ([be59e75](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/be59e75e0ddfb5f6a248acd7e2153ef25e11fa8d))
+
 ## [2.13.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.12.0...2.13.0) (2026-06-10)
 
 ### Features
@@ -295,6 +310,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 
