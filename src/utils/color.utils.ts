@@ -139,6 +139,19 @@ export const CHART_COLOR_PRESETS: Record<ChartColorScheme, string[]> = {
 }
 
 /**
+ * Canonical color scheme options shared by the settings preset dropdown and
+ * the per-card context menu. Single source of truth for the available schemes.
+ */
+export const COLOR_SCHEME_OPTIONS: ReadonlyArray<{ value: ChartColorScheme; label: string }> = [
+    { value: 'default', label: 'Default' },
+    { value: 'green', label: 'Green' },
+    { value: 'blue', label: 'Blue' },
+    { value: 'purple', label: 'Purple' },
+    { value: 'orange', label: 'Orange' },
+    { value: 'red', label: 'Red' }
+]
+
+/**
  * Get chart colors for a specific scheme
  */
 export function getChartColorScheme(scheme: ChartColorScheme | undefined): string[] {

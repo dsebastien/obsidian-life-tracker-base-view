@@ -1,7 +1,12 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import { FolderSuggest } from '../components/ui/folder-suggest'
-import { CSS_CLASS, CSS_SELECTOR, type ChartColorScheme } from '../../utils'
+import {
+    CSS_CLASS,
+    CSS_SELECTOR,
+    COLOR_SCHEME_OPTIONS as COLOR_SCHEME_OPTIONS_LIST,
+    type ChartColorScheme
+} from '../../utils'
 import { BUY_ME_A_COFFEE_BADGE_DATA_URL } from '../assets/buy-me-a-coffee'
 import {
     VisualizationType,
@@ -32,16 +37,12 @@ const AGGREGATION_METHOD_OPTIONS: Record<string, string> = {
 }
 
 /**
- * Color scheme options for the preset dropdown
+ * Color scheme options for the preset dropdown, derived from the shared
+ * canonical list so the settings and context menu never drift apart.
  */
-const COLOR_SCHEME_OPTIONS: Record<string, string> = {
-    default: 'Default',
-    green: 'Green',
-    blue: 'Blue',
-    purple: 'Purple',
-    orange: 'Orange',
-    red: 'Red'
-}
+const COLOR_SCHEME_OPTIONS: Record<string, string> = Object.fromEntries(
+    COLOR_SCHEME_OPTIONS_LIST.map((option) => [option.value, option.label])
+)
 
 type SettingsTab = 'properties' | 'visualizations' | 'about'
 

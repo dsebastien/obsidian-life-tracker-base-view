@@ -25,11 +25,15 @@ import {
     type SettingsChangeInfo,
     type ResolvedDateAnchor,
     type DateAnchorConfig,
-    type OverlayVisualizationConfig
+    type OverlayVisualizationConfig,
+    type PropertyDefinition
 } from '../types'
 import type { OverlayPropertyData } from '../services/chart-aggregation.utils'
 import { DateAnchorService } from '../services/date-anchor.service'
-import { DataAggregationService } from '../services/data-aggregation.service'
+import {
+    DataAggregationService,
+    sharedAggregationService
+} from '../services/data-aggregation.service'
 import { RenderCacheService } from '../services/render-cache.service'
 import { BaseVisualization } from '../components/visualizations/base-visualization'
 import { HeatmapVisualization } from '../components/visualizations/heatmap/heatmap-visualization'
@@ -185,7 +189,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Initialize services
         this.dateAnchorService = new DateAnchorService()
-        this.aggregationService = new DataAggregationService()
+        this.aggregationService = sharedAggregationService
         this.cacheService = new RenderCacheService()
         this.columnConfigService = new ColumnConfigService(
             plugin,
@@ -206,11 +210,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 }
 
                 // Get data points (already filtered based on showEmptyValues setting)
-                const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
                 return this.getDataPointsForProperty(
                     propertyId,
                     propertyDisplayName,
-                    showEmptyValues
+                    this.getShowEmptyValues()
                 )
             }
         )
@@ -329,6 +332,24 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         ]
     }
 
+    /** Read the per-view "show empty values" setting (defaults to false). */
+    private getShowEmptyValues(): boolean {
+        return (this.config.get('showEmptyValues') as boolean) ?? false
+    }
+
+    /**
+     * Resolve the property definition for a Bases property id (strips the
+     * `note.` / `file.` namespace) for value-mapping support. Returns null when
+     * the property has no matching definition.
+     */
+    private findPropertyDefinition(propertyId: BasesPropertyId): PropertyDefinition | null {
+        const propertyName = extractPropertyName(String(propertyId))
+        return (
+            this.plugin.settings.propertyDefinitions.find((def) => def.name === propertyName) ??
+            null
+        )
+    }
+
     /**
      * Get data points for a specific property (with caching).
      * When showEmptyValues is false, filters out entries without meaningful data.
@@ -356,11 +377,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         }
 
         // Find property definition for value mapping support
-        // Extract property name from propertyId (strips namespace like "note." or "file.")
-        const propertyName = extractPropertyName(String(propertyId))
-        const propertyDefinition =
-            this.plugin.settings.propertyDefinitions.find((def) => def.name === propertyName) ??
-            null
+        const propertyDefinition = this.findPropertyDefinition(propertyId)
 
         const dataPoints = this.aggregationService.createDataPoints(
             entries,
@@ -690,7 +707,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             )?.[0]
             if (firstVizId) {
                 const currentShowEmptyValues = this.visualizationShowEmptyValues.get(firstVizId)
-                const newShowEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
+                const newShowEmptyValues = this.getShowEmptyValues()
                 if (
                     currentShowEmptyValues !== undefined &&
                     currentShowEmptyValues !== newShowEmptyValues
@@ -760,7 +777,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         }
 
         // Get showEmptyValues setting
-        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
+        const showEmptyValues = this.getShowEmptyValues()
 
         const overlayIds = new Set<string>(
             this.columnConfigService.getOverlayConfigsArray().map((o) => o.id)
@@ -797,10 +814,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         )
 
         for (const viz of stale) {
-            const propertyName = extractPropertyName(String(viz.propertyId))
-            const propertyDefinition =
-                this.plugin.settings.propertyDefinitions.find((def) => def.name === propertyName) ??
-                null
+            const propertyDefinition = this.findPropertyDefinition(viz.propertyId)
 
             const dataPoints = this.aggregationService.createDataPoints(
                 filteredEntries,
@@ -882,13 +896,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         )
 
         if (effectiveConfigs.length > 0) {
-            const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
-
-            // Extract property name from propertyId (strips namespace like "note." or "file.")
-            const propertyName = extractPropertyName(String(propertyId))
-            const propertyDefinition =
-                this.plugin.settings.propertyDefinitions.find((def) => def.name === propertyName) ??
-                null
+            const showEmptyValues = this.getShowEmptyValues()
+            const propertyDefinition = this.findPropertyDefinition(propertyId)
 
             const dataPoints = this.aggregationService.createDataPoints(
                 entries,
@@ -947,7 +956,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Gather data for all properties in the overlay
         const propertiesData: OverlayPropertyData[] = []
-        const showEmptyValues = (this.config.get('showEmptyValues') as boolean) ?? false
+        const showEmptyValues = this.getShowEmptyValues()
 
         for (const propertyId of overlayConfig.propertyIds) {
             const displayName = this.config.getDisplayName(propertyId)
@@ -957,12 +966,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
             if (!dataPoints) {
                 // Create data points if not cached
-                // Extract property name from propertyId (strips namespace like "note." or "file.")
-                const propertyName = extractPropertyName(String(propertyId))
-                const propertyDefinition =
-                    this.plugin.settings.propertyDefinitions.find(
-                        (def) => def.name === propertyName
-                    ) ?? null
+                const propertyDefinition = this.findPropertyDefinition(propertyId)
 
                 dataPoints = this.aggregationService.createDataPoints(
                     entries,
@@ -1127,10 +1131,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             visualization
         })
         this.visualizationTypes.set(columnConfig.id, columnConfig.visualizationType)
-        this.visualizationShowEmptyValues.set(
-            columnConfig.id,
-            (this.config.get('showEmptyValues') as boolean) ?? false
-        )
+        this.visualizationShowEmptyValues.set(columnConfig.id, this.getShowEmptyValues())
     }
 
     /**
@@ -1144,62 +1145,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         displayName: string,
         canRemove: boolean
     ): void {
-        // Add context menu handler (right-click)
-        cardEl.addEventListener('contextmenu', (event) => {
-            event.preventDefault()
+        this.attachLongTouchMenu(cardEl, (event) => {
             this.handleCardContextMenu(event, propertyId, visualizationId, displayName, canRemove)
-        })
-
-        // Add long-touch support for context menu
-        let longTouchTimer: number | null = null
-        let touchStartPos: { x: number; y: number } | null = null
-
-        cardEl.addEventListener('touchstart', (event) => {
-            const touch = event.touches[0]
-            if (touch) {
-                touchStartPos = { x: touch.clientX, y: touch.clientY }
-                longTouchTimer = window.setTimeout(() => {
-                    event.preventDefault()
-                    this.handleCardContextMenu(
-                        event,
-                        propertyId,
-                        visualizationId,
-                        displayName,
-                        canRemove
-                    )
-                }, 500) // 500ms long press
-            }
-        })
-
-        cardEl.addEventListener('touchmove', (event) => {
-            // Cancel long touch if finger moves too much
-            if (longTouchTimer && touchStartPos) {
-                const touch = event.touches[0]
-                if (touch) {
-                    const dx = Math.abs(touch.clientX - touchStartPos.x)
-                    const dy = Math.abs(touch.clientY - touchStartPos.y)
-                    if (dx > 10 || dy > 10) {
-                        window.clearTimeout(longTouchTimer)
-                        longTouchTimer = null
-                    }
-                }
-            }
-        })
-
-        cardEl.addEventListener('touchend', () => {
-            if (longTouchTimer) {
-                window.clearTimeout(longTouchTimer)
-                longTouchTimer = null
-            }
-            touchStartPos = null
-        })
-
-        cardEl.addEventListener('touchcancel', () => {
-            if (longTouchTimer) {
-                window.clearTimeout(longTouchTimer)
-                longTouchTimer = null
-            }
-            touchStartPos = null
         })
     }
 
@@ -1210,15 +1157,37 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         cardEl: HTMLElement,
         overlayConfig: OverlayVisualizationConfig
     ): void {
-        // Add context menu handler (right-click)
-        cardEl.addEventListener('contextmenu', (event) => {
-            event.preventDefault()
+        this.attachLongTouchMenu(cardEl, (event) => {
             this.handleOverlayContextMenu(event, overlayConfig)
         })
+    }
 
-        // Add long-touch support for context menu
+    /**
+     * Wire right-click and long-press (touch) on a card to open a context menu.
+     * Shared by property and overlay cards. The long press is cancelled if the
+     * finger moves more than a few pixels, so it doesn't fight with scrolling.
+     */
+    private attachLongTouchMenu(
+        cardEl: HTMLElement,
+        onMenu: (event: MouseEvent | TouchEvent) => void
+    ): void {
+        const LONG_PRESS_MS = 500
+        const MOVE_CANCEL_PX = 10
+
         let longTouchTimer: number | null = null
         let touchStartPos: { x: number; y: number } | null = null
+
+        const cancelTimer = (): void => {
+            if (longTouchTimer) {
+                window.clearTimeout(longTouchTimer)
+                longTouchTimer = null
+            }
+        }
+
+        cardEl.addEventListener('contextmenu', (event) => {
+            event.preventDefault()
+            onMenu(event)
+        })
 
         cardEl.addEventListener('touchstart', (event) => {
             const touch = event.touches[0]
@@ -1226,8 +1195,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 touchStartPos = { x: touch.clientX, y: touch.clientY }
                 longTouchTimer = window.setTimeout(() => {
                     event.preventDefault()
-                    this.handleOverlayContextMenu(event, overlayConfig)
-                }, 500) // 500ms long press
+                    onMenu(event)
+                }, LONG_PRESS_MS)
             }
         })
 
@@ -1238,27 +1207,20 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 if (touch) {
                     const dx = Math.abs(touch.clientX - touchStartPos.x)
                     const dy = Math.abs(touch.clientY - touchStartPos.y)
-                    if (dx > 10 || dy > 10) {
-                        window.clearTimeout(longTouchTimer)
-                        longTouchTimer = null
+                    if (dx > MOVE_CANCEL_PX || dy > MOVE_CANCEL_PX) {
+                        cancelTimer()
                     }
                 }
             }
         })
 
         cardEl.addEventListener('touchend', () => {
-            if (longTouchTimer) {
-                window.clearTimeout(longTouchTimer)
-                longTouchTimer = null
-            }
+            cancelTimer()
             touchStartPos = null
         })
 
         cardEl.addEventListener('touchcancel', () => {
-            if (longTouchTimer) {
-                window.clearTimeout(longTouchTimer)
-                longTouchTimer = null
-            }
+            cancelTimer()
             touchStartPos = null
         })
     }

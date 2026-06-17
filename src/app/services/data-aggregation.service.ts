@@ -369,3 +369,9 @@ export class DataAggregationService {
         }
     }
 }
+
+/**
+ * Shared instance. DataAggregationService is stateless, so a single instance
+ * can be reused everywhere instead of constructing one per visualization.
+ */
+export const sharedAggregationService = new DataAggregationService()

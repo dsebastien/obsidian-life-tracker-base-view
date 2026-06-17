@@ -6,14 +6,9 @@ import type {
     TagCloudData,
     VisualizationDataPoint
 } from '../../../types'
-import { DataAggregationService } from '../../../services/data-aggregation.service'
+import { sharedAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatTagTooltip } from '../../ui/tooltip'
 import { log } from '../../../../utils'
-
-/**
- * Shared aggregation service instance for all tag cloud visualizations
- */
-const sharedAggregationService = new DataAggregationService()
 
 /**
  * Tag cloud visualization for tags and lists

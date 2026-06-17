@@ -14,6 +14,7 @@ export {
     applyHeatmapColorScheme,
     getBooleanColor,
     CHART_COLOR_PRESETS,
+    COLOR_SCHEME_OPTIONS,
     getChartColorScheme
 } from './color.utils'
 export type { ChartColorScheme } from './color.utils'

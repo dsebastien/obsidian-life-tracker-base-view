@@ -7,15 +7,10 @@ import type {
     VisualizationConfig,
     VisualizationDataPoint
 } from '../../../types'
-import { DataAggregationService } from '../../../services/data-aggregation.service'
+import { sharedAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip } from '../../ui/tooltip'
 import { differenceInMilliseconds, parseISO } from 'date-fns'
 import { formatDateByGranularity, formatDateISO, getChartColorScheme, log } from '../../../../utils'
-
-/**
- * Shared aggregation service instance for all timeline visualizations
- */
-const sharedAggregationService = new DataAggregationService()
 
 /**
  * Timeline visualization for date-based data

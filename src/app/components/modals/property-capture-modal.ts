@@ -11,11 +11,10 @@ import {
 } from '../../types'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
+import { isNoteComplete } from '../../services/note-completion.utils'
 import { createPropertyEditor } from '../editing/property-editor'
+import { AUTO_SAVE_DEBOUNCE_MS } from '../editing/editing.constants'
 import { formatFileTitleWithWeekday, log, prefersReducedMotion } from '../../../utils'
-
-/** Debounce delay for auto-save in milliseconds */
-const AUTO_SAVE_DEBOUNCE_MS = 500
 
 /**
  * Modal for capturing/editing property values in a carousel-style interface.
@@ -169,7 +168,6 @@ export class PropertyCaptureModal extends Modal {
      */
     private isFileComplete(fileIndex: number): boolean {
         if (this.context.mode !== 'batch' || !this.context.files) return false
-
         if (this.filterMode === 'never') return false
 
         const file = this.context.files[fileIndex]
@@ -181,28 +179,9 @@ export class PropertyCaptureModal extends Modal {
             allDefinitions
         )
 
-        if (applicableDefinitions.length === 0) return false
-
         const frontmatter = this.frontmatterService.read(file)
 
-        if (this.filterMode === 'required') {
-            // Check if all required properties are filled
-            const requiredDefs = applicableDefinitions.filter((d) => d.required)
-            if (requiredDefs.length === 0) return false
-
-            return requiredDefs.every((def) => {
-                const value = frontmatter[def.name]
-                return value !== undefined && value !== null && value !== ''
-            })
-        } else if (this.filterMode === 'all') {
-            // Check if all properties are filled
-            return applicableDefinitions.every((def) => {
-                const value = frontmatter[def.name]
-                return value !== undefined && value !== null && value !== ''
-            })
-        }
-
-        return false
+        return isNoteComplete(this.filterMode, applicableDefinitions, (name) => frontmatter[name])
     }
 
     /**

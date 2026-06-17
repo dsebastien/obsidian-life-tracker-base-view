@@ -16,19 +16,7 @@ import {
     type AggregationMethod,
     type CardMenuCallback
 } from '../../types'
-import type { ChartColorScheme } from '../../../utils'
-
-/**
- * Color scheme options for the dropdown
- */
-const COLOR_SCHEME_OPTIONS: Array<{ value: ChartColorScheme; label: string }> = [
-    { value: 'default', label: 'Default' },
-    { value: 'green', label: 'Green' },
-    { value: 'blue', label: 'Blue' },
-    { value: 'purple', label: 'Purple' },
-    { value: 'orange', label: 'Orange' },
-    { value: 'red', label: 'Red' }
-]
+import { COLOR_SCHEME_OPTIONS, type ChartColorScheme } from '../../../utils'
 
 /**
  * Cell size options for heatmap

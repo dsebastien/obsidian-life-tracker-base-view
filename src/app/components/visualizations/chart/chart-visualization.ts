@@ -10,7 +10,7 @@ import type {
     ScatterChartData,
     VisualizationDataPoint
 } from '../../../types'
-import { DataAggregationService } from '../../../services/data-aggregation.service'
+import { sharedAggregationService } from '../../../services/data-aggregation.service'
 import { ChartLoaderService } from '../../../services/chart-loader.service'
 import { log, getBooleanColor, getChartColorScheme, getColorWithAlpha } from '../../../../utils'
 import type { ChartClickElement, ChartInstance } from './chart-types'
@@ -22,11 +22,6 @@ import {
     initScatterChart
 } from './chart-initializers'
 import { computeMovingAverage, computeTrend } from '../../../services/chart-aggregation.utils'
-
-/**
- * Shared aggregation service instance for all chart visualizations
- */
-const sharedAggregationService = new DataAggregationService()
 
 /**
  * Chart.js-based visualization for line and bar charts

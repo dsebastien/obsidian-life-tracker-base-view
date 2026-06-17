@@ -375,31 +375,6 @@ export class ColumnConfigService {
     }
 
     /**
-     * Update an existing column configuration (updates first visualization)
-     * @deprecated Use updateVisualizationConfig for specific visualization
-     */
-    updateColumnConfig(
-        propertyId: BasesPropertyId,
-        updates: Partial<ColumnVisualizationConfig>
-    ): void {
-        const configs = this.getColumnConfigs()
-        const propertyConfigs = configs[propertyId]
-
-        if (!propertyConfigs || propertyConfigs.length === 0) return
-
-        const existing = propertyConfigs[0]
-        if (!existing) return
-
-        propertyConfigs[0] = {
-            ...existing,
-            ...updates,
-            configuredAt: Date.now()
-        }
-
-        this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
-    }
-
-    /**
      * Delete all configurations for a property (reset to unconfigured state)
      */
     deleteColumnConfig(propertyId: BasesPropertyId): void {

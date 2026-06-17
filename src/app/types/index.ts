@@ -82,7 +82,7 @@ export type {
 } from './column'
 
 // Editor types
-export type { PropertyEditor, PropertyEditorConfig, DirtyChangeCallback } from './editor'
+export type { PropertyEditor, PropertyEditorConfig } from './editor'
 
 // Property types
 export {

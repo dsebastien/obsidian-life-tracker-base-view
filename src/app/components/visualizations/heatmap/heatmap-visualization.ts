@@ -7,7 +7,7 @@ import type {
     HeatmapData,
     VisualizationDataPoint
 } from '../../../types'
-import { DataAggregationService } from '../../../services/data-aggregation.service'
+import { sharedAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
 import { renderHeatmapGrid } from './heatmap-renderer'
 import { parseISO, isSameDay, isSameMonth, isSameYear } from 'date-fns'
@@ -18,11 +18,6 @@ import {
     formatDateISO,
     getColorLevelForValue
 } from '../../../../utils'
-
-/**
- * Shared aggregation service instance for all heatmap visualizations
- */
-const sharedAggregationService = new DataAggregationService()
 
 /**
  * Streak unit label per granularity (singular form)

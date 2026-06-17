@@ -23,7 +23,9 @@ import type {
 import { TimeFrame, TIME_FRAME_LABELS } from '../../types'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
+import { isNoteComplete } from '../../services/note-completion.utils'
 import { createPropertyEditor } from '../../components/editing/property-editor'
+import { AUTO_SAVE_DEBOUNCE_MS } from '../../components/editing/editing.constants'
 import {
     log,
     DATA_ATTR_FULL,
@@ -121,9 +123,6 @@ export class GridView extends BasesView implements FileProvider {
 
     // Viewport observer cleanup
     private viewportCleanup: (() => void) | null = null
-
-    /** Debounce delay for auto-save in milliseconds */
-    private static readonly AUTO_SAVE_DEBOUNCE_MS = 500
 
     /** Time to ignore data updates after saving (prevents focus loss) */
     private static readonly SAVE_COOLDOWN_MS = 1000
@@ -328,10 +327,7 @@ export class GridView extends BasesView implements FileProvider {
         const dateRange = getTimeFrameDateRange(timeFrame)
 
         // Get filtering option: 'required' (default), 'all', or 'never'
-        const hideNotesWhen = (this.config.get('hideNotesWhen') as string) ?? 'required'
-
-        // Pre-compute definitions for filtering based on option
-        const requiredDefinitions = this.activeDefinitions.filter((def) => def.required)
+        const hideNotesWhen = (this.config.get('hideNotesWhen') as BatchFilterMode) ?? 'required'
 
         // Extract values from Bases API and filter in a single pass
         for (const entry of entries) {
@@ -352,25 +348,12 @@ export class GridView extends BasesView implements FileProvider {
             this.originalValues.set(file.path, { ...values })
             this.currentValues.set(file.path, { ...values })
 
-            // Check if we should include this entry based on filter option
-            let shouldInclude = true
-
-            if (hideNotesWhen === 'required' && requiredDefinitions.length > 0) {
-                // Hide notes where all required properties are filled
-                const allRequiredFilled = requiredDefinitions.every((def) => {
-                    const value = values[def.name]
-                    return value !== undefined && value !== null && value !== ''
-                })
-                shouldInclude = !allRequiredFilled
-            } else if (hideNotesWhen === 'all') {
-                // Hide notes where all properties are filled
-                const allFilled = this.activeDefinitions.every((def) => {
-                    const value = values[def.name]
-                    return value !== undefined && value !== null && value !== ''
-                })
-                shouldInclude = !allFilled
-            }
-            // 'never' - always include
+            // Hide notes that are complete under the selected filter mode
+            const shouldInclude = !isNoteComplete(
+                hideNotesWhen,
+                this.activeDefinitions,
+                (name) => values[name]
+            )
 
             if (shouldInclude) {
                 this.filteredEntries.push(entry)
@@ -1335,7 +1318,7 @@ export class GridView extends BasesView implements FileProvider {
         const timerId = window.setTimeout(() => {
             this.savePropertyImmediate(file, definition, value)
             this.saveTimers.delete(timerKey)
-        }, GridView.AUTO_SAVE_DEBOUNCE_MS)
+        }, AUTO_SAVE_DEBOUNCE_MS)
 
         this.saveTimers.set(timerKey, { timerId, file, definition })
     }
