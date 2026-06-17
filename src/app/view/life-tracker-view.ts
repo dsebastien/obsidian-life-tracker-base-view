@@ -134,6 +134,12 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // (DOM is already in the right state, no need to re-render)
     private isUpdatingManualOrder = false
 
+    // Forces the next onDataUpdated() onto the full re-render path. Set when a
+    // per-card/preset config change (color, scale, aggregation, ...) needs to
+    // be picked up — the incremental fast path only re-aggregates data and
+    // would otherwise ignore config-only changes (issue: color not applying).
+    private forceFullRender = false
+
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
 
@@ -441,12 +447,15 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     currentHeatmapSettings.showDayLabels ||
                 this.previousHeatmapSettings.colorScheme !== currentHeatmapSettings.colorScheme)
 
+        // A pending config-only change forces the full re-render path: the
+        // incremental fast path only re-aggregates data and would ignore the
+        // new color/scale/aggregation/etc. Consume the flag here.
+        const forceFull = this.forceFullRender
+        this.forceFullRender = false
+
         // Check if we can do an incremental update (same structure, just data changed)
-        const canIncrementalUpdate = this.canDoIncrementalUpdate(
-            entries,
-            propertyIds,
-            newOrderSignature
-        )
+        const canIncrementalUpdate =
+            !forceFull && this.canDoIncrementalUpdate(entries, propertyIds, newOrderSignature)
 
         // Get current time frame from config
         const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
@@ -1135,6 +1144,128 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     }
 
     /**
+     * Apply a per-card configuration change (color, scale, aggregation, moving
+     * average, reference line, heatmap options). Rebuilds just the affected
+     * card in place when possible so the rest of the dashboard stays put and
+     * doesn't flicker; falls back to a full re-render otherwise.
+     */
+    private applyConfigChange(
+        propertyId: BasesPropertyId,
+        visualizationId: string,
+        displayName: string
+    ): void {
+        if (this.rebuildVisualizationCard(propertyId, visualizationId, displayName)) {
+            return
+        }
+        // Couldn't isolate the card — force the full path so the config change
+        // is still picked up (the incremental path ignores config-only changes).
+        this.forceFullRender = true
+        this.onDataUpdated()
+    }
+
+    /**
+     * Rebuild a single visualization card in place after a config change,
+     * recreating the visualization with its fresh config while leaving every
+     * other card untouched. Data points are config-independent, so the cached
+     * points are reused. Returns false (caller falls back to a full re-render)
+     * when the card can't be safely isolated — the property has multiple
+     * visualizations, is hidden by an overlay, or its card isn't in the DOM.
+     */
+    private rebuildVisualizationCard(
+        propertyId: BasesPropertyId,
+        visualizationId: string,
+        displayName: string
+    ): boolean {
+        if (!this.gridEl) return false
+
+        // Only the single-visualization case is safe to swap in place.
+        const effectiveConfigs = this.columnConfigService.getEffectiveConfigs(
+            propertyId,
+            displayName
+        )
+        if (effectiveConfigs.length !== 1) return false
+        if (this.columnConfigService.shouldHideIndividualVisualization(propertyId)) return false
+
+        const newConfig = effectiveConfigs[0]?.config
+        if (!newConfig) return false
+
+        // Locate the existing card by its current visualization id (UUIDs are
+        // selector-safe). Preset-derived ids are ephemeral and won't match the
+        // rendered card — that case falls back to a full re-render.
+        const oldCard = this.gridEl.querySelector<HTMLElement>(
+            `[${DATA_ATTR_VISUALIZATION_ID}="${visualizationId}"]`
+        )
+        if (!oldCard) return false
+
+        // Reuse cached data points; recompute them if the cache was cleared.
+        let dataPoints = this.cacheService.getDataPoints(propertyId)
+        if (!dataPoints) {
+            const entries = this.data.data
+            let dateAnchors = this.cacheService.getDateAnchors()
+            if (!dateAnchors) {
+                dateAnchors = this.dateAnchorService.resolveAllAnchors(
+                    entries,
+                    this.getDateAnchorConfig()
+                )
+                this.cacheService.setDateAnchors(dateAnchors)
+            }
+            const timeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+            const filteredEntries = this.filterEntriesByTimeFrame(
+                entries,
+                dateAnchors,
+                getTimeFrameDateRange(timeFrame)
+            )
+            dataPoints = this.aggregationService.createDataPoints(
+                filteredEntries,
+                propertyId,
+                displayName,
+                this.findPropertyDefinition(propertyId),
+                dateAnchors,
+                this.getShowEmptyValues()
+            )
+            this.cacheService.setDataPoints(propertyId, dataPoints)
+        }
+
+        // Tear down the old visualization instance and its tracking entries.
+        const existing = this.visualizations.get(visualizationId)
+        existing?.visualization.destroy()
+        this.visualizations.delete(visualizationId)
+        this.visualizationTypes.delete(visualizationId)
+        this.visualizationShowEmptyValues.delete(visualizationId)
+
+        // Build the replacement card and swap it into the same DOM position so
+        // surrounding cards don't move.
+        const cardEl = createDiv({
+            cls: 'lt-card',
+            attr: {
+                [DATA_ATTR_FULL.PROPERTY_ID]: newConfig.propertyId,
+                [DATA_ATTR_VISUALIZATION_ID]: newConfig.id
+            }
+        })
+        oldCard.replaceWith(cardEl)
+
+        this.setupCardEventHandlers(cardEl, newConfig.propertyId, newConfig.id, displayName, false)
+
+        const visualization = this.createVisualization(cardEl, newConfig, displayName)
+        visualization.setMaximizeCallback((pid, maximize) => {
+            this.maximizeService.handleMaximizeToggle(pid, maximize)
+        })
+        visualization.setAnimationDuration(this.plugin.settings.animationDuration)
+        visualization.render(dataPoints)
+        this.dragController?.attachHandle(cardEl, { kind: 'property', id: newConfig.propertyId })
+
+        this.visualizations.set(newConfig.id, {
+            propertyId: newConfig.propertyId,
+            propertyDisplayName: displayName,
+            visualization
+        })
+        this.visualizationTypes.set(newConfig.id, newConfig.visualizationType)
+        this.visualizationShowEmptyValues.set(newConfig.id, this.getShowEmptyValues())
+
+        return true
+    }
+
+    /**
      * Setup event handlers for card (context menu, touch)
      * Passes visualization ID and canRemove for context menu
      */
@@ -1546,7 +1677,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         { scale: action.scale }
                     )
                 }
-                this.onDataUpdated()
+                this.applyConfigChange(propertyId, visualizationId, displayName)
                 break
 
             case 'configureColorScheme':
@@ -1569,7 +1700,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         { colorScheme: action.colorScheme }
                     )
                 }
-                this.onDataUpdated()
+                this.applyConfigChange(propertyId, visualizationId, displayName)
                 break
 
             case 'configureReferenceLine':
@@ -1593,7 +1724,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         { referenceLine: action.referenceLine }
                     )
                 }
-                this.onDataUpdated()
+                this.applyConfigChange(propertyId, visualizationId, displayName)
                 break
 
             case 'configureAggregationMethod':
@@ -1619,7 +1750,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         { aggregationMethod: action.aggregationMethod }
                     )
                 }
-                this.onDataUpdated()
+                this.applyConfigChange(propertyId, visualizationId, displayName)
                 break
 
             case 'configureMovingAverage':
@@ -1645,7 +1776,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         { movingAveragePeriod: action.movingAveragePeriod }
                     )
                 }
-                this.onDataUpdated()
+                this.applyConfigChange(propertyId, visualizationId, displayName)
                 break
 
             case 'configureHeatmapCellSize':
@@ -1664,7 +1795,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.columnConfigService.updateVisualizationConfig(propertyId, visualizationId, {
                     heatmapCellSize: action.cellSize
                 })
-                this.onDataUpdated()
+                this.applyConfigChange(propertyId, visualizationId, displayName)
                 break
 
             case 'configureHeatmapShowMonthLabels':
@@ -1683,7 +1814,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.columnConfigService.updateVisualizationConfig(propertyId, visualizationId, {
                     heatmapShowMonthLabels: action.showMonthLabels
                 })
-                this.onDataUpdated()
+                this.applyConfigChange(propertyId, visualizationId, displayName)
                 break
 
             case 'configureHeatmapShowDayLabels':
@@ -1702,7 +1833,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.columnConfigService.updateVisualizationConfig(propertyId, visualizationId, {
                     heatmapShowDayLabels: action.showDayLabels
                 })
-                this.onDataUpdated()
+                this.applyConfigChange(propertyId, visualizationId, displayName)
                 break
 
             case 'resetConfig':
@@ -1945,7 +2076,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      * Triggers full refresh to simplify handling of multiple visualizations per property.
      */
     private refreshVisualizationsForPreset(_presetId: string): void {
-        // With multiple visualizations per property, simplify by doing a full refresh
+        // A preset edit may change config only (color/scale/aggregation), which
+        // the incremental path ignores — force the full re-render path.
+        this.forceFullRender = true
         this.onDataUpdated()
     }
 
