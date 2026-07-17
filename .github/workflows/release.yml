@@ -1,5 +1,20 @@
 name: Release
 
+# Two-phase release so the provenance attestation is bound to the tag commit:
+# 1. prepare (workflow_dispatch without publish, on a branch): version bump +
+#    changelog + format, build as a gate, commit, tag that commit (lightweight,
+#    so the tag ref points directly at the commit), then re-dispatch this
+#    workflow at the tag ref with publish=true.
+# 2. publish (workflow_dispatch with publish=true at a tag ref, or a manually
+#    pushed tag): github.sha IS the tagged commit, so the Sigstore certificate
+#    matches the commit the release tag points to. Builds, attests, releases.
+#
+# Recovery: if prepare fails after the tag was pushed (e.g. the re-dispatch
+# call failed), run: gh workflow run release.yml --ref <version> -f version=<version> -f publish=true
+# If prepare fails after the release commit was pushed but before tagging,
+# just re-run prepare with the same version: it detects the existing
+# "chore(release): <version>" commit at HEAD and skips straight to tagging.
+
 on:
     workflow_dispatch:
         inputs:
@@ -7,17 +22,28 @@ on:
                 description: 'Version to release (e.g., 1.2.3)'
                 required: true
                 type: string
+            publish:
+                description: 'Internal: build and publish at the current (tag) ref. Leave unchecked to start a release.'
+                required: false
+                type: boolean
+                default: false
     push:
         tags:
-            - '*.*.*'
+            - '[0-9]*.[0-9]*.[0-9]*'
 
 permissions:
     contents: write
     id-token: write
     attestations: write
+    actions: write
+
+concurrency:
+    group: release
+    cancel-in-progress: false
 
 jobs:
-    release:
+    prepare:
+        if: github.event_name == 'workflow_dispatch' && !inputs.publish && startsWith(github.ref, 'refs/heads/')
         runs-on: ubuntu-slim
 
         steps:
@@ -37,51 +63,47 @@ jobs:
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
 
-            - name: Determine version and branch
+            - name: Determine version
               id: version
+              env:
+                  RAW_VERSION: ${{ inputs.version }}
               run: |
-                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-                    VERSION="${{ github.event.inputs.version }}"
-                    BRANCH="${{ github.ref_name }}"
-                  else
-                    # Triggered by tag push
-                    VERSION="${{ github.ref_name }}"
-                    # Find the branch that contains this tag
-                    BRANCH=$(git branch -r --contains ${{ github.ref }} | grep -v HEAD | head -1 | sed 's/.*\///')
-                    if [ -z "$BRANCH" ]; then
-                      BRANCH="main"
-                    fi
+                  # Strip 'v' prefix if present (Obsidian tags have no 'v' prefix)
+                  VERSION="${RAW_VERSION#v}"
+                  if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                    echo "Invalid version '$VERSION' — expected SemVer without 'v' prefix (e.g., 1.2.3)" >&2
+                    exit 1
                   fi
-                  # Strip 'v' prefix if present (for backwards compatibility)
-                  VERSION="${VERSION#v}"
+                  if git rev-parse "refs/tags/$VERSION" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+                    echo "Tag $VERSION already exists" >&2
+                    exit 1
+                  fi
+                  # Idempotent re-run: a previous prepare may have pushed the
+                  # release commit but failed before tagging. Skip the bump in
+                  # that case to avoid duplicating the changelog entry.
+                  if [ "$(git log -1 --format=%s)" = "chore(release): $VERSION" ]; then
+                    echo "HEAD is already the release commit for $VERSION; skipping bump steps."
+                    echo "prepared=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "prepared=false" >> $GITHUB_OUTPUT
+                  fi
                   echo "version=$VERSION" >> $GITHUB_OUTPUT
-                  # Tag WITHOUT 'v' prefix per Obsidian plugin spec
-                  echo "tag=$VERSION" >> $GITHUB_OUTPUT
-                  echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-                  echo "Version: $VERSION"
-                  echo "Target branch: $BRANCH"
-
-            - name: Checkout branch (when triggered by tag)
-              if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-              run: |
-                  git checkout ${{ steps.version.outputs.branch }}
-                  git pull origin ${{ steps.version.outputs.branch }}
 
             - name: Install dependencies
               run: bun install --frozen-lockfile
 
             - name: Update package.json version
+              if: steps.version.outputs.prepared != 'true'
               run: bun run release:update-version ${{ steps.version.outputs.version }}
 
             - name: Update manifest and versions.json
+              if: steps.version.outputs.prepared != 'true'
               run: |
                   export npm_package_version=${{ steps.version.outputs.version }}
                   bun run release:version-bump
 
-            - name: Build for production
-              run: bun run build
-
             - name: Generate changelog
+              if: steps.version.outputs.prepared != 'true'
               run: bun run release:changelog
 
             - name: Log changelog
@@ -90,19 +112,80 @@ jobs:
                   head -100 CHANGELOG.md
 
             - name: Format code
+              if: steps.version.outputs.prepared != 'true'
               run: bun run format
 
+            - name: Build (release gate — do not tag a commit that cannot build)
+              run: |
+                  bun run build
+                  bun test
+
             - name: Commit release changes
+              if: steps.version.outputs.prepared != 'true'
               run: |
                   git add package.json versions.json manifest.json CHANGELOG.md docs/release-notes.md
-                  git commit -m "chore(release): ${{ steps.version.outputs.version }}" || echo "No changes to commit"
-                  git push origin HEAD:${{ steps.version.outputs.branch }}
+                  git commit -m "chore(release): ${{ steps.version.outputs.version }}"
+                  git push origin HEAD:${{ github.ref_name }}
 
-            - name: Create and push tag (manual trigger only)
-              if: github.event_name == 'workflow_dispatch'
+            - name: Tag release commit
+              # Lightweight tag on purpose: the tag ref then points directly at
+              # the commit, so GITHUB_SHA and the attestation subject are
+              # unambiguous on both publish trigger paths.
               run: |
-                  git tag -a ${{ steps.version.outputs.tag }} -m "Release ${{ steps.version.outputs.version }}"
-                  git push origin ${{ steps.version.outputs.tag }}
+                  git tag ${{ steps.version.outputs.version }}
+                  git push origin ${{ steps.version.outputs.version }}
+
+            - name: Dispatch publish run at the tag
+              # A tag pushed with GITHUB_TOKEN does not trigger the tag-push
+              # event (recursion guard), but workflow_dispatch is exempt.
+              run: |
+                  VERSION=${{ steps.version.outputs.version }}
+                  curl --fail-with-body -X POST \
+                    -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                    -H "Accept: application/vnd.github+json" \
+                    https://api.github.com/repos/${{ github.repository }}/actions/workflows/release.yml/dispatches \
+                    -d "{\"ref\":\"refs/tags/$VERSION\",\"inputs\":{\"version\":\"$VERSION\",\"publish\":\"true\"}}" \
+                    || {
+                      echo "Dispatch failed. The tag is already pushed; recover with:" >&2
+                      echo "  gh workflow run release.yml --ref $VERSION -f version=$VERSION -f publish=true" >&2
+                      exit 1
+                    }
+
+    publish:
+        if: >-
+            (github.event_name == 'workflow_dispatch' && inputs.publish && startsWith(github.ref, 'refs/tags/')) ||
+            (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+        runs-on: ubuntu-slim
+        steps:
+            - name: Checkout tag
+              uses: actions/checkout@v6
+
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version-file: package.json
+
+            - name: Verify tag matches manifest version
+              id: version
+              run: |
+                  VERSION="${GITHUB_REF_NAME#v}"
+                  if [ "$GITHUB_REF_NAME" != "$VERSION" ]; then
+                    echo "Tag '$GITHUB_REF_NAME' has a 'v' prefix — Obsidian release tags must be bare SemVer." >&2
+                    exit 1
+                  fi
+                  MANIFEST_VERSION=$(bun -e 'console.log(require("./manifest.json").version)')
+                  if [ "$VERSION" != "$MANIFEST_VERSION" ]; then
+                    echo "Tag $VERSION does not match manifest.json version $MANIFEST_VERSION." >&2
+                    echo "Tags must point at a release commit (run the prepare phase first)." >&2
+                    exit 1
+                  fi
+                  echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Build for production
+              run: bun run build
 
             - name: Extract changelog for release notes
               id: changelog
@@ -116,7 +199,6 @@ jobs:
 
             - name: Generate artifact attestations
               uses: actions/attest-build-provenance@v3
-              continue-on-error: true
               with:
                   subject-path: |
                       dist/main.js
@@ -126,7 +208,7 @@ jobs:
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v3
               with:
-                  tag_name: ${{ steps.version.outputs.tag }}
+                  tag_name: ${{ steps.version.outputs.version }}
                   name: ${{ steps.version.outputs.version }}
                   body: ${{ steps.changelog.outputs.notes }}
                   files: |

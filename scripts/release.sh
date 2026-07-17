@@ -120,10 +120,9 @@ echo ""
 print_info "Release will be created with version: $VERSION"
 print_warning "The GitHub workflow will:"
 print_warning "  1. Update package.json, manifest.json, and versions.json"
-print_warning "  2. Build the plugin"
-print_warning "  3. Generate CHANGELOG.md"
-print_warning "  4. Commit changes and create tag"
-print_warning "  5. Create GitHub release with artifacts (main.js, manifest.json, styles.css)"
+print_warning "  2. Generate CHANGELOG.md, format, commit, and tag the release commit"
+print_warning "  3. Re-dispatch itself at the tag to build and attest at that exact commit"
+print_warning "  4. Create GitHub release with artifacts (main.js, manifest.json, styles.css)"
 echo ""
 
 # Confirm before triggering
