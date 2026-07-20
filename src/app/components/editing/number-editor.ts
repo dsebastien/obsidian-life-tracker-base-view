@@ -42,16 +42,22 @@ export class NumberEditor extends BasePropertyEditor {
         })
         this.sliderEl.min = String(numberRange.min)
         this.sliderEl.max = String(numberRange.max)
-        this.sliderEl.step = '1'
+        // 'any' allows fractional values (e.g., weight = 82.75 kg)
+        // '1' would snap slider nudges to integers only
+        this.sliderEl.step = 'any'
         this.sliderEl.value = currentValue !== null ? String(currentValue) : String(numberRange.min)
 
         // Number input (use text type for better control over input blocking)
+        // inputmode 'decimal' shows the decimal keyboard on mobile (with a '.' key)
+        // pattern allows optional decimal point so HTML5 form validation passes for
+        // fractional values like 82.75. The '[0-9]*' pattern only matched integers
+        // and caused the browser to reject decimals on blur/submit.
         this.inputEl = wrapper.createEl('input', {
             cls: 'lt-editor-input lt-editor-input--number',
             type: 'text',
             attr: {
-                inputmode: 'numeric',
-                pattern: '[0-9]*'
+                inputmode: 'decimal',
+                pattern: '[0-9]*\\.?[0-9]*'
             }
         })
         this.inputEl.value = currentValue !== null ? String(currentValue) : ''
@@ -100,7 +106,9 @@ export class NumberEditor extends BasePropertyEditor {
     }
 
     private renderInput(container: HTMLElement): void {
-        // Use text type for better control over input blocking
+        // Use text type for better control over input blocking.
+        // inputmode 'decimal' + pattern allowing optional decimal point — see
+        // renderSliderWithInput() above for the full rationale.
         this.inputEl = container.createEl('input', {
             cls: this.config.compact
                 ? 'lt-editor-input lt-editor-input--compact lt-editor-input--number'
@@ -108,8 +116,8 @@ export class NumberEditor extends BasePropertyEditor {
             type: 'text',
             placeholder: this.config.definition.description ?? this.getDisplayLabel(),
             attr: {
-                inputmode: 'numeric',
-                pattern: '[0-9]*'
+                inputmode: 'decimal',
+                pattern: '[0-9]*\\.?[0-9]*'
             }
         })
 
