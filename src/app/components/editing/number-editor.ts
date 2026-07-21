@@ -44,7 +44,7 @@ export class NumberEditor extends BasePropertyEditor {
         this.sliderEl.max = String(numberRange.max)
         // 'any' allows fractional values (e.g., weight = 82.75 kg)
         // '1' would snap slider nudges to integers only
-        this.sliderEl.step = 'any'
+        this.sliderEl.step = '0.01'
         this.sliderEl.value = currentValue !== null ? String(currentValue) : String(numberRange.min)
 
         // Number input (use text type for better control over input blocking)
