@@ -57,7 +57,7 @@ export class NumberEditor extends BasePropertyEditor {
             type: 'text',
             attr: {
                 inputmode: 'decimal',
-                pattern: '[0-9]*\\.?[0-9]*'
+                pattern: '-?[0-9]*\\.?[0-9]*'
             }
         })
         this.inputEl.value = currentValue !== null ? String(currentValue) : ''
@@ -117,7 +117,7 @@ export class NumberEditor extends BasePropertyEditor {
             placeholder: this.config.definition.description ?? this.getDisplayLabel(),
             attr: {
                 inputmode: 'decimal',
-                pattern: '[0-9]*\\.?[0-9]*'
+                pattern: '-?[0-9]*\\.?[0-9]*'
             }
         })
 
