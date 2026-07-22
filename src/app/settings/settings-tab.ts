@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian'
+import { App, Notice, PluginSettingTab, Setting, type TextComponent } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import { FolderSuggest } from '../components/ui/folder-suggest'
 import {
@@ -27,6 +27,7 @@ import {
     type MappingType,
     type AggregationMethod
 } from '../types'
+import { computeNumberRange } from './number-range.utils'
 
 /**
  * Aggregation method options for the preset dropdown
@@ -578,27 +579,21 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
 
         const constraintSetting = new Setting(container)
             .setName('Number range')
-            .setDesc('Min and max values (leave both empty for no constraints)')
+            .setDesc(
+                'Min, max, and optional step (leave min and max empty for no constraints). ' +
+                    'When only one bound is set, the other is inferred.'
+            )
+
+        let minText: TextComponent | null = null
+        let maxText: TextComponent | null = null
 
         // Min
         constraintSetting.addText((text) => {
+            minText = text
             text.setPlaceholder('Min')
                 .setValue(numberRange?.min?.toString() ?? '')
-                .onChange(async (value) => {
-                    await this.plugin.updateSettings((draft) => {
-                        const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
-                        if (d) {
-                            const min = value ? parseFloat(value) : null
-                            const max = d.numberRange?.max ?? null
-                            if (min !== null && max !== null) {
-                                d.numberRange = { min, max }
-                            } else if (min !== null) {
-                                d.numberRange = { min, max: min + 100 }
-                            } else {
-                                d.numberRange = null
-                            }
-                        }
-                    })
+                .onChange((value) => {
+                    void this.updateNumberRange(definition, 'min', value, maxText)
                 })
             text.inputEl.type = 'number'
             text.inputEl.classList.add('lt-constraint-input')
@@ -606,20 +601,30 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
 
         // Max
         constraintSetting.addText((text) => {
+            maxText = text
             text.setPlaceholder('Max')
                 .setValue(numberRange?.max?.toString() ?? '')
+                .onChange((value) => {
+                    void this.updateNumberRange(definition, 'max', value, minText)
+                })
+            text.inputEl.type = 'number'
+            text.inputEl.classList.add('lt-constraint-input')
+        })
+
+        // Step (optional)
+        constraintSetting.addText((text) => {
+            text.setPlaceholder('Step')
+                .setValue(numberRange?.step?.toString() ?? '')
                 .onChange(async (value) => {
+                    const step = value ? parseFloat(value) : null
                     await this.plugin.updateSettings((draft) => {
                         const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
-                        if (d) {
-                            const max = value ? parseFloat(value) : null
-                            const min = d.numberRange?.min ?? null
-                            if (min !== null && max !== null) {
-                                d.numberRange = { min, max }
-                            } else if (max !== null) {
-                                d.numberRange = { min: 0, max }
+                        // Step only applies when a range exists; ignore otherwise.
+                        if (d?.numberRange) {
+                            if (step !== null && step > 0) {
+                                d.numberRange.step = step
                             } else {
-                                d.numberRange = null
+                                delete d.numberRange.step
                             }
                         }
                     })
@@ -627,6 +632,39 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             text.inputEl.type = 'number'
             text.inputEl.classList.add('lt-constraint-input')
         })
+    }
+
+    /**
+     * Apply a change to one bound of a property's number range, inferring the
+     * other bound when only one is provided and surfacing the inferred value
+     * (both as a Notice and by reflecting it in the sibling input).
+     */
+    private async updateNumberRange(
+        definition: PropertyDefinition,
+        changed: 'min' | 'max',
+        rawValue: string,
+        siblingText: TextComponent | null
+    ): Promise<void> {
+        // Compute the new range (and any inference) synchronously from current
+        // state, then apply it in one update.
+        const current = this.plugin.settings.propertyDefinitions.find((d) => d.id === definition.id)
+        const entered = rawValue ? parseFloat(rawValue) : null
+        const { range: newRange, inferred } = computeNumberRange(
+            changed,
+            entered,
+            current?.numberRange ?? null
+        )
+
+        await this.plugin.updateSettings((draft) => {
+            const d = draft.propertyDefinitions.find((def) => def.id === definition.id)
+            if (d) d.numberRange = newRange
+        })
+
+        // Reflect the inferred bound in the sibling field + notify the user.
+        if (inferred) {
+            siblingText?.setValue(String(inferred.value))
+            new Notice(`${inferred.bound} set to ${inferred.value}`)
+        }
     }
 
     private renderAllowedValues(container: HTMLElement, definition: PropertyDefinition): void {

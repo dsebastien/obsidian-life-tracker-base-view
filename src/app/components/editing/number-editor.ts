@@ -43,7 +43,11 @@ export class NumberEditor extends BasePropertyEditor {
         })
         this.sliderEl.min = String(numberRange.min)
         this.sliderEl.max = String(numberRange.max)
-        this.sliderEl.step = NUMBER_SLIDER_STEP
+        // Per-property step when configured, else the fractional default (issue #107)
+        this.sliderEl.step =
+            numberRange.step != null && numberRange.step > 0
+                ? String(numberRange.step)
+                : NUMBER_SLIDER_STEP
         this.sliderEl.value = currentValue !== null ? String(currentValue) : String(numberRange.min)
 
         // Number input (use text type for better control over input blocking)

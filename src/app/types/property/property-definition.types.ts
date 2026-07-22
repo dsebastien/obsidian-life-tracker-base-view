@@ -81,6 +81,12 @@ export interface Mapping {
 export interface NumberRange {
     min: number
     max: number
+    /**
+     * Optional slider / spinner step. When unset, the editor uses a small
+     * fractional default so decimals are allowed. Set e.g. `1` for whole-number
+     * scores or `0.5` for half-point scores.
+     */
+    step?: number
 }
 
 /**
