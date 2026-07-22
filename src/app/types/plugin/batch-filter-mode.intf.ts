@@ -4,6 +4,11 @@
 export type BatchFilterMode = 'required' | 'all' | 'never'
 
 /**
+ * All filter mode values, for runtime validation of stored config.
+ */
+export const BATCH_FILTER_MODES: readonly BatchFilterMode[] = ['required', 'all', 'never']
+
+/**
  * Default filter mode
  */
 export const DEFAULT_BATCH_FILTER_MODE: BatchFilterMode = 'required'

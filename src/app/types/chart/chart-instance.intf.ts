@@ -1,23 +1,12 @@
-import type { ChartDatasetConfig } from './chart-dataset-config.intf'
+import type { Chart } from 'chart.js'
 
 /**
- * Internal chart instance interface
+ * Chart instance type.
+ *
+ * Aliased to Chart.js's real `Chart` class so that every downstream access
+ * (`.data`, `.options`, `.update()`, `.destroy()`, `.toBase64Image()`, …) is
+ * type-checked against the actual API instead of a hand-maintained subset that
+ * can silently drift. Chart's default generic parameters keep call sites free of
+ * per-chart-type annotations.
  */
-export interface ChartInstance {
-    destroy: () => void
-    update: (mode?: string) => void
-    resize: () => void
-    reset: () => void
-    /** Base64 data URL of the canvas in its current state (PNG by default) */
-    toBase64Image: (type?: string, quality?: number) => string
-    data: {
-        labels: string[]
-        datasets: ChartDatasetConfig[]
-    }
-    options: {
-        animation?: {
-            duration?: number
-            easing?: string
-        }
-    }
-}
+export type ChartInstance = Chart

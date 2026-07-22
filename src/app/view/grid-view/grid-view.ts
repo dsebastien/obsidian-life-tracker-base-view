@@ -13,6 +13,7 @@ import {
 } from 'obsidian'
 import type { LifeTrackerPlugin } from '../../plugin'
 import type {
+    ConfigGetter,
     FileProvider,
     BatchFilterMode,
     PropertyDefinition,
@@ -20,10 +21,11 @@ import type {
     SettingsChangeInfo,
     ResolvedDateAnchor
 } from '../../types'
-import { TimeFrame, TIME_FRAME_LABELS } from '../../types'
+import { TimeFrame, TIME_FRAME_OPTIONS, TIME_FRAME_LABELS, BATCH_FILTER_MODES } from '../../types'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
 import { isNoteComplete } from '../../services/note-completion.utils'
+import { getEnumConfig } from '../config-accessors'
 import { createPropertyEditor } from '../../components/editing/property-editor'
 import { AUTO_SAVE_DEBOUNCE_MS } from '../../components/editing/editing.constants'
 import {
@@ -50,6 +52,9 @@ export class GridView extends BasesView implements FileProvider {
     private plugin: LifeTrackerPlugin
     private containerEl: HTMLElement
     private scrollEl: HTMLElement
+
+    /** Runtime-narrowing accessor bound to this view's config (see config-accessors). */
+    private readonly cfg: ConfigGetter = (key) => this.config.get(key)
 
     // Virtual scrolling elements
     private tableWrapperEl: HTMLElement | null = null
@@ -184,7 +189,7 @@ export class GridView extends BasesView implements FileProvider {
      * Get the current filter mode for batch capture
      */
     getFilterMode(): BatchFilterMode {
-        return (this.config.get('hideNotesWhen') as BatchFilterMode) ?? 'required'
+        return getEnumConfig(this.cfg, 'hideNotesWhen', BATCH_FILTER_MODES) ?? 'required'
     }
 
     /**
@@ -323,11 +328,13 @@ export class GridView extends BasesView implements FileProvider {
         this.baseSelectedProperties = this.getBaseSelectedProperties(definitionNames)
 
         // Get time frame setting
-        const timeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+        const timeFrame =
+            getEnumConfig(this.cfg, 'timeFrame', TIME_FRAME_OPTIONS) ?? TimeFrame.AllTime
         const dateRange = getTimeFrameDateRange(timeFrame)
 
         // Get filtering option: 'required' (default), 'all', or 'never'
-        const hideNotesWhen = (this.config.get('hideNotesWhen') as BatchFilterMode) ?? 'required'
+        const hideNotesWhen =
+            getEnumConfig(this.cfg, 'hideNotesWhen', BATCH_FILTER_MODES) ?? 'required'
 
         // Extract values from Bases API and filter in a single pass
         for (const entry of entries) {

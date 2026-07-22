@@ -12,7 +12,10 @@ import {
     DEFAULT_BATCH_FILTER_MODE,
     VisualizationType,
     TimeFrame,
+    TIME_FRAME_OPTIONS,
     TimeGranularity,
+    TIME_GRANULARITY_OPTIONS,
+    type ConfigGetter,
     type FileProvider,
     type CardMenuAction,
     type GridSettings,
@@ -64,6 +67,8 @@ import {
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
 import { getVisualizationConfig } from './visualization-config.helper'
+import { getBoolConfig, getEnumConfig, getNumberConfig, getStringConfig } from './config-accessors'
+import { overlayIdToPropertyId } from './overlay-id'
 import {
     computeEffectiveOrder,
     orderSignature,
@@ -108,6 +113,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private plugin: LifeTrackerPlugin
     private containerEl: HTMLElement
     private gridEl: HTMLElement | null = null
+
+    /** Runtime-narrowing accessor bound to this view's config (see config-accessors). */
+    private readonly cfg: ConfigGetter = (key) => this.config.get(key)
 
     // Services
     private dateAnchorService: DateAnchorService
@@ -335,7 +343,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      * If dateAnchorProperty is set, prioritize that property.
      */
     private getDateAnchorConfig(): DateAnchorConfig[] | undefined {
-        const dateAnchorProperty = this.config.get('dateAnchorProperty') as
+        // Stored as an opaque property id (branded string); narrow to string first.
+        const dateAnchorProperty = getStringConfig(this.cfg, 'dateAnchorProperty') as
             | BasesPropertyId
             | undefined
 
@@ -357,7 +366,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
     /** Read the per-view "show empty values" setting (defaults to false). */
     private getShowEmptyValues(): boolean {
-        return (this.config.get('showEmptyValues') as boolean) ?? false
+        return getBoolConfig(this.cfg, 'showEmptyValues') ?? false
     }
 
     /**
@@ -465,10 +474,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Get current heatmap settings from view config
         const currentHeatmapSettings = {
-            cellSize: this.config.get('heatmapCellSize') as number | undefined,
-            showMonthLabels: this.config.get('heatmapShowMonthLabels') as boolean | undefined,
-            showDayLabels: this.config.get('heatmapShowDayLabels') as boolean | undefined,
-            colorScheme: this.config.get('heatmapColorScheme') as string | undefined
+            cellSize: getNumberConfig(this.cfg, 'heatmapCellSize'),
+            showMonthLabels: getBoolConfig(this.cfg, 'heatmapShowMonthLabels'),
+            showDayLabels: getBoolConfig(this.cfg, 'heatmapShowDayLabels'),
+            colorScheme: getStringConfig(this.cfg, 'heatmapColorScheme')
         }
 
         // Check if heatmap settings changed
@@ -492,7 +501,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             !forceFull && this.canDoIncrementalUpdate(entries, propertyIds, newOrderSignature)
 
         // Get current time frame from config
-        const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+        const currentTimeFrame =
+            getEnumConfig(this.cfg, 'timeFrame', TIME_FRAME_OPTIONS) ?? TimeFrame.AllTime
 
         if (canIncrementalUpdate) {
             // Fast path: update existing visualizations in place
@@ -536,16 +546,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         }
 
         // Load grid settings from config
-        const savedColumns = this.config.get('gridColumns') as number | undefined
-        const savedTimeFrame = this.config.get('timeFrame') as TimeFrame | undefined
+        const savedColumns = getNumberConfig(this.cfg, 'gridColumns')
+        const savedTimeFrame = getEnumConfig(this.cfg, 'timeFrame', TIME_FRAME_OPTIONS)
         this.gridSettings.columns = savedColumns ?? DEFAULT_GRID_COLUMNS
         this.gridSettings.timeFrame = savedTimeFrame ?? TimeFrame.AllTime
 
         // Create control bar at the top (hidden when the user opted out)
-        const hideControlBar = (this.config.get('hideControlBar') as boolean) ?? false
+        const hideControlBar = getBoolConfig(this.cfg, 'hideControlBar') ?? false
         this.previousHideControlBar = hideControlBar
-        this.previousShowTrend = (this.config.get('chartShowTrend') as boolean) ?? true
-        this.previousShowStreaks = (this.config.get('heatmapShowStreaks') as boolean) ?? true
+        this.previousShowTrend = getBoolConfig(this.cfg, 'chartShowTrend') ?? true
+        this.previousShowStreaks = getBoolConfig(this.cfg, 'heatmapShowStreaks') ?? true
         if (!hideControlBar) {
             createGridControls(
                 this.containerEl,
@@ -656,14 +666,15 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         if (!this.gridEl) return false
 
         // Check if time frame has changed
-        const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+        const currentTimeFrame =
+            getEnumConfig(this.cfg, 'timeFrame', TIME_FRAME_OPTIONS) ?? TimeFrame.AllTime
         if (this.previousTimeFrame !== null && this.previousTimeFrame !== currentTimeFrame) {
             return false
         }
 
         // The control bar is built in the full re-render path, so toggling its
         // visibility from the view settings panel must invalidate the fast path.
-        const currentHideControlBar = (this.config.get('hideControlBar') as boolean) ?? false
+        const currentHideControlBar = getBoolConfig(this.cfg, 'hideControlBar') ?? false
         if (
             this.previousHideControlBar !== null &&
             this.previousHideControlBar !== currentHideControlBar
@@ -673,11 +684,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Trend/streak display toggles only take effect when visualization
         // configs are rebuilt, which happens on the full re-render path
-        const currentShowTrend = (this.config.get('chartShowTrend') as boolean) ?? true
+        const currentShowTrend = getBoolConfig(this.cfg, 'chartShowTrend') ?? true
         if (this.previousShowTrend !== null && this.previousShowTrend !== currentShowTrend) {
             return false
         }
-        const currentShowStreaks = (this.config.get('heatmapShowStreaks') as boolean) ?? true
+        const currentShowStreaks = getBoolConfig(this.cfg, 'heatmapShowStreaks') ?? true
         if (this.previousShowStreaks !== null && this.previousShowStreaks !== currentShowStreaks) {
             return false
         }
@@ -854,7 +865,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Only compute the filtered entries once, and only if we actually
         // have work to do (this is non-trivial for large vaults).
-        const currentTimeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+        const currentTimeFrame =
+            getEnumConfig(this.cfg, 'timeFrame', TIME_FRAME_OPTIONS) ?? TimeFrame.AllTime
         const timeFrameDateRange = getTimeFrameDateRange(currentTimeFrame)
         const filteredEntries = this.filterEntriesByTimeFrame(
             entries,
@@ -1063,7 +1075,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Get granularity from view config
         const granularity =
-            (this.config.get('granularity') as TimeGranularity) ?? TimeGranularity.Daily
+            getEnumConfig(this.cfg, 'granularity', TIME_GRANULARITY_OPTIONS) ??
+            TimeGranularity.Daily
 
         // Aggregate data for the overlay chart
         const chartData = this.aggregationService.aggregateForOverlayChart(
@@ -1088,7 +1101,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Create a ColumnVisualizationConfig for the overlay
         // Use overlay ID as propertyId since overlays are independent visualizations
         const overlayColumnConfig: ColumnVisualizationConfig = {
-            propertyId: overlayConfig.id as BasesPropertyId,
+            propertyId: overlayIdToPropertyId(overlayConfig.id),
             id: overlayConfig.id,
             visualizationType: overlayConfig.visualizationType,
             displayName: overlayConfig.displayName,
@@ -1102,7 +1115,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const chartConfig: ChartConfig = getVisualizationConfig(
             overlayConfig.visualizationType,
             overlayColumnConfig,
-            (key) => this.config.get(key)
+            this.cfg
         ) as ChartConfig
 
         // Enable legend for overlay charts (show property names)
@@ -1112,7 +1125,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const visualization = new ChartVisualization(
             cardEl,
             this.plugin.app,
-            overlayConfig.id as BasesPropertyId,
+            overlayIdToPropertyId(overlayConfig.id),
             overlayConfig.displayName,
             chartConfig,
             overlayConfig.referenceLines
@@ -1140,7 +1153,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Store in visualizations map using overlay ID
         // Use overlay ID as propertyId for maximize functionality (overlays are independent visualizations)
         this.visualizations.set(overlayConfig.id, {
-            propertyId: overlayConfig.id as BasesPropertyId,
+            propertyId: overlayIdToPropertyId(overlayConfig.id),
             propertyDisplayName: overlayConfig.displayName,
             visualization
         })
@@ -1273,7 +1286,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 )
                 this.cacheService.setDateAnchors(dateAnchors)
             }
-            const timeFrame = (this.config.get('timeFrame') as TimeFrame) ?? TimeFrame.AllTime
+            const timeFrame =
+                getEnumConfig(this.cfg, 'timeFrame', TIME_FRAME_OPTIONS) ?? TimeFrame.AllTime
             const filteredEntries = this.filterEntriesByTimeFrame(
                 entries,
                 dateAnchors,
@@ -1565,7 +1579,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const vizConfig = getVisualizationConfig(
             columnConfig.visualizationType,
             columnConfig,
-            (key) => this.config.get(key)
+            this.cfg
         )
 
         switch (columnConfig.visualizationType) {

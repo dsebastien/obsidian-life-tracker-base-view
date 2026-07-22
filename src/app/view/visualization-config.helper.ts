@@ -1,5 +1,6 @@
 import {
     TimeGranularity,
+    TIME_GRANULARITY_OPTIONS,
     VisualizationType,
     type ColumnVisualizationConfig,
     type ChartConfig,
@@ -11,6 +12,7 @@ import {
 } from '../types'
 import { HEATMAP_PRESETS } from '../../utils'
 import { DEFAULT_CELL_SIZE, DEFAULT_EMBEDDED_HEIGHT } from './view-options'
+import { getBoolConfig, getEnumConfig, getNumberConfig, getStringConfig } from './config-accessors'
 
 /**
  * Get visualization configuration from view config
@@ -20,9 +22,10 @@ export function getVisualizationConfig(
     columnConfig: ColumnVisualizationConfig,
     getConfig: ConfigGetter
 ): VisualizationConfig {
-    const granularity = (getConfig('granularity') as TimeGranularity) ?? TimeGranularity.Daily
-    const showEmptyValues = (getConfig('showEmptyValues') as boolean) ?? false
-    const embeddedHeight = (getConfig('embeddedHeight') as number) ?? DEFAULT_EMBEDDED_HEIGHT
+    const granularity =
+        getEnumConfig(getConfig, 'granularity', TIME_GRANULARITY_OPTIONS) ?? TimeGranularity.Daily
+    const showEmptyValues = getBoolConfig(getConfig, 'showEmptyValues') ?? false
+    const embeddedHeight = getNumberConfig(getConfig, 'embeddedHeight') ?? DEFAULT_EMBEDDED_HEIGHT
 
     const baseConfig: VisualizationConfig = {
         granularity,
@@ -41,21 +44,21 @@ export function getVisualizationConfig(
         case VisualizationType.Heatmap: {
             // Use per-visualization settings if set, otherwise fall back to global settings
             const colorSchemeName =
-                colorScheme ?? (getConfig('heatmapColorScheme') as string) ?? 'green'
+                colorScheme ?? getStringConfig(getConfig, 'heatmapColorScheme') ?? 'green'
             const heatmapColorScheme = HEATMAP_PRESETS[colorSchemeName] ?? HEATMAP_PRESETS['green']!
 
             // Per-viz overrides for heatmap settings
             const cellSize =
                 columnConfig.heatmapCellSize ??
-                (getConfig('heatmapCellSize') as number) ??
+                getNumberConfig(getConfig, 'heatmapCellSize') ??
                 DEFAULT_CELL_SIZE
             const showMonthLabels =
                 columnConfig.heatmapShowMonthLabels ??
-                (getConfig('heatmapShowMonthLabels') as boolean) ??
+                getBoolConfig(getConfig, 'heatmapShowMonthLabels') ??
                 true
             const showDayLabels =
                 columnConfig.heatmapShowDayLabels ??
-                (getConfig('heatmapShowDayLabels') as boolean) ??
+                getBoolConfig(getConfig, 'heatmapShowDayLabels') ??
                 true
 
             return {
@@ -65,7 +68,7 @@ export function getVisualizationConfig(
                 cellGap: 2,
                 showMonthLabels,
                 showDayLabels,
-                showStreakInfo: (getConfig('heatmapShowStreaks') as boolean) ?? true,
+                showStreakInfo: getBoolConfig(getConfig, 'heatmapShowStreaks') ?? true,
                 scale,
                 aggregationMethod
             } as HeatmapConfig
@@ -75,8 +78,8 @@ export function getVisualizationConfig(
             return {
                 ...baseConfig,
                 chartType: mapVisualizationTypeToChartType(vizType),
-                showLegend: (getConfig('chartShowLegend') as boolean) ?? false,
-                showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
+                showLegend: getBoolConfig(getConfig, 'chartShowLegend') ?? false,
+                showGrid: getBoolConfig(getConfig, 'chartShowGrid') ?? true,
                 tension: 0.3,
                 fill: false, // Line charts don't have fill
                 scale,
@@ -84,15 +87,15 @@ export function getVisualizationConfig(
                 referenceLine,
                 aggregationMethod,
                 movingAveragePeriod,
-                showTrendInfo: (getConfig('chartShowTrend') as boolean) ?? true
+                showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
         case VisualizationType.AreaChart:
             return {
                 ...baseConfig,
                 chartType: mapVisualizationTypeToChartType(vizType),
-                showLegend: (getConfig('chartShowLegend') as boolean) ?? false,
-                showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
+                showLegend: getBoolConfig(getConfig, 'chartShowLegend') ?? false,
+                showGrid: getBoolConfig(getConfig, 'chartShowGrid') ?? true,
                 tension: 0.3,
                 fill: true, // Area charts have fill
                 scale,
@@ -100,21 +103,21 @@ export function getVisualizationConfig(
                 referenceLine,
                 aggregationMethod,
                 movingAveragePeriod,
-                showTrendInfo: (getConfig('chartShowTrend') as boolean) ?? true
+                showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
         case VisualizationType.BarChart:
             return {
                 ...baseConfig,
                 chartType: mapVisualizationTypeToChartType(vizType),
-                showLegend: (getConfig('chartShowLegend') as boolean) ?? false,
-                showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
+                showLegend: getBoolConfig(getConfig, 'chartShowLegend') ?? false,
+                showGrid: getBoolConfig(getConfig, 'chartShowGrid') ?? true,
                 tension: 0.3,
                 scale,
                 colorScheme,
                 referenceLine,
                 aggregationMethod,
-                showTrendInfo: (getConfig('chartShowTrend') as boolean) ?? true
+                showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
         case VisualizationType.PieChart:
@@ -126,8 +129,8 @@ export function getVisualizationConfig(
             return {
                 ...baseConfig,
                 chartType: mapVisualizationTypeToChartType(vizType),
-                showLegend: (getConfig('chartShowLegend') as boolean) ?? false,
-                showGrid: (getConfig('chartShowGrid') as boolean) ?? true,
+                showLegend: getBoolConfig(getConfig, 'chartShowLegend') ?? false,
+                showGrid: getBoolConfig(getConfig, 'chartShowGrid') ?? true,
                 tension: 0.3,
                 scale,
                 colorScheme,
@@ -140,8 +143,9 @@ export function getVisualizationConfig(
                 minFontSize: 12,
                 maxFontSize: 32,
                 sortBy:
-                    (getConfig('tagCloudSortBy') as 'frequency' | 'alphabetical') ?? 'frequency',
-                maxTags: (getConfig('tagCloudMaxTags') as number) ?? 50
+                    getEnumConfig(getConfig, 'tagCloudSortBy', ['frequency', 'alphabetical']) ??
+                    'frequency',
+                maxTags: getNumberConfig(getConfig, 'tagCloudMaxTags') ?? 50
             } as TagCloudConfig
 
         case VisualizationType.Timeline:

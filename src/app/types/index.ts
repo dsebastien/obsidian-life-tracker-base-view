@@ -10,7 +10,7 @@ export type {
 } from './chart'
 
 // Visualization types
-export { VisualizationType, TimeGranularity } from './visualization'
+export { VisualizationType, TimeGranularity, TIME_GRANULARITY_OPTIONS } from './visualization'
 export {
     CONFIG_CARD_VISUALIZATION_OPTIONS,
     CONTEXT_MENU_VISUALIZATION_OPTIONS,
@@ -119,6 +119,7 @@ export {
     DEFAULT_SETTINGS,
     DEFAULT_BATCH_FILTER_MODE,
     BATCH_FILTER_MODE_OPTIONS,
+    BATCH_FILTER_MODES,
     getBatchFilterModeLabel
 } from './plugin'
 export type {

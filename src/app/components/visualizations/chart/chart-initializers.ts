@@ -123,7 +123,7 @@ export function initPieChart(
                 onClick(elements)
             }
         }
-    }) as unknown as ChartInstance
+    })
 }
 
 /**
@@ -184,7 +184,7 @@ export function initRadarChart(
                 onClick(elements)
             }
         }
-    }) as unknown as ChartInstance
+    })
 }
 
 /**
@@ -359,7 +359,7 @@ export function initCartesianChart(
                 onClick(elements)
             }
         }
-    }) as unknown as ChartInstance
+    })
 }
 
 /**
@@ -446,7 +446,7 @@ export function initScatterChart(
                 onClick(elements)
             }
         }
-    }) as unknown as ChartInstance
+    })
 }
 
 /**
@@ -539,5 +539,5 @@ export function initBubbleChart(
                 onClick(elements)
             }
         }
-    }) as unknown as ChartInstance
+    })
 }
