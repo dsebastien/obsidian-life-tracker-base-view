@@ -20,7 +20,13 @@ import {
 } from '../../../../utils'
 import type { Chart as ChartJsChart } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
+import { format } from 'date-fns'
 import { areAllValuesIntegers, formatMetricValue } from './chart-format.utils'
+
+/** Format an epoch-ms x value as a compact date for scatter axis ticks / tooltips. */
+function formatTimestamp(ms: number): string {
+    return format(new Date(ms), 'MMM d, yyyy')
+}
 
 /**
  * Chart.js constructor type. We pin to `typeof ChartJsChart` (a type-only import) so the
@@ -416,20 +422,27 @@ export function initScatterChart(
                             // Return empty string for null/undefined values
                             if (x === null || x === undefined || y === null || y === undefined)
                                 return ''
-                            return `Time: ${x.toFixed(1)}%, Value: ${y.toFixed(2)}`
+                            // x is an epoch-ms timestamp (issue #97)
+                            return `${formatTimestamp(x)}: ${formatMetricValue(y, false)}`
                         }
                     }
                 }
             },
             scales: {
                 x: {
+                    type: 'linear',
                     display: true,
                     title: {
                         display: true,
-                        text: 'Time →'
+                        text: 'Date'
                     },
-                    min: 0,
-                    max: 100,
+                    ticks: {
+                        // x values are epoch-ms timestamps; render them as dates
+                        callback: (value) => formatTimestamp(Number(value)),
+                        maxRotation: 45,
+                        minRotation: 45,
+                        autoSkipPadding: 12
+                    },
                     grid: {
                         display: chartConfig.showGrid
                     }

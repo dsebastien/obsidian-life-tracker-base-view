@@ -489,6 +489,18 @@ describe('missing values are gaps, not zeros (issue #92)', () => {
         expect(result.filePaths).toEqual(['a.md', 'c.md'])
     })
 
+    test('aggregateForScatterChart: x is the real timestamp, not a 0-100% (issue #97)', () => {
+        const dataPoints = [
+            createDataPoint('a.md', '2025-01-01', { numericValue: 5 }),
+            createDataPoint('c.md', '2025-01-03', { numericValue: 7 })
+        ]
+        const result = aggregateForScatterChart(dataPoints, 'note.mood' as BasesPropertyId, 'Mood')
+        expect(result.points.map((p) => p.x)).toEqual([
+            new Date('2025-01-01').getTime(),
+            new Date('2025-01-03').getTime()
+        ])
+    })
+
     test('aggregateForBubbleChart: entries without a value are skipped', () => {
         const dataPoints = [
             createDataPoint('a.md', '2025-01-01', { numericValue: 10 }),

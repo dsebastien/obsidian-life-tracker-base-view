@@ -18,7 +18,7 @@ import {
     type TrendInfo,
     type VisualizationDataPoint
 } from '../types'
-import { formatDateByGranularity } from '../../utils'
+import { formatDateByGranularity, minOf, maxOf } from '../../utils'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
 
 /**
@@ -477,18 +477,14 @@ export function aggregateForScatterChart(
         return { propertyId, displayName, points: [], filePaths: [] }
     }
 
-    // Get date range for normalization
-    const dates = validPoints.map((p) => p.dateAnchor!.date.getTime())
-    const minTime = Math.min(...dates)
-    const maxTime = Math.max(...dates)
-    const timeRange = maxTime - minTime || 1
-
-    // Create scatter points with normalized x (time) and raw y (value)
+    // Use the real timestamp (ms since epoch) as x so the axis reflects actual
+    // temporal spacing and tooltips can show the real date, instead of a
+    // meaningless 0–100% of the date range (issue #97).
     const points: ScatterPoint[] = []
     const filePaths: string[] = []
 
     for (const point of validPoints) {
-        const x = ((point.dateAnchor!.date.getTime() - minTime) / timeRange) * 100
+        const x = point.dateAnchor!.date.getTime()
         const y = point.numericValue!
 
         points.push({ x, y })
@@ -534,14 +530,15 @@ export function aggregateForBubbleChart(
         group.filePaths.push(point.filePath)
     }
 
-    // Get date range for x-axis normalization
+    // Get date range for x-axis normalization (reduce-based min/max avoids a
+    // stack overflow from spreading a huge array into Math.min/max — issue #97)
     const allDates = [...grouped.values()].map((g) => g.date.getTime())
-    const minTime = Math.min(...allDates)
-    const maxTime = Math.max(...allDates)
+    const minTime = minOf(allDates) ?? 0
+    const maxTime = maxOf(allDates) ?? 0
     const timeRange = maxTime - minTime || 1
 
     // Find max count for radius normalization
-    const maxCount = Math.max(...[...grouped.values()].map((g) => g.filePaths.length))
+    const maxCount = maxOf([...grouped.values()].map((g) => g.filePaths.length)) ?? 1
 
     // Create bubble points
     const points: BubblePoint[] = []

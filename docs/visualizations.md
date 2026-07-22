@@ -43,6 +43,7 @@ Best for: Showing volume over time
 Best for: Showing distribution
 
 - Individual points without connections
+- Plotted against a real date axis, so points sit at their actual position in time and the tooltip shows the exact date
 - Good for sparse or irregular data
 - Shows data density patterns
 - Good for: irregular measurements, event occurrences

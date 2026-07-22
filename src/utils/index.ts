@@ -101,3 +101,4 @@ export {
 
 // Export utilities (CSV / image export)
 export { toCsv, sanitizeFilename } from './export.utils'
+export { minOf, maxOf } from './number.utils'
