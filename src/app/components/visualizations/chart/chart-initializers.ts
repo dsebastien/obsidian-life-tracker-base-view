@@ -20,6 +20,7 @@ import {
 } from '../../../../utils'
 import type { Chart as ChartJsChart } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
+import { areAllValuesIntegers, formatMetricValue } from './chart-format.utils'
 
 /**
  * Chart.js constructor type. We pin to `typeof ChartJsChart` (a type-only import) so the
@@ -93,7 +94,7 @@ export function initPieChart(
             plugins: {
                 legend: {
                     display: chartConfig.showLegend,
-                    position: 'right'
+                    position: chartConfig.legendPosition ?? 'right'
                 },
                 tooltip: {
                     enabled: true,
@@ -239,6 +240,11 @@ export function initCartesianChart(
         }
     })
 
+    // Counts (habits, sessions) should render without decimals: detect when every
+    // plotted value is a whole number so the tooltip drops the `.00` (issue #103).
+    const allValues: unknown[] = datasets.flatMap((dataset) => dataset.data as unknown[])
+    const integersOnly = areAllValuesIntegers(allValues)
+
     // Map chart type (area uses line type)
     const chartJsType = chartConfig.chartType === 'line' ? 'line' : chartConfig.chartType
 
@@ -318,7 +324,7 @@ export function initCartesianChart(
                             const value = context.parsed.y
                             // Return empty string for null/undefined values (not "null")
                             if (value === null || value === undefined) return ''
-                            return `${label}: ${value.toFixed(2)}`
+                            return `${label}: ${formatMetricValue(value, integersOnly)}`
                         }
                     }
                 },
@@ -494,16 +500,16 @@ export function initBubbleChart(
                             // Return empty string for null/undefined values
                             if (y === null || y === undefined) return ''
                             const raw = context.raw
-                            const r =
+                            // Read the exact count stored on the point (issue #103)
+                            const count =
                                 raw &&
                                 typeof raw === 'object' &&
-                                'r' in raw &&
-                                typeof raw.r === 'number'
-                                    ? raw.r
+                                'count' in raw &&
+                                typeof raw.count === 'number'
+                                    ? raw.count
                                     : 0
-                            // Calculate count from radius (reverse the formula)
-                            const count = Math.round(((r - 5) / 25) * 10) || 1
-                            return `Value: ${y.toFixed(2)}, Entries: ~${count}`
+                            const entries = count === 1 ? '1 entry' : `${count} entries`
+                            return `Value: ${formatMetricValue(y, false)}, ${entries}`
                         }
                     }
                 }

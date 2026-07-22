@@ -12,6 +12,7 @@ export type {
 // Visualization types
 export { VisualizationType, TimeGranularity, TIME_GRANULARITY_OPTIONS } from './visualization'
 export {
+    CHART_LEGEND_POSITIONS,
     CONFIG_CARD_VISUALIZATION_OPTIONS,
     CONTEXT_MENU_VISUALIZATION_OPTIONS,
     SCALE_PRESETS,
@@ -42,6 +43,7 @@ export type {
     HeatmapConfig,
     ChartJsType,
     ChartConfig,
+    ChartLegendPosition,
     TagCloudConfig,
     TimelineConfig,
     ContextMenuVisualizationOption,

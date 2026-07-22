@@ -24,9 +24,11 @@ export type {
     HeatmapConfig,
     ChartJsType,
     ChartConfig,
+    ChartLegendPosition,
     TagCloudConfig,
     TimelineConfig
 } from './visualization.types'
+export { CHART_LEGEND_POSITIONS } from './visualization.types'
 export {
     CONFIG_CARD_VISUALIZATION_OPTIONS,
     CONTEXT_MENU_VISUALIZATION_OPTIONS,

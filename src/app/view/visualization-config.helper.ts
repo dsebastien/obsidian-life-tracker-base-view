@@ -1,6 +1,7 @@
 import {
     TimeGranularity,
     TIME_GRANULARITY_OPTIONS,
+    CHART_LEGEND_POSITIONS,
     VisualizationType,
     type ColumnVisualizationConfig,
     type ChartConfig,
@@ -134,7 +135,10 @@ export function getVisualizationConfig(
                 tension: 0.3,
                 scale,
                 colorScheme,
-                aggregationMethod
+                aggregationMethod,
+                legendPosition:
+                    getEnumConfig(getConfig, 'chartLegendPosition', CHART_LEGEND_POSITIONS) ??
+                    'right'
             } as ChartConfig
 
         case VisualizationType.TagCloud:

@@ -54,6 +54,9 @@ Best for: Multi-dimensional data
 - Points with variable size
 - Size represents a third dimension
 - Good for: data with magnitude variations
+- Hovering a bubble shows the value and the exact number of entries in that period
+
+Chart tooltips show whole-number values without trailing decimals, so counts like habit completions read as `3` rather than `3.00`.
 
 ## Circular Charts
 

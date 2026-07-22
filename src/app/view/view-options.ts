@@ -144,6 +144,18 @@ export function getLifeTrackerViewOptions(): BasesAllOptions[] {
                     default: false
                 },
                 {
+                    type: 'dropdown',
+                    key: 'chartLegendPosition',
+                    displayName: 'Legend position',
+                    default: 'right',
+                    options: {
+                        top: 'Top',
+                        right: 'Right',
+                        bottom: 'Bottom',
+                        left: 'Left'
+                    }
+                },
+                {
                     type: 'toggle',
                     key: 'chartShowGrid',
                     displayName: 'Show grid lines',

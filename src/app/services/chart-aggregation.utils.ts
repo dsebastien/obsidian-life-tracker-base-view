@@ -554,10 +554,13 @@ export function aggregateForBubbleChart(
         const x = ((group.date.getTime() - minTime) / timeRange) * 100
 
         const y = combineValues(group.values, aggregationMethod)
+        const count = group.filePaths.length
         // Radius proportional to count, min 5, max 30
-        const r = 5 + (group.filePaths.length / maxCount) * 25
+        const r = 5 + (count / maxCount) * 25
 
-        points.push({ x, y, r })
+        // Keep the exact count on the point so the tooltip is precise instead of
+        // reverse-engineering it from the (lossy) radius (issue #103)
+        points.push({ x, y, r, count })
         filePaths.push(group.filePaths)
     }
 

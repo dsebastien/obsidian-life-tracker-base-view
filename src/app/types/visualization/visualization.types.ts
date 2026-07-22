@@ -137,6 +137,8 @@ export interface BubblePoint {
     x: number
     y: number
     r: number
+    /** Exact number of entries in this bubble's period (radius is lossy) */
+    count: number
 }
 
 /**
@@ -273,7 +275,22 @@ export interface ChartConfig extends VisualizationConfig {
     movingAveragePeriod?: number
     /** Show the trend arrow and trend row (default true) */
     showTrendInfo?: boolean
+    /** Legend placement for pie/doughnut/polar charts (default 'right') */
+    legendPosition?: ChartLegendPosition
 }
+
+/**
+ * Legend placement options for charts.
+ */
+export type ChartLegendPosition = 'top' | 'right' | 'bottom' | 'left'
+
+/** All legend placement values, for runtime validation of stored config. */
+export const CHART_LEGEND_POSITIONS: readonly ChartLegendPosition[] = [
+    'top',
+    'right',
+    'bottom',
+    'left'
+]
 
 /**
  * Tag cloud-specific configuration
