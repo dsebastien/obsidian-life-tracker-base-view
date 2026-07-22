@@ -1,6 +1,7 @@
 import type { ValidationResult, PropertyEditorConfig } from '../../types'
 import { validateNumber, isEmpty, setupNumberInputBlocking, clampToRange } from '../../../utils'
 import { BasePropertyEditor } from './base-editor'
+import { NUMBER_INPUT_ATTRS, NUMBER_SLIDER_STEP } from './editing.constants'
 
 /**
  * Number editor - renders as slider + input if range is defined,
@@ -42,17 +43,14 @@ export class NumberEditor extends BasePropertyEditor {
         })
         this.sliderEl.min = String(numberRange.min)
         this.sliderEl.max = String(numberRange.max)
-        this.sliderEl.step = '1'
+        this.sliderEl.step = NUMBER_SLIDER_STEP
         this.sliderEl.value = currentValue !== null ? String(currentValue) : String(numberRange.min)
 
         // Number input (use text type for better control over input blocking)
         this.inputEl = wrapper.createEl('input', {
             cls: 'lt-editor-input lt-editor-input--number',
             type: 'text',
-            attr: {
-                inputmode: 'numeric',
-                pattern: '[0-9]*'
-            }
+            attr: { ...NUMBER_INPUT_ATTRS }
         })
         this.inputEl.value = currentValue !== null ? String(currentValue) : ''
 
@@ -107,10 +105,7 @@ export class NumberEditor extends BasePropertyEditor {
                 : 'lt-editor-input lt-editor-input--number',
             type: 'text',
             placeholder: this.config.definition.description ?? this.getDisplayLabel(),
-            attr: {
-                inputmode: 'numeric',
-                pattern: '[0-9]*'
-            }
+            attr: { ...NUMBER_INPUT_ATTRS }
         })
 
         const numberRange = this.config.definition.numberRange
