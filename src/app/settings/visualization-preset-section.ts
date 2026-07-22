@@ -1,6 +1,9 @@
 import { Setting } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
-import { COLOR_SCHEME_OPTIONS as COLOR_SCHEME_OPTIONS_LIST, type ChartColorScheme } from '../../utils'
+import {
+    COLOR_SCHEME_OPTIONS as COLOR_SCHEME_OPTIONS_LIST,
+    type ChartColorScheme
+} from '../../utils'
 import {
     VisualizationType,
     SETTINGS_TAB_VISUALIZATION_OPTIONS,

@@ -1,7 +1,6 @@
 # Life Tracker Plugin - Improvement Brainstorm
 
 **Status**: Reference document / Future backlog
-**Created**: 2025-12-17
 **Purpose**: Ideas for future development, organized by effort and impact
 
 ### UX/UI Enhancements
