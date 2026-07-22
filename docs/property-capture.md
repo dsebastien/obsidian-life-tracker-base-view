@@ -74,6 +74,8 @@ When invoked from a Life Tracker or Grid view:
 - **Property pills**: Click to jump to a specific property
 - **Note selector**: (Batch mode) Switch between notes
 
+The modal opens on the first property that still needs a value (required properties first), so you land straight on something to fill in rather than on fields you have already completed.
+
 ### Editors
 
 Each property type has a specialized editor:
@@ -83,10 +85,14 @@ Each property type has a specialized editor:
 | text     | Text input field                       |
 | number   | Numeric input with increment/decrement |
 | checkbox | Toggle switch                          |
-| date     | Date picker                            |
-| datetime | Date and time picker                   |
+| date     | Date picker with a **Today** shortcut  |
+| datetime | Date and time picker with **Today**    |
 | list     | Multi-value input with add/remove      |
 | tags     | Tag input with autocomplete            |
+
+The **date** and **datetime** editors include a **Today** button that fills in the current date (and time) in one click — handy since native date fields never pre-fill.
+
+For **list** and **tags** properties that restrict input to a set of allowed values, typing a value outside that set is rejected with a brief shake and an inline message, so you can correct it instead of the entry silently disappearing.
 
 ### Auto-Save
 

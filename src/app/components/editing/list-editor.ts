@@ -19,6 +19,7 @@ export class ListEditor extends BasePropertyEditor {
     private suggestionsEl: HTMLElement | null = null
     private currentValues: string[] = []
     private activeSuggestionIndex = -1
+    private rejectedTimer: number | null = null
 
     constructor(config: PropertyEditorConfig) {
         super(config)
@@ -267,11 +268,8 @@ export class ListEditor extends BasePropertyEditor {
                     : isInAllowedValues(normalizedValue, allowedValues)
 
             if (!isAllowed) {
-                // Clear input and don't add
-                if (this.inputEl) {
-                    this.inputEl.value = ''
-                }
-                this.hideSuggestions()
+                // Give visual feedback instead of silently discarding the input
+                this.flashRejected(`"${value}" is not an allowed value`)
                 return
             }
         }
@@ -291,6 +289,37 @@ export class ListEditor extends BasePropertyEditor {
             this.inputEl.value = ''
         }
         this.hideSuggestions()
+    }
+
+    /**
+     * Signal that the typed value was rejected (not in the allowed set): shake the
+     * input, keep + select the text so it can be corrected, and show a brief inline
+     * message. Auto-clears after a short delay.
+     */
+    private flashRejected(message: string): void {
+        if (!this.inputEl) return
+
+        this.inputEl.addClass('lt-editor-list-input--rejected')
+        this.inputEl.select()
+        this.hideSuggestions()
+
+        let errorEl = this.wrapperEl?.querySelector<HTMLElement>('.lt-editor-list-error') ?? null
+        if (!errorEl && this.wrapperEl) {
+            errorEl = this.wrapperEl.createDiv({
+                cls: 'lt-editor-list-error',
+                attr: { role: 'alert' }
+            })
+        }
+        errorEl?.setText(message)
+
+        if (this.rejectedTimer !== null) {
+            window.clearTimeout(this.rejectedTimer)
+        }
+        this.rejectedTimer = window.setTimeout(() => {
+            this.inputEl?.removeClass('lt-editor-list-input--rejected')
+            errorEl?.remove()
+            this.rejectedTimer = null
+        }, 1600)
     }
 
     private removeValue(value: string): void {
@@ -347,6 +376,10 @@ export class ListEditor extends BasePropertyEditor {
     }
 
     override destroy(): void {
+        if (this.rejectedTimer !== null) {
+            window.clearTimeout(this.rejectedTimer)
+            this.rejectedTimer = null
+        }
         this.wrapperEl = null
         this.inputEl = null
         this.pillsEl = null

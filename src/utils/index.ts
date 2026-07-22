@@ -41,6 +41,7 @@ export {
     startOfYear,
     getWeeksBetween,
     formatDateForInput,
+    formatNowForInput,
     formatDateISO,
     formatDateByGranularity,
     getMonthName,

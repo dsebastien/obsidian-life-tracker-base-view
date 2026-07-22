@@ -11,7 +11,7 @@ import {
 } from '../../types'
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
-import { isNoteComplete } from '../../services/note-completion.utils'
+import { isNoteComplete, findFirstUnfilledIndex } from '../../services/note-completion.utils'
 import { createPropertyEditor } from '../editing/property-editor'
 import { AUTO_SAVE_DEBOUNCE_MS } from '../editing/editing.constants'
 import { formatFileTitleWithWeekday, log, prefersReducedMotion } from '../../../utils'
@@ -128,10 +128,14 @@ export class PropertyCaptureModal extends Modal {
             }
         }
 
-        // Start at first property
-        this.currentPropertyIndex = 0
-        const firstDef = this.sortedDefinitions[0]
-        this.currentValue = firstDef ? this.savedValues[firstDef.name] : undefined
+        // Start at the first unfilled property (preferring required ones) so the
+        // user lands on something actionable instead of re-confirming already-filled
+        // fields. Falls back to the first property when everything is filled.
+        this.currentPropertyIndex = findFirstUnfilledIndex(this.sortedDefinitions, (name) =>
+            this.filledProperties.has(name)
+        )
+        const startDef = this.sortedDefinitions[this.currentPropertyIndex]
+        this.currentValue = startDef ? this.savedValues[startDef.name] : undefined
     }
 
     private getCurrentFile(): TFile | undefined {

@@ -20,6 +20,7 @@ import {
     startOfYear,
     getWeeksBetween,
     formatDateForInput,
+    formatNowForInput,
     formatDateISO,
     formatDateByGranularity,
     getMonthName
@@ -431,5 +432,20 @@ describe('formatDateForInput (issue #94)', () => {
 
     test('unparseable strings are returned unchanged', () => {
         expect(formatDateForInput('not-a-date', false)).toBe('not-a-date')
+    })
+})
+
+describe('formatNowForInput (issue #106)', () => {
+    test('date form matches the native date input pattern', () => {
+        expect(formatNowForInput(false)).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    })
+
+    test('datetime form matches the native datetime-local pattern', () => {
+        expect(formatNowForInput(true)).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)
+    })
+
+    test('the date part of the datetime form equals the date-only form', () => {
+        // Same call site instant; the datetime string starts with the date string.
+        expect(formatNowForInput(true).startsWith(formatNowForInput(false))).toBe(true)
     })
 })

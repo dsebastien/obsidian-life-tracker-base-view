@@ -1597,6 +1597,22 @@
         @apply w-40;
     }
 
+    /* Date input + "Today" shortcut on one row */
+    .lt-date-editor-row {
+        @apply flex items-center gap-2;
+    }
+
+    .lt-date-today-btn {
+        @apply px-2 py-1 rounded text-xs cursor-pointer;
+        background-color: var(--interactive-normal);
+        border: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+    }
+
+    .lt-date-today-btn:hover {
+        background-color: var(--interactive-hover);
+    }
+
     .lt-editor-input--invalid {
         border-color: var(--text-error);
     }
@@ -1728,6 +1744,32 @@
 
     .lt-editor-list-input:focus {
         @apply outline-none;
+    }
+
+    /* Rejected value feedback: shake + error tint */
+    .lt-editor-list-input--rejected {
+        color: var(--text-error);
+        animation: lt-shake 0.35s ease-in-out;
+    }
+
+    .lt-editor-list-error {
+        @apply w-full mt-1 text-xs;
+        color: var(--text-error);
+    }
+
+    @keyframes lt-shake {
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+        20%,
+        60% {
+            transform: translateX(-4px);
+        }
+        40%,
+        80% {
+            transform: translateX(4px);
+        }
     }
 
     .lt-editor-list-suggestions {

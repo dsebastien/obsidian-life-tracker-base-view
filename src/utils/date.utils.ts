@@ -305,6 +305,16 @@ export function formatDateForInput(value: string, includeTime: boolean): string 
 }
 
 /**
+ * Current local date/time formatted for a native date / datetime-local input
+ * (`yyyy-MM-dd` or `yyyy-MM-dd'T'HH:mm`). Local components are used so the value
+ * matches what the user sees in their timezone (see `formatDateForInput`).
+ */
+export function formatNowForInput(includeTime: boolean): string {
+    const now = new Date()
+    return includeTime ? format(now, "yyyy-MM-dd'T'HH:mm") : format(now, 'yyyy-MM-dd')
+}
+
+/**
  * Format date based on time granularity
  * - Daily: YYYY-MM-DD
  * - Weekly: YYYY-Www (ISO week)

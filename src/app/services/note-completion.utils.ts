@@ -32,3 +32,21 @@ export function isNoteComplete(
 
     return relevant.every((def) => isFilled(getValue(def.name)))
 }
+
+/**
+ * Index of the first property worth landing on in the capture carousel: the first
+ * unfilled *required* property, else the first unfilled property of any kind, else
+ * `0` when everything is already filled (so the carousel still opens at the start).
+ */
+export function findFirstUnfilledIndex(
+    definitions: readonly PropertyDefinition[],
+    isNameFilled: (name: string) => boolean
+): number {
+    const firstUnfilledRequired = definitions.findIndex(
+        (def) => def.required && !isNameFilled(def.name)
+    )
+    if (firstUnfilledRequired !== -1) return firstUnfilledRequired
+
+    const firstUnfilled = definitions.findIndex((def) => !isNameFilled(def.name))
+    return firstUnfilled === -1 ? 0 : firstUnfilled
+}
