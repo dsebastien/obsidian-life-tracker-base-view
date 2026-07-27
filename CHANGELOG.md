@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.15.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.14.2...2.15.0) (2026-07-27)
+
+### Features
+
+* **plugin:** capture modal quick wins ([#106](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/106)) ([4e01942](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4e01942db5cac34c1960a4a2bafd847094196c9f))
+* **plugin:** chart tooltip polish ([#103](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/103)) ([000d242](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/000d24288c85758800966ce368cd52ddbba81e35))
+* **plugin:** configurable number slider step + min/max feedback ([#107](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/107)) ([34bd301](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/34bd3015a9845ba8c2bb941e767ca652b60832de))
+* **plugin:** scatter chart real time axis + stack-safe min/max ([#97](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/97)) ([65be924](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/65be924bbe7092bebea8d5d4eed056d2c3d12e10))
+* **plugin:** show a what's new dialog once after plugin updates ([8c49850](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/8c498504ebeb65e0d4dd0659c197b741f8b7c08b))
+
+### Bug Fixes
+
+* **plugin:** allow decimal values in number property inputs ([f9e1c62](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/f9e1c6294e9320cc7cf51a1f26b5af72c87d8f8a)), closes [#120](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/120)
+
 ## [2.14.2](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.14.1...2.14.2) (2026-07-17)
 
 ## [2.14.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.14.0...2.14.1) (2026-06-17)
@@ -314,6 +328,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

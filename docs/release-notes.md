@@ -1,5 +1,19 @@
 # Release Notes
 
+## 2.15.0 (2026-07-27)
+
+### Features
+
+- **plugin:** capture modal quick wins ([#106](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/106))
+- **plugin:** chart tooltip polish ([#103](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/103))
+- **plugin:** configurable number slider step + min/max feedback ([#107](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/107))
+- **plugin:** scatter chart real time axis + stack-safe min/max ([#97](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/97))
+- **plugin:** show a what's new dialog once after plugin updates
+
+### Bug Fixes
+
+- **plugin:** allow decimal values in number property inputs
+
 ## 2.14.2 (2026-07-17)
 
 ## 2.14.1 (2026-06-17)
