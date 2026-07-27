@@ -1,3 +1,4 @@
+import { registerWhatsNewDialog } from './whats-new'
 import { Plugin, type TFile } from 'obsidian'
 import {
     DEFAULT_SETTINGS,
@@ -85,6 +86,8 @@ export class LifeTrackerPlugin extends Plugin {
      * Executed as soon as the plugin loads
      */
     override async onload() {
+        // Must run before anything can call saveData (fresh-install detection)
+        registerWhatsNewDialog(this)
         log('Initializing', 'debug')
         await this.loadSettings()
 

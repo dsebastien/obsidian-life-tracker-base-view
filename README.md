@@ -186,6 +186,7 @@ Configure presets in **Settings → Life Tracker → Visualization presets** by 
 - **Visualization type**: Which visualization to use (heatmap, line chart, etc.)
 - **Scale**: Optional min/max range for numeric visualizations
 - **Color scheme**: Optional color palette for chart types (green, blue, purple, orange, red)
+- **What's new after updates.** After a plugin update, a one-time dialog shows the release notes you just received (including skipped versions) with ways to support development. Never shown on fresh installs or regular restarts.
 
 **How presets work with overrides**: When you add a property column to a Life Tracker Base View, the plugin checks for matching presets and applies them automatically. However, you can always override the preset configuration for that specific property in that specific view using the right-click context menu. Your per-view overrides take precedence over presets, giving you global defaults with local flexibility.
 
