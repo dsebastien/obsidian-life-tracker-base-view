@@ -74,7 +74,7 @@
         "eslint-config-prettier": "^10.1.5",
         "eslint-plugin-obsidianmd": "0.1.9",
         "globals": "16.5.0",
-        "obsidian": "latest",
+        "obsidian": "1.12.0",
         "prettier": "^3.6.2",
         "tailwindcss": "4.1.17",
         "typescript": "^5.9.3",
