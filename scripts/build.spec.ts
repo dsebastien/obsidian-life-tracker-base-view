@@ -31,9 +31,9 @@ describe('build constants', () => {
         expect(STYLES_OUT).toBe('dist/styles.css')
     })
 
-    test('PLUGIN_ID matches package.json name', async () => {
-        const packageJson = (await Bun.file('package.json').json()) as { name: string }
-        expect(PLUGIN_ID).toBe(packageJson.name)
+    test('PLUGIN_ID matches the manifest id', async () => {
+        const manifestJson = (await Bun.file('manifest.json').json()) as { id: string }
+        expect(PLUGIN_ID).toBe(manifestJson.id)
     })
 
     test('BANNER contains expected text', () => {
