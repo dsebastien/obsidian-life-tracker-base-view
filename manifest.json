@@ -7,5 +7,9 @@
     "isDesktopOnly": false,
     "author": "Sébastien Dubois",
     "authorUrl": "https://dsebastien.net",
-    "fundingUrl": "https://www.buymeacoffee.com/dsebastien"
+    "fundingUrl": {
+        "Join Knowii": "https://www.store.dsebastien.net/product/knowii-community/",
+        "GitHub Sponsors": "https://github.com/sponsors/dsebastien",
+        "Buy Me a Coffee": "https://www.buymeacoffee.com/dsebastien"
+    }
 }

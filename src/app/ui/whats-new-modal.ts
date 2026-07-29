@@ -1,9 +1,11 @@
 import { App, Component, MarkdownRenderer, Modal, Setting } from 'obsidian'
 
-const KNOWII_COMMUNITY_URL = 'https://www.store.dsebastien.net/product/knowii-community/'
-const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/dsebastien'
-const BUY_ME_A_COFFEE_URL = 'https://www.buymeacoffee.com/dsebastien'
-const YOUTUBE_CHANNEL_URL = 'https://youtube.com/@dsebastien'
+import {
+    BUY_ME_A_COFFEE_URL,
+    GITHUB_SPONSORS_URL,
+    KNOWII_COMMUNITY_URL,
+    YOUTUBE_CHANNEL_URL
+} from './support-links'
 
 /**
  * Marker class shared by every plugin shipping this dialog (useful for
