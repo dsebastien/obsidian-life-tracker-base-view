@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.17.0 (2026-07-29)
+
+### Features
+
+- **plugin:** aggregate what's new dialogs across simultaneously updated plugins
+
 ## 2.16.0 (2026-07-29)
 
 ### Features
