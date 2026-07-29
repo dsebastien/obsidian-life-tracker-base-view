@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.16.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.15.0...2.16.0) (2026-07-29)
+
+### Features
+
+* **plugin:** add Knowii community to the what's new dialog and harden it ([217e179](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/217e179f20cf3bc2be0e86ddd6833d4864696818))
+
 ## [2.15.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.14.2...2.15.0) (2026-07-27)
 
 ### Features
@@ -328,6 +334,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 
