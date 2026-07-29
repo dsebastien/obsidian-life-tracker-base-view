@@ -3717,6 +3717,25 @@
     border-top: 1px solid var(--background-modifier-border);
 }
 
+/* One section per updated plugin (aggregated bulk updates) */
+.life-tracker-whats-new-section + .life-tracker-whats-new-section {
+    margin-top: 1.25em;
+    padding-top: 1.25em;
+    border-top: 2px solid var(--background-modifier-border);
+}
+
+.life-tracker-whats-new-section-title {
+    font-weight: var(--font-semibold, 600);
+    font-size: var(--h4-size, 1.15em);
+    color: var(--text-normal);
+    margin-bottom: 0.5em;
+}
+
+/* A single update names the plugin in the modal title already */
+.life-tracker-whats-new-section:only-child > .life-tracker-whats-new-section-title {
+    display: none;
+}
+
 /* Community + support rows: tighter than default settings rows. Specificity
    matches Obsidian's `.modal:not(.mod-settings) .setting-item:not(...)`
    (0,4,0) so these rules actually win via source order. */
