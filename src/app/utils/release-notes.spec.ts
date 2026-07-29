@@ -47,6 +47,28 @@ describe('parseChangelogSections', () => {
     })
 })
 
+describe('parseChangelogSections — major releases', () => {
+    test('parses h1 version headings (conventional-changelog major releases)', () => {
+        const changelog = `# Changelog
+
+# [2.0.0](https://github.com/x/y/compare/1.8.0...2.0.0) (2026-08-01)
+
+### Features
+
+- breaking overhaul
+
+## [1.8.0](https://github.com/x/y/compare/1.7.2...1.8.0) (2026-07-18)
+
+### Features
+
+- shiny new board
+`
+        const sections = parseChangelogSections(changelog)
+        expect(sections.map((s) => s.version)).toEqual(['2.0.0', '1.8.0'])
+        expect(extractReleaseNotes(changelog, '2.0.0')).toContain('breaking overhaul')
+    })
+})
+
 describe('extractReleaseNotes', () => {
     test('returns only the current version section without a sinceVersion', () => {
         const notes = extractReleaseNotes(CHANGELOG, '1.8.0')
@@ -69,6 +91,22 @@ describe('extractReleaseNotes', () => {
 
     test('returns an empty string when the version is not in the changelog', () => {
         expect(extractReleaseNotes(CHANGELOG, '9.9.9')).toBe('')
+    })
+
+    test('drops heading-only sections so the dialog fallback can kick in', () => {
+        const changelog = `# Changelog
+
+### [1.7.1](https://github.com/x/y/compare/1.7.0...1.7.1) (2026-07-17)
+
+## [1.7.0](https://github.com/x/y/compare/1.6.0...1.7.0) (2026-07-17)
+
+### Features
+
+- calendar mode
+`
+        expect(extractReleaseNotes(changelog, '1.7.1')).toBe('')
+        expect(extractReleaseNotes(changelog, '1.7.1', '1.6.0')).toContain('calendar mode')
+        expect(extractReleaseNotes(changelog, '1.7.1', '1.6.0')).not.toContain('1.7.1')
     })
 
     test('caps the number of sections', () => {

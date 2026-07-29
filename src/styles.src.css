@@ -3667,3 +3667,64 @@
         transition-duration: 0.01ms;
     }
 }
+
+/* ========================================
+   "WHAT'S NEW" DIALOG
+   Shown once after a plugin update (see
+   src/app/ui/whats-new-modal.ts). The modal
+   renders in Obsidian's modal layer, outside
+   any plugin root element, so these rules use
+   plugin-id-prefixed classes (no conflicts
+   when sibling plugins ship this feature) and
+   Obsidian theme variables throughout.
+   ======================================== */
+
+.modal.life-tracker-whats-new-dialog {
+    width: min(640px, 92vw);
+}
+
+/* Scrollable release notes area, with breathing room after the changelog */
+.life-tracker-whats-new-notes {
+    max-height: 55vh;
+    overflow-y: auto;
+    margin: 0.25rem 0 1.25rem;
+    padding: 1rem 1.25rem 2rem;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m, 8px);
+    background-color: var(--background-secondary);
+}
+
+.life-tracker-whats-new-notes > :first-child {
+    margin-top: 0;
+}
+
+/* Version headings stay compact inside the dialog */
+.life-tracker-whats-new-notes h1,
+.life-tracker-whats-new-notes h2 {
+    font-size: var(--h4-size, 1.15em);
+    margin: 0.75em 0 0.5em;
+}
+
+.life-tracker-whats-new-notes h3 {
+    font-size: var(--h5-size, 1em);
+    margin: 1em 0 0.35em;
+}
+
+/* Separator between versions (emitted between changelog sections) */
+.life-tracker-whats-new-notes hr {
+    margin: 1.5em 0;
+    border: none;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+/* Community + support rows: tighter than default settings rows. Specificity
+   matches Obsidian's `.modal:not(.mod-settings) .setting-item:not(...)`
+   (0,4,0) so these rules actually win via source order. */
+.modal.life-tracker-whats-new-dialog .life-tracker-whats-new-links .setting-item {
+    border-top: none;
+    padding: 0.45rem 0;
+}
+
+.modal.life-tracker-whats-new-dialog .life-tracker-whats-new-links .setting-item-description {
+    padding-right: 0.75rem;
+}

@@ -11,8 +11,11 @@ export interface ChangelogSection {
     markdown: string
 }
 
-/** Matches a conventional-changelog version heading line. */
-const VERSION_HEADING_REGEX = /^#{2,3} \[?(\d+\.\d+\.\d+)\]?/
+/**
+ * Matches a conventional-changelog version heading line (h1 for major
+ * releases, h2 for minor, h3 for patch).
+ */
+const VERSION_HEADING_REGEX = /^#{1,3} \[?(\d+\.\d+\.\d+)\]?/
 
 /**
  * Compare two SemVer versions (numeric core only, which is all Obsidian
@@ -77,7 +80,13 @@ export function extractReleaseNotes(
     maxSections = 10
 ): string {
     const sections = parseChangelogSections(changelog)
-    const relevant = sections.filter((section) => {
+    // conventional-changelog emits heading-only sections for releases without
+    // notable commits; drop them so such updates use the dialog's fallback
+    // text instead of rendering a bare version heading.
+    const withBody = sections.filter(
+        (section) => '' !== section.markdown.split('\n').slice(1).join('').trim()
+    )
+    const relevant = withBody.filter((section) => {
         if (compareSemver(section.version, currentVersion) > 0) {
             return false
         }
@@ -86,9 +95,11 @@ export function extractReleaseNotes(
         }
         return compareSemver(section.version, sinceVersion) > 0
     })
+    // Sections are separated by a horizontal rule so the dialog can render a
+    // clear visual break between versions.
     return relevant
         .slice(0, maxSections)
         .map((section) => section.markdown)
-        .join('\n\n')
+        .join('\n\n---\n\n')
         .trim()
 }
