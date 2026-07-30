@@ -20,6 +20,8 @@ export type {
     TimelineData,
     TimelinePoint,
     HeatmapColorScheme,
+    GradientHeatmapColorScheme,
+    DiscreteHeatmapColorScheme,
     VisualizationConfig,
     HeatmapConfig,
     ChartJsType,

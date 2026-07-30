@@ -47,6 +47,7 @@ Custom filename date patterns (issue #139) let users map their own naming conven
 - Non-scale types: PieChart, DoughnutChart, PolarAreaChart, TagCloud, Timeline
 - Color scheme-supporting types: Heatmap, BarChart, LineChart, AreaChart, PieChart, DoughnutChart, RadarChart, PolarAreaChart, ScatterChart, BubbleChart, Timeline
 - Non-color scheme types: TagCloud
+- Heatmap and chart schemes are drawn from separate lists (see [Heatmap Color Schemes](#heatmap-color-schemes)); only heatmaps can carry an inline custom scheme
 
 ## Maximize State
 
@@ -149,6 +150,21 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Missing (null) values are skipped during aggregation, never coerced to 0 — a 0 would skew averages and render fake dips (issue #92)
 - Periods that exist but contain only empty entries yield `null` data points, rendered as gaps by Chart.js
 - Scatter and bubble charts skip valueless entries entirely (no point/bubble at 0)
+
+## Heatmap Color Schemes
+
+- A heatmap color scheme is either a **gradient** (`kind: 'gradient'`, 5 intensity levels bucketed against the cell min/max — the original behavior) or **discrete** (`kind: 'discrete'`, an explicit value → color mapping) — issue #82
+- Discrete mode ignores min/max normalization entirely: a value maps to the same color whatever range surrounds it
+- A cell whose value has no mapping entry uses `fallback`, then `empty`; a null value always uses `empty`
+- Gradient cells are colored by CSS level classes driven by container CSS variables; discrete cells carry an inline `background-color`, because arbitrary mappings cannot be pre-declared as classes. Switching a card back to a gradient must clear that inline color
+- The legend follows the scheme: "Less → More" ramp for gradients, one labelled swatch per mapping entry for discrete schemes
+- A custom mapping is stored inline on the per-visualization config and wins over any preset name, per-card or view-wide. Presets (settings tab) only ever store scheme _names_
+- Charts narrow the shared `colorScheme` field with `asChartColorScheme()`: a heatmap-only name (`viridis`, `cividis`) or an inline scheme object resolves to the default chart palette rather than leaking into a `ChartConfig`
+
+## Accessibility: Color
+
+- Colorblind-friendly palettes are first-class options, not an afterthought (issue #136): charts offer a `colorblind` scheme (Okabe-Ito, 8 colors), heatmaps offer the `viridis` and `cividis` gradients
+- New custom heatmap mappings seed from a colorblind-safe blue → orange ramp, and added entries cycle the Okabe-Ito palette. Red → green is deliberately avoided as a default: it is the axis most color vision deficiencies collapse
 
 ## Heatmap Aggregation
 

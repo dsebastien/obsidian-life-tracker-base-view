@@ -130,15 +130,15 @@ Configured via the view's settings panel (gear icon).
 
 Stored per view, per visualization. Access via right-click context menu.
 
-| Setting         | Description                                                                    |
-| --------------- | ------------------------------------------------------------------------------ |
-| Type            | Visualization type                                                             |
-| Scale           | Min/max range (auto or preset)                                                 |
-| Color scheme    | Color palette (green, blue, purple, etc.)                                      |
-| Reference line  | Target line with value and label                                               |
-| Aggregation     | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps |
-| Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                |
-| Heatmap options | Cell size, day/month labels (heatmap only)                                     |
+| Setting         | Description                                                                     |
+| --------------- | ------------------------------------------------------------------------------- |
+| Type            | Visualization type                                                              |
+| Scale           | Min/max range (auto or preset)                                                  |
+| Color scheme    | Color palette; heatmaps add Viridis/Cividis and a custom value-to-color mapping |
+| Reference line  | Target line with value and label                                                |
+| Aggregation     | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps  |
+| Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                 |
+| Heatmap options | Cell size, day/month labels (heatmap only)                                      |
 
 Aggregation also applies to overlay charts (set in the overlay's own config,
 where it is shared across all of the overlay's properties — see [Overlay Config](#overlay-config)).
@@ -181,6 +181,13 @@ Available for all chart types except Tag Cloud:
 - `purple`
 - `orange`
 - `red`
+- `colorblind` — eight colors that stay distinguishable with any common form of
+  color vision deficiency
+
+Heatmaps use their own list: the five schemes above, plus `viridis` and `cividis`
+(colorblind-friendly gradients), plus a **custom mapping** that assigns a color to
+each specific value. A custom mapping is stored inline on the card rather than as
+a name, and takes precedence over the view-wide **Color scheme** setting.
 
 ## Date Anchor Resolution
 

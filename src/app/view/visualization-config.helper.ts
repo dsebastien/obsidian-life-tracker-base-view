@@ -11,7 +11,7 @@ import {
     type VisualizationConfig,
     type ConfigGetter
 } from '../types'
-import { HEATMAP_PRESETS } from '../../utils'
+import { HEATMAP_PRESETS, asChartColorScheme, normalizeHeatmapColorScheme } from '../../utils'
 import { DEFAULT_CELL_SIZE, DEFAULT_EMBEDDED_HEIGHT } from './view-options'
 import { getBoolConfig, getEnumConfig, getNumberConfig, getStringConfig } from './config-accessors'
 
@@ -36,17 +36,25 @@ export function getVisualizationConfig(
 
     // Extract scale, color scheme, reference line, and aggregation method from column config if present
     const scale = columnConfig.scale
-    const colorScheme = columnConfig.colorScheme
+    const storedColorScheme = columnConfig.colorScheme
+    // Charts only understand preset names: an inline heatmap scheme (issue #82)
+    // or a heatmap-only preset name must not leak into a ChartConfig
+    const colorScheme = asChartColorScheme(storedColorScheme)
     const referenceLine = columnConfig.referenceLine
     const aggregationMethod = columnConfig.aggregationMethod
     const movingAveragePeriod = columnConfig.movingAveragePeriod
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
-            // Use per-visualization settings if set, otherwise fall back to global settings
+            // A per-viz custom mapping wins outright; otherwise resolve a preset
+            // name, per-viz first and the view-wide setting as fallback (#82)
+            const customScheme = normalizeHeatmapColorScheme(storedColorScheme)
             const colorSchemeName =
-                colorScheme ?? getStringConfig(getConfig, 'heatmapColorScheme') ?? 'green'
-            const heatmapColorScheme = HEATMAP_PRESETS[colorSchemeName] ?? HEATMAP_PRESETS['green']!
+                (typeof storedColorScheme === 'string' ? storedColorScheme : undefined) ??
+                getStringConfig(getConfig, 'heatmapColorScheme') ??
+                'green'
+            const heatmapColorScheme =
+                customScheme ?? HEATMAP_PRESETS[colorSchemeName] ?? HEATMAP_PRESETS['green']!
 
             // Per-viz overrides for heatmap settings
             const cellSize =

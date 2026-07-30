@@ -1,5 +1,6 @@
 import {
     TimeGranularity,
+    type HeatmapColorScheme,
     type HeatmapConfig,
     type HeatmapData,
     type HeatmapCell
@@ -12,6 +13,8 @@ import {
     getWeeksBetween,
     getWeekStartDay,
     getColorLevelForValue,
+    isDiscreteHeatmapScheme,
+    resolveHeatmapCellColor,
     setCssProps
 } from '../../../../utils'
 
@@ -80,6 +83,33 @@ function cellHasData(cell: HeatmapCell | undefined): boolean {
 }
 
 /**
+ * Color a single heatmap cell according to the configured scheme (issue #82).
+ *
+ * Gradient schemes bucket the value into a level class styled from the CSS
+ * variables set on the container. Discrete schemes map the value directly to a
+ * color, which cannot be pre-declared as a class, so the cell carries an inline
+ * background instead. Shared by every granularity and by the in-place update
+ * path so the two never drift apart.
+ */
+export function applyCellColor(
+    cellEl: HTMLElement,
+    value: number | null,
+    scheme: HeatmapColorScheme,
+    minValue: number,
+    maxValue: number
+): void {
+    if (isDiscreteHeatmapScheme(scheme)) {
+        setCssProps(cellEl, {
+            backgroundColor: resolveHeatmapCellColor(value, scheme, minValue, maxValue)
+        })
+        return
+    }
+
+    const level = getColorLevelForValue(value, minValue, maxValue)
+    cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
+}
+
+/**
  * Render daily heatmap (GitHub-style: 7 rows × N weeks)
  */
 function renderDailyHeatmap(
@@ -134,9 +164,13 @@ function renderDailyHeatmap(
             const cellEl = weekCol.createDiv({ cls: 'lt-heatmap-cell' })
             setCssProps(cellEl, { width: config.cellSize, height: config.cellSize })
 
-            // Set color level
-            const level = getColorLevelForValue(cell?.value ?? null, data.minValue, data.maxValue)
-            cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
+            applyCellColor(
+                cellEl,
+                cell?.value ?? null,
+                config.colorScheme,
+                data.minValue,
+                data.maxValue
+            )
 
             // Store data attributes
             cellEl.dataset['date'] = dateKey
@@ -214,8 +248,7 @@ function renderWeeklyHeatmap(
         const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
         setCssProps(cellEl, { width: config.cellSize * 2, height: config.cellSize })
 
-        const level = getColorLevelForValue(cell.value, data.minValue, data.maxValue)
-        cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
+        applyCellColor(cellEl, cell.value, config.colorScheme, data.minValue, data.maxValue)
 
         cellEl.dataset['date'] = formatDateISO(cell.date)
         if (cell.value !== null) {
@@ -284,8 +317,13 @@ function renderMonthlyHeatmap(
             const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
             setCssProps(cellEl, { width: config.cellSize * 1.5, height: config.cellSize })
 
-            const level = getColorLevelForValue(cell?.value ?? null, data.minValue, data.maxValue)
-            cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
+            applyCellColor(
+                cellEl,
+                cell?.value ?? null,
+                config.colorScheme,
+                data.minValue,
+                data.maxValue
+            )
 
             const date = new Date(year, month, 1)
             cellEl.dataset['date'] = formatDateISO(date)
@@ -333,8 +371,7 @@ function renderQuarterlyHeatmap(
         const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
         setCssProps(cellEl, { width: config.cellSize * 2, height: config.cellSize })
 
-        const level = getColorLevelForValue(cell.value, data.minValue, data.maxValue)
-        cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
+        applyCellColor(cellEl, cell.value, config.colorScheme, data.minValue, data.maxValue)
 
         cellEl.dataset['date'] = formatDateISO(cell.date)
         if (cell.value !== null) {
@@ -369,8 +406,7 @@ function renderYearlyHeatmap(
         const cellEl = gridEl.createDiv({ cls: 'lt-heatmap-cell' })
         setCssProps(cellEl, { width: config.cellSize * 3, height: config.cellSize })
 
-        const level = getColorLevelForValue(cell.value, data.minValue, data.maxValue)
-        cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
+        applyCellColor(cellEl, cell.value, config.colorScheme, data.minValue, data.maxValue)
 
         cellEl.dataset['date'] = formatDateISO(cell.date)
         if (cell.value !== null) {

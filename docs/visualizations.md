@@ -110,7 +110,9 @@ Best for: Daily patterns over time
 - Shows gaps and streaks clearly
 - Good for: habit tracking, daily ratings, streaks
 
-**Color schemes**: Green, Blue, Purple, Orange, Red
+**Color schemes**: Green, Blue, Purple, Orange, Red, plus **Viridis** and **Cividis** — two colorblind-friendly gradients that also stay readable in grayscale.
+
+**Custom color mapping**: for scales where each value means something specific (mood 1-5, energy levels, a rating), a single-hue gradient makes 2 and 3 nearly indistinguishable. Right-click the card, set **Colors** to **Custom mapping…**, and give each value its own color. A new mapping starts with values 1-5 on a colorblind-friendly ramp, so it is usable straight away. Values you have not mapped use the **fallback color**, and the legend lists one labelled swatch per entry instead of the "Less → More" ramp. The mapping belongs to that card, so two heatmaps of the same property can be colored differently.
 
 **Aggregation**: when several notes fall in the same cell period, their values are combined by **Average** (default) or **Sum**. Use Sum for counter-style tracking like calories or sessions per day. Set it from the card's right-click menu.
 
@@ -172,6 +174,13 @@ Available for all chart types (except Tag Cloud):
 - **Purple**: Creative, premium
 - **Orange**: Warm, energetic
 - **Red**: Bold, attention-grabbing
+- **Colorblind-friendly**: eight colors chosen to stay distinguishable with any
+  common form of color vision deficiency — use it whenever a chart shows several
+  series at once, since the other schemes vary only in lightness
+
+Heatmaps have their own list instead: the five schemes above plus **Viridis** and
+**Cividis** (both colorblind-friendly), and **Custom mapping…** for exact
+value-to-color control. See [Heatmap](#heatmap).
 
 ## Reference Lines
 

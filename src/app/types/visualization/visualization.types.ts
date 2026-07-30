@@ -204,12 +204,34 @@ export interface TimelinePoint {
 }
 
 /**
- * Heatmap color scheme configuration
+ * Heatmap color scheme that shades a single hue by intensity: values are
+ * bucketed into 5 levels against the cell min/max and looked up in `levels`.
  */
-export interface HeatmapColorScheme {
+export interface GradientHeatmapColorScheme {
+    kind: 'gradient'
     empty: string
     levels: [string, string, string, string, string]
 }
+
+/**
+ * Heatmap color scheme that maps specific values to specific colors (issue #82).
+ * Fits categorical-feeling numeric data such as mood scores, where each value
+ * deserves its own hue rather than a shade of the same one.
+ */
+export interface DiscreteHeatmapColorScheme {
+    kind: 'discrete'
+    empty: string
+    /** Map of stringified value → color. Numeric values become "1", "2", ... */
+    mapping: Record<string, string>
+    /** Color for values with no entry in `mapping`. Defaults to `empty`. */
+    fallback?: string
+}
+
+/**
+ * Heatmap color scheme configuration: either an intensity gradient or an
+ * explicit value → color mapping.
+ */
+export type HeatmapColorScheme = GradientHeatmapColorScheme | DiscreteHeatmapColorScheme
 
 /**
  * Configuration for visualization rendering

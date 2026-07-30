@@ -1,50 +1,250 @@
-import type { HeatmapColorScheme } from '../app/types'
+import type {
+    DiscreteHeatmapColorScheme,
+    GradientHeatmapColorScheme,
+    HeatmapColorScheme
+} from '../app/types'
+
+/** Shared "no data" color for every built-in heatmap preset */
+const HEATMAP_EMPTY_COLOR = 'var(--background-modifier-border)'
 
 /**
  * Default GitHub-style heatmap color scheme (green)
  */
-const DEFAULT_HEATMAP_COLORS: HeatmapColorScheme = {
-    empty: 'var(--background-modifier-border)',
+const DEFAULT_HEATMAP_COLORS: GradientHeatmapColorScheme = {
+    kind: 'gradient',
+    empty: HEATMAP_EMPTY_COLOR,
     levels: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39']
 }
 
 /**
  * Dark mode heatmap colors (inverted intensity)
  */
-const DARK_HEATMAP_COLORS: HeatmapColorScheme = {
-    empty: 'var(--background-modifier-border)',
+const DARK_HEATMAP_COLORS: GradientHeatmapColorScheme = {
+    kind: 'gradient',
+    empty: HEATMAP_EMPTY_COLOR,
     levels: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353']
 }
 
 /**
- * Alternative color schemes
+ * Named heatmap gradient presets.
+ *
+ * `viridis` and `cividis` are perceptually uniform and safe for color vision
+ * deficiency (issue #136); cividis is specifically optimized for deuteranopia.
+ * Both stay legible in grayscale, unlike the single-hue presets.
  */
-export const HEATMAP_PRESETS: Record<string, HeatmapColorScheme> = {
+export const HEATMAP_PRESETS: Record<string, GradientHeatmapColorScheme> = {
     green: DEFAULT_HEATMAP_COLORS,
     blue: {
-        empty: 'var(--background-modifier-border)',
+        kind: 'gradient',
+        empty: HEATMAP_EMPTY_COLOR,
         levels: ['#ebedf0', '#c6e6ff', '#79c0ff', '#388bfd', '#1f6feb']
     },
     purple: {
-        empty: 'var(--background-modifier-border)',
+        kind: 'gradient',
+        empty: HEATMAP_EMPTY_COLOR,
         levels: ['#ebedf0', '#d8b9ff', '#b87fff', '#8957e5', '#6e40c9']
     },
     orange: {
-        empty: 'var(--background-modifier-border)',
+        kind: 'gradient',
+        empty: HEATMAP_EMPTY_COLOR,
         levels: ['#ebedf0', '#ffdfb6', '#ffc680', '#ffa657', '#f0883e']
     },
     red: {
-        empty: 'var(--background-modifier-border)',
+        kind: 'gradient',
+        empty: HEATMAP_EMPTY_COLOR,
         levels: ['#ebedf0', '#ffc1c1', '#ff8080', '#ff4040', '#da3633']
+    },
+    viridis: {
+        kind: 'gradient',
+        empty: HEATMAP_EMPTY_COLOR,
+        levels: ['#ebedf0', '#440154', '#31688e', '#35b779', '#fde725']
+    },
+    cividis: {
+        kind: 'gradient',
+        empty: HEATMAP_EMPTY_COLOR,
+        levels: ['#ebedf0', '#00224e', '#35618f', '#7d8e9a', '#fee838']
     }
 }
 
 /**
- * Get color for a heatmap cell based on level (0-4)
+ * Names of the built-in heatmap gradient presets.
  */
-export function getHeatmapColor(level: 0 | 1 | 2 | 3 | 4, scheme: HeatmapColorScheme): string {
+export type HeatmapPresetName =
+    | 'green'
+    | 'blue'
+    | 'purple'
+    | 'orange'
+    | 'red'
+    | 'viridis'
+    | 'cividis'
+
+/**
+ * Canonical heatmap gradient options, shared by the view options dropdown, the
+ * per-card popover and the settings preset dropdown.
+ */
+export const HEATMAP_COLOR_SCHEME_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+    { value: 'green', label: 'Green (GitHub)' },
+    { value: 'blue', label: 'Blue' },
+    { value: 'purple', label: 'Purple' },
+    { value: 'orange', label: 'Orange' },
+    { value: 'red', label: 'Red' },
+    { value: 'viridis', label: 'Viridis (colorblind-friendly)' },
+    { value: 'cividis', label: 'Cividis (colorblind-friendly)' }
+]
+
+/**
+ * Okabe-Ito qualitative palette: the standard set of eight colors chosen to stay
+ * distinguishable under deuteranopia, protanopia and tritanopia (issue #136).
+ * Used for the `colorblind` chart scheme and to seed custom heatmap mappings.
+ */
+export const COLORBLIND_SAFE_PALETTE: readonly string[] = [
+    '#0072b2', // blue
+    '#e69f00', // orange
+    '#009e73', // bluish green
+    '#cc79a7', // reddish purple
+    '#56b4e9', // sky blue
+    '#d55e00', // vermillion
+    '#f0e442', // yellow
+    '#000000' // black
+]
+
+/**
+ * Default 5-step ramp for a freshly created custom mapping (issue #82).
+ * Diverging blue → orange rather than red → green: red/green is exactly the
+ * axis most color vision deficiencies collapse (issue #136).
+ */
+const DEFAULT_DISCRETE_RAMP: readonly string[] = [
+    '#0072b2', // blue — low
+    '#56b4e9', // sky blue
+    '#f0e442', // yellow — middle
+    '#e69f00', // orange
+    '#d55e00' // vermillion — high
+]
+
+/**
+ * Build the scheme a user gets when first switching a heatmap to custom
+ * mapping: values 1..5 on a colorblind-safe ramp, which covers the mood-style
+ * 1..5 scales issue #82 was filed for.
+ */
+export function createDefaultDiscreteScheme(): DiscreteHeatmapColorScheme {
+    const mapping: Record<string, string> = {}
+    DEFAULT_DISCRETE_RAMP.forEach((color, index) => {
+        mapping[String(index + 1)] = color
+    })
+    return {
+        kind: 'discrete',
+        empty: HEATMAP_EMPTY_COLOR,
+        mapping
+    }
+}
+
+/**
+ * Color to pre-fill when the user adds a mapping entry: continue through the
+ * colorblind-safe palette so added entries stay distinguishable from existing
+ * ones without the user having to think about it.
+ */
+export function nextDiscreteEntryColor(existingCount: number): string {
+    return COLORBLIND_SAFE_PALETTE[existingCount % COLORBLIND_SAFE_PALETTE.length]!
+}
+
+/**
+ * Whether a heatmap scheme maps values directly to colors (issue #82)
+ */
+export function isDiscreteHeatmapScheme(
+    scheme: HeatmapColorScheme
+): scheme is DiscreteHeatmapColorScheme {
+    return scheme.kind === 'discrete'
+}
+
+/**
+ * Get color for a heatmap cell based on level (0-4).
+ * Gradient schemes only — discrete schemes have no levels; go through
+ * `resolveHeatmapCellColor` instead.
+ */
+export function getHeatmapColor(
+    level: 0 | 1 | 2 | 3 | 4,
+    scheme: GradientHeatmapColorScheme
+): string {
     if (level === 0) return scheme.empty
     return scheme.levels[level] ?? scheme.empty
+}
+
+/**
+ * Resolve the color of a single heatmap cell, whatever the scheme kind.
+ * The single entry point renderers should use.
+ *
+ * Discrete schemes ignore `min`/`max` entirely: the point of a mapping is that
+ * a value means the same thing regardless of the range around it.
+ */
+export function resolveHeatmapCellColor(
+    value: number | null,
+    scheme: HeatmapColorScheme,
+    min: number,
+    max: number
+): string {
+    if (value === null || value === undefined) return scheme.empty
+
+    if (isDiscreteHeatmapScheme(scheme)) {
+        return scheme.mapping[String(value)] ?? scheme.fallback ?? scheme.empty
+    }
+
+    return getHeatmapColor(getColorLevelForValue(value, min, max), scheme)
+}
+
+/**
+ * Validate a `colorScheme` value read from view config as an inline heatmap
+ * scheme, returning null when it is a preset name or unusable.
+ *
+ * View config comes from a `.base` file on disk, so it can be anything. A bare
+ * `{ empty, levels }` object (the shape presets had before issue #82) is
+ * upgraded to an explicit gradient scheme rather than rejected.
+ */
+export function normalizeHeatmapColorScheme(raw: unknown): HeatmapColorScheme | null {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null
+
+    const candidate = raw as Record<string, unknown>
+    const empty = typeof candidate['empty'] === 'string' ? candidate['empty'] : HEATMAP_EMPTY_COLOR
+
+    if (candidate['kind'] === 'discrete') {
+        const rawMapping = candidate['mapping']
+        if (typeof rawMapping !== 'object' || rawMapping === null || Array.isArray(rawMapping)) {
+            return null
+        }
+
+        const mapping: Record<string, string> = {}
+        for (const [key, value] of Object.entries(rawMapping as Record<string, unknown>)) {
+            if (typeof value === 'string' && value.length > 0) {
+                mapping[key] = value
+            }
+        }
+
+        const scheme: DiscreteHeatmapColorScheme = { kind: 'discrete', empty, mapping }
+        if (typeof candidate['fallback'] === 'string') {
+            scheme.fallback = candidate['fallback']
+        }
+        return scheme
+    }
+
+    // Gradient, either explicit or in the pre-#82 shape
+    const rawLevels: unknown = candidate['levels']
+    if (!Array.isArray(rawLevels) || rawLevels.length !== 5) return null
+
+    const [level0, level1, level2, level3, level4] = rawLevels as unknown[]
+    if (
+        typeof level0 !== 'string' ||
+        typeof level1 !== 'string' ||
+        typeof level2 !== 'string' ||
+        typeof level3 !== 'string' ||
+        typeof level4 !== 'string'
+    ) {
+        return null
+    }
+
+    return {
+        kind: 'gradient',
+        empty,
+        levels: [level0, level1, level2, level3, level4]
+    }
 }
 
 /**
@@ -105,7 +305,25 @@ export const CHART_COLORS_HEX: string[] = [
 /**
  * Chart color scheme identifiers
  */
-export type ChartColorScheme = 'default' | 'green' | 'blue' | 'purple' | 'orange' | 'red'
+export type ChartColorScheme =
+    | 'default'
+    | 'green'
+    | 'blue'
+    | 'purple'
+    | 'orange'
+    | 'red'
+    | 'colorblind'
+
+/** Every valid chart scheme name, for runtime validation of stored config. */
+export const CHART_COLOR_SCHEMES: readonly ChartColorScheme[] = [
+    'default',
+    'green',
+    'blue',
+    'purple',
+    'orange',
+    'red',
+    'colorblind'
+]
 
 /**
  * Chart color presets - 8 distinct colors per scheme
@@ -135,7 +353,11 @@ export const CHART_COLOR_PRESETS: Record<ChartColorScheme, string[]> = {
         '#fff8dc',
         '#fffbe6'
     ],
-    red: ['#da3633', '#f85149', '#ff7b72', '#ffa198', '#ffbdbb', '#ffc1c1', '#ffdcd9', '#ffebe9']
+    red: ['#da3633', '#f85149', '#ff7b72', '#ffa198', '#ffbdbb', '#ffc1c1', '#ffdcd9', '#ffebe9'],
+    // Okabe-Ito: distinguishable under the common color vision deficiencies,
+    // unlike the single-family presets above where adjacent series differ only
+    // in lightness (issue #136)
+    colorblind: [...COLORBLIND_SAFE_PALETTE]
 }
 
 /**
@@ -148,7 +370,8 @@ export const COLOR_SCHEME_OPTIONS: ReadonlyArray<{ value: ChartColorScheme; labe
     { value: 'blue', label: 'Blue' },
     { value: 'purple', label: 'Purple' },
     { value: 'orange', label: 'Orange' },
-    { value: 'red', label: 'Red' }
+    { value: 'red', label: 'Red' },
+    { value: 'colorblind', label: 'Colorblind-friendly' }
 ]
 
 /**
@@ -157,6 +380,20 @@ export const COLOR_SCHEME_OPTIONS: ReadonlyArray<{ value: ChartColorScheme; labe
 export function getChartColorScheme(scheme: ChartColorScheme | undefined): string[] {
     if (!scheme) return CHART_COLOR_PRESETS.default
     return CHART_COLOR_PRESETS[scheme] ?? CHART_COLOR_PRESETS.default
+}
+
+/**
+ * Narrow a stored `colorScheme` to a chart scheme name.
+ *
+ * The field is shared with heatmaps, which may store an inline custom scheme
+ * object or a heatmap-only preset name (issue #82) — neither means anything to
+ * a chart, so both resolve to undefined (the default palette).
+ */
+export function asChartColorScheme(raw: unknown): ChartColorScheme | undefined {
+    if (typeof raw !== 'string') return undefined
+    return CHART_COLOR_SCHEMES.includes(raw as ChartColorScheme)
+        ? (raw as ChartColorScheme)
+        : undefined
 }
 
 /**
@@ -278,6 +515,9 @@ const HEATMAP_CSS_VARS = {
  * Apply heatmap color scheme CSS variables to a container element.
  * This sets the CSS custom properties that control heatmap cell colors.
  *
+ * No-op for discrete schemes: their colors are unbounded, so cells carry an
+ * inline background instead of a level class (issue #82).
+ *
  * @param element - The container element to apply colors to
  * @param colorScheme - The color scheme to apply
  */
@@ -285,7 +525,7 @@ export function applyHeatmapColorScheme(
     element: HTMLElement,
     colorScheme: HeatmapColorScheme
 ): void {
-    if (!colorScheme) return
+    if (!colorScheme || isDiscreteHeatmapScheme(colorScheme)) return
 
     element.style.setProperty(HEATMAP_CSS_VARS.EMPTY, colorScheme.empty)
     element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_0, colorScheme.levels[0] ?? '')
@@ -298,6 +538,6 @@ export function applyHeatmapColorScheme(
 /**
  * Get appropriate heatmap scheme for current theme
  */
-export function getThemeAwareHeatmapColors(): HeatmapColorScheme {
+export function getThemeAwareHeatmapColors(): GradientHeatmapColorScheme {
     return isDarkTheme() ? DARK_HEATMAP_COLORS : DEFAULT_HEATMAP_COLORS
 }

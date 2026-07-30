@@ -8,9 +8,18 @@ import {
     getChartColor,
     getColorWithAlpha,
     generateGradient,
-    applyHeatmapColorScheme
+    applyHeatmapColorScheme,
+    resolveHeatmapCellColor,
+    isDiscreteHeatmapScheme,
+    normalizeHeatmapColorScheme,
+    createDefaultDiscreteScheme,
+    nextDiscreteEntryColor,
+    asChartColorScheme,
+    getChartColorScheme,
+    COLORBLIND_SAFE_PALETTE,
+    HEATMAP_COLOR_SCHEME_OPTIONS
 } from './color.utils'
-import type { HeatmapColorScheme } from '../app/types'
+import type { DiscreteHeatmapColorScheme, HeatmapColorScheme } from '../app/types'
 
 /**
  * Creates a mock HTMLElement with style.setProperty tracking for testing
@@ -343,6 +352,7 @@ describe('color-utils', () => {
         test('handles custom color scheme', () => {
             const mockEl = createMockElement()
             const customScheme: HeatmapColorScheme = {
+                kind: 'gradient',
                 empty: '#000000',
                 levels: ['#111111', '#222222', '#333333', '#444444', '#555555']
             }
@@ -356,5 +366,203 @@ describe('color-utils', () => {
             expect(mockEl.appliedStyles.get('--lt-heatmap-level-3')).toBe('#444444')
             expect(mockEl.appliedStyles.get('--lt-heatmap-level-4')).toBe('#555555')
         })
+    })
+})
+
+describe('resolveHeatmapCellColor (issue #82)', () => {
+    const discrete: DiscreteHeatmapColorScheme = {
+        kind: 'discrete',
+        empty: '#eeeeee',
+        mapping: { '1': '#0072b2', '3': '#f0e442', '5': '#d55e00' },
+        fallback: '#999999'
+    }
+
+    test('maps a known value to its color, ignoring min/max', () => {
+        expect(resolveHeatmapCellColor(3, discrete, 0, 100)).toBe('#f0e442')
+        // Same value, wildly different range: discrete mode does not normalize
+        expect(resolveHeatmapCellColor(3, discrete, -50, 4)).toBe('#f0e442')
+    })
+
+    test('uses the fallback for a value with no entry', () => {
+        expect(resolveHeatmapCellColor(2, discrete, 1, 5)).toBe('#999999')
+    })
+
+    test('uses the empty color when no fallback is set', () => {
+        const noFallback: DiscreteHeatmapColorScheme = {
+            kind: 'discrete',
+            empty: '#eeeeee',
+            mapping: { '1': '#0072b2' }
+        }
+        expect(resolveHeatmapCellColor(2, noFallback, 1, 5)).toBe('#eeeeee')
+    })
+
+    test('returns the empty color for null in either mode', () => {
+        expect(resolveHeatmapCellColor(null, discrete, 1, 5)).toBe('#eeeeee')
+        expect(resolveHeatmapCellColor(null, HEATMAP_PRESETS['green']!, 1, 5)).toBe(
+            HEATMAP_PRESETS['green']!.empty
+        )
+    })
+
+    test('handles negative and fractional keys', () => {
+        const scheme: DiscreteHeatmapColorScheme = {
+            kind: 'discrete',
+            empty: '#eeeeee',
+            mapping: { '-1': '#111111', '0.5': '#222222' }
+        }
+        expect(resolveHeatmapCellColor(-1, scheme, -1, 1)).toBe('#111111')
+        expect(resolveHeatmapCellColor(0.5, scheme, -1, 1)).toBe('#222222')
+    })
+
+    test('an emptied mapping colors every cell with the empty color', () => {
+        // Reachable from the editor: remove every row, then apply
+        const scheme: DiscreteHeatmapColorScheme = {
+            kind: 'discrete',
+            empty: '#eeeeee',
+            mapping: {}
+        }
+        expect(resolveHeatmapCellColor(1, scheme, 1, 5)).toBe('#eeeeee')
+    })
+
+    test('gradient mode still delegates to the level logic', () => {
+        const green = HEATMAP_PRESETS['green']!
+        for (const value of [1, 25, 50, 75, 100]) {
+            expect(resolveHeatmapCellColor(value, green, 0, 100)).toBe(
+                getHeatmapColor(getColorLevelForValue(value, 0, 100), green)
+            )
+        }
+    })
+
+    test('isDiscreteHeatmapScheme discriminates the union', () => {
+        expect(isDiscreteHeatmapScheme(discrete)).toBe(true)
+        expect(isDiscreteHeatmapScheme(HEATMAP_PRESETS['green']!)).toBe(false)
+    })
+})
+
+describe('normalizeHeatmapColorScheme', () => {
+    test('returns null for preset names and other non-objects', () => {
+        expect(normalizeHeatmapColorScheme('green')).toBeNull()
+        expect(normalizeHeatmapColorScheme(undefined)).toBeNull()
+        expect(normalizeHeatmapColorScheme(null)).toBeNull()
+        expect(normalizeHeatmapColorScheme(42)).toBeNull()
+        expect(normalizeHeatmapColorScheme([])).toBeNull()
+    })
+
+    test('upgrades a pre-#82 { empty, levels } object to a gradient scheme', () => {
+        const legacy = {
+            empty: '#000000',
+            levels: ['#1', '#2', '#3', '#4', '#5']
+        }
+        expect(normalizeHeatmapColorScheme(legacy)).toEqual({
+            kind: 'gradient',
+            empty: '#000000',
+            levels: ['#1', '#2', '#3', '#4', '#5']
+        })
+    })
+
+    test('passes a modern gradient scheme through unchanged', () => {
+        const scheme = HEATMAP_PRESETS['viridis']!
+        expect(normalizeHeatmapColorScheme(scheme)).toEqual(scheme)
+    })
+
+    test('rejects gradients without exactly five string levels', () => {
+        expect(normalizeHeatmapColorScheme({ empty: '#000', levels: ['#1', '#2'] })).toBeNull()
+        expect(
+            normalizeHeatmapColorScheme({ empty: '#000', levels: ['#1', '#2', '#3', '#4', 5] })
+        ).toBeNull()
+        expect(normalizeHeatmapColorScheme({ empty: '#000' })).toBeNull()
+    })
+
+    test('reads a discrete scheme, dropping non-string mapping values', () => {
+        const result = normalizeHeatmapColorScheme({
+            kind: 'discrete',
+            empty: '#eeeeee',
+            mapping: { '1': '#0072b2', '2': 42, '3': '', '4': '#d55e00' },
+            fallback: '#999999'
+        })
+
+        expect(result).toEqual({
+            kind: 'discrete',
+            empty: '#eeeeee',
+            mapping: { '1': '#0072b2', '4': '#d55e00' },
+            fallback: '#999999'
+        })
+    })
+
+    test('rejects a discrete scheme with an unusable mapping', () => {
+        expect(normalizeHeatmapColorScheme({ kind: 'discrete', mapping: 'nope' })).toBeNull()
+        expect(normalizeHeatmapColorScheme({ kind: 'discrete', mapping: [] })).toBeNull()
+    })
+
+    test('omits fallback when it is not a string', () => {
+        const result = normalizeHeatmapColorScheme({
+            kind: 'discrete',
+            mapping: { '1': '#0072b2' },
+            fallback: 7
+        })
+        expect(result).not.toBeNull()
+        expect(result && 'fallback' in result).toBe(false)
+    })
+})
+
+describe('colorblind-friendly palettes (issue #136)', () => {
+    test('createDefaultDiscreteScheme seeds values 1..5 from the safe ramp', () => {
+        const scheme = createDefaultDiscreteScheme()
+
+        expect(scheme.kind).toBe('discrete')
+        expect(Object.keys(scheme.mapping)).toEqual(['1', '2', '3', '4', '5'])
+        // Every seeded color is distinct, so a 1..5 scale is readable at a glance
+        expect(new Set(Object.values(scheme.mapping)).size).toBe(5)
+    })
+
+    test('the default ramp avoids the red/green axis most deficiencies collapse', () => {
+        const colors = Object.values(createDefaultDiscreteScheme().mapping)
+        // Every seeded color comes from the vetted palette
+        for (const color of colors) {
+            expect(COLORBLIND_SAFE_PALETTE).toContain(color)
+        }
+    })
+
+    test('nextDiscreteEntryColor walks the palette and wraps around', () => {
+        expect(nextDiscreteEntryColor(0)).toBe(COLORBLIND_SAFE_PALETTE[0]!)
+        expect(nextDiscreteEntryColor(3)).toBe(COLORBLIND_SAFE_PALETTE[3]!)
+        expect(nextDiscreteEntryColor(COLORBLIND_SAFE_PALETTE.length)).toBe(
+            COLORBLIND_SAFE_PALETTE[0]!
+        )
+    })
+
+    test('the colorblind chart scheme exposes the Okabe-Ito palette', () => {
+        expect(getChartColorScheme('colorblind')).toEqual([...COLORBLIND_SAFE_PALETTE])
+    })
+
+    test('viridis and cividis are offered as heatmap gradients', () => {
+        const values = HEATMAP_COLOR_SCHEME_OPTIONS.map((option) => option.value)
+        expect(values).toContain('viridis')
+        expect(values).toContain('cividis')
+        // Every offered option resolves to a real preset
+        for (const value of values) {
+            expect(HEATMAP_PRESETS[value]).toBeDefined()
+        }
+    })
+})
+
+describe('asChartColorScheme', () => {
+    test('accepts known chart scheme names', () => {
+        expect(asChartColorScheme('blue')).toBe('blue')
+        expect(asChartColorScheme('colorblind')).toBe('colorblind')
+    })
+
+    test('rejects heatmap-only names so charts fall back to the default palette', () => {
+        expect(asChartColorScheme('viridis')).toBeUndefined()
+        expect(asChartColorScheme('cividis')).toBeUndefined()
+    })
+
+    test('rejects an inline heatmap scheme object', () => {
+        expect(asChartColorScheme(createDefaultDiscreteScheme())).toBeUndefined()
+        expect(asChartColorScheme(HEATMAP_PRESETS['green']!)).toBeUndefined()
+    })
+
+    test('rejects unknown values', () => {
+        expect(asChartColorScheme(undefined)).toBeUndefined()
+        expect(asChartColorScheme('chartreuse')).toBeUndefined()
     })
 })

@@ -14,10 +14,19 @@ export {
     applyHeatmapColorScheme,
     getBooleanColor,
     CHART_COLOR_PRESETS,
+    CHART_COLOR_SCHEMES,
     COLOR_SCHEME_OPTIONS,
-    getChartColorScheme
+    HEATMAP_COLOR_SCHEME_OPTIONS,
+    COLORBLIND_SAFE_PALETTE,
+    getChartColorScheme,
+    asChartColorScheme,
+    resolveHeatmapCellColor,
+    isDiscreteHeatmapScheme,
+    normalizeHeatmapColorScheme,
+    createDefaultDiscreteScheme,
+    nextDiscreteEntryColor
 } from './color.utils'
-export type { ChartColorScheme } from './color.utils'
+export type { ChartColorScheme, HeatmapPresetName } from './color.utils'
 
 // Date utilities
 export {

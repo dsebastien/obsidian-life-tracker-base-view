@@ -14,9 +14,23 @@ import {
     type ScaleConfig,
     type ReferenceLineConfig,
     type AggregationMethod,
-    type CardMenuCallback
+    type CardMenuCallback,
+    type DiscreteHeatmapColorScheme,
+    type StoredColorScheme
 } from '../../types'
-import { COLOR_SCHEME_OPTIONS, type ChartColorScheme } from '../../../utils'
+import {
+    COLOR_SCHEME_OPTIONS,
+    HEATMAP_COLOR_SCHEME_OPTIONS,
+    createDefaultDiscreteScheme,
+    nextDiscreteEntryColor,
+    normalizeHeatmapColorScheme,
+    type ChartColorScheme
+} from '../../../utils'
+
+/**
+ * Dropdown value that opens the custom value → color mapping editor (issue #82)
+ */
+const CUSTOM_MAPPING_VALUE = '__custom__'
 
 /**
  * Cell size options for heatmap
@@ -79,7 +93,7 @@ export function showCardContextMenu(
     event: MouseEvent | TouchEvent,
     currentType: VisualizationType,
     currentScale: ScaleConfig | undefined,
-    currentColorScheme: ChartColorScheme | undefined,
+    currentColorScheme: StoredColorScheme | undefined,
     currentHeatmapConfig: HeatmapMenuConfig | undefined,
     currentReferenceLine: ReferenceLineConfig | undefined,
     currentAggregationMethod: AggregationMethod | undefined,
@@ -322,30 +336,94 @@ export function showCardContextMenu(
 
         // Color scheme dropdown (if supported)
         if (hasColorScheme) {
+            const isHeatmap = vizType === VisualizationType.Heatmap
+            // Only a heatmap can carry an inline custom scheme (issue #82)
+            const customScheme = isHeatmap ? normalizeHeatmapColorScheme(currentColorScheme) : null
+            const discreteScheme =
+                customScheme && customScheme.kind === 'discrete' ? customScheme : null
+
             const colorGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
             colorGroup.createEl('label', { text: 'Colors' })
 
             const colorSelect = colorGroup.createEl('select', { cls: 'lt-card-popover-select' })
 
-            for (const scheme of COLOR_SCHEME_OPTIONS) {
+            // Heatmaps have their own gradient presets (including the
+            // colorblind-friendly ones, issue #136) plus custom mapping
+            const schemeOptions = isHeatmap
+                ? [
+                      ...HEATMAP_COLOR_SCHEME_OPTIONS,
+                      { value: CUSTOM_MAPPING_VALUE, label: 'Custom mapping…' }
+                  ]
+                : COLOR_SCHEME_OPTIONS
+
+            const effectiveScheme = discreteScheme
+                ? CUSTOM_MAPPING_VALUE
+                : typeof currentColorScheme === 'string'
+                  ? currentColorScheme
+                  : isHeatmap
+                    ? ''
+                    : 'default'
+
+            if (isHeatmap) {
+                // Always offered, so a card that has been given its own preset
+                // can be handed back to the view-wide heatmap scheme
+                const defaultOption = colorSelect.createEl('option', {
+                    value: '',
+                    text: 'Default'
+                })
+                defaultOption.selected = effectiveScheme === ''
+            }
+
+            for (const scheme of schemeOptions) {
                 const option = colorSelect.createEl('option', {
                     value: scheme.value,
                     text: scheme.label
                 })
-                const effectiveScheme = currentColorScheme ?? 'default'
                 if (scheme.value === effectiveScheme) {
                     option.selected = true
                 }
             }
 
             colorSelect.addEventListener('change', () => {
-                const value = colorSelect.value as ChartColorScheme
+                const value = colorSelect.value
+
+                if (value === CUSTOM_MAPPING_VALUE) {
+                    // Close first, like the scale modal: two stacked dialogs
+                    // would mean two focus traps and two Escape handlers
+                    close()
+                    showDiscreteColorSchemeModal(
+                        discreteScheme ?? createDefaultDiscreteScheme(),
+                        (scheme) => {
+                            onAction({ type: 'configureColorScheme', colorScheme: scheme })
+                        }
+                    )
+                    return
+                }
+
                 close()
                 onAction({
                     type: 'configureColorScheme',
-                    colorScheme: value === 'default' ? undefined : value
+                    colorScheme:
+                        value === 'default' || value === ''
+                            ? undefined
+                            : (value as ChartColorScheme)
                 })
             })
+
+            // Already on a custom mapping: offer to edit it without having to
+            // re-pick the dropdown entry that is already selected
+            if (discreteScheme) {
+                const editBtn = colorGroup.createEl('button', {
+                    cls: 'lt-card-popover-select',
+                    text: 'Edit mapping'
+                })
+                editBtn.addEventListener('click', () => {
+                    close()
+                    showDiscreteColorSchemeModal(discreteScheme, (scheme) => {
+                        onAction({ type: 'configureColorScheme', colorScheme: scheme })
+                    })
+                })
+            }
         }
 
         // Reference line configuration
@@ -797,6 +875,143 @@ function showCustomScaleModal(
 
     // Focus min input
     minInput.focus()
+}
+
+/**
+ * Show the value → color mapping editor for a heatmap (issue #82).
+ *
+ * Rows are edited as a working copy and only handed back on Apply, so cancelling
+ * leaves the card untouched. Entries with a blank value are dropped; an empty
+ * mapping is still valid (every cell then falls back to the fallback color).
+ */
+function showDiscreteColorSchemeModal(
+    currentScheme: DiscreteHeatmapColorScheme,
+    onConfirm: (scheme: DiscreteHeatmapColorScheme) => void
+): void {
+    // Working copy: an ordered list, because a mapping object cannot hold a
+    // half-typed duplicate key while the user is editing
+    const rows: Array<{ value: string; color: string }> = Object.entries(currentScheme.mapping).map(
+        ([value, color]) => ({ value, color })
+    )
+
+    const overlay = activeDocument.body.createDiv({ cls: 'lt-scale-modal-overlay' })
+    const modal = overlay.createDiv({
+        cls: 'lt-scale-modal lt-mapping-modal',
+        attr: { 'role': 'dialog', 'aria-modal': 'true', 'aria-label': 'Configure color mapping' }
+    })
+    trapFocus(modal)
+
+    modal.createDiv({ cls: 'lt-scale-modal-header', text: 'Configure color mapping' })
+
+    const form = modal.createDiv({ cls: 'lt-scale-modal-form' })
+    form.createDiv({
+        cls: 'lt-mapping-hint',
+        text: 'Give each value its own color. Values without an entry use the fallback color.'
+    })
+
+    const rowsEl = form.createDiv({ cls: 'lt-mapping-rows' })
+
+    const renderRows = (): void => {
+        rowsEl.empty()
+
+        rows.forEach((row, index) => {
+            const rowEl = rowsEl.createDiv({ cls: 'lt-mapping-row' })
+
+            const valueInput = rowEl.createEl('input', {
+                type: 'text',
+                cls: 'lt-scale-modal-input lt-mapping-value',
+                placeholder: 'Value'
+            })
+            valueInput.value = row.value
+            valueInput.addEventListener('input', () => {
+                row.value = valueInput.value
+            })
+
+            const colorInput = rowEl.createEl('input', {
+                type: 'color',
+                cls: 'lt-mapping-color'
+            })
+            colorInput.value = row.color
+            colorInput.addEventListener('input', () => {
+                row.color = colorInput.value
+            })
+
+            const removeBtn = rowEl.createEl('button', {
+                cls: 'lt-mapping-remove',
+                text: '×',
+                attr: { 'aria-label': `Remove entry for value ${row.value || index + 1}` }
+            })
+            removeBtn.addEventListener('click', () => {
+                rows.splice(index, 1)
+                renderRows()
+            })
+        })
+    }
+
+    renderRows()
+
+    const addBtn = form.createEl('button', {
+        cls: 'lt-scale-modal-btn lt-scale-modal-btn--secondary lt-mapping-add',
+        text: 'Add entry'
+    })
+    addBtn.addEventListener('click', () => {
+        rows.push({ value: '', color: nextDiscreteEntryColor(rows.length) })
+        renderRows()
+    })
+
+    // Fallback color for values with no entry
+    const fallbackGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
+    fallbackGroup.createSpan({ text: 'Fallback color:' })
+    const fallbackInput = fallbackGroup.createEl('input', {
+        type: 'color',
+        cls: 'lt-mapping-color'
+    })
+    fallbackInput.value = currentScheme.fallback ?? '#cccccc'
+
+    const handleEscape = (e: KeyboardEvent): void => {
+        if (e.key === 'Escape') cleanup()
+    }
+
+    const cleanup = (): void => {
+        activeDocument.removeEventListener('keydown', handleEscape)
+        overlay.remove()
+    }
+
+    const buttons = modal.createDiv({ cls: 'lt-scale-modal-buttons' })
+
+    const cancelBtn = buttons.createEl('button', {
+        cls: 'lt-scale-modal-btn lt-scale-modal-btn--secondary',
+        text: 'Cancel'
+    })
+    cancelBtn.addEventListener('click', cleanup)
+
+    const confirmBtn = buttons.createEl('button', {
+        cls: 'lt-scale-modal-btn lt-scale-modal-btn--primary',
+        text: 'Apply'
+    })
+    confirmBtn.addEventListener('click', () => {
+        const mapping: Record<string, string> = {}
+        for (const row of rows) {
+            const key = row.value.trim()
+            // Last entry wins on duplicates, matching what the list shows
+            if (key) mapping[key] = row.color
+        }
+
+        onConfirm({
+            kind: 'discrete',
+            empty: currentScheme.empty,
+            mapping,
+            fallback: fallbackInput.value
+        })
+        cleanup()
+    })
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cleanup()
+    })
+
+    activeDocument.addEventListener('keydown', handleEscape)
+    rowsEl.querySelector<HTMLInputElement>('.lt-mapping-value')?.focus()
 }
 
 /**

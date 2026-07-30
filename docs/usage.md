@@ -109,7 +109,7 @@ Right-click any visualization card to access:
 
 - **Change visualization**: Switch to a different chart type
 - **Configure scale**: Set min/max values (auto-detect or presets)
-- **Configure color scheme**: Choose from 5 color palettes
+- **Configure color scheme**: Choose a color palette; heatmaps also offer colorblind-friendly gradients and a custom value-to-color mapping
 - **Reference line**: Add a horizontal target line
 - **Add visualization**: Create another visualization for the same property
 - **Remove visualization**: Delete this visualization (if multiple exist)

@@ -1,5 +1,6 @@
 import type { BasesAllOptions } from 'obsidian'
 import { TimeGranularity } from '../types'
+import { HEATMAP_COLOR_SCHEME_OPTIONS } from '../../utils'
 
 /**
  * Default embedded height in pixels
@@ -111,13 +112,11 @@ export function getLifeTrackerViewOptions(): BasesAllOptions[] {
                     key: 'heatmapColorScheme',
                     displayName: 'Color scheme',
                     default: 'green',
-                    options: {
-                        green: 'Green (GitHub)',
-                        blue: 'Blue',
-                        purple: 'Purple',
-                        orange: 'Orange',
-                        red: 'Red'
-                    }
+                    // Derived from the shared list so the view options, the card
+                    // popover and the settings presets never drift apart
+                    options: Object.fromEntries(
+                        HEATMAP_COLOR_SCHEME_OPTIONS.map((option) => [option.value, option.label])
+                    )
                 }
             ]
         },

@@ -10,10 +10,11 @@ import {
     type OverlayVisualizationConfig,
     type OverlayConfigMap,
     type ScaleConfig,
+    type StoredColorScheme,
     type ReferenceLineConfig,
     type EffectiveConfigResult
 } from '../types'
-import { log, type ChartColorScheme } from '../../utils'
+import { log } from '../../utils'
 
 /**
  * Config key for storing column configurations in view config
@@ -151,7 +152,7 @@ export class ColumnConfigService {
         visualizationType: VisualizationType,
         displayName: string,
         scale?: ScaleConfig,
-        colorScheme?: ChartColorScheme,
+        colorScheme?: StoredColorScheme,
         referenceLine?: ReferenceLineConfig
     ): string {
         const configs = this.getColumnConfigs()
@@ -517,7 +518,7 @@ export class ColumnConfigService {
         visualizationType: VisualizationType,
         displayName: string,
         scale?: ScaleConfig,
-        colorScheme?: ChartColorScheme
+        colorScheme?: StoredColorScheme
     ): string {
         if (propertyIds.length < 2) {
             log('Cannot create overlay with fewer than 2 properties', 'warn')

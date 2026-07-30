@@ -17,6 +17,7 @@ export {
 } from './column-config.types'
 export type {
     ScaleConfig,
+    StoredColorScheme,
     ReferenceLineConfig,
     ColumnVisualizationConfig,
     ColumnConfigMap,

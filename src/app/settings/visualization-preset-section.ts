@@ -2,7 +2,7 @@ import { Setting } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import {
     COLOR_SCHEME_OPTIONS as COLOR_SCHEME_OPTIONS_LIST,
-    type ChartColorScheme
+    HEATMAP_COLOR_SCHEME_OPTIONS
 } from '../../utils'
 import {
     VisualizationType,
@@ -13,7 +13,8 @@ import {
     supportsAggregationMethod,
     DEFAULT_AGGREGATION_METHOD,
     type PropertyVisualizationPreset,
-    type AggregationMethod
+    type AggregationMethod,
+    type StoredColorScheme
 } from '../types'
 
 /**
@@ -31,6 +32,17 @@ const AGGREGATION_METHOD_OPTIONS: Record<string, string> = {
 const COLOR_SCHEME_OPTIONS: Record<string, string> = Object.fromEntries(
     COLOR_SCHEME_OPTIONS_LIST.map((option) => [option.value, option.label])
 )
+
+/**
+ * Heatmaps have their own gradient presets (issue #82/#136), so they get their
+ * own list. `default` means "use the view's heatmap color scheme".
+ */
+const HEATMAP_SCHEME_OPTIONS: Record<string, string> = {
+    default: 'Default',
+    ...Object.fromEntries(
+        HEATMAP_COLOR_SCHEME_OPTIONS.map((option) => [option.value, option.label])
+    )
+}
 
 /**
  * Renders and manages the "Visualizations" settings tab: global animation
@@ -183,13 +195,19 @@ export class VisualizationPresetSection {
         // Color scheme dropdown (only for chart types)
         if (supportsColorScheme(preset.visualizationType)) {
             setting.addDropdown((dropdown) => {
+                const isHeatmap = preset.visualizationType === VisualizationType.Heatmap
+                // Presets only ever store a scheme name; custom mappings are
+                // configured per card (issue #82)
+                const currentName =
+                    typeof preset.colorScheme === 'string' ? preset.colorScheme : 'default'
+
                 dropdown
-                    .addOptions(COLOR_SCHEME_OPTIONS)
-                    .setValue(preset.colorScheme ?? 'default')
+                    .addOptions(isHeatmap ? HEATMAP_SCHEME_OPTIONS : COLOR_SCHEME_OPTIONS)
+                    .setValue(currentName)
                     .onChange(async (value) => {
                         await this.plugin.updatePreset(preset.id, (p) => {
                             p.colorScheme =
-                                value === 'default' ? undefined : (value as ChartColorScheme)
+                                value === 'default' ? undefined : (value as StoredColorScheme)
                         })
                     })
             })

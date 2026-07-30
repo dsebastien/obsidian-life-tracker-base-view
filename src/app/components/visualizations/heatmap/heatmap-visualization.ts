@@ -9,15 +9,16 @@ import type {
 } from '../../../types'
 import { sharedAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
-import { renderHeatmapGrid } from './heatmap-renderer'
+import { applyCellColor, renderHeatmapGrid } from './heatmap-renderer'
 import { parseISO, isSameDay, isSameMonth, isSameYear } from 'date-fns'
 import {
     log,
     CSS_SELECTOR,
     applyHeatmapColorScheme,
     formatDateISO,
-    getColorLevelForValue,
-    getEventElement
+    getEventElement,
+    isDiscreteHeatmapScheme,
+    setCssProps
 } from '../../../../utils'
 
 /**
@@ -276,6 +277,9 @@ export class HeatmapVisualization extends BaseVisualization {
             newCellMap.set(key, { value: cell.value, count: cell.count })
         }
 
+        const colorScheme = this.heatmapConfig.colorScheme
+        const isDiscrete = isDiscreteHeatmapScheme(colorScheme)
+
         // Query all existing cells
         const cells = this.gridEl.querySelectorAll(CSS_SELECTOR.HEATMAP_CELL)
 
@@ -286,20 +290,27 @@ export class HeatmapVisualization extends BaseVisualization {
 
             const newCellData = newCellMap.get(dateStr)
 
-            // Remove all level classes
+            // Reset both coloring mechanisms: the scheme (and so which one
+            // applies) can have changed since the cell was rendered
             for (let i = 0; i <= 4; i++) {
                 cellEl.classList.remove(`lt-heatmap-cell--level-${i}`)
             }
             cellEl.classList.remove('lt-heatmap-cell--has-data')
+            if (!isDiscrete) {
+                // Leaving an inline background behind would win over the level
+                // class when switching from a discrete scheme back to a gradient
+                setCssProps(cellEl, { backgroundColor: '' })
+            }
 
             // Update cell data
             if (newCellData) {
-                const level = getColorLevelForValue(
+                applyCellColor(
+                    cellEl,
                     newCellData.value,
+                    colorScheme,
                     newData.minValue,
                     newData.maxValue
                 )
-                cellEl.classList.add(`lt-heatmap-cell--level-${level}`)
 
                 if (newCellData.value !== null) {
                     cellEl.dataset['value'] = String(newCellData.value)
@@ -314,7 +325,7 @@ export class HeatmapVisualization extends BaseVisualization {
                 }
             } else {
                 // No data for this cell
-                cellEl.classList.add('lt-heatmap-cell--level-0')
+                applyCellColor(cellEl, null, colorScheme, newData.minValue, newData.maxValue)
                 delete cellEl.dataset['value']
                 cellEl.dataset['count'] = '0'
             }
@@ -636,9 +647,32 @@ export class HeatmapVisualization extends BaseVisualization {
     }
 
     /**
-     * Create heatmap legend
+     * Create heatmap legend.
+     *
+     * A gradient scheme gets the "Less → More" intensity ramp. A discrete
+     * scheme has no ordering to communicate, so it gets one labelled swatch per
+     * mapping entry instead — without it the colors are unreadable (issue #82).
      */
     private createLegend(container: HTMLElement): void {
+        const { colorScheme, cellSize } = this.heatmapConfig
+
+        if (isDiscreteHeatmapScheme(colorScheme)) {
+            const entries = Object.entries(colorScheme.mapping)
+            if (entries.length === 0) return
+
+            const legend = container.createDiv({
+                cls: 'lt-heatmap-legend lt-heatmap-legend--discrete'
+            })
+
+            for (const [value, color] of entries) {
+                const item = legend.createDiv({ cls: 'lt-heatmap-legend-item' })
+                const box = item.createDiv({ cls: 'lt-heatmap-cell' })
+                setCssProps(box, { width: cellSize, height: cellSize, backgroundColor: color })
+                item.createSpan({ text: value })
+            }
+            return
+        }
+
         const legend = container.createDiv({ cls: 'lt-heatmap-legend' })
 
         legend.createSpan({ text: 'Less' })
@@ -648,8 +682,7 @@ export class HeatmapVisualization extends BaseVisualization {
             const box = legend.createDiv({
                 cls: `lt-heatmap-cell lt-heatmap-cell--level-${i}`
             })
-            box.style.width = `${this.heatmapConfig.cellSize}px`
-            box.style.height = `${this.heatmapConfig.cellSize}px`
+            setCssProps(box, { width: cellSize, height: cellSize })
         }
 
         legend.createSpan({ text: 'More' })

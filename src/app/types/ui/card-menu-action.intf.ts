@@ -3,9 +3,9 @@ import type { VisualizationType } from '../visualization/visualization-type.intf
 import type {
     ScaleConfig,
     ReferenceLineConfig,
-    AggregationMethod
+    AggregationMethod,
+    StoredColorScheme
 } from '../column/column-config.types'
-import type { ChartColorScheme } from '../../../utils/color.utils'
 
 /**
  * Menu action types for card context menu
@@ -13,7 +13,7 @@ import type { ChartColorScheme } from '../../../utils/color.utils'
 export type CardMenuAction =
     | { type: 'changeVisualization'; visualizationType: VisualizationType }
     | { type: 'configureScale'; scale: ScaleConfig | undefined }
-    | { type: 'configureColorScheme'; colorScheme: ChartColorScheme | undefined }
+    | { type: 'configureColorScheme'; colorScheme: StoredColorScheme | undefined }
     | { type: 'configureReferenceLine'; referenceLine: ReferenceLineConfig }
     | { type: 'configureAggregationMethod'; aggregationMethod: AggregationMethod | undefined }
     | { type: 'configureMovingAverage'; movingAveragePeriod: number | undefined }

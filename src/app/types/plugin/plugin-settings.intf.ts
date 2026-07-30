@@ -2,10 +2,10 @@ import type { VisualizationType } from '../visualization/visualization-type.intf
 import type {
     ScaleConfig,
     ReferenceLineConfig,
-    AggregationMethod
+    AggregationMethod,
+    StoredColorScheme
 } from '../column/column-config.types'
 import type { PropertyDefinition } from '../property/property-definition.types'
-import type { ChartColorScheme } from '../../../utils/color.utils'
 import type { WeekStartDay } from '../../../utils/date.utils'
 
 /**
@@ -21,8 +21,8 @@ export interface PropertyVisualizationPreset {
     visualizationType: VisualizationType
     /** Optional scale configuration */
     scale?: ScaleConfig
-    /** Optional color scheme for chart types */
-    colorScheme?: ChartColorScheme
+    /** Optional color scheme: a chart or heatmap preset name */
+    colorScheme?: StoredColorScheme
     /** Reference line configuration for cartesian charts */
     referenceLine?: ReferenceLineConfig
     /** How to combine multiple values within a time period (cartesian/bubble charts) */

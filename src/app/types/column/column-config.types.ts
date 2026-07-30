@@ -1,6 +1,17 @@
 import type { BasesPropertyId } from 'obsidian'
 import { VisualizationType } from '../visualization/visualization-type.intf'
-import type { ChartColorScheme } from '../../../utils/color.utils'
+import type { ChartColorScheme, HeatmapPresetName } from '../../../utils/color.utils'
+import type { HeatmapColorScheme } from '../visualization/visualization.types'
+
+/**
+ * What a visualization's `colorScheme` can hold: the name of a built-in chart or
+ * heatmap preset, or — for heatmaps only — an inline custom scheme such as a
+ * value → color mapping (issue #82).
+ *
+ * Charts narrow this with `asChartColorScheme()`; heatmaps resolve it with
+ * `normalizeHeatmapColorScheme()` plus a `HEATMAP_PRESETS` lookup.
+ */
+export type StoredColorScheme = ChartColorScheme | HeatmapPresetName | HeatmapColorScheme
 
 /**
  * Scale configuration for numeric visualizations
@@ -53,8 +64,8 @@ export interface ColumnVisualizationConfig {
     configuredAt: number
     /** Scale configuration for numeric visualizations (Heatmap, BarChart, LineChart) */
     scale?: ScaleConfig
-    /** Color scheme for chart visualizations */
-    colorScheme?: ChartColorScheme
+    /** Preset name, or an inline custom heatmap scheme (issue #82) */
+    colorScheme?: StoredColorScheme
     /** Heatmap cell size override (pixels) */
     heatmapCellSize?: number
     /** Heatmap show month labels override */
@@ -229,7 +240,7 @@ export interface OverlayVisualizationConfig {
     /** Scale configuration for Y-axis */
     scale?: ScaleConfig
     /** Color scheme for chart colors */
-    colorScheme?: ChartColorScheme
+    colorScheme?: StoredColorScheme
     /** Reference line configurations per property ID (for overlays with multiple properties) */
     referenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
     /** Hide individual visualizations for properties in this overlay (default: false) */

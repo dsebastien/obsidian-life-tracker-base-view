@@ -15,7 +15,7 @@ You can find more details and background information here: https://www.knowii.ne
 ### Visualizations
 
 - **12 visualization types**: Heatmap, Line, Bar, Area, Pie, Doughnut, Radar, Polar Area, Scatter, Bubble, Tag Cloud, Timeline
-- **GitHub-style heatmaps** with 5 color schemes (green, blue, purple, orange, red) and average/sum aggregation for multi-entry days
+- **GitHub-style heatmaps** with 7 color schemes (green, blue, purple, orange, red, plus colorblind-friendly viridis and cividis), a custom value-to-color mapping for rating scales like mood 1-5, and average/sum aggregation for multi-entry days
 - **Animated charts** with configurable duration and play/pause controls
 - **Interactive elements**: click chart elements to open source notes, hover for detailed tooltips
 - **Supports all property types**: frontmatter properties, Bases formulas, and file metadata (e.g., tags as tag cloud)
@@ -36,7 +36,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Visualization presets**: auto-apply settings to properties by name pattern
 - **Scale configuration**: auto-detect or manual min/max for numeric visualizations
 - **Reference lines**: add horizontal target lines to cartesian charts (line, bar, area) to track values against goals (e.g., weight target)
-- **Color schemes**: 5 chart color schemes (green, blue, purple, orange, red) for all chart types
+- **Color schemes**: 6 chart color schemes (green, blue, purple, orange, red, and a colorblind-friendly palette) for all chart types
 - **Chart options**: toggle legend, grid lines, and more
 - **Responsive resizing**: visualizations automatically adjust to available space
 
@@ -203,7 +203,7 @@ Configure presets in **Settings → Life Tracker → Visualization presets** by 
 - **Property name pattern**: The text to match against property names
 - **Visualization type**: Which visualization to use (heatmap, line chart, etc.)
 - **Scale**: Optional min/max range for numeric visualizations
-- **Color scheme**: Optional color palette for chart types (green, blue, purple, orange, red)
+- **Color scheme**: Optional color palette (green, blue, purple, orange, red, colorblind-friendly; heatmaps also offer viridis and cividis)
 - **What's new after updates.** After a plugin update, a one-time dialog shows the release notes you just received (including skipped versions) with ways to support development. Never shown on fresh installs or regular restarts.
 
 **How presets work with overrides**: When you add a property column to a Life Tracker Base View, the plugin checks for matching presets and applies them automatically. However, you can always override the preset configuration for that specific property in that specific view using the right-click context menu. Your per-view overrides take precedence over presets, giving you global defaults with local flexibility.

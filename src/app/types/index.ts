@@ -39,6 +39,8 @@ export type {
     TimelineData,
     TimelinePoint,
     HeatmapColorScheme,
+    GradientHeatmapColorScheme,
+    DiscreteHeatmapColorScheme,
     VisualizationConfig,
     HeatmapConfig,
     ChartJsType,
@@ -71,6 +73,7 @@ export {
 } from './column'
 export type {
     ScaleConfig,
+    StoredColorScheme,
     ReferenceLineConfig,
     ColumnVisualizationConfig,
     ColumnConfigMap,
