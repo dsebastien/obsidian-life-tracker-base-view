@@ -879,20 +879,49 @@ export class PropertyDefinitionSection {
     ): void {
         const setting = new Setting(container)
 
+        // The text value doubles as the object key *and* as an editable field,
+        // so handlers must work off where the entry lives *now*. Typing "ok"
+        // into a fresh row fires onChange per keystroke: keying off the
+        // render-time value would leave an orphaned "o" entry behind and make
+        // the number field write to a key that no longer exists.
+        let currentKey = textValue
+        let currentValue = numericValue
+
         // Text value input
         setting.addText((text) => {
             text.setPlaceholder('Text value (e.g., ⭐⭐⭐)')
                 .setValue(textValue)
                 .onChange(async (newTextValue) => {
-                    await this.plugin.updateSettings((draft) => {
-                        const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
-                        if (d?.valueMapping) {
-                            delete d.valueMapping[textValue]
-                            if (newTextValue.trim()) {
-                                d.valueMapping[newTextValue.trim()] = numericValue
+                    const trimmed = newTextValue.trim()
+
+                    // Renaming onto an existing entry would silently destroy it.
+                    // Read live settings, not the render-time `definition`:
+                    // sibling rows may have been renamed since this row was drawn.
+                    const existing =
+                        this.plugin.settings.propertyDefinitions.find((d) => d.id === definition.id)
+                            ?.valueMapping ?? {}
+                    const duplicate =
+                        trimmed !== currentKey &&
+                        Object.prototype.hasOwnProperty.call(existing, trimmed)
+
+                    text.inputEl.toggleClass('lt-input-invalid', duplicate)
+                    if (duplicate) return
+
+                    const previousKey = currentKey
+                    currentKey = trimmed
+
+                    await this.plugin.updateSettings(
+                        (draft) => {
+                            const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                            if (!d?.valueMapping) return
+
+                            delete d.valueMapping[previousKey]
+                            if (trimmed) {
+                                d.valueMapping[trimmed] = currentValue
                             }
-                        }
-                    })
+                        },
+                        { type: 'property-definitions-changed' }
+                    )
                 })
         })
 
@@ -904,15 +933,19 @@ export class PropertyDefinitionSection {
             text.setPlaceholder('Number')
                 .setValue(String(numericValue))
                 .onChange(async (value) => {
-                    await this.plugin.updateSettings((draft) => {
-                        const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
-                        if (d?.valueMapping && textValue in d.valueMapping) {
-                            const num = parseFloat(value)
-                            if (!isNaN(num)) {
-                                d.valueMapping[textValue] = num
+                    const num = parseFloat(value)
+                    if (isNaN(num)) return
+                    currentValue = num
+
+                    await this.plugin.updateSettings(
+                        (draft) => {
+                            const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                            if (d?.valueMapping && currentKey in d.valueMapping) {
+                                d.valueMapping[currentKey] = num
                             }
-                        }
-                    })
+                        },
+                        { type: 'property-definitions-changed' }
+                    )
                 })
             text.inputEl.type = 'number'
         })
@@ -932,15 +965,18 @@ export class PropertyDefinitionSection {
                     // Wait a bit for any pending onChange handlers to complete
                     await new Promise((resolve) => window.setTimeout(resolve, 50))
 
-                    await this.plugin.updateSettings((draft) => {
-                        const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
-                        if (d?.valueMapping) {
-                            delete d.valueMapping[textValue]
-                            if (Object.keys(d.valueMapping).length === 0) {
-                                d.valueMapping = null
+                    await this.plugin.updateSettings(
+                        (draft) => {
+                            const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                            if (d?.valueMapping) {
+                                delete d.valueMapping[currentKey]
+                                if (Object.keys(d.valueMapping).length === 0) {
+                                    d.valueMapping = null
+                                }
                             }
-                        }
-                    })
+                        },
+                        { type: 'property-definitions-changed' }
+                    )
                     this.requestRerender()
                 })
         })

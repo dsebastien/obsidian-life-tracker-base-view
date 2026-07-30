@@ -174,6 +174,18 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Chart palettes are **not** polarity-driven: a series color identifies the series, not its goodness. Only the trend indicator carries sentiment
 - Polarity and emojis are offered only for properties whose values are numeric: number, checkbox, and text properties that have a value mapping
 
+## Settings Persistence
+
+- Settings writes are serialized through a queue (`createSerialQueue`): editors call `updateSettings` on every keystroke, and two overlapping `saveData` calls can otherwise land out of order, persisting the _older_ snapshot — a corruption that only surfaces after a restart
+- Each queued write persists the settings as they are when it runs, not when it was queued, so the last write always reflects the newest state
+- A failed write rejects for its own caller but does not wedge the queue
+
+## Editable Map Keys
+
+- Wherever a map key is itself an editable field (`valueMapping`, `valueEmojis`), the row's handlers must track the _current_ key, never the render-time one: `onChange` fires per keystroke, so typing `10` into a fresh row would otherwise leave an orphaned `1` entry and make the sibling field write to a key that no longer exists
+- Renaming onto an existing key is rejected and flagged, never silently applied — it would destroy the other entry
+- Duplicate detection reads live settings, not the render-time snapshot: sibling rows may have been renamed since this row was drawn
+
 ## Value Emojis
 
 - `valueEmojis` maps a value or range to an emoji — issue #22. Keys are an exact value (`3`) or an inclusive range (`1-2`, `1..2`, `-5--1`); reversed ranges are normalized, unparseable keys are ignored at render time and flagged in settings

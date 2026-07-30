@@ -184,7 +184,8 @@ Available for all chart types except Tag Cloud:
 - `colorblind` — eight colors that stay distinguishable with any common form of
   color vision deficiency
 
-Heatmaps use their own list: the five schemes above, plus `viridis` and `cividis`
+Heatmaps use their own list: `auto` (the default — follows the property's value
+direction), the five schemes above, plus `viridis` and `cividis`
 (colorblind-friendly gradients), plus a **custom mapping** that assigns a color to
 each specific value. A custom mapping is stored inline on the card rather than as
 a name, and takes precedence over the view-wide **Color scheme** setting.

@@ -11,7 +11,7 @@ import {
     type StoredColorScheme,
     type ValuePolarity
 } from '../types'
-import { HEATMAP_PRESETS } from '../../utils'
+import { HEATMAP_PRESETS, HEATMAP_SCHEME_AUTO } from '../../utils'
 
 /** Build a view-config getter backed by a plain object */
 function configGetter(values: Record<string, unknown> = {}): (key: string) => unknown {
@@ -166,6 +166,22 @@ describe('getVisualizationConfig - polarity and emojis (issues #21, #22)', () =>
     test('neutral keeps the plugin-wide green default', () => {
         expect(configWith(definitionWith('neutral')).colorScheme).toEqual(HEATMAP_PRESETS['green']!)
         expect(configWith(definitionWith(undefined)).colorScheme).toEqual(HEATMAP_PRESETS['green']!)
+    })
+
+    test('the view-wide "auto" value hands over to polarity', () => {
+        // `auto` is that setting's own default and means "nothing chosen".
+        // Reading it as a preset name would make polarity unreachable.
+        const config = configWith(definitionWith('lower-is-better'), {
+            heatmapColorScheme: HEATMAP_SCHEME_AUTO
+        })
+        expect(config.colorScheme).toEqual(HEATMAP_PRESETS['red']!)
+    })
+
+    test('"auto" with a neutral property falls through to green', () => {
+        const config = configWith(definitionWith('neutral'), {
+            heatmapColorScheme: HEATMAP_SCHEME_AUTO
+        })
+        expect(config.colorScheme).toEqual(HEATMAP_PRESETS['green']!)
     })
 
     test('polarity is only a default: an explicit view-wide scheme still wins', () => {

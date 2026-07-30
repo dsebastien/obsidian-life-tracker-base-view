@@ -79,6 +79,16 @@ export type HeatmapPresetName =
     | 'cividis'
 
 /**
+ * Stored value meaning "no explicit heatmap scheme chosen": fall back to the
+ * property's polarity (issue #21), then to the plugin default.
+ *
+ * Exists because Obsidian may write a declared view-option `default` into the
+ * stored config, which would make an untouched setting look like a deliberate
+ * choice and starve every lower-precedence default.
+ */
+export const HEATMAP_SCHEME_AUTO = 'auto'
+
+/**
  * Canonical heatmap gradient options, shared by the view options dropdown, the
  * per-card popover and the settings preset dropdown.
  */

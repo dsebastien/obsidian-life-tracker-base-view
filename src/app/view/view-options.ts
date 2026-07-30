@@ -1,6 +1,6 @@
 import type { BasesAllOptions } from 'obsidian'
 import { TimeGranularity } from '../types'
-import { HEATMAP_COLOR_SCHEME_OPTIONS } from '../../utils'
+import { HEATMAP_COLOR_SCHEME_OPTIONS, HEATMAP_SCHEME_AUTO } from '../../utils'
 
 /**
  * Default embedded height in pixels
@@ -111,12 +111,23 @@ export function getLifeTrackerViewOptions(): BasesAllOptions[] {
                     type: 'dropdown',
                     key: 'heatmapColorScheme',
                     displayName: 'Color scheme',
-                    default: 'green',
+                    // `auto` rather than `green`: Obsidian may materialize a
+                    // declared default into stored config, which would make an
+                    // untouched setting indistinguishable from an explicit
+                    // "green" and silently starve the polarity default (#21).
+                    // An explicit "automatic" value removes the ambiguity.
+                    default: HEATMAP_SCHEME_AUTO,
                     // Derived from the shared list so the view options, the card
                     // popover and the settings presets never drift apart
-                    options: Object.fromEntries(
-                        HEATMAP_COLOR_SCHEME_OPTIONS.map((option) => [option.value, option.label])
-                    )
+                    options: {
+                        [HEATMAP_SCHEME_AUTO]: 'Automatic (by value direction)',
+                        ...Object.fromEntries(
+                            HEATMAP_COLOR_SCHEME_OPTIONS.map((option) => [
+                                option.value,
+                                option.label
+                            ])
+                        )
+                    }
                 }
             ]
         },

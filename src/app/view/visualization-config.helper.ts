@@ -14,6 +14,7 @@ import {
 } from '../types'
 import {
     HEATMAP_PRESETS,
+    HEATMAP_SCHEME_AUTO,
     asChartColorScheme,
     normalizeHeatmapColorScheme,
     polarityHeatmapPreset
@@ -66,9 +67,14 @@ export function getVisualizationConfig(
             // Polarity only supplies a *default* (issue #21): green when more is
             // better, red when more is worse. Anything the user picked — per
             // card or view-wide — still wins.
+            //
+            // `auto` is the view-wide setting's own default and means "nothing
+            // chosen", so it hands over to polarity. Reading it as a preset name
+            // would make polarity unreachable for every heatmap.
+            const viewWideName = getStringConfig(getConfig, 'heatmapColorScheme')
             const colorSchemeName =
                 (typeof storedColorScheme === 'string' ? storedColorScheme : undefined) ??
-                getStringConfig(getConfig, 'heatmapColorScheme') ??
+                (viewWideName === HEATMAP_SCHEME_AUTO ? undefined : viewWideName) ??
                 polarityHeatmapPreset(definition?.polarity) ??
                 'green'
             const heatmapColorScheme =

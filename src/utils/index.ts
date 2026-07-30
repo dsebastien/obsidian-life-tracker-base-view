@@ -17,6 +17,7 @@ export {
     CHART_COLOR_SCHEMES,
     COLOR_SCHEME_OPTIONS,
     HEATMAP_COLOR_SCHEME_OPTIONS,
+    HEATMAP_SCHEME_AUTO,
     COLORBLIND_SAFE_PALETTE,
     getChartColorScheme,
     asChartColorScheme,
@@ -47,6 +48,9 @@ export {
     listEmojiEntries
 } from './emoji-mapping.utils'
 export type { ParsedEmojiKey, EmojiEntry } from './emoji-mapping.utils'
+
+// Async helpers
+export { createCoalescingWriter } from './write-queue.utils'
 
 // Date utilities
 export {

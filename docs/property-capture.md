@@ -62,7 +62,8 @@ Setting it does two things:
   only signal.
 - The **default heatmap color** becomes green for higher-is-better and red for
   lower-is-better, so "more color = more of the thing" reads correctly either
-  way. This is only a default — any color scheme you pick yourself still wins.
+  way. This applies while the view's **Color scheme** is left on **Automatic**;
+  pick any scheme there or on the card itself and your choice wins.
 
 Leaving it neutral keeps the previous behavior exactly.
 

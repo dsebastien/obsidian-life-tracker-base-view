@@ -9,7 +9,12 @@ import {
     type SettingsChangeInfo
 } from './types'
 import { LifeTrackerPluginSettingTab } from './settings/settings-tab'
-import { log, setCustomFilenameDatePatterns, setWeekStartDay } from '../utils'
+import {
+    createCoalescingWriter,
+    log,
+    setCustomFilenameDatePatterns,
+    setWeekStartDay
+} from '../utils'
 import { produce } from 'immer'
 import type { Draft } from 'immer'
 import { LifeTrackerView, LIFE_TRACKER_VIEW_TYPE } from './view/life-tracker-view'
@@ -28,6 +33,15 @@ export class LifeTrackerPlugin extends Plugin {
      * Listeners for settings changes
      */
     private settingsChangeListeners: Set<SettingsChangeCallback> = new Set()
+
+    /**
+     * Serializes and coalesces settings writes (see `saveSettings`).
+     */
+    private readonly enqueueSave = createCoalescingWriter(async () => {
+        log('Saving settings', 'debug', this.settings)
+        await this.saveData(this.settings)
+        log('Settings saved', 'debug', this.settings)
+    })
 
     /**
      * Registered file providers (base views that can provide files for batch
@@ -198,12 +212,19 @@ export class LifeTrackerPlugin extends Plugin {
     }
 
     /**
-     * Save the plugin settings
+     * Save the plugin settings.
+     *
+     * Writes are serialized *and* coalesced (see `createCoalescingWriter`).
+     * Settings editors call `updateSettings` on every keystroke: without
+     * serialization two saves can be in flight at once and land out of order,
+     * leaving the older snapshot on disk; without coalescing, a burst of
+     * keystrokes queues one redundant write per character.
+     *
+     * The write always persists `this.settings` as it is when it runs, so the
+     * newest state is what reaches disk.
      */
     async saveSettings() {
-        log('Saving settings', 'debug', this.settings)
-        await this.saveData(this.settings)
-        log('Settings saved', 'debug', this.settings)
+        await this.enqueueSave()
     }
 
     /**
