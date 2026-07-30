@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.19.0 (2026-07-30)
+
+### Features
+
+- **plugin:** pinned cards, progressive rendering, quick number entry, mobile swipe [#123](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/123) [#125](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/125) [#135](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/135) [#140](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/140)
+
 ## 2.18.0 (2026-07-30)
 
 ### Features
