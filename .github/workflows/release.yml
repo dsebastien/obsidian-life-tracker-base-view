@@ -117,8 +117,10 @@ jobs:
 
             - name: Build (release gate — do not tag a commit that cannot build)
               run: |
-                  bun run build
+                  bun run tsc
+                  bun run lint
                   bun test
+                  bun run build
 
             - name: Commit release changes
               if: steps.version.outputs.prepared != 'true'

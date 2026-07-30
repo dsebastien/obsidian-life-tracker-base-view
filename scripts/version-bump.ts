@@ -38,6 +38,25 @@ export async function writeVersions(versions: VersionsJson): Promise<void> {
     await Bun.write(versionsFile, JSON.stringify(versions, null, 4) + '\n')
 }
 
+/**
+ * The `version -> minAppVersion` map after recording a release (issue #117).
+ *
+ * Every released version gets an entry, which is what Obsidian's own sample
+ * plugin does. The previous rule — only record when this `minAppVersion` is not
+ * already tracked — meant that once a minimum was seen, every later release
+ * sharing it was silently skipped. Since `minAppVersion` changes rarely, that
+ * left the file stuck at two entries while a dozen releases went unrecorded.
+ *
+ * Pure so the rule is actually testable; the file I/O stays in `bumpVersion`.
+ */
+export function recordVersion(
+    versions: VersionsJson,
+    targetVersion: string,
+    minAppVersion: string
+): VersionsJson {
+    return { ...versions, [targetVersion]: minAppVersion }
+}
+
 export async function bumpVersion(targetVersion: string): Promise<void> {
     // Read and update manifest.json
     const manifest = await readManifest()
@@ -46,15 +65,10 @@ export async function bumpVersion(targetVersion: string): Promise<void> {
     await writeManifest(manifest)
     console.log(`Updated manifest.json version to ${targetVersion}`)
 
-    // Update versions.json if this minAppVersion is not already tracked
+    // Record this release in versions.json
     const versions = await readVersions()
-    if (!Object.values(versions).includes(minAppVersion)) {
-        versions[targetVersion] = minAppVersion
-        await writeVersions(versions)
-        console.log(`Added ${targetVersion} -> ${minAppVersion} to versions.json`)
-    } else {
-        console.log(`versions.json already contains minAppVersion ${minAppVersion}`)
-    }
+    await writeVersions(recordVersion(versions, targetVersion, minAppVersion))
+    console.log(`Recorded ${targetVersion} -> ${minAppVersion} in versions.json`)
 }
 
 // Only run if executed directly

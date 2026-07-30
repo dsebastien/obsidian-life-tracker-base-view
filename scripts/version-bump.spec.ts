@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { recordVersion } from './version-bump'
 import type { ManifestJson, VersionsJson } from './version-bump'
 
 describe('ManifestJson interface', () => {
@@ -78,5 +79,45 @@ describe('version format validation', () => {
         for (const version of invalidVersions) {
             expect(version).not.toMatch(semverRegex)
         }
+    })
+})
+
+describe('recordVersion (issue #117)', () => {
+    test('records every release, not just ones with a new minAppVersion', () => {
+        // The original bug: `2.7.4 -> 1.12.0` was already present, so every
+        // later release sharing that minimum was skipped and versions.json
+        // stalled while 2.7.5 through 2.19.0 shipped
+        const existing: VersionsJson = { '0.1.0': '1.10.0', '2.7.4': '1.12.0' }
+
+        const result = recordVersion(existing, '2.20.0', '1.12.0')
+
+        expect(result['2.20.0']).toBe('1.12.0')
+        expect(Object.keys(result)).toHaveLength(3)
+    })
+
+    test('records a release that does raise the minimum', () => {
+        const result = recordVersion({ '1.0.0': '1.10.0' }, '2.0.0', '1.12.0')
+        expect(result).toEqual({ '1.0.0': '1.10.0', '2.0.0': '1.12.0' })
+    })
+
+    test('re-recording the same version is idempotent', () => {
+        const existing: VersionsJson = { '1.0.0': '1.10.0' }
+        expect(recordVersion(existing, '1.0.0', '1.10.0')).toEqual(existing)
+    })
+
+    test('a corrected minAppVersion overwrites the entry for that version', () => {
+        expect(recordVersion({ '1.0.0': '1.10.0' }, '1.0.0', '1.12.0')).toEqual({
+            '1.0.0': '1.12.0'
+        })
+    })
+
+    test('does not mutate the input', () => {
+        const existing: VersionsJson = { '1.0.0': '1.10.0' }
+        recordVersion(existing, '2.0.0', '1.12.0')
+        expect(existing).toEqual({ '1.0.0': '1.10.0' })
+    })
+
+    test('works from an empty map', () => {
+        expect(recordVersion({}, '1.0.0', '1.10.0')).toEqual({ '1.0.0': '1.10.0' })
     })
 })
