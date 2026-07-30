@@ -70,6 +70,12 @@ For vaults with many notes:
 - Start with monthly/quarterly granularity
 - Add specific date ranges as needed
 
+Cards appear as soon as the view opens: their outlines are laid out immediately
+and each one fills in as it finishes rendering, so a multi-year dashboard is
+usable while it is still drawing. Dense line and area charts (more than 500
+points, roughly 18 months of daily data) drop their point markers and draw just
+the line — every point is still plotted and still shows a tooltip on hover.
+
 ### Many Visualizations
 
 If you have many properties:

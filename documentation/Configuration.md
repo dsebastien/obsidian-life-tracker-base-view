@@ -60,6 +60,19 @@ Configured via Obsidian's view options UI.
 | `timeFrame`     | TimeFrameId     | `all_time` | Filter notes by date range                                 |
 | `hideNotesWhen` | BatchFilterMode | `required` | Hide notes when properties are filled (required/all/never) |
 
+## Card Order & Pins (Per-View)
+
+Stored in the Life Tracker view config, both as `string[]` of `prop:<id>` /
+`overlay:<id>` entries (see `card-order.types.ts`).
+
+| Key           | Description                                                                    |
+| ------------- | ------------------------------------------------------------------------------ |
+| `manualOrder` | Drag-and-drop card order; cleared by the **Reset order** button                |
+| `pinnedCards` | Cards pinned to the top of the grid (issue #123); cleared when the last is off |
+
+Pins are applied after the manual/natural order is reconciled, so pinned cards
+always come first (see `documentation/Business Rules.md`).
+
 ## Time Frame Options
 
 Available time frames for filtering visualization data:

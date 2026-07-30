@@ -13,11 +13,38 @@ import { log } from '../../../../utils'
 /**
  * Tag cloud visualization for tags and lists
  */
+/**
+ * Separator for signature parts: a unit separator can't appear in a tag name,
+ * so no tag text can forge a signature match.
+ */
+const SIGNATURE_SEPARATOR = '\u001f'
+
+/**
+ * Signature of what is currently rendered, used to skip no-op updates
+ * (issue #104): the tags in render order with their frequencies, plus the
+ * overall max frequency — font sizes are relative to it, so a change outside
+ * the rendered slice still resizes the visible tags.
+ */
+function signatureOf(tags: TagCloudData['tags'], maxFrequency: number): string {
+    return [String(maxFrequency), ...tags.map((tag) => `${tag.tag}=${tag.frequency}`)].join(
+        SIGNATURE_SEPARATOR
+    )
+}
+
+/** Same tags in the same order, regardless of frequency */
+function sameTagOrder(a: TagCloudData['tags'], b: TagCloudData['tags']): boolean {
+    if (a.length !== b.length) return false
+    return a.every((tag, index) => tag.tag === b[index]?.tag)
+}
+
 export class TagCloudVisualization extends BaseVisualization {
     private tagCloudConfig: TagCloudConfig
     private tooltip: Tooltip | null = null
     private cloudEl: HTMLElement | null = null
     private tagCloudData: TagCloudData | null = null
+    /** Tags actually rendered, in render order (sorted + capped) */
+    private renderedTags: TagCloudData['tags'] = []
+    private renderedSignature: string | null = null
 
     constructor(
         containerEl: HTMLElement,
@@ -36,6 +63,11 @@ export class TagCloudVisualization extends BaseVisualization {
     override render(data: VisualizationDataPoint[]): void {
         log(`Rendering tag cloud for ${this.displayName}`, 'debug')
 
+        // Each render builds a fresh tooltip; drop the previous one so repeated
+        // structural updates don't accumulate orphaned tooltip elements
+        this.tooltip?.destroy()
+        this.tooltip = null
+
         // Aggregate data (use shared service)
         this.tagCloudData = sharedAggregationService.aggregateForTagCloud(
             data,
@@ -44,6 +76,9 @@ export class TagCloudVisualization extends BaseVisualization {
         )
 
         if (this.tagCloudData.tags.length === 0) {
+            this.renderedTags = []
+            this.renderedSignature = null
+            this.cloudEl = null
             this.showEmptyState(`No data found for "${this.displayName}"`)
             return
         }
@@ -60,15 +95,9 @@ export class TagCloudVisualization extends BaseVisualization {
         // Create tooltip
         this.tooltip = new Tooltip(this.cloudEl)
 
-        // Sort tags based on config
-        let sortedTags = [...this.tagCloudData.tags]
-        if (this.tagCloudConfig.sortBy === 'alphabetical') {
-            sortedTags.sort((a, b) => a.tag.localeCompare(b.tag))
-        }
-        // Already sorted by frequency from aggregation service
-
-        // Limit to max tags
-        sortedTags = sortedTags.slice(0, this.tagCloudConfig.maxTags)
+        const sortedTags = this.selectTags(this.tagCloudData)
+        this.renderedTags = sortedTags
+        this.renderedSignature = signatureOf(sortedTags, this.tagCloudData.maxFrequency)
 
         // Render tags
         for (const tagItem of sortedTags) {
@@ -95,11 +124,74 @@ export class TagCloudVisualization extends BaseVisualization {
     }
 
     /**
-     * Update the tag cloud with new data
+     * Sorted, capped list of tags in render order
+     */
+    private selectTags(tagCloudData: TagCloudData): TagCloudData['tags'] {
+        const tags = [...tagCloudData.tags]
+        if (this.tagCloudConfig.sortBy === 'alphabetical') {
+            tags.sort((a, b) => a.tag.localeCompare(b.tag))
+        }
+        // Already sorted by frequency from aggregation service
+        return tags.slice(0, this.tagCloudConfig.maxTags)
+    }
+
+    /**
+     * Update the tag cloud, avoiding DOM work when nothing visible changed
+     * (issue #104). Unrelated property edits trigger view-wide updates, and a
+     * full teardown + re-render per update was the dominant cost.
      */
     override update(data: VisualizationDataPoint[]): void {
-        // Re-render for simplicity
-        this.render(data)
+        if (!this.cloudEl || this.renderedSignature === null) {
+            this.render(data)
+            return
+        }
+
+        const newData = sharedAggregationService.aggregateForTagCloud(
+            data,
+            this.propertyId,
+            this.displayName
+        )
+
+        if (newData.tags.length === 0) {
+            this.render(data)
+            return
+        }
+
+        const newTags = this.selectTags(newData)
+
+        // Identical content: keep the DOM untouched
+        if (signatureOf(newTags, newData.maxFrequency) === this.renderedSignature) {
+            this.tagCloudData = newData
+            this.renderedTags = newTags
+            return
+        }
+
+        // Same tags in the same order: only the sizes and tooltips move
+        if (!sameTagOrder(newTags, this.renderedTags)) {
+            this.render(data)
+            return
+        }
+
+        const tagEls = this.cloudEl.querySelectorAll<HTMLElement>('.lt-tag')
+        if (tagEls.length !== newTags.length) {
+            this.render(data)
+            return
+        }
+
+        tagEls.forEach((tagEl, index) => {
+            const tagItem = newTags[index]
+            if (!tagItem) return
+
+            const fontSize = this.calculateFontSize(tagItem.frequency, newData.maxFrequency)
+            const sizeClass = this.getSizeClass(fontSize)
+
+            tagEl.className = `lt-tag ${sizeClass}`
+            tagEl.dataset['frequency'] = String(tagItem.frequency)
+        })
+
+        this.tagCloudData = newData
+        this.renderedTags = newTags
+        this.renderedSignature = signatureOf(newTags, newData.maxFrequency)
     }
 
     /**
@@ -121,6 +213,8 @@ export class TagCloudVisualization extends BaseVisualization {
         this.tooltip = null
         this.cloudEl = null
         this.tagCloudData = null
+        this.renderedTags = []
+        this.renderedSignature = null
     }
 
     /**

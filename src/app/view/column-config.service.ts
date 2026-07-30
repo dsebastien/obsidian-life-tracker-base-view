@@ -69,6 +69,16 @@ function migrateToArrayFormat(legacy: LegacyColumnConfigMap): ColumnConfigMap {
  * Supports multiple visualizations per property.
  */
 export class ColumnConfigService {
+    /**
+     * Memoized view-config reads for the current render cycle (issue #104).
+     * `getColumnConfigs()` is called about a dozen times per render and each
+     * call deserializes the whole config blob (and may run the legacy
+     * migration). Writes refresh the cache; `invalidateCache()` drops it at the
+     * start of a render cycle so external config changes are picked up.
+     */
+    private cachedColumnConfigs: ColumnConfigMap | null = null
+    private cachedOverlayConfigs: OverlayConfigMap | null = null
+
     constructor(
         private plugin: LifeTrackerPlugin,
         private getConfigValue: (key: string) => unknown,
@@ -76,16 +86,46 @@ export class ColumnConfigService {
     ) {}
 
     /**
+     * Drop the memoized config reads. Call once per render cycle, before
+     * anything reads configs, so changes made outside this service are seen.
+     */
+    invalidateCache(): void {
+        this.cachedColumnConfigs = null
+        this.cachedOverlayConfigs = null
+    }
+
+    /**
+     * Persist column configs and keep the memoized copy in sync
+     */
+    private writeColumnConfigs(configs: ColumnConfigMap): void {
+        this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+        this.cachedColumnConfigs = configs
+    }
+
+    /**
+     * Persist overlay configs and keep the memoized copy in sync
+     */
+    private writeOverlayConfigs(configs: OverlayConfigMap): void {
+        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+        this.cachedOverlayConfigs = configs
+    }
+
+    /**
      * Get stored column configurations from view config.
      * Automatically migrates legacy format if detected.
      */
     getColumnConfigs(): ColumnConfigMap {
+        if (this.cachedColumnConfigs) {
+            return this.cachedColumnConfigs
+        }
+
         const raw = this.getConfigValue(COLUMN_CONFIGS_KEY) as
             | ColumnConfigMap
             | LegacyColumnConfigMap
             | undefined
 
         if (!raw) {
+            // Not cached: an empty read must not shadow a config that appears later
             return {}
         }
 
@@ -93,10 +133,11 @@ export class ColumnConfigService {
         if (isLegacyFormat(raw)) {
             log('Migrating column configs from legacy format', 'debug')
             const migrated = migrateToArrayFormat(raw)
-            this.setConfigValue(COLUMN_CONFIGS_KEY, migrated)
+            this.writeColumnConfigs(migrated)
             return migrated
         }
 
+        this.cachedColumnConfigs = raw
         return raw
     }
 
@@ -146,7 +187,7 @@ export class ColumnConfigService {
             configs[propertyId] = [config, ...existingConfigs.slice(1)]
         }
 
-        this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+        this.writeColumnConfigs(configs)
         return config.id
     }
 
@@ -181,7 +222,7 @@ export class ColumnConfigService {
         newConfigs.splice(sourceIndex + 1, 0, newConfig)
         configs[propertyId] = newConfigs
 
-        this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+        this.writeColumnConfigs(configs)
         return newId
     }
 
@@ -204,7 +245,7 @@ export class ColumnConfigService {
         }
 
         configs[propertyId] = newConfigs
-        this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+        this.writeColumnConfigs(configs)
         return true
     }
 
@@ -371,7 +412,7 @@ export class ColumnConfigService {
             configuredAt: Date.now()
         }
 
-        this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+        this.writeColumnConfigs(configs)
     }
 
     /**
@@ -380,7 +421,7 @@ export class ColumnConfigService {
     deleteColumnConfig(propertyId: BasesPropertyId): void {
         const configs = this.getColumnConfigs()
         delete configs[propertyId]
-        this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+        this.writeColumnConfigs(configs)
     }
 
     /**
@@ -400,7 +441,7 @@ export class ColumnConfigService {
             configs[propertyId] = propertyConfigs.filter((c) => c.id !== visualizationId)
         }
 
-        this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+        this.writeColumnConfigs(configs)
     }
 
     /**
@@ -421,7 +462,7 @@ export class ColumnConfigService {
         }
 
         if (orphanedIds.length > 0) {
-            this.setConfigValue(COLUMN_CONFIGS_KEY, configs)
+            this.writeColumnConfigs(configs)
             log('Cleaned up orphaned configs', 'debug', { orphanedIds })
         }
 
@@ -437,8 +478,18 @@ export class ColumnConfigService {
      * Get stored overlay configurations from view config.
      */
     getOverlayConfigs(): OverlayConfigMap {
+        if (this.cachedOverlayConfigs) {
+            return this.cachedOverlayConfigs
+        }
+
         const raw = this.getConfigValue(OVERLAY_CONFIGS_KEY) as OverlayConfigMap | undefined
-        return raw ?? {}
+        if (!raw) {
+            // Not cached: an empty read must not shadow a config that appears later
+            return {}
+        }
+
+        this.cachedOverlayConfigs = raw
+        return raw
     }
 
     /**
@@ -492,7 +543,7 @@ export class ColumnConfigService {
         }
 
         configs[id] = config
-        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+        this.writeOverlayConfigs(configs)
 
         log('Created overlay config', 'debug', { id, propertyIds, visualizationType })
         return id
@@ -516,7 +567,7 @@ export class ColumnConfigService {
             configuredAt: Date.now()
         }
 
-        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+        this.writeOverlayConfigs(configs)
     }
 
     /**
@@ -536,7 +587,7 @@ export class ColumnConfigService {
         overlay.propertyIds.push(propertyId)
         overlay.configuredAt = Date.now()
 
-        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+        this.writeOverlayConfigs(configs)
         return true
     }
 
@@ -559,13 +610,13 @@ export class ColumnConfigService {
         // Delete overlay if fewer than 2 properties remain
         if (overlay.propertyIds.length < 2) {
             delete configs[overlayId]
-            this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+            this.writeOverlayConfigs(configs)
             log('Deleted overlay due to insufficient properties', 'debug', { overlayId })
             return false
         }
 
         overlay.configuredAt = Date.now()
-        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+        this.writeOverlayConfigs(configs)
         return true
     }
 
@@ -575,7 +626,7 @@ export class ColumnConfigService {
     deleteOverlayConfig(overlayId: string): void {
         const configs = this.getOverlayConfigs()
         delete configs[overlayId]
-        this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+        this.writeOverlayConfigs(configs)
     }
 
     /**
@@ -622,7 +673,7 @@ export class ColumnConfigService {
         }
 
         if (changed) {
-            this.setConfigValue(OVERLAY_CONFIGS_KEY, configs)
+            this.writeOverlayConfigs(configs)
         }
     }
 }

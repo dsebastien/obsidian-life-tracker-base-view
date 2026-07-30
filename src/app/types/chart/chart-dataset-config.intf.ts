@@ -19,4 +19,11 @@ export interface ChartDatasetConfig {
     borderDash?: number[]
     /** Point radius; 0 hides the points (used by the moving-average overlay) */
     pointRadius?: number
+    /** Point radius on hover; kept non-zero so hidden points still highlight */
+    pointHoverRadius?: number
+    /**
+     * Extra hit radius around a point. Dense series hide their markers
+     * (`pointRadius: 0`), which would otherwise make tooltips unreachable.
+     */
+    pointHitRadius?: number
 }

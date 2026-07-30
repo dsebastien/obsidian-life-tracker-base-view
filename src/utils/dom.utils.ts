@@ -63,3 +63,19 @@ export function setCssProps(el: HTMLElement, props: Record<string, string | numb
 export function prefersReducedMotion(): boolean {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
+
+/**
+ * Narrow an event target to an element, safely across window realms.
+ *
+ * `target instanceof Element` compares against the *current* window's `Element`
+ * constructor, so it is false for nodes coming from an Obsidian popout window —
+ * which would silently kill event delegation there. Duck-typing on `closest`
+ * works in every realm.
+ */
+export function getEventElement(target: EventTarget | null): Element | null {
+    if (target === null || typeof target !== 'object') {
+        return null
+    }
+    const candidate = target as Partial<Element>
+    return typeof candidate.closest === 'function' ? (candidate as Element) : null
+}

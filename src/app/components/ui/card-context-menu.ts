@@ -87,6 +87,7 @@ export function showCardContextMenu(
     isFromPreset: boolean,
     isMaximized: boolean,
     canRemove: boolean,
+    isPinned: boolean,
     onAction: CardMenuCallback
 ): void {
     // Get position from event
@@ -162,6 +163,17 @@ export function showCardContextMenu(
             onAction({ type: 'removeVisualization' })
         })
     }
+
+    // Pin/unpin button (issue #123)
+    const pinBtn = header.createEl('button', {
+        cls: 'lt-card-popover-btn'
+    })
+    setIcon(pinBtn, 'star')
+    pinBtn.createSpan({ text: isPinned ? 'Unpin' : 'Pin to top' })
+    pinBtn.addEventListener('click', () => {
+        close()
+        onAction({ type: 'togglePin' })
+    })
 
     // Maximize/Minimize button
     const maximizeBtn = header.createEl('button', {

@@ -94,6 +94,31 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - When a property is in multiple overlays, it is hidden if ANY overlay has `hideIndividualVisualizations` enabled
 - Data points are still cached for hidden properties (needed for overlay rendering)
 
+## Card Pinning
+
+- Cards with a rendered visualization (property or overlay) can be pinned to the top of the grid via the star button in their header; property cards additionally offer it in the right-click menu (overlay right-click opens the overlay edit modal instead) (issue #123)
+- Unconfigured property cards (the "choose a visualization" card) are not pinnable — there is nothing rendered yet to pin. A configured card showing an empty state has no header either, so its pin is reachable via the right-click menu only
+- Pins are per property / per overlay, matching the ordering model: a property with several visualizations is pinned as a group, since its cards always render together
+- Pinned cards are hoisted to the front of the effective order, keeping their relative order in that order — pinning does not reorder pins among themselves
+- Pins are stored per Base view (`pinnedCards` in the view config), like the manual order, and cleared from the config entirely when the last pin is removed
+- Pins referencing properties/overlays that no longer exist are ignored when ordering, and dropped from the config on the next pin toggle
+- Dragging a pinned card below unpinned ones does not unpin it: the pin still wins on the next render
+
+## Progressive Rendering
+
+- On a full re-render the grid immediately lays out one skeleton placeholder per pending card, and each skeleton is replaced by its real card as the render batches progress (issue #135)
+- Skeletons carry no data, listeners, or card id attribute, so drag-and-drop and maximize ignore them
+- Leftover skeletons (items that render no card, e.g. a property hidden by an overlay) are removed when the render finishes
+- The previous content height stays reserved for the whole rebuild so the dashboard never collapses; there is no blanket spinner overlay any more
+
+## Rendering Performance
+
+- Heatmap cell interaction uses one delegated listener set on the grid root, detached on `destroy()` — never per-cell listeners (issue #104)
+- Tag cloud and timeline updates are skipped when the aggregated content is unchanged, and the tag cloud updates sizes in place when only frequencies changed
+- View-config reads in `ColumnConfigService` are memoized per render cycle and invalidated at the start of each cycle (and on every write)
+- Line/area datasets above 500 points render without point markers (`pointRadius: 0`, hover and hit radius preserved); dense scatter charts shrink their dots. No data points are ever dropped
+- Chart.js' decimation plugin is deliberately not enabled: it requires a linear/time x scale with `parsing: false`, while these charts use a category scale of formatted period labels
+
 ## Card Ordering
 
 - Default order: Obsidian's property order (from `BasesViewConfig.getOrder()`), followed by overlay cards in their stored order
@@ -139,6 +164,21 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - A period is streak-active when its cell value is non-null and non-zero — consistent with heatmap rendering where 0 on a 0-based scale shows as absence (issue #87)
 - The current streak counts only when the trailing run reaches the current period or the immediately preceding one (today's data may not be captured yet)
 - Consecutiveness is calendar-based per granularity (cells can be sparse)
+
+## Number Quick Entry
+
+- Number editors show −/+ buttons except in compact mode (grid cells), where the plain input is kept (issue #125)
+- Steps use the property's configured step, falling back to 1; results are clamped to the property's range and rounded to 6 decimals to avoid float drift
+- From an empty field the first tap lands on the range minimum for bounded properties, on +step for unbounded increments, and on 0 for unbounded decrements (never negative from empty)
+- The −/+ buttons commit immediately (one tap = one saved value); the buttons disable at the range bounds
+
+## Capture Modal Swipe Navigation
+
+- On touch/pen input, swiping the card left moves to the next property and right to the previous one — identical to the arrow buttons (issue #140)
+- A gesture is a swipe when it travels ≥60px horizontally, horizontal travel ≥1.5× vertical travel, and it completes within 800ms
+- Gestures starting on an interactive control (input, textarea, select, button, link, contenteditable) are ignored so sliders and text selection keep working
+- Mouse input never swipes: a horizontal mouse drag in a modal means text selection
+- Swipes never trigger the boundary actions ("Done" / "Next file"); those stay button-only
 
 ## Data Entry Safety
 

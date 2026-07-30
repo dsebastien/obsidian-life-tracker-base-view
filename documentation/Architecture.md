@@ -40,7 +40,9 @@ src/
         grid-view.ts               # Grid BasesView (card editing)
         grid-view-options.ts       # Grid view options
       view-options.ts              # Life tracker view options
-      column-config.service.ts     # Per-column config management
+      column-config.service.ts     # Per-column config management (memoized per render cycle)
+      card-order.service.ts        # Manual order + pinning reconciliation
+      card-order.types.ts          # Order/pin config keys and serialization
       maximize-state.service.ts    # Card maximize/minimize state
       visualization-config.helper.ts # Build visualization configs
     components/

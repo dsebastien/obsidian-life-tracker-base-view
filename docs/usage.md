@@ -80,6 +80,24 @@ When a custom order is in effect, a **Reset order** button appears in the contro
 
 **Note**: The custom order is saved per view. Different Bases — and different views inside the same Base — keep their own orderings independently.
 
+### Pin Favorite Cards
+
+Click the star in a card's top-right corner to pin it. Pinned cards move to the
+top of the grid and stay there whatever the rest of the order is, so your most
+important metrics are always the first thing you see. Click the star again to
+release it — property cards also offer **Pin to top** / **Unpin** in their
+right-click menu.
+
+Property cards and overlay cards can both be pinned, several at a time — pinned
+cards keep their relative order. Pins are saved per view, like the custom order.
+
+When a property has several visualizations, they are pinned together: those
+cards always render side by side, so the pin applies to the property.
+
+Cards that aren't showing a visualization yet — an unconfigured property, or one
+with no data in the selected time frame — have no star; configure them (or
+right-click a configured one) to pin.
+
 ### Animation Controls
 
 - **Play/Pause**: Control chart animations

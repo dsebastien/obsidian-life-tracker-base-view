@@ -15,10 +15,26 @@ import { formatDateByGranularity, formatDateISO, getChartColorScheme, log } from
 /**
  * Timeline visualization for date-based data
  */
+/**
+ * Signature of the rendered points, used to skip no-op updates (issue #104).
+ * Position, size and tooltip all derive from date, value and entry count.
+ */
+function signatureOf(data: TimelineData): string {
+    return [
+        data.minDate.getTime(),
+        data.maxDate.getTime(),
+        ...data.points.map(
+            (point) =>
+                `${point.date.getTime()}=${point.value ?? ''}:${point.label}:${point.filePaths.length}`
+        )
+    ].join(' ')
+}
+
 export class TimelineVisualization extends BaseVisualization {
     private tooltip: Tooltip | null = null
     private timelineEl: HTMLElement | null = null
     private timelineData: TimelineData | null = null
+    private renderedSignature: string | null = null
 
     constructor(
         containerEl: HTMLElement,
@@ -36,6 +52,11 @@ export class TimelineVisualization extends BaseVisualization {
     override render(data: VisualizationDataPoint[]): void {
         log(`Rendering timeline for ${this.displayName}`, 'debug')
 
+        // Each render builds a fresh tooltip; drop the previous one so repeated
+        // structural updates don't accumulate orphaned tooltip elements
+        this.tooltip?.destroy()
+        this.tooltip = null
+
         // Aggregate data (use shared service)
         // Data is already pre-filtered based on showEmptyValues
         this.timelineData = sharedAggregationService.aggregateForTimeline(
@@ -45,6 +66,8 @@ export class TimelineVisualization extends BaseVisualization {
         )
 
         if (this.timelineData.points.length === 0) {
+            this.timelineEl = null
+            this.renderedSignature = null
             this.showEmptyState(`No date data found for "${this.displayName}"`)
             return
         }
@@ -79,6 +102,8 @@ export class TimelineVisualization extends BaseVisualization {
 
         // Create axis labels
         this.renderAxisLabels()
+
+        this.renderedSignature = signatureOf(this.timelineData)
     }
 
     /**
@@ -167,11 +192,29 @@ export class TimelineVisualization extends BaseVisualization {
     }
 
     /**
-     * Update the timeline with new data
+     * Update the timeline, skipping the re-render when nothing visible changed
+     * (issue #104). Every point's position, size and tooltip derives from the
+     * aggregated data, so an identical signature means an identical DOM.
      */
     override update(data: VisualizationDataPoint[]): void {
-        // Re-render for simplicity
-        this.render(data)
+        if (!this.timelineEl || this.renderedSignature === null) {
+            this.render(data)
+            return
+        }
+
+        const newData = sharedAggregationService.aggregateForTimeline(
+            data,
+            this.propertyId,
+            this.displayName
+        )
+
+        if (newData.points.length === 0 || signatureOf(newData) !== this.renderedSignature) {
+            this.render(data)
+            return
+        }
+
+        // Same points: keep the DOM, but adopt the fresh file paths behind them
+        this.timelineData = newData
     }
 
     /**
@@ -197,6 +240,7 @@ export class TimelineVisualization extends BaseVisualization {
         this.tooltip = null
         this.timelineEl = null
         this.timelineData = null
+        this.renderedSignature = null
     }
 
     /**

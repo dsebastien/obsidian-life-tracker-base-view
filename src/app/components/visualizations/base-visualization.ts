@@ -31,6 +31,10 @@ export abstract class BaseVisualization {
     protected playBtn: HTMLElement | null = null
     protected animationState: AnimationState = 'idle'
     protected animationDuration: number = DEFAULT_ANIMATION_DURATION
+    /** Pin toggle callback and state (issue #123) */
+    protected onPinToggle: (() => void) | null = null
+    protected isPinned: boolean = false
+    protected pinBtn: HTMLElement | null = null
 
     constructor(
         containerEl: HTMLElement,
@@ -66,6 +70,37 @@ export abstract class BaseVisualization {
      */
     setAnimationDuration(duration: number): void {
         this.animationDuration = duration
+    }
+
+    /**
+     * Wire the pin toggle (issue #123). The button only appears once a callback
+     * is set, so visualizations rendered outside the grid stay unchanged.
+     */
+    setPinCallback(callback: () => void): void {
+        this.onPinToggle = callback
+    }
+
+    /**
+     * Set pinned state and update the button icon
+     */
+    setPinned(pinned: boolean): void {
+        this.isPinned = pinned
+        this.updatePinButtonIcon()
+    }
+
+    /**
+     * Update the pin button icon and label based on current state
+     */
+    protected updatePinButtonIcon(): void {
+        if (!this.pinBtn) return
+
+        // Always the same outline star: CSS fills it gold when pinned, so the
+        // control never changes shape or position between states
+        setIcon(this.pinBtn, 'star')
+        const label = this.isPinned ? 'Unpin from top' : 'Pin to top'
+        this.pinBtn.setAttribute('aria-label', label)
+        this.pinBtn.setAttribute('aria-pressed', String(this.isPinned))
+        this.pinBtn.classList.toggle('lt-pin-btn--pinned', this.isPinned)
     }
 
     /**
@@ -203,6 +238,32 @@ export abstract class BaseVisualization {
         // Add action buttons
         const actionsEl = header.createDiv({ cls: 'lt-section-actions' })
 
+        // Pin button (issue #123), first so the play/maximize buttons keep
+        // their positions across cards
+        if (this.onPinToggle) {
+            this.pinBtn = actionsEl.createDiv({
+                cls: 'lt-pin-btn',
+                attr: {
+                    role: 'button',
+                    tabindex: '0'
+                }
+            })
+            this.updatePinButtonIcon()
+
+            this.pinBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                this.handlePinButtonClick()
+            })
+
+            this.pinBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    this.handlePinButtonClick()
+                }
+            })
+        }
+
         // Add play button if animation is supported
         if (this.supportsAnimation()) {
             this.playBtn = actionsEl.createDiv({
@@ -261,6 +322,15 @@ export abstract class BaseVisualization {
         })
 
         return header
+    }
+
+    /**
+     * Toggle the pin. The star flips immediately so the click feels answered;
+     * the grid re-render that follows sets the authoritative state.
+     */
+    protected handlePinButtonClick(): void {
+        this.setPinned(!this.isPinned)
+        this.onPinToggle?.()
     }
 
     /**

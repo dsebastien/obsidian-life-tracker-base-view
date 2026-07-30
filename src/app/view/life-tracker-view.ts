@@ -71,11 +71,20 @@ import { getBoolConfig, getEnumConfig, getNumberConfig, getStringConfig } from '
 import { overlayIdToPropertyId } from './overlay-id'
 import {
     computeEffectiveOrder,
+    isCardPinned,
     orderSignature,
     readManualOrder,
-    writeManualOrder
+    readPinnedCards,
+    togglePinnedCard,
+    writeManualOrder,
+    writePinnedCards
 } from './card-order.service'
-import { MANUAL_ORDER_KEY, serializeOrderItem, type OrderedCardItem } from './card-order.types'
+import {
+    MANUAL_ORDER_KEY,
+    PINNED_CARDS_KEY,
+    serializeOrderItem,
+    type OrderedCardItem
+} from './card-order.types'
 import {
     PropertySelectionModal,
     type SelectableProperty
@@ -160,10 +169,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // bulk note edits) into a single rebuild so visualizations don't thrash.
     private dataUpdateDebounceTimer: number | null = null
 
-    // Overlay shown during a full re-render. Reserves the previous content
-    // height and shows a spinner so the dashboard stays visually stable instead
-    // of collapsing and flickering while cards rebuild asynchronously.
-    private rebuildIndicatorEl: HTMLElement | null = null
+    // Cards pinned to the top of the grid (issue #123), read from view config
+    // at the start of every render cycle
+    private pinnedCards: OrderedCardItem[] = []
 
     // Cleanup function for settings listener
     private unsubscribeSettings: (() => void) | null = null
@@ -457,15 +465,22 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.currentRenderCycle++
         const renderCycle = this.currentRenderCycle
 
+        // Config reads are memoized per render cycle (issue #104): drop last
+        // cycle's copy so changes made outside this view are picked up
+        this.columnConfigService.invalidateCache()
+
         // Get entries and properties
         const entries = this.data.data
         const propertyIds = this.config.getOrder()
         const overlayConfigs = this.columnConfigService.getOverlayConfigsArray()
         const manualOrder = readManualOrder(this.config.get(MANUAL_ORDER_KEY))
+        const pinnedCards = readPinnedCards(this.config.get(PINNED_CARDS_KEY))
+        this.pinnedCards = pinnedCards
         const effectiveOrder = computeEffectiveOrder({
             propertyIds,
             overlayIds: overlayConfigs.map((o) => o.id),
-            manualOrder
+            manualOrder,
+            pinnedCards
         })
         const newOrderSignature = orderSignature(effectiveOrder)
 
@@ -531,16 +546,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.maximizeService.cleanup()
         this.destroyVisualizations()
         this.containerEl.empty()
-        this.beginRebuildIndicator(reservedHeight)
+        this.reserveRebuildHeight(reservedHeight)
 
         if (entries.length === 0) {
-            this.endRebuildIndicator()
+            this.releaseRebuildHeight()
             createEmptyState(this.containerEl, EMPTY_STATE_MESSAGES.noData, '📊')
             return
         }
 
         if (propertyIds.length === 0) {
-            this.endRebuildIndicator()
+            this.releaseRebuildHeight()
             createEmptyState(this.containerEl, EMPTY_STATE_MESSAGES.noProperties, '⚙️')
             return
         }
@@ -615,7 +630,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Check if any entries remain after filtering
         if (filteredEntries.length === 0) {
-            this.endRebuildIndicator()
+            this.releaseRebuildHeight()
             createEmptyState(this.gridEl, 'No data available for the selected time frame', '📅')
             return
         }
@@ -895,6 +910,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      * in batches to prevent UI freezing. The order is determined by the
      * effective order computed in `onDataUpdated` (manual order merged with
      * any newly added items appended at the end).
+     *
+     * A skeleton placeholder is laid out for every pending card first (issue
+     * #135), so the dashboard's shape appears on the first frame and each
+     * skeleton is swapped for its real card as the batches progress, instead of
+     * the whole grid appearing at once at the end.
      */
     private async renderCardsAsync(
         orderedCards: OrderedCardItem[],
@@ -902,7 +922,30 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>,
         renderCycle: number
     ): Promise<void> {
+        const gridEl = this.gridEl
+        if (!gridEl) return
+
         let index = 0
+        const skeletons = this.renderSkeletonCards(gridEl, this.countExpectedCards(orderedCards))
+
+        /**
+         * Move whatever the last card render appended (cards land at the end of
+         * the grid) in front of the remaining skeletons, and retire one skeleton
+         * per rendered card so the grid keeps growing from the top without
+         * shifting what is already visible.
+         */
+        const promoteRenderedCards = (childCountBefore: number): void => {
+            const appended = Array.from(gridEl.children).slice(childCountBefore)
+            const anchor = skeletons[0] ?? null
+
+            for (const card of appended) {
+                gridEl.insertBefore(card, anchor)
+            }
+
+            for (const retired of skeletons.splice(0, appended.length)) {
+                retired.remove()
+            }
+        }
 
         const renderBatch = (): void => {
             // Check if this render cycle is still current
@@ -917,6 +960,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 const item = orderedCards[index]
                 if (!item) continue
 
+                const childCountBefore = gridEl.children.length
+
                 if (item.kind === 'property') {
                     this.renderPropertyCard(item.id, entries, dateAnchors)
                 } else {
@@ -925,6 +970,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         this.renderOverlayCard(overlayConfig, entries, dateAnchors)
                     }
                 }
+
+                promoteRenderedCards(childCountBefore)
             }
 
             // Schedule next batch if more items to render
@@ -932,13 +979,67 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.pendingRenderFrame = window.requestAnimationFrame(renderBatch)
             } else {
                 this.pendingRenderFrame = null
-                // All cards rendered — release the stability overlay/height.
-                this.endRebuildIndicator()
+                // Drop any skeletons left over (items that render no card, e.g.
+                // properties hidden by an overlay)
+                for (const skeleton of skeletons) {
+                    skeleton.remove()
+                }
+                skeletons.length = 0
+                // All cards rendered — release the reserved height.
+                this.releaseRebuildHeight()
             }
         }
 
         // Start rendering
         this.pendingRenderFrame = window.requestAnimationFrame(renderBatch)
+    }
+
+    /**
+     * How many cards the ordered items will actually render (issue #135), so
+     * the skeleton layout matches the final grid instead of assuming one card
+     * per item: a property can hold several visualizations, or none when it is
+     * hidden by an overlay.
+     */
+    private countExpectedCards(orderedCards: OrderedCardItem[]): number {
+        let count = 0
+
+        for (const item of orderedCards) {
+            if (item.kind === 'overlay') {
+                if (this.columnConfigService.getOverlayConfig(item.id)) count++
+                continue
+            }
+
+            if (this.columnConfigService.shouldHideIndividualVisualization(item.id)) continue
+
+            const effectiveConfigs = this.columnConfigService.getEffectiveConfigs(
+                item.id,
+                this.config.getDisplayName(item.id)
+            )
+            // Unconfigured properties still render one card (the config card)
+            count += Math.max(1, effectiveConfigs.length)
+        }
+
+        return count
+    }
+
+    /**
+     * Lay out `count` skeleton placeholders in the grid (issue #135).
+     * They are plain, non-interactive cards: no data, no listeners.
+     */
+    private renderSkeletonCards(gridEl: HTMLElement, count: number): HTMLElement[] {
+        const skeletons: HTMLElement[] = []
+
+        for (let i = 0; i < count; i++) {
+            const skeletonEl = gridEl.createDiv({
+                cls: 'lt-card lt-card--skeleton',
+                attr: { 'aria-hidden': 'true' }
+            })
+            skeletonEl.createDiv({ cls: 'lt-skeleton-line lt-skeleton-line--title' })
+            skeletonEl.createDiv({ cls: 'lt-skeleton-body' })
+            skeletons.push(skeletonEl)
+        }
+
+        return skeletons
     }
 
     /**
@@ -998,24 +1099,21 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     }
 
     /**
-     * Start the rebuild stability indicator: reserve the previous content
-     * height so the layout doesn't collapse, and overlay a loading spinner.
-     * Call right after emptying the container on the full re-render path.
+     * Reserve the previous content height so the layout doesn't collapse while
+     * cards rebuild. Call right after emptying the container on the full
+     * re-render path. Progress itself is shown by the skeleton cards the grid
+     * lays out immediately (issue #135), so no overlay spinner is needed.
      */
-    private beginRebuildIndicator(reservedHeight: number): void {
+    private reserveRebuildHeight(reservedHeight: number): void {
         if (reservedHeight > 0) {
             setCssProps(this.containerEl, { minHeight: reservedHeight })
         }
-        this.rebuildIndicatorEl = this.containerEl.createDiv({ cls: 'lt-rebuild-overlay' })
-        this.rebuildIndicatorEl.createDiv({ cls: 'lt-loading-spinner' })
     }
 
     /**
-     * Remove the rebuild stability indicator and release the reserved height.
+     * Release the height reserved for the rebuild.
      */
-    private endRebuildIndicator(): void {
-        this.rebuildIndicatorEl?.remove()
-        this.rebuildIndicatorEl = null
+    private releaseRebuildHeight(): void {
         setCssProps(this.containerEl, { minHeight: '' })
     }
 
@@ -1136,6 +1234,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             this.maximizeService.handleMaximizeToggle(propertyId, maximize)
         })
 
+        // Wire up pinning (issue #123)
+        const pinItem: OrderedCardItem = { kind: 'overlay', id: overlayConfig.id }
+        visualization.setPinCallback(() => this.toggleCardPin(pinItem))
+        visualization.setPinned(isCardPinned(this.pinnedCards, pinItem))
+
         // Set animation duration from plugin settings
         visualization.setAnimationDuration(this.plugin.settings.animationDuration)
 
@@ -1195,6 +1298,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         visualization.setMaximizeCallback((propertyId, maximize) => {
             this.maximizeService.handleMaximizeToggle(propertyId, maximize)
         })
+
+        // Wire up pinning (issue #123)
+        const pinItem: OrderedCardItem = { kind: 'property', id: columnConfig.propertyId }
+        visualization.setPinCallback(() => this.toggleCardPin(pinItem))
+        visualization.setPinned(isCardPinned(this.pinnedCards, pinItem))
 
         // Set animation duration from plugin settings
         visualization.setAnimationDuration(this.plugin.settings.animationDuration)
@@ -1328,6 +1436,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         visualization.setMaximizeCallback((pid, maximize) => {
             this.maximizeService.handleMaximizeToggle(pid, maximize)
         })
+        // Keep the pin control alive across in-place rebuilds (issue #123)
+        const pinItem: OrderedCardItem = { kind: 'property', id: newConfig.propertyId }
+        visualization.setPinCallback(() => this.toggleCardPin(pinItem))
+        visualization.setPinned(isCardPinned(this.pinnedCards, pinItem))
         visualization.setAnimationDuration(this.plugin.settings.animationDuration)
         visualization.render(dataPoints)
         this.dragController?.attachHandle(cardEl, { kind: 'property', id: newConfig.propertyId })
@@ -1688,10 +1800,36 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             isFromPreset,
             isMaximized,
             canRemove,
+            isCardPinned(this.pinnedCards, { kind: 'property', id: propertyId }),
             (action: CardMenuAction) => {
                 this.handleCardMenuAction(action, propertyId, visualizationId, displayName)
             }
         )
+    }
+
+    /**
+     * Pin or unpin a card so it stays at the top of the grid (issue #123).
+     * Pins are stored per view, like the manual order, and a full re-render
+     * applies the new order.
+     */
+    private toggleCardPin(item: OrderedCardItem): void {
+        const toggled = togglePinnedCard(this.pinnedCards, item)
+
+        // Drop pins whose card no longer exists, so deleted overlays and
+        // removed properties don't get written back into the config
+        const liveKeys = new Set(this.currentEffectiveOrder.map(serializeOrderItem))
+        const pinnedCards = toggled.filter((pinned) => liveKeys.has(serializeOrderItem(pinned)))
+        this.pinnedCards = pinnedCards
+        this.config.set(
+            PINNED_CARDS_KEY,
+            pinnedCards.length > 0 ? writePinnedCards(pinnedCards) : null
+        )
+        // Force the full path: the order changed, so the DOM must be rebuilt.
+        // Clearing previousOrderSignature would do the opposite — a null
+        // signature reads as "nothing to compare", which *allows* the
+        // incremental path and leaves the cards where they are.
+        this.forceFullRender = true
+        this.onDataUpdated()
     }
 
     /**
@@ -1925,6 +2063,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 break
             }
 
+            case 'togglePin': {
+                this.toggleCardPin({ kind: 'property', id: propertyId })
+                break
+            }
+
             case 'exportImage': {
                 void this.exportVisualizationImage(visualizationId, displayName)
                 break
@@ -2076,8 +2219,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      */
     private resetCardOrder(): void {
         this.config.set(MANUAL_ORDER_KEY, null)
-        // Force a full re-render so the DOM matches the natural order.
-        this.previousOrderSignature = null
+        // Force a full re-render so the DOM matches the natural order. Same
+        // trap as pinning: a null previousOrderSignature reads as "nothing to
+        // compare" and lets the incremental path keep the old DOM order.
+        this.forceFullRender = true
         this.onDataUpdated()
     }
 
@@ -2181,7 +2326,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Cancel any pending async render
         this.cancelPendingRender()
-        this.endRebuildIndicator()
+        this.releaseRebuildHeight()
 
         // Clean up ResizeObserver
         this.cleanupResizeObserver()

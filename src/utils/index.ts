@@ -77,7 +77,8 @@ export {
     DATA_ATTR,
     DATA_ATTR_FULL,
     prefersReducedMotion,
-    setCssProps
+    setCssProps,
+    getEventElement
 } from './dom.utils'
 
 // Logging utilities

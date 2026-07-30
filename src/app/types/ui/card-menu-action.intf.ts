@@ -22,6 +22,8 @@ export type CardMenuAction =
     | { type: 'configureHeatmapShowDayLabels'; showDayLabels: boolean | undefined }
     | { type: 'resetConfig' }
     | { type: 'toggleMaximize' }
+    /** Pin/unpin the card so it stays at the top of the grid (issue #123) */
+    | { type: 'togglePin' }
     | { type: 'exportImage' }
     | { type: 'exportCsv' }
     | { type: 'addVisualization' }

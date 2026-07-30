@@ -16,7 +16,8 @@ import {
     CSS_SELECTOR,
     applyHeatmapColorScheme,
     formatDateISO,
-    getColorLevelForValue
+    getColorLevelForValue,
+    getEventElement
 } from '../../../../utils'
 
 /**
@@ -37,9 +38,16 @@ export class HeatmapVisualization extends BaseVisualization {
     private heatmapConfig: HeatmapConfig
     private tooltip: Tooltip | null = null
     private gridEl: HTMLElement | null = null
+    private scrollEl: HTMLElement | null = null
     private streaksEl: HTMLElement | null = null
     private heatmapData: HeatmapData | null = null
     private pendingScrollFrame: number | null = null
+    /** Detach the delegated grid listeners (issue #104) */
+    private detachListeners: (() => void) | null = null
+    /** Detach the scroll-position tracker used by `handleResize` */
+    private detachScrollTracking: (() => void) | null = null
+    /** Whether the user is looking at the end (freshest data) of the heatmap */
+    private wasScrolledToEnd = true
 
     constructor(
         containerEl: HTMLElement,
@@ -81,12 +89,18 @@ export class HeatmapVisualization extends BaseVisualization {
         }
 
         if (this.heatmapData.cells.length === 0) {
+            // The empty state replaces the whole card content, so drop the
+            // references and listeners of the grid it removes — otherwise a
+            // later update() would patch a detached grid and the card would
+            // stay stuck on the empty state
+            this.releaseRenderedGrid()
             this.showEmptyState(`No data with dates found for "${this.displayName}"`)
             return
         }
 
         // Clear container
         this.containerEl.empty()
+        this.releaseRenderedGrid()
 
         // Create section header
         this.createSectionHeader(this.displayName)
@@ -105,12 +119,17 @@ export class HeatmapVisualization extends BaseVisualization {
         // position — the auto scroll-to-end below was pushing them out of
         // view to the left.
         const scrollEl = heatmapEl.createDiv({ cls: 'lt-heatmap-scroll' })
+        this.scrollEl = scrollEl
+        // Fresh render starts pinned to the end (see scrollToEnd below)
+        this.wasScrolledToEnd = true
+        this.trackScrollPosition(scrollEl)
 
         // Render the grid
         this.gridEl = renderHeatmapGrid(scrollEl, this.heatmapData, this.heatmapConfig)
 
-        // Add event listeners
-        this.addEventListeners()
+        // Make cells reachable, then wire one delegated listener set
+        this.applyCellAccessibility()
+        this.attachGridListeners()
 
         // Create legend (outside the scroll element so it is always visible)
         this.createLegend(heatmapEl)
@@ -123,6 +142,21 @@ export class HeatmapVisualization extends BaseVisualization {
         // Scroll horizontally to the end so the freshest data is visible.
         // Defer to next frame so the browser has computed layout/scrollWidth.
         this.scrollToEnd(scrollEl)
+    }
+
+    /**
+     * Drop everything tied to a grid that is about to be (or has just been)
+     * removed from the DOM: listeners, scroll tracking, tooltip and element
+     * references. Safe to call repeatedly.
+     */
+    private releaseRenderedGrid(): void {
+        this.detachListeners?.()
+        this.detachScrollTracking?.()
+        this.tooltip?.destroy()
+        this.tooltip = null
+        this.gridEl = null
+        this.scrollEl = null
+        this.streaksEl = null
     }
 
     /**
@@ -168,6 +202,14 @@ export class HeatmapVisualization extends BaseVisualization {
             }
         }
 
+        // Losing every value must fall back to the empty state: empty data
+        // reports today as its min/max, which can pass canUpdateInPlace() and
+        // leave a grid of blank cells behind
+        if (newData.cells.length === 0) {
+            this.render(data)
+            return
+        }
+
         // If date range changed significantly, do a full re-render
         if (!this.canUpdateInPlace(newData)) {
             this.render(data)
@@ -179,6 +221,9 @@ export class HeatmapVisualization extends BaseVisualization {
 
         // Update stored data
         this.heatmapData = newData
+
+        // Cell values changed, so their accessible labels did too
+        this.applyCellAccessibility()
 
         // Refresh streak stats (cells changed, so streaks may have too)
         this.renderStreakStats()
@@ -299,11 +344,49 @@ export class HeatmapVisualization extends BaseVisualization {
             window.cancelAnimationFrame(this.pendingScrollFrame)
             this.pendingScrollFrame = null
         }
-        this.tooltip?.destroy()
-        this.tooltip = null
-        this.gridEl = null
-        this.streaksEl = null
+        this.releaseRenderedGrid()
         this.heatmapData = null
+    }
+
+    /**
+     * Keep the freshest data in view when the pane is resized (issue #104).
+     * The grid is CSS-driven so nothing needs redrawing, but a narrower pane
+     * shifts the scroll window: re-pin to the end when the user was already
+     * looking at the end, and leave their position alone otherwise.
+     *
+     * "Was at the end" is tracked on scroll rather than measured here: by the
+     * time a resize is observed the geometry has already changed, so measuring
+     * now would report a large distance from the end and never re-pin.
+     */
+    override handleResize(): void {
+        const scrollEl = this.scrollEl
+        if (!scrollEl) return
+
+        if (this.wasScrolledToEnd) {
+            this.scrollToEnd(scrollEl)
+        }
+    }
+
+    /**
+     * Track whether the user is looking at the end of the heatmap, so a resize
+     * can decide whether to re-pin (see `handleResize`).
+     */
+    private trackScrollPosition(scrollEl: HTMLElement): void {
+        this.detachScrollTracking?.()
+
+        const onScroll = (): void => {
+            const distanceFromEnd =
+                scrollEl.scrollWidth - scrollEl.clientWidth - scrollEl.scrollLeft
+            // A cell plus its gap of slack still counts as "at the end"
+            const slack = this.heatmapConfig.cellSize + this.heatmapConfig.cellGap
+            this.wasScrolledToEnd = distanceFromEnd <= slack
+        }
+
+        scrollEl.addEventListener('scroll', onScroll)
+        this.detachScrollTracking = (): void => {
+            scrollEl.removeEventListener('scroll', onScroll)
+            this.detachScrollTracking = null
+        }
     }
 
     /**
@@ -339,27 +422,22 @@ export class HeatmapVisualization extends BaseVisualization {
     }
 
     /**
-     * Add event listeners to heatmap cells
+     * Make every cell reachable and described: roving tabindex — the first cell
+     * is the Tab stop, arrows move focus, Enter/Space opens the entries
+     * (issue #110).
      */
-    private addEventListeners(): void {
+    private applyCellAccessibility(): void {
         if (!this.gridEl || !this.heatmapData) return
 
-        const cells = this.gridEl.querySelectorAll(CSS_SELECTOR.HEATMAP_CELL)
+        const cells = this.gridEl.querySelectorAll<HTMLElement>(CSS_SELECTOR.HEATMAP_CELL)
 
-        cells.forEach((cell, index) => {
-            const cellEl = cell as HTMLElement
+        // Keep the current Tab stop where the user left it: an in-place data
+        // update must not send keyboard focus back to the first cell
+        const existingTabStop = Array.from(cells).findIndex((cellEl) => cellEl.tabIndex === 0)
+        const tabStopIndex = existingTabStop === -1 ? 0 : existingTabStop
 
-            // Hover events
-            cellEl.addEventListener('mouseenter', (e) => this.handleCellHover(e, cellEl))
-            cellEl.addEventListener('mouseleave', () => this.handleCellLeave())
-
-            // Click event
-            cellEl.addEventListener('click', () => this.handleCellClick(cellEl))
-
-            // Keyboard access (issue #110): roving tabindex — the first cell
-            // is the Tab stop, arrows move focus, Enter/Space opens the
-            // entries, and focusing shows the tooltip
-            cellEl.tabIndex = index === 0 ? 0 : -1
+        cells.forEach((cellEl, index) => {
+            cellEl.tabIndex = index === tabStopIndex ? 0 : -1
             cellEl.setAttribute('role', 'button')
             const label = this.formatCellTooltip(cellEl)
             if (label) {
@@ -368,10 +446,73 @@ export class HeatmapVisualization extends BaseVisualization {
                     `${label.title}${label.value ? `: ${label.value}` : ''}`
                 )
             }
-            cellEl.addEventListener('focus', () => this.handleCellFocus(cellEl))
-            cellEl.addEventListener('blur', () => this.handleCellLeave())
-            cellEl.addEventListener('keydown', (e) => this.handleCellKeydown(e, cellEl))
         })
+    }
+
+    /**
+     * Wire cell interaction with a single delegated listener set on the grid
+     * root (issue #104). Multi-year heatmaps have thousands of cells; attaching
+     * six listeners to each one was both slow to build and never torn down.
+     *
+     * `mouseover`/`mouseout` and `focusin`/`focusout` are used instead of
+     * `mouseenter`/`mouseleave` and `focus`/`blur` because only the former
+     * bubble to the delegate.
+     */
+    private attachGridListeners(): void {
+        const gridEl = this.gridEl
+        if (!gridEl) return
+
+        // Replace any previous binding (render() can run repeatedly)
+        this.detachListeners?.()
+
+        const cellFrom = (event: Event): HTMLElement | null => {
+            // getEventElement, not `instanceof Element`: popout windows have
+            // their own Element constructor (issue #104)
+            const target = getEventElement(event.target)
+            if (!target) return null
+            const cell = target.closest<HTMLElement>(CSS_SELECTOR.HEATMAP_CELL)
+            return cell && gridEl.contains(cell) ? cell : null
+        }
+
+        const onMouseOver = (event: MouseEvent): void => {
+            const cell = cellFrom(event)
+            if (cell) this.handleCellHover(event, cell)
+        }
+        const onMouseOut = (event: MouseEvent): void => {
+            if (cellFrom(event)) this.handleCellLeave()
+        }
+        const onClick = (event: MouseEvent): void => {
+            const cell = cellFrom(event)
+            if (cell) this.handleCellClick(cell)
+        }
+        const onFocusIn = (event: FocusEvent): void => {
+            const cell = cellFrom(event)
+            if (cell) this.handleCellFocus(cell)
+        }
+        const onFocusOut = (event: FocusEvent): void => {
+            if (cellFrom(event)) this.handleCellLeave()
+        }
+        const onKeyDown = (event: KeyboardEvent): void => {
+            const cell = cellFrom(event)
+            if (cell) this.handleCellKeydown(event, cell)
+        }
+
+        gridEl.addEventListener('mouseover', onMouseOver)
+        gridEl.addEventListener('mouseout', onMouseOut)
+        gridEl.addEventListener('click', onClick)
+        gridEl.addEventListener('focusin', onFocusIn)
+        gridEl.addEventListener('focusout', onFocusOut)
+        gridEl.addEventListener('keydown', onKeyDown)
+
+        this.detachListeners = (): void => {
+            gridEl.removeEventListener('mouseover', onMouseOver)
+            gridEl.removeEventListener('mouseout', onMouseOut)
+            gridEl.removeEventListener('click', onClick)
+            gridEl.removeEventListener('focusin', onFocusIn)
+            gridEl.removeEventListener('focusout', onFocusOut)
+            gridEl.removeEventListener('keydown', onKeyDown)
+            this.detachListeners = null
+        }
     }
 
     /**

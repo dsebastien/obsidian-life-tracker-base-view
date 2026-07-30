@@ -43,6 +43,34 @@ function chartAnimation(): false | undefined {
 }
 
 /**
+ * Above this many points per dataset, line/area charts stop drawing point
+ * markers (issue #104). Multi-year daily vaults plot thousands of points; the
+ * markers dominate both draw time and visual noise, while the line itself stays
+ * cheap. No data is dropped — every point is still plotted and still
+ * hoverable through `pointHitRadius`.
+ *
+ * Chart.js' own decimation plugin cannot help here: it requires a `linear` or
+ * `time` x scale with `parsing: false`, and these charts use a category scale
+ * built from formatted period labels.
+ */
+export const DENSE_SERIES_POINT_THRESHOLD = 500
+
+/**
+ * Point styling for a dataset of `pointCount` values. Dense series hide their
+ * markers but keep a generous hit radius so tooltips still work.
+ */
+function densePointStyle(pointCount: number): {
+    pointRadius?: number
+    pointHoverRadius?: number
+    pointHitRadius?: number
+} {
+    if (pointCount <= DENSE_SERIES_POINT_THRESHOLD) {
+        return {}
+    }
+    return { pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 8 }
+}
+
+/**
  * Initialize pie/doughnut/polarArea chart
  */
 export function initPieChart(
@@ -242,7 +270,9 @@ export function initCartesianChart(
             borderColor: color,
             borderWidth: 2,
             tension: chartConfig.tension,
-            fill: shouldFill
+            fill: shouldFill,
+            // Bars have no point markers to hide (issue #104)
+            ...(chartConfig.chartType === 'bar' ? {} : densePointStyle(dataset.data.length))
         }
     })
 
@@ -389,6 +419,10 @@ export function initScatterChart(
     const colors = getChartColorScheme(chartConfig.colorScheme)
     const color = colors[0]!
 
+    // Scatter marks cannot be hidden (they *are* the data), but dense series get
+    // smaller dots so thousands of points stay readable and cheap (issue #104)
+    const isDense = scatterChartData.points.length > DENSE_SERIES_POINT_THRESHOLD
+
     return new Chart(ctx, {
         type: 'scatter',
         data: {
@@ -399,8 +433,8 @@ export function initScatterChart(
                     backgroundColor: getColorWithAlpha(color, 0.7),
                     borderColor: color,
                     borderWidth: 1,
-                    pointRadius: 6,
-                    pointHoverRadius: 8
+                    pointRadius: isDense ? 2 : 6,
+                    pointHoverRadius: isDense ? 5 : 8
                 }
             ]
         },

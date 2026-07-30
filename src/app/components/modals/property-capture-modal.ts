@@ -14,7 +14,19 @@ import { PropertyRecognitionService } from '../../services/property-recognition.
 import { isNoteComplete, findFirstUnfilledIndex } from '../../services/note-completion.utils'
 import { createPropertyEditor } from '../editing/property-editor'
 import { AUTO_SAVE_DEBOUNCE_MS } from '../editing/editing.constants'
-import { formatFileTitleWithWeekday, log, prefersReducedMotion } from '../../../utils'
+import { detectSwipeDirection } from './swipe.utils'
+import {
+    formatFileTitleWithWeekday,
+    getEventElement,
+    log,
+    prefersReducedMotion
+} from '../../../utils'
+
+/**
+ * Elements whose own touch handling must win over swipe navigation: dragging a
+ * slider or selecting text inside an input is not a page swipe.
+ */
+const SWIPE_IGNORED_SELECTOR = 'input, textarea, select, button, a, [contenteditable="true"]'
 
 /**
  * Modal for capturing/editing property values in a carousel-style interface.
@@ -58,6 +70,12 @@ export class PropertyCaptureModal extends Modal {
     private progressEl: HTMLElement | null = null
     private cardEl: HTMLElement | null = null
 
+    // Teardown callbacks for listeners attached outside the rendered subtree
+    private cleanupCallbacks: (() => void)[] = []
+
+    // Swipe gesture start state (issue #140); null when no gesture is tracked
+    private swipeStart: { x: number; y: number; time: number; pointerId: number } | null = null
+
     constructor(plugin: LifeTrackerPlugin, context: CaptureContext) {
         super(plugin.app)
         this.plugin = plugin
@@ -91,7 +109,18 @@ export class PropertyCaptureModal extends Modal {
             this.saveCurrentPropertyImmediate()
         }
         this.destroyEditor()
+        this.runCleanups()
         this.contentEl.empty()
+    }
+
+    /**
+     * Run and forget pending teardown callbacks (swipe listeners)
+     */
+    private runCleanups(): void {
+        for (const cleanup of this.cleanupCallbacks) {
+            cleanup()
+        }
+        this.cleanupCallbacks = []
     }
 
     /**
@@ -225,6 +254,8 @@ export class PropertyCaptureModal extends Modal {
 
     private render(): void {
         const { contentEl } = this
+        // Detach listeners bound to the previous card before it is dropped
+        this.runCleanups()
         contentEl.empty()
 
         // Main container
@@ -246,6 +277,7 @@ export class PropertyCaptureModal extends Modal {
 
         // Property card (main content area)
         this.cardEl = this.wrapperEl.createDiv({ cls: 'lt-carousel-card' })
+        this.setupSwipeNavigation(this.cardEl)
         this.renderCard()
 
         // Progress bar at bottom
@@ -667,6 +699,79 @@ export class PropertyCaptureModal extends Modal {
             })
     }
 
+    /**
+     * Swipe left/right to move between properties on touch devices (issue
+     * #140). Mouse and trackpad input is left alone: a horizontal mouse drag
+     * inside a modal means text selection, not navigation.
+     *
+     * Listeners live on the card element, which is replaced by `render()`, so
+     * they die with it; the teardown callbacks only matter for the final close.
+     */
+    private setupSwipeNavigation(cardEl: HTMLElement): void {
+        const isTouchLike = (event: PointerEvent): boolean =>
+            event.pointerType === 'touch' || event.pointerType === 'pen'
+
+        const onPointerDown = (event: PointerEvent): void => {
+            if (!isTouchLike(event) || !event.isPrimary) {
+                return
+            }
+            // Let interactive controls (sliders, inputs, buttons) keep their
+            // gestures. getEventElement, not `instanceof Element`: a popout
+            // window's nodes fail the cross-realm instance check, which would
+            // make every control swipeable again.
+            const target = getEventElement(event.target)
+            if (target?.closest(SWIPE_IGNORED_SELECTOR)) {
+                this.swipeStart = null
+                return
+            }
+            this.swipeStart = {
+                x: event.clientX,
+                y: event.clientY,
+                time: event.timeStamp,
+                pointerId: event.pointerId
+            }
+        }
+
+        const onPointerUp = (event: PointerEvent): void => {
+            const start = this.swipeStart
+            this.swipeStart = null
+            if (!start || start.pointerId !== event.pointerId) {
+                return
+            }
+
+            const direction = detectSwipeDirection(
+                event.clientX - start.x,
+                event.clientY - start.y,
+                event.timeStamp - start.time
+            )
+            if (!direction) return
+
+            // Swiping left moves forward, right moves back — same as the arrows.
+            // Boundaries are no-ops: the last property's forward action is
+            // "Done" / "Next file", too destructive to trigger by accident.
+            if (direction === 'forward') {
+                this.navigateNext()
+            } else {
+                this.navigatePrev()
+            }
+        }
+
+        const onPointerCancel = (): void => {
+            this.swipeStart = null
+        }
+
+        cardEl.addEventListener('pointerdown', onPointerDown)
+        cardEl.addEventListener('pointerup', onPointerUp)
+        cardEl.addEventListener('pointercancel', onPointerCancel)
+
+        this.cleanupCallbacks.push(() => {
+            cardEl.removeEventListener('pointerdown', onPointerDown)
+            cardEl.removeEventListener('pointerup', onPointerUp)
+            cardEl.removeEventListener('pointercancel', onPointerCancel)
+            this.swipeStart = null
+        })
+    }
+
     private navigatePrev(): void {
         if (this.isFirstProperty()) return
         this.navDirection = 'backward'
@@ -726,11 +831,18 @@ export class PropertyCaptureModal extends Modal {
         const numberWrapper = editorContainer.querySelector('.lt-editor-number-wrapper')
 
         if (numberWrapper) {
-            // Number editor with slider: add button inside the wrapper, after the input
+            // Number editor with slider: add button inside the wrapper, after
+            // the input. Move the whole stepper when present (issue #125) so the
+            // −/+ buttons stay attached to their input.
             const inputWrapper = numberWrapper.createDiv({ cls: 'lt-carousel-input-with-default' })
-            const numberInput = numberWrapper.querySelector('.lt-editor-input--number')
+            const stepper = numberWrapper.querySelector('.lt-editor-stepper')
+            const numberInput = stepper ?? numberWrapper.querySelector('.lt-editor-input--number')
             if (numberInput) {
                 inputWrapper.appendChild(numberInput)
+            }
+            if (stepper) {
+                // Lets the row size to the stepper instead of being clipped
+                inputWrapper.addClass('lt-carousel-input-with-default--stepper')
             }
             const btn = inputWrapper.createEl('button', {
                 cls: 'lt-carousel-default-btn',
@@ -741,12 +853,20 @@ export class PropertyCaptureModal extends Modal {
                 this.validateAndNavigateNext()
             })
         } else {
-            // Other editors: wrap input with button
-            const input = editorContainer.querySelector(
-                '.lt-editor-input, .lt-editor-select, .lt-editor-toggle, .lt-editor-list'
-            )
+            // Other editors: wrap input with button. The stepper wrapper (when
+            // the number editor has no slider) takes precedence over the bare
+            // input so its −/+ buttons travel with it (issue #125).
+            const stepper = editorContainer.querySelector('.lt-editor-stepper')
+            const input =
+                stepper ??
+                editorContainer.querySelector(
+                    '.lt-editor-input, .lt-editor-select, .lt-editor-toggle, .lt-editor-list'
+                )
             if (input) {
                 const inputWrapper = createDiv({ cls: 'lt-carousel-input-with-default' })
+                if (stepper) {
+                    inputWrapper.addClass('lt-carousel-input-with-default--stepper')
+                }
                 input.parentNode?.insertBefore(inputWrapper, input)
                 inputWrapper.appendChild(input)
                 const btn = inputWrapper.createEl('button', {

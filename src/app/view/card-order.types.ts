@@ -8,6 +8,12 @@ import type { BasesPropertyId } from 'obsidian'
 export const MANUAL_ORDER_KEY = 'manualOrder'
 
 /**
+ * Config key under which the per-view pinned cards are persisted (issue #123).
+ * Same serialized form as the manual order, and likewise scoped to the view.
+ */
+export const PINNED_CARDS_KEY = 'pinnedCards'
+
+/**
  * A single item in the rendered grid: either a configured/unconfigured
  * property card or an overlay card.
  */

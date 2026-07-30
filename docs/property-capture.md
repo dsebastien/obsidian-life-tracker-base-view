@@ -73,10 +73,18 @@ When invoked from a Life Tracker or Grid view:
 ### Navigation
 
 - **Left/Right arrows**: Move between properties
+- **Swipe left/right**: (Touch devices) Move between properties
 - **Property pills**: Click to jump to a specific property
 - **Note selector**: (Batch mode) Switch between notes
 
 The modal opens on the first property that still needs a value (required properties first), so you land straight on something to fill in rather than on fields you have already completed.
+
+On phones and tablets, swipe the card left to go to the next property and right
+to go back. Swiping stops at the last property, so you can never finish or skip
+to the next note by accident — use the button for that. Swipes that start on a
+slider or an input are ignored so you can still drag a slider or select text,
+and mostly-vertical gestures scroll as usual. The navigation buttons also grow
+to full-size touch targets on small screens.
 
 ### Editors
 
@@ -91,6 +99,13 @@ Each property type has a specialized editor:
 | datetime | Date and time picker with **Today**    |
 | list     | Multi-value input with add/remove      |
 | tags     | Tag input with autocomplete            |
+
+The **number** editor shows **−** and **+** buttons on either side of the input
+for one-tap entry — ideal for counters like glasses of water or pushups. They
+step by the property's configured step (1 when none is set), stay inside the
+property's range (greying out at the bounds), and from an empty field the first
+tap lands on the range minimum for bounded properties. Compact number cells in
+the Life Tracking Grid keep the plain input.
 
 The **date** and **datetime** editors include a **Today** button that fills in the current date (and time) in one click — handy since native date fields never pre-fill.
 

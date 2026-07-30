@@ -31,6 +31,8 @@ You can find more details and background information here: https://www.knowii.ne
 - **Time frame selection**: filter visualizations to show specific date ranges (all time, last 7/30/90/365 days, this week/month/quarter/year, etc.)
 - **Grid layout controls**: adjustable columns (1-6)
 - **Drag-and-drop reordering**: rearrange any card (property or overlay) by dragging its grip handle; the custom order is saved per view and works on desktop and mobile
+- **Pin favorites**: star a visualization card to keep it at the top of the grid regardless of the rest of the order; saved per view
+- **Progressive rendering**: card outlines appear instantly and fill in one by one, so large dashboards are usable while they draw
 - **Visualization presets**: auto-apply settings to properties by name pattern
 - **Scale configuration**: auto-detect or manual min/max for numeric visualizations
 - **Reference lines**: add horizontal target lines to cartesian charts (line, bar, area) to track values against goals (e.g., weight target)
@@ -42,14 +44,15 @@ You can find more details and background information here: https://www.knowii.ne
 
 - **Property definitions**: configure trackable properties with types (text, number, checkbox, date, list, tags), defaults, and constraints
 - **Capture command**: quick dialog to fill properties for the active note or batch process multiple notes
-- **Carousel interface**: navigate through properties one at a time with progress tracking
+- **Carousel interface**: navigate through properties one at a time with progress tracking — arrows on desktop, swipe left/right on touch devices
+- **Quick number entry**: −/+ buttons next to number inputs for one-tap counters (glasses of water, pushups), step- and range-aware
 - **Batch mode**: process notes from Grid View or Life Tracker View with smart filtering (skip complete notes)
 - **Auto-save**: values saved automatically as you type with visual feedback
 - **Grid View**: card-based Base view type for editing properties across multiple notes
 
 ### User Experience
 
-- **Context menu**: right-click any card to change visualization, configure scale and color scheme, maximize, or reset
+- **Context menu**: right-click a property card to change visualization, configure scale and color scheme, pin it, maximize, or reset (overlay cards open their own editor)
 - **Maximize mode**: expand any visualization to full view (press Escape to exit)
 - **Persistent settings**: grid layout and card configurations saved per view
 - **Empty states**: helpful messages when data is missing or misconfigured
