@@ -174,6 +174,23 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Chart palettes are **not** polarity-driven: a series color identifies the series, not its goodness. Only the trend indicator carries sentiment
 - Polarity and emojis are offered only for properties whose values are numeric: number, checkbox, and text properties that have a value mapping
 
+## Starter Kit Integration
+
+- Life Tracker reads the Obsidian Starter Kit plugin (`obsidian-starter-kit`) through its `plugin.api`, and only ever reads. The integration is entirely optional: absent, disabled, or an API missing an expected method all degrade to "not available", never an error
+- **Ownership split for a linked definition**: Starter Kit owns the structure — `name`, `displayName`, `type`, `allowedValues`, `numberRange`, `defaultValue`, `required`, `description`, and `mappings`. Life Tracker owns `id`, `order`, `valueMapping`, `polarity`, `valueEmojis`. A sync never touches a Life-Tracker-owned field
+- `polarity` / `valueEmojis` are deliberately **not** mirrored into Starter Kit's schema: it would store them without ever acting on them, and two homes for one value is the drift the link exists to prevent
+- A linked definition's `mappings` are **copied** from its note type, never re-derived. Starter Kit's recognition has rules that must not be duplicated (several note types can match one note; tag matches take priority). Life Tracker asks a different question — "does this property apply to this note?" — which is a plain OR over the mappings, so copying is correct; deciding _which single type_ a note is remains Starter Kit's job
+- Starter Kit global properties get no mappings, matching their "applies everywhere" semantics
+- Import identity is the **property name**: two definitions for one frontmatter key would both write to it. A name already claimed by a definition linked to a _different_ source is a conflict and is skipped — never silently rebound
+- Importing over an existing unlinked definition ("adopt") links it and takes structure from Starter Kit, but keeps its polarity, emojis and value mapping
+- A linked definition whose source disappears (renamed note type, deleted property, plugin uninstalled) is **kept** with its last-synced structure and flagged in settings. It is never deleted — Starter Kit may simply be mid-edit
+- Unlinking keeps the definition and every one of its settings; it only stops future refreshes
+- The link key is `(noteTypeId, propertyName)`. Starter Kit properties have no stable id, so **renaming one in Starter Kit breaks the link** — the definition is flagged as orphaned and can be re-imported. Documented rather than worked around: there is no identifier to follow
+- A source is not importable when its property name is blank, or when its note type has **no enabled mappings**. Starter Kit treats "no enabled mappings" as matching _nothing_, while Life Tracker treats an empty mapping list as applying to _every_ note — importing would silently invert the scope and write frontmatter into unrelated notes
+- Starter Kit property types Life Tracker lacks (`select`, `url`, `time`, and the legacy `multitext` / `boolean` aliases) are normalized on import — all are string-typed, so unknown types become `text` rather than being stored verbatim
+- Life Tracker's mapping matching is case-insensitive where Starter Kit's is case-sensitive, so a linked property can apply to marginally more notes than Starter Kit would recognize. Left as-is: changing shared matching semantics for every user to serve this integration would be the worse trade
+- Sync runs once on `onLayoutReady` (not `onload`, where Starter Kit may not be registered yet), plus on demand from the settings tab. There is no live subscription to Starter Kit changes
+
 ## Settings Persistence
 
 - Settings writes are serialized through a queue (`createSerialQueue`): editors call `updateSettings` on every keystroke, and two overlapping `saveData` calls can otherwise land out of order, persisting the _older_ snapshot — a corruption that only surfaces after a restart

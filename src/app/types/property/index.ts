@@ -21,4 +21,12 @@ export type {
     Mapping,
     PropertyIssue
 } from './property-definition.types'
+export type {
+    StarterKitProperty,
+    StarterKitNoteType,
+    StarterKitPropertyLink,
+    StarterKitApi,
+    StarterKitApiResult
+} from './starter-kit.types'
+export { STARTER_KIT_PLUGIN_ID } from './starter-kit.types'
 export { getPropertyDisplayLabel } from './property-definition.types'

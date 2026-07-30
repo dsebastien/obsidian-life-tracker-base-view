@@ -5,8 +5,9 @@ import { renderSupportSection } from '../ui/support-links'
 import { PropertyDefinitionSection } from './property-definition-section'
 import { VisualizationPresetSection } from './visualization-preset-section'
 import { DateSettingsSection } from './date-settings-section'
+import { StarterKitSection } from './starter-kit-section'
 
-type SettingsTab = 'properties' | 'visualizations' | 'dates' | 'about'
+type SettingsTab = 'properties' | 'visualizations' | 'dates' | 'starter-kit' | 'about'
 
 export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     plugin: LifeTrackerPlugin
@@ -18,6 +19,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     private readonly propertySection: PropertyDefinitionSection
     private readonly presetSection: VisualizationPresetSection
     private readonly dateSection: DateSettingsSection
+    private readonly starterKitSection: StarterKitSection
 
     constructor(app: App, plugin: LifeTrackerPlugin) {
         super(app, plugin)
@@ -30,6 +32,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         )
         this.presetSection = new VisualizationPresetSection(plugin, () => this.display())
         this.dateSection = new DateSettingsSection(plugin, () => this.display())
+        this.starterKitSection = new StarterKitSection(plugin, () => this.display())
     }
 
     display(): void {
@@ -54,6 +57,9 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             case 'dates':
                 this.dateSection.render(contentEl)
                 break
+            case 'starter-kit':
+                this.starterKitSection.render(contentEl)
+                break
             case 'about':
                 this.renderAboutTab(contentEl)
                 break
@@ -67,6 +73,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             { id: 'properties', label: 'Property definitions' },
             { id: 'visualizations', label: 'Visualizations' },
             { id: 'dates', label: 'Dates' },
+            { id: 'starter-kit', label: 'Starter Kit' },
             { id: 'about', label: 'About' }
         ]
 

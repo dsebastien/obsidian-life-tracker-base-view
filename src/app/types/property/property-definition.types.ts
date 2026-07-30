@@ -1,3 +1,5 @@
+import type { StarterKitPropertyLink } from './starter-kit.types'
+
 /**
  * Property types supported by Obsidian's property system.
  *
@@ -218,6 +220,15 @@ export interface PropertyDefinition {
     polarity?: ValuePolarity
     /** Value/range → emoji map for display and one-tap entry (issue #22) */
     valueEmojis?: EmojiMapping | null
+    /**
+     * Link to the Obsidian Starter Kit property this definition mirrors.
+     *
+     * When set, Starter Kit owns the *structure* (name, type, constraints,
+     * defaults, note scoping) and it is re-read on load; Life Tracker keeps
+     * everything else — `order`, `valueMapping`, `polarity`, `valueEmojis`.
+     * Absent means a purely local definition, which is the default.
+     */
+    starterKitLink?: StarterKitPropertyLink | null
 }
 
 /**

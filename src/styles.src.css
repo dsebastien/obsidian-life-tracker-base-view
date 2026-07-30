@@ -1877,6 +1877,39 @@
         background-color: var(--background-modifier-hover);
     }
 
+    /* ========================================
+   STARTER KIT INTEGRATION
+   ======================================== */
+
+    /* Origin badge on a property definition whose structure Starter Kit owns */
+    .lt-starter-kit-badge {
+        @apply ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide;
+        background-color: var(--background-modifier-border);
+        color: var(--text-muted);
+    }
+
+    .lt-starter-kit-group {
+        @apply mt-4 mb-1 text-sm font-semibold;
+        color: var(--text-normal);
+    }
+
+    /* A name already claimed by another note type's property: not importable
+       until the user resolves it, so it reads as inert rather than clickable */
+    .lt-starter-kit-conflict {
+        @apply opacity-60;
+        border-left: 2px solid var(--text-error);
+        padding-left: 8px;
+    }
+
+    /* Linked property whose Starter Kit source is currently missing. Kept and
+       working — flagged, never removed. */
+    .lt-starter-kit-orphaned {
+        /* --text-warning is not in the project's vetted variable list, so it
+           falls back to the accent color rather than to nothing */
+        border-left: 2px solid var(--text-warning, var(--text-accent));
+        padding-left: 8px;
+    }
+
     /* Mapping key that does not parse as a value or range, or collides with an
        existing key (issue #22). Doubled class (0,2,0) so it beats Obsidian's
        attribute-based `input[type='text']` border rules (0,1,1). */

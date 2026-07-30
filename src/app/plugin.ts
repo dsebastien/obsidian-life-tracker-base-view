@@ -22,12 +22,20 @@ import { getLifeTrackerViewOptions } from './view/view-options'
 import { GridView, GRID_VIEW_TYPE } from './view/grid-view/grid-view'
 import { getGridViewOptions } from './view/grid-view/grid-view-options'
 import { registerCommands } from './commands'
+import { StarterKitService } from './services/starter-kit.service'
+import { syncLinkedDefinitions } from './services/starter-kit.utils'
 
 export class LifeTrackerPlugin extends Plugin {
     /**
      * The plugin settings are immutable
      */
     settings: PluginSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS)
+
+    /**
+     * Reads note types and properties from the Obsidian Starter Kit plugin,
+     * when it is installed. Always safe to call — degrades to "not available".
+     */
+    starterKit!: StarterKitService
 
     /**
      * Listeners for settings changes
@@ -132,11 +140,50 @@ export class LifeTrackerPlugin extends Plugin {
             log('Life Tracker Grid view registered', 'debug')
         }
 
+        this.starterKit = new StarterKitService(this.app)
+
         // Add a settings screen for the plugin
         this.addSettingTab(new LifeTrackerPluginSettingTab(this.app, this))
 
         // Register commands
         registerCommands(this)
+
+        // Refresh Starter Kit-linked definitions once every plugin has loaded:
+        // during our own onload, Starter Kit may not be registered yet
+        this.app.workspace.onLayoutReady(() => {
+            // Never let a Starter Kit problem surface as an unhandled rejection
+            // during startup
+            void this.syncStarterKitDefinitions().catch((error: unknown) => {
+                log('Starter Kit sync failed', 'warn', error)
+            })
+        })
+    }
+
+    /**
+     * Re-read the structure of every Starter Kit-linked property definition.
+     *
+     * A no-op when Starter Kit is absent, when nothing is linked, or when the
+     * structure already matches — so a normal startup writes nothing. Never
+     * removes a definition whose source has disappeared: Starter Kit may simply
+     * be mid-edit, and the user's tracked property must survive that.
+     *
+     * @returns whether anything changed
+     */
+    async syncStarterKitDefinitions(): Promise<boolean> {
+        const sources = this.starterKit.collectSources()
+        if (sources.length === 0) return false
+
+        const synced = syncLinkedDefinitions(this.settings.propertyDefinitions, sources)
+        if (!synced) return false
+
+        log('Syncing Starter Kit-linked property definitions', 'debug')
+        await this.updateSettings(
+            (draft) => {
+                draft.propertyDefinitions = synced
+            },
+            { type: 'property-definitions-changed' }
+        )
+        return true
     }
 
     override onunload() {}

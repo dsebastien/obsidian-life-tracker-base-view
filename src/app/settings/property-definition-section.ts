@@ -176,6 +176,19 @@ export class PropertyDefinitionSection {
                 })
         })
 
+        // Starter Kit origin badge: a linked definition's structure is owned
+        // elsewhere, so where it comes from must be visible right here rather
+        // than only on the Starter Kit tab
+        if (definition.starterKitLink) {
+            const link = definition.starterKitLink
+            const origin = link.noteTypeName || 'Global properties'
+            mainSetting.nameEl.createSpan({
+                cls: 'lt-starter-kit-badge',
+                text: 'Starter Kit',
+                attr: { 'aria-label': `Linked to ${origin} → ${link.propertyName}` }
+            })
+        }
+
         // Property name input
         mainSetting.addText((text) => {
             text.setPlaceholder('Property name (frontmatter key)')

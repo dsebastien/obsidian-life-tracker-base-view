@@ -113,6 +113,14 @@ export type {
     Mapping,
     PropertyIssue
 } from './property'
+export type {
+    StarterKitProperty,
+    StarterKitNoteType,
+    StarterKitPropertyLink,
+    StarterKitApi,
+    StarterKitApiResult
+} from './property'
+export { STARTER_KIT_PLUGIN_ID } from './property'
 export { getPropertyDisplayLabel } from './property'
 
 // UI types
