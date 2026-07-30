@@ -4,8 +4,9 @@ import { BUY_ME_A_COFFEE_BADGE_DATA_URL } from '../assets/buy-me-a-coffee'
 import { renderSupportSection } from '../ui/support-links'
 import { PropertyDefinitionSection } from './property-definition-section'
 import { VisualizationPresetSection } from './visualization-preset-section'
+import { DateSettingsSection } from './date-settings-section'
 
-type SettingsTab = 'properties' | 'visualizations' | 'about'
+type SettingsTab = 'properties' | 'visualizations' | 'dates' | 'about'
 
 export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     plugin: LifeTrackerPlugin
@@ -16,6 +17,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
 
     private readonly propertySection: PropertyDefinitionSection
     private readonly presetSection: VisualizationPresetSection
+    private readonly dateSection: DateSettingsSection
 
     constructor(app: App, plugin: LifeTrackerPlugin) {
         super(app, plugin)
@@ -27,6 +29,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             this.expandedDefinitions
         )
         this.presetSection = new VisualizationPresetSection(plugin, () => this.display())
+        this.dateSection = new DateSettingsSection(plugin, () => this.display())
     }
 
     display(): void {
@@ -48,6 +51,9 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             case 'visualizations':
                 this.presetSection.render(contentEl)
                 break
+            case 'dates':
+                this.dateSection.render(contentEl)
+                break
             case 'about':
                 this.renderAboutTab(contentEl)
                 break
@@ -60,6 +66,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         const tabs: Array<{ id: SettingsTab; label: string }> = [
             { id: 'properties', label: 'Property definitions' },
             { id: 'visualizations', label: 'Visualizations' },
+            { id: 'dates', label: 'Dates' },
             { id: 'about', label: 'About' }
         ]
 

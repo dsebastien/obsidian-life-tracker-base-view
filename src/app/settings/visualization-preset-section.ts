@@ -33,9 +33,10 @@ const COLOR_SCHEME_OPTIONS: Record<string, string> = Object.fromEntries(
 )
 
 /**
- * Renders and manages the "Visualizations" settings tab: global week-start /
- * animation settings and the visualization preset list. Extracted from the
- * settings tab to keep each module focused (issue #112).
+ * Renders and manages the "Visualizations" settings tab: global animation
+ * settings and the visualization preset list. Extracted from the settings tab
+ * to keep each module focused (issue #112). Date-related settings live in the
+ * "Dates" tab (see `DateSettingsSection`).
  */
 export class VisualizationPresetSection {
     constructor(
@@ -44,22 +45,6 @@ export class VisualizationPresetSection {
     ) {}
 
     render(containerEl: HTMLElement): void {
-        new Setting(containerEl)
-            .setName('First day of the week')
-            .setDesc(
-                'Starting day for week grouping and heatmap columns. ISO week labels stay Monday-based.'
-            )
-            .addDropdown((dropdown) => {
-                dropdown
-                    .addOptions({ '1': 'Monday', '0': 'Sunday' })
-                    .setValue(String(this.plugin.settings.weekStartsOn))
-                    .onChange(async (value) => {
-                        await this.plugin.updateSettings((draft) => {
-                            draft.weekStartsOn = value === '0' ? 0 : 1
-                        })
-                    })
-            })
-
         // Animation settings
         new Setting(containerEl).setName('Animation').setHeading()
 

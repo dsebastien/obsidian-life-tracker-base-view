@@ -22,8 +22,6 @@ export type { ChartColorScheme } from './color.utils'
 // Date utilities
 export {
     isValidDate,
-    parseDateFromFilename,
-    getDateFromISOWeek,
     getISOWeekNumber,
     getQuarter,
     addDays,
@@ -52,6 +50,25 @@ export {
     getWeekStartDay
 } from './date.utils'
 export type { TimeFrameDateRange, WeekStartDay } from './date.utils'
+
+// Filename date parsing utilities (built-in + user-configured patterns)
+export {
+    FILENAME_DATE_TOKENS,
+    compileFilenameDatePattern,
+    validateFilenameDatePattern,
+    renderFilenameDatePatternExample,
+    matchFilenameDatePattern,
+    parseDateFromFilename,
+    setCustomFilenameDatePatterns,
+    getCustomFilenameDatePatterns,
+    getDateFromISOWeek
+} from './filename-date.utils'
+export type {
+    FilenameDateTokenName,
+    FilenameDateTokenDefinition,
+    CompiledFilenameDatePattern,
+    FilenameDatePatternCompilation
+} from './filename-date.utils'
 
 // DOM utilities
 export {

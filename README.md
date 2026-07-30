@@ -27,6 +27,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **List property visualization**: list/tag properties automatically visualized with occurrence counts (pie/doughnut) or presence tracking over time (line/bar)
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
 - **First day of the week**: choose Monday (default) or Sunday for week grouping and heatmap columns
+- **Custom filename date patterns**: recognize your own note naming conventions (`Journal 2026-07-30`, `20260730`, `30.07.2026`, …) with simple `{{date}}` / `{{year}}` / `{{month}}` / `{{day}}` / `{{week}}` / `{{quarter}}` placeholders, on top of the built-in formats
 - **Time frame selection**: filter visualizations to show specific date ranges (all time, last 7/30/90/365 days, this week/month/quarter/year, etc.)
 - **Grid layout controls**: adjustable columns (1-6)
 - **Drag-and-drop reordering**: rearrange any card (property or overlay) by dragging its grip handle; the custom order is saved per view and works on desktop and mobile
@@ -116,7 +117,21 @@ Invoked in a Life Tracking Base view:
 
 ![Data Entry on a set of notes](documentation/screenshots/data-entry-on-a-set-of-notes.png)
 
-Use the "Life Tracker: Capture today" command to jump straight to today's daily note (named `YYYY-MM-DD`) and start capturing — no need to open the note first.
+Use the "Life Tracker: Capture today" command to jump straight to today's daily note (named `YYYY-MM-DD`, or matching one of your filename date patterns) and start capturing — no need to open the note first.
+
+### Filename Date Patterns
+
+The plugin reads dates from filenames such as `2026-07-30`, `2026-W31`, `2026-07`, `2026-Q3` and `2026` out of the box. If your notes are named differently, add your own patterns in **Settings → Life Tracker → Dates** using placeholders:
+
+| Pattern                      | Matches                  |
+| ---------------------------- | ------------------------ |
+| `Journal {{date}}`           | `Journal 2026-07-30`     |
+| `{{year}}{{month}}{{day}}`   | `20260730`               |
+| `{{day}}.{{month}}.{{year}}` | `30.07.2026`             |
+| `{{date}}*`                  | `2026-07-30 (Thursday)`  |
+| `* {{year}}-W{{week}}`       | `Weekly review 2026-W31` |
+
+Use `*` for parts that vary. Each pattern shows a live example of what it matches, and the built-in formats always keep working.
 
 ### Overlay Charts
 

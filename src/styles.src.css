@@ -62,6 +62,49 @@
     }
 
     /* ========================================
+   SETTINGS - FILENAME DATE PATTERNS
+   ======================================== */
+
+    .lt-filename-patterns-container {
+        @apply mb-4;
+    }
+
+    .lt-filename-pattern-help {
+        @apply flex flex-col gap-1 mb-4 py-3 px-3 rounded text-sm;
+        color: var(--text-muted);
+        background-color: var(--background-secondary);
+    }
+
+    .lt-filename-pattern-help-row {
+        @apply flex items-baseline gap-2;
+    }
+
+    .lt-filename-pattern-token {
+        @apply text-xs px-1.5 py-0.5 rounded flex-shrink-0;
+        font-family: var(--font-monospace);
+        color: var(--text-normal);
+        background-color: var(--background-primary);
+    }
+
+    .lt-filename-pattern-input {
+        @apply w-56;
+        font-family: var(--font-monospace);
+    }
+
+    .lt-filename-pattern-status {
+        @apply text-xs mt-1;
+        color: var(--text-muted);
+    }
+
+    .lt-filename-pattern-status--error {
+        color: var(--text-error);
+    }
+
+    .lt-filename-pattern-status--valid {
+        color: var(--text-accent);
+    }
+
+    /* ========================================
    SETTINGS - TABS
    ======================================== */
 

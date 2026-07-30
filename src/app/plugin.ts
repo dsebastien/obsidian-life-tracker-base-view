@@ -9,7 +9,7 @@ import {
     type SettingsChangeInfo
 } from './types'
 import { LifeTrackerPluginSettingTab } from './settings/settings-tab'
-import { log, setWeekStartDay } from '../utils'
+import { log, setCustomFilenameDatePatterns, setWeekStartDay } from '../utils'
 import { produce } from 'immer'
 import type { Draft } from 'immer'
 import { LifeTrackerView, LIFE_TRACKER_VIEW_TYPE } from './view/life-tracker-view'
@@ -137,7 +137,7 @@ export class LifeTrackerPlugin extends Plugin {
         if (!loadedSettings) {
             log('Using default settings', 'debug')
             this.settings = produce(DEFAULT_SETTINGS, (draft) => draft)
-            this.applyWeekStart()
+            this.applyDateSettings()
             return
         }
 
@@ -166,18 +166,35 @@ export class LifeTrackerPlugin extends Plugin {
             if (loadedSettings.weekStartsOn === 0 || loadedSettings.weekStartsOn === 1) {
                 draft.weekStartsOn = loadedSettings.weekStartsOn
             }
+
+            // Load custom filename date patterns (issue #139). Entries can be
+            // hand-edited in data.json, so keep anything with a usable pattern
+            // and backfill missing ids (the settings UI keys on them).
+            if (Array.isArray(loadedSettings.filenameDatePatterns)) {
+                draft.filenameDatePatterns = loadedSettings.filenameDatePatterns
+                    .filter((entry) => typeof entry?.pattern === 'string')
+                    .map((entry) => ({
+                        id: entry.id ? entry.id : crypto.randomUUID(),
+                        pattern: entry.pattern
+                    }))
+            }
         })
 
-        this.applyWeekStart()
+        this.applyDateSettings()
         log(`Settings loaded`, 'debug', loadedSettings)
     }
 
     /**
-     * Push the configured week start into the date utilities so week grouping
-     * and heatmap columns honor the user's preference (issue #99).
+     * Push date-related settings into the date utilities: the week start so
+     * week grouping and heatmap columns honor the user's preference (issue
+     * #99), and the custom filename date patterns used to resolve date anchors
+     * from filenames (issue #139).
      */
-    private applyWeekStart(): void {
+    private applyDateSettings(): void {
         setWeekStartDay(this.settings.weekStartsOn)
+        setCustomFilenameDatePatterns(
+            this.settings.filenameDatePatterns.map((entry) => entry.pattern)
+        )
     }
 
     /**
@@ -199,7 +216,7 @@ export class LifeTrackerPlugin extends Plugin {
         changeInfo: SettingsChangeInfo = { type: 'full' }
     ): Promise<void> {
         this.settings = produce(this.settings, updater)
-        this.applyWeekStart()
+        this.applyDateSettings()
         await this.saveSettings()
         this.notifySettingsChanged(changeInfo)
     }

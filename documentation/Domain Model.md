@@ -45,6 +45,15 @@ Global preset (plugin settings) auto-applied by property name pattern:
 - `scale`: Optional scale
 - `colorScheme`: Optional color scheme
 
+### FilenameDatePattern
+
+User-defined filename date pattern (plugin settings) used for date anchoring:
+
+- `id`: Unique pattern ID (UUID)
+- `pattern`: Template with `{{date}}`, `{{year}}`, `{{month}}`, `{{day}}`, `{{week}}`, `{{quarter}}` tokens and `*` wildcards (e.g. `Journal {{date}}`)
+
+Compiled to a `CompiledFilenameDatePattern` (anchored regex + inferred `TimeGranularity` + capture-group token order) before use.
+
 ## Data Structures
 
 ### VisualizationDataPoint

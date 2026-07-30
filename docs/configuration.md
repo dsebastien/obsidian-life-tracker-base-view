@@ -9,13 +9,62 @@ nav_order: 3
 
 Access via **Settings → Life Tracker**.
 
+Settings are grouped into tabs: **Property definitions**, **Visualizations**,
+**Dates** and **About**.
+
 ### First Day of the Week
 
-Choose whether weeks start on **Monday** (default) or **Sunday**. Affects weekly
-grouping, heatmap week columns, and the "this week" / "last week" time frames.
-ISO week labels (`YYYY-Www` filenames, week numbers) stay Monday-based.
+In the **Dates** tab. Choose whether weeks start on **Monday** (default) or
+**Sunday**. Affects weekly grouping, heatmap week columns, and the "this week" /
+"last week" time frames. ISO week labels (`YYYY-Www` filenames, week numbers)
+stay Monday-based.
+
+### Filename Date Patterns
+
+In the **Dates** tab. Out of the box, the plugin reads dates from filenames such
+as `2026-07-30`, `2026-W31`, `2026-07`, `2026-Q3` and `2026`. If your notes are
+named differently — `Journal 2026-07-30`, `20260730`, `30.07.2026` — add a
+pattern so those notes still land on the right date.
+
+Write patterns with placeholders:
+
+| Placeholder   | Meaning                                             | Example      |
+| ------------- | --------------------------------------------------- | ------------ |
+| `{{date}}`    | Full ISO date, same as `{{year}}-{{month}}-{{day}}` | `2026-07-30` |
+| `{{year}}`    | Four-digit year                                     | `2026`       |
+| `{{month}}`   | Two-digit month                                     | `07`         |
+| `{{day}}`     | Two-digit day of the month                          | `30`         |
+| `{{week}}`    | ISO week number                                     | `31`         |
+| `{{quarter}}` | Quarter, including the `Q`                          | `Q3`         |
+| `*`           | Any text                                            |              |
+
+Examples:
+
+| Pattern                       | Matches                  |
+| ----------------------------- | ------------------------ |
+| `Journal {{date}}`            | `Journal 2026-07-30`     |
+| `{{year}}{{month}}{{day}}`    | `20260730`               |
+| `{{day}}.{{month}}.{{year}}`  | `30.07.2026`             |
+| `{{date}}*`                   | `2026-07-30 (Thursday)`  |
+| `* {{year}}-W{{week}}`        | `Weekly review 2026-W31` |
+| `{{year}} {{quarter}} review` | `2026 Q3 review`         |
+
+Good to know:
+
+- The whole filename must match the pattern — use `*` for the parts that vary.
+- Matching ignores case, so `journal 2026-07-30` matches `Journal {{date}}` too.
+- The time period is derived from the placeholders you use: a day (or
+  `{{date}}`) means daily notes, `{{week}}` weekly, `{{quarter}}` quarterly,
+  a month monthly, a year alone yearly.
+- Patterns are tried top to bottom, before the built-in formats. The built-in
+  formats always keep working, so nothing breaks if you add none.
+- Every pattern shows either an example of what it matches or an explanation of
+  what's wrong with it, right below the input.
+- "Capture today" also uses your patterns to find today's note.
 
 ### Animation Duration
+
+In the **Visualizations** tab.
 
 Control how long chart animations play (in milliseconds).
 
@@ -137,7 +186,7 @@ Available for all chart types except Tag Cloud:
 
 Priority order for determining entry dates:
 
-1. **Filename pattern**: YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-Qq
+1. **Filename pattern**: your [custom patterns](#filename-date-patterns) first, then the built-in YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-Qq, YYYY
 2. **Date anchor property**: Configured in view settings
 3. **File metadata**: ctime or mtime
 

@@ -62,7 +62,7 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
 
             if (!file) {
                 new Notice(
-                    "No note for today found. Expected a note named after today's date (YYYY-MM-DD)."
+                    "No note for today found. Expected a note named after today's date (YYYY-MM-DD), or matching one of your filename date patterns."
                 )
                 return
             }
@@ -73,9 +73,10 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
 }
 
 /**
- * Find today's daily note: a markdown file whose basename is today's date
- * in the daily filename pattern (YYYY-MM-DD). When several notes match
- * (e.g. duplicates across folders), the most recently modified one wins.
+ * Find today's daily note: a markdown file whose basename resolves to today's
+ * date at daily granularity — either a built-in pattern (YYYY-MM-DD) or one of
+ * the user's custom filename date patterns (issue #139). When several notes
+ * match (e.g. duplicates across folders), the most recently modified one wins.
  */
 function findTodayNote(plugin: LifeTrackerPlugin): TFile | null {
     const today = new Date()

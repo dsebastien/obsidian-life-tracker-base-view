@@ -1,5 +1,9 @@
 export { DEFAULT_SETTINGS } from './plugin-settings.intf'
-export type { PluginSettings, PropertyVisualizationPreset } from './plugin-settings.intf'
+export type {
+    PluginSettings,
+    PropertyVisualizationPreset,
+    FilenameDatePattern
+} from './plugin-settings.intf'
 export type { SettingsChangeCallback } from './settings-change-callback.intf'
 export type { SettingsChangeInfo } from './settings-change-info.intf'
 export type { FileProvider } from './file-provider.intf'

@@ -29,6 +29,17 @@ export interface PropertyVisualizationPreset {
     aggregationMethod?: AggregationMethod
 }
 
+/**
+ * A user-defined filename date pattern (issue #139).
+ * Written with `{{token}}` placeholders, e.g. `Journal {{date}}`.
+ */
+export interface FilenameDatePattern {
+    /** Unique ID for this pattern */
+    id: string
+    /** Pattern using {{date}}, {{year}}, {{month}}, {{day}}, {{week}}, {{quarter}} and `*` */
+    pattern: string
+}
+
 export interface PluginSettings {
     /**
      * Global visualization presets by property name
@@ -59,6 +70,12 @@ export interface PluginSettings {
      * 0 = Sunday, 1 = Monday. Defaults to Monday (issue #99).
      */
     weekStartsOn: WeekStartDay
+
+    /**
+     * Custom filename date patterns, tried before the built-in ones when
+     * resolving an entry's date from its filename (issue #139)
+     */
+    filenameDatePatterns: FilenameDatePattern[]
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -66,5 +83,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     animationDuration: 3000,
     propertyDefinitions: [],
     showConfettiOnCapture: true,
-    weekStartsOn: 1
+    weekStartsOn: 1,
+    filenameDatePatterns: []
 }

@@ -4,10 +4,34 @@
 
 Stored in plugin data, applies to all views.
 
-| Setting                | Type                          | Default | Description                                       |
-| ---------------------- | ----------------------------- | ------- | ------------------------------------------------- |
-| `visualizationPresets` | PropertyVisualizationPreset[] | `[]`    | Auto-apply visualization by property name pattern |
-| `animationDuration`    | number                        | `3000`  | Chart animation duration (ms)                     |
+| Setting                 | Type                          | Default | Description                                           |
+| ----------------------- | ----------------------------- | ------- | ----------------------------------------------------- |
+| `visualizationPresets`  | PropertyVisualizationPreset[] | `[]`    | Auto-apply visualization by property name pattern     |
+| `animationDuration`     | number                        | `3000`  | Chart animation duration (ms)                         |
+| `propertyDefinitions`   | PropertyDefinition[]          | `[]`    | Trackable properties for capture/editing              |
+| `showConfettiOnCapture` | boolean                       | `true`  | Confetti animation when a capture completes           |
+| `weekStartsOn`          | 0 \| 1                        | `1`     | First day of the week (0 = Sunday, 1 = Monday)        |
+| `filenameDatePatterns`  | FilenameDatePattern[]         | `[]`    | Custom `{{token}}` filename date patterns (see below) |
+
+### Filename date patterns
+
+Each entry is `{ id: string; pattern: string }`. Patterns are compiled once on
+load and on every settings change (`plugin.applyDateSettings()` →
+`setCustomFilenameDatePatterns`), then consulted by `parseDateFromFilename`
+before the built-in formats.
+
+| Token         | Matches             | Example    |
+| ------------- | ------------------- | ---------- |
+| `{{date}}`    | `\d{4}-\d{2}-\d{2}` | 2026-07-30 |
+| `{{year}}`    | `\d{4}`             | 2026       |
+| `{{month}}`   | `\d{2}`             | 07         |
+| `{{day}}`     | `\d{2}`             | 30         |
+| `{{week}}`    | `\d{1,2}`           | 31         |
+| `{{quarter}}` | `Q[1-4]`            | Q3         |
+| `*`           | any text (wildcard) | —          |
+
+Validation and granularity inference rules are in `documentation/Business Rules.md`.
+Implementation: `src/utils/filename-date.utils.ts`.
 
 ## Life Tracker View Options (Per-View)
 

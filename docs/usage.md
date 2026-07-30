@@ -124,9 +124,13 @@ Hover over chart elements to see detailed information:
 
 The plugin determines dates for entries using this priority:
 
-1. **Filename pattern**: YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-Qq
+1. **Filename pattern**: YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-Qq, YYYY — plus any custom patterns you add
 2. **Date anchor property**: Configured in view settings
 3. **File metadata**: Creation or modification time
+
+If your notes use another naming convention (`Journal 2026-07-30`, `20260730`,
+`30.07.2026`, …), add a filename date pattern in **Settings → Life Tracker →
+Dates**. See [Filename date patterns](configuration.md#filename-date-patterns).
 
 ## Multiple Visualizations
 

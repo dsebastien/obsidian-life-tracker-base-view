@@ -19,9 +19,21 @@ When a new business rule is mentioned:
 
 Priority order for resolving an entry's date:
 
-1. Filename pattern (YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-Qq)
+1. Filename pattern — custom patterns first (in configured order), then the built-ins (YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-Qq, YYYY)
 2. Configured date anchor property
 3. File metadata (ctime, mtime)
+
+## Filename Date Patterns
+
+Custom filename date patterns (issue #139) let users map their own naming conventions to dates:
+
+- Patterns use `{{token}}` placeholders — `{{date}}`, `{{year}}`, `{{month}}`, `{{day}}`, `{{week}}`, `{{quarter}}` — plus `*` as a wildcard for arbitrary text. Same token vocabulary as the other plugins in this family, so users learn it once.
+- Patterns match the whole basename (anchored), case-insensitively. Literal text is regex-escaped.
+- Custom patterns are tried before the built-in formats, in the order configured; the built-ins always remain as a fallback so vaults with no configuration keep working unchanged.
+- Granularity is inferred from the tokens, never configured: `{{date}}` or year+month+day → daily; year+`{{week}}` → weekly; year+`{{quarter}}` → quarterly; year+month → monthly; year alone → yearly.
+- Validation rules: a pattern needs `{{date}}` or `{{year}}`; `{{day}}` needs `{{month}}`; `{{week}}`, `{{quarter}}` and month/day tokens are mutually exclusive; `{{date}}` cannot be combined with other date tokens; a token can appear only once.
+- Impossible calendar dates (e.g. `2026-02-31`) never match.
+- Invalid patterns are rejected in the settings UI and skipped (logged as a warning) at parse time — one bad entry must never break date resolution for the rest.
 
 ## Configuration Priority
 
@@ -160,7 +172,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 
 ## Capture Today Command
 
-- Resolves today's note by exact basename match on the daily filename pattern (YYYY-MM-DD)
+- Resolves today's note by basename match on any daily-granularity filename pattern — built-in (YYYY-MM-DD) or custom (issue #139)
 - When several notes match, the most recently modified one wins
 
 ## Reduced Motion

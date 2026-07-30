@@ -127,6 +127,7 @@ export {
 export type {
     PluginSettings,
     PropertyVisualizationPreset,
+    FilenameDatePattern,
     SettingsChangeCallback,
     SettingsChangeInfo,
     FileProvider,

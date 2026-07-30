@@ -12,9 +12,12 @@ src/
   app/
     plugin.ts                # Plugin lifecycle, settings management, view registration
     settings/
-      settings-tab.ts        # Plugin settings UI
+      settings-tab.ts        # Plugin settings UI (tab navigation)
+      property-definition-section.ts # "Property definitions" tab
+      visualization-preset-section.ts # "Visualizations" tab
+      date-settings-section.ts # "Dates" tab (week start, filename date patterns)
     types/
-      plugin-settings.intf.ts      # PluginSettings, PropertyVisualizationPreset
+      plugin-settings.intf.ts      # PluginSettings, PropertyVisualizationPreset, FilenameDatePattern
       property-definition.types.ts # PropertyDefinition, PropertyType, NumberConstraint
       column-config.types.ts       # ColumnVisualizationConfig, ScaleConfig
       visualization-type.intf.ts   # VisualizationType enum
@@ -64,10 +67,11 @@ src/
         tag-cloud/                 # Frequency-sized tags
         timeline/                  # Date distribution
   utils/
-    date-utils.ts            # Date parsing, formatting
-    color-utils.ts           # Heatmap color scales
-    value-extractors.ts      # Extract values from Obsidian Value types
-    log.ts                   # Debug logging
+    date.utils.ts            # Date math, formatting, time frames, week start
+    filename-date.utils.ts   # Filename date parsing: built-in + {{token}} patterns
+    color.utils.ts           # Heatmap color scales
+    value.utils.ts           # Extract values from Obsidian Value types
+    log.utils.ts             # Debug logging
   styles.src.css             # Tailwind source (compiled to styles.css)
 ```
 
@@ -116,7 +120,7 @@ All editors:
 
 ### Services
 
-- **DateAnchorService**: Resolves date for each entry (filename pattern > property > file metadata)
+- **DateAnchorService**: Resolves date for each entry (filename pattern > property > file metadata). Filename parsing goes through `parseDateFromFilename`, which tries the user's custom `{{token}}` patterns first, then the built-in ISO formats (issue #139)
 - **DataAggregationService**: Groups data by time granularity, produces visualization-ready structures
 - **FrontmatterService**: Read/write frontmatter, validate against property definitions
 - **ColumnConfigService**: Manages per-property visualization configs (persisted in view config)

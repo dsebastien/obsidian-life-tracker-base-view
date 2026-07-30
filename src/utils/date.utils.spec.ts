@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
     isValidDate,
-    parseDateFromFilename,
-    getDateFromISOWeek,
     getISOWeekNumber,
     getQuarter,
     addDays,
@@ -39,75 +37,6 @@ describe('date-utils', () => {
 
         test('returns true for Date.now()', () => {
             expect(isValidDate(new Date())).toBe(true)
-        })
-    })
-
-    describe('parseDateFromFilename', () => {
-        test('parses daily format YYYY-MM-DD', () => {
-            const result = parseDateFromFilename('2024-01-15')
-            expect(result).not.toBeNull()
-            expect(result!.granularity).toBe(TimeGranularity.Daily)
-            expect(result!.date.getFullYear()).toBe(2024)
-            expect(result!.date.getMonth()).toBe(0) // January
-            expect(result!.date.getDate()).toBe(15)
-        })
-
-        test('parses weekly format YYYY-Www', () => {
-            const result = parseDateFromFilename('2024-W01')
-            expect(result).not.toBeNull()
-            expect(result!.granularity).toBe(TimeGranularity.Weekly)
-            expect(result!.date.getFullYear()).toBe(2024)
-        })
-
-        test('parses monthly format YYYY-MM', () => {
-            const result = parseDateFromFilename('2024-03')
-            expect(result).not.toBeNull()
-            expect(result!.granularity).toBe(TimeGranularity.Monthly)
-            expect(result!.date.getFullYear()).toBe(2024)
-            expect(result!.date.getMonth()).toBe(2) // March
-        })
-
-        test('parses quarterly format YYYY-Qq', () => {
-            const result = parseDateFromFilename('2024-Q2')
-            expect(result).not.toBeNull()
-            expect(result!.granularity).toBe(TimeGranularity.Quarterly)
-            expect(result!.date.getFullYear()).toBe(2024)
-            expect(result!.date.getMonth()).toBe(3) // April (Q2 starts)
-        })
-
-        test('parses yearly format YYYY', () => {
-            const result = parseDateFromFilename('2024')
-            expect(result).not.toBeNull()
-            expect(result!.granularity).toBe(TimeGranularity.Yearly)
-            expect(result!.date.getFullYear()).toBe(2024)
-            expect(result!.date.getMonth()).toBe(0) // January
-        })
-
-        test('returns null for invalid filename', () => {
-            expect(parseDateFromFilename('not-a-date')).toBeNull()
-            expect(parseDateFromFilename('my-note')).toBeNull()
-            expect(parseDateFromFilename('')).toBeNull()
-        })
-    })
-
-    describe('getDateFromISOWeek', () => {
-        test('returns Monday of the given ISO week', () => {
-            // Week 1 of 2024 starts on Monday, January 1
-            const result = getDateFromISOWeek(2024, 1)
-            expect(result).not.toBeNull()
-            expect(result!.getDay()).toBe(1) // Monday
-        })
-
-        test('returns null for invalid week numbers', () => {
-            expect(getDateFromISOWeek(2024, 0)).toBeNull()
-            expect(getDateFromISOWeek(2024, 54)).toBeNull()
-            expect(getDateFromISOWeek(2024, -1)).toBeNull()
-        })
-
-        test('handles week 53 for years that have it', () => {
-            // 2020 has 53 weeks
-            const result = getDateFromISOWeek(2020, 53)
-            expect(result).not.toBeNull()
         })
     })
 

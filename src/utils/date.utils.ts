@@ -10,9 +10,7 @@ import {
     getQuarter as dateFnsGetQuarter,
     isValid,
     isWithinInterval,
-    parse,
     parseISO,
-    setISOWeek,
     startOfDay as dateFnsStartOfDay,
     startOfMonth as dateFnsStartOfMonth,
     startOfQuarter as dateFnsStartOfQuarter,
@@ -29,7 +27,7 @@ import {
     isSameYear as dateFnsIsSameYear,
     eachWeekOfInterval
 } from 'date-fns'
-import { TimeGranularity, TimeFrame, type DatePattern } from '../app/types'
+import { TimeGranularity, TimeFrame } from '../app/types'
 
 /**
  * First day of the week, using date-fns' `weekStartsOn` convention.
@@ -55,113 +53,10 @@ export function getWeekStartDay(): WeekStartDay {
 }
 
 /**
- * Supported date patterns for filename parsing
- */
-const DATE_PATTERNS: DatePattern[] = [
-    {
-        // Daily: YYYY-MM-DD
-        regex: /^(\d{4})-(\d{2})-(\d{2})$/,
-        granularity: TimeGranularity.Daily,
-        parser: (match: RegExpMatchArray): Date | null => {
-            const dateStr = match[0]
-            if (!dateStr) return null
-            const date = parse(dateStr, 'yyyy-MM-dd', new Date())
-            return isValidDate(date) ? date : null
-        }
-    },
-    {
-        // Weekly: YYYY-Www (ISO week)
-        regex: /^(\d{4})-W(\d{2})$/,
-        granularity: TimeGranularity.Weekly,
-        parser: (match: RegExpMatchArray): Date | null => {
-            const yearStr = match[1]
-            const weekStr = match[2]
-            if (!yearStr || !weekStr) return null
-            const year = parseInt(yearStr, 10)
-            const week = parseInt(weekStr, 10)
-            return getDateFromISOWeek(year, week)
-        }
-    },
-    {
-        // Monthly: YYYY-MM
-        regex: /^(\d{4})-(\d{2})$/,
-        granularity: TimeGranularity.Monthly,
-        parser: (match: RegExpMatchArray): Date | null => {
-            const dateStr = match[0]
-            if (!dateStr) return null
-            const date = parse(dateStr, 'yyyy-MM', new Date())
-            return isValidDate(date) ? date : null
-        }
-    },
-    {
-        // Quarterly: YYYY-Qq
-        regex: /^(\d{4})-Q([1-4])$/,
-        granularity: TimeGranularity.Quarterly,
-        parser: (match: RegExpMatchArray): Date | null => {
-            const yearStr = match[1]
-            const quarterStr = match[2]
-            if (!yearStr || !quarterStr) return null
-            const year = parseInt(yearStr, 10)
-            const quarter = parseInt(quarterStr, 10)
-            const month = (quarter - 1) * 3
-            const date = new Date(year, month, 1)
-            return isValidDate(date) ? date : null
-        }
-    },
-    {
-        // Yearly: YYYY
-        regex: /^(\d{4})$/,
-        granularity: TimeGranularity.Yearly,
-        parser: (match: RegExpMatchArray): Date | null => {
-            const yearStr = match[1]
-            if (!yearStr) return null
-            const year = parseInt(yearStr, 10)
-            const date = new Date(year, 0, 1)
-            return isValidDate(date) ? date : null
-        }
-    }
-]
-
-/**
  * Check if a date is valid
  */
 export function isValidDate(date: Date): boolean {
     return isValid(date)
-}
-
-/**
- * Parse date from filename (without extension)
- */
-export function parseDateFromFilename(
-    filename: string
-): { date: Date; granularity: TimeGranularity } | null {
-    for (const pattern of DATE_PATTERNS) {
-        const match = filename.match(pattern.regex)
-        if (match) {
-            const date = pattern.parser(match)
-            if (date) {
-                return { date, granularity: pattern.granularity }
-            }
-        }
-    }
-    return null
-}
-
-/**
- * Get date from ISO week number
- * Returns the Monday of the given ISO week
- */
-export function getDateFromISOWeek(year: number, week: number): Date | null {
-    if (week < 1 || week > 53) return null
-
-    // Start with January 4th of the year (always in week 1)
-    const jan4 = new Date(year, 0, 4)
-    // Set to the target ISO week, which gives us a date in that week
-    const targetDate = setISOWeek(jan4, week)
-    // Get the Monday of that week (ISO weeks start on Monday)
-    const monday = dateFnsStartOfWeek(targetDate, { weekStartsOn: 1 })
-
-    return isValidDate(monday) ? monday : null
 }
 
 /**
