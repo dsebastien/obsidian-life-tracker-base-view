@@ -1,5 +1,13 @@
 # Release Notes
 
+## 2.18.0 (2026-07-30)
+
+### Features
+
+- **plugin:** custom filename date patterns
+- **plugin:** show what's new in a tab instead of a modal dialog
+- **plugin:** surface support CTAs everywhere users can see them
+
 ## 2.17.0 (2026-07-29)
 
 ### Features

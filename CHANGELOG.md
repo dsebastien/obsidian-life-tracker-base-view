@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.18.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.17.0...2.18.0) (2026-07-30)
+
+### Features
+
+* **plugin:** custom filename date patterns ([b5cebd9](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/b5cebd96e94b2884a76ae6d52a6930c86cfb2284)), closes [#139](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/139)
+* **plugin:** show what's new in a tab instead of a modal dialog ([a27510b](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a27510b113ec3d2a5bd2ac6a60308dcb349185f6))
+* **plugin:** surface support CTAs everywhere users can see them ([4129135](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/41291358723b743ec4b0751bf57d096716b38e51))
+
 ## [2.17.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.16.0...2.17.0) (2026-07-29)
 
 ### Features
@@ -340,6 +348,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 
