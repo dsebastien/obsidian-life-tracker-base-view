@@ -70,7 +70,6 @@ describe('applyStarterKitStructure — ownership split', () => {
         const result = applyStarterKitStructure(localDefinition(), source())
 
         expect(result.name).toBe('mood')
-        expect(result.displayName).toBe('Mood')
         expect(result.type).toBe('number')
         expect(result.numberRange).toEqual({ min: 1, max: 5 })
         expect(result.description).toBe('Daily mood')
@@ -528,8 +527,9 @@ describe('stable property ids — surviving a rename', () => {
 
         expect(result).not.toBeNull()
         expect(result![0]!.name).toBe('feeling')
-        expect(result![0]!.displayName).toBe('Feeling')
-        // Life-Tracker-owned settings ride through the rename untouched
+        // Life-Tracker-owned settings ride through the rename untouched,
+        // including the label the user chose
+        expect(result![0]!.displayName).toBe('My mood')
         expect(result![0]!.polarity).toBe('higher-is-better')
         expect(result![0]!.valueEmojis).toEqual({ '1': '😞', '5': '😄' })
     })
@@ -654,5 +654,65 @@ describe('rename collisions — never two definitions for one key', () => {
 
         expect(plan[0]!.action).toBe('conflict')
         expect(plan[1]!.action).toBe('relink')
+    })
+})
+
+describe('display names — the label belongs to Life Tracker', () => {
+    test('a customized label survives a sync', () => {
+        // Found in a real vault: Starter Kit defaults displayName to the raw
+        // property name, so letting it win renamed 90 labelled properties back
+        // to "health_energy_level" and friends
+        const definition = localDefinition({ displayName: 'Energy Level', name: 'health_energy' })
+        const skSource = source({
+            property: skProperty({ name: 'health_energy', displayName: 'health_energy' })
+        })
+
+        expect(applyStarterKitStructure(definition, skSource).displayName).toBe('Energy Level')
+    })
+
+    test("Starter Kit's label is taken when Life Tracker has none", () => {
+        const definition = localDefinition({ displayName: '' })
+        expect(applyStarterKitStructure(definition, source()).displayName).toBe('Mood')
+    })
+
+    test("Starter Kit's label is taken when Life Tracker's is just the raw name", () => {
+        const definition = localDefinition({ name: 'mood', displayName: 'mood' })
+        expect(applyStarterKitStructure(definition, source()).displayName).toBe('Mood')
+    })
+
+    test("a freshly created definition gets Starter Kit's label", () => {
+        expect(createLinkedDefinition(source(), 'id', 0).displayName).toBe('Mood')
+    })
+
+    test('a whitespace-only label counts as unset', () => {
+        const definition = localDefinition({ displayName: '   ' })
+        expect(applyStarterKitStructure(definition, source()).displayName).toBe('Mood')
+    })
+})
+
+describe('version skew — Starter Kit gaining ids later', () => {
+    test('a legacy name-based link upgrades to an id on the next sync', () => {
+        // User updates Life Tracker first (Starter Kit still has no ids), then
+        // updates Starter Kit. The link must harden itself, not break.
+        const legacy = applyStarterKitStructure(localDefinition(), source())
+        expect(legacy.starterKitLink?.propertyId).toBeUndefined()
+
+        const withIds = source({ property: skProperty({ id: 'prop-1-aaaaaaa' }) })
+        const result = syncLinkedDefinitions([legacy], [withIds])
+
+        expect(result).not.toBeNull()
+        expect(result![0]!.starterKitLink?.propertyId).toBe('prop-1-aaaaaaa')
+        expect(result![0]!.polarity).toBe('higher-is-better')
+    })
+
+    test('an older Starter Kit without ids keeps working against a hardened link', () => {
+        // Downgrade or a partially-migrated vault: the link has an id, the
+        // source does not. Name matching must still resolve it.
+        const hardened = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: skProperty({ id: 'prop-1-aaaaaaa' }) })
+        )
+
+        expect(linkMatches(hardened.starterKitLink, source())).toBe(true)
     })
 })

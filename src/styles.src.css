@@ -1893,6 +1893,28 @@
         color: var(--text-normal);
     }
 
+    /* Collapsed note type header: a real vault had 49 of these */
+    .lt-starter-kit-group-header {
+        border-top: 1px solid var(--background-modifier-border);
+    }
+
+    /* Property rows sit under their note type header */
+    .lt-starter-kit-row {
+        @apply pl-4;
+    }
+
+    /* Already linked: shown for context, nothing to do */
+    .lt-starter-kit-linked {
+        @apply opacity-70;
+    }
+
+    /* One-click path for a vault configured before this integration existed */
+    .lt-starter-kit-banner {
+        @apply flex flex-col gap-2 p-3 mb-3 rounded;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+    }
+
     /* A name already claimed by another note type's property: not importable
        until the user resolves it, so it reads as inert rather than clickable */
     .lt-starter-kit-conflict {

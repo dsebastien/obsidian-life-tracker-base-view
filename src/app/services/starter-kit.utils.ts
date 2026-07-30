@@ -108,10 +108,27 @@ function mappingsFor(source: StarterKitSource): Mapping[] {
 }
 
 /**
+ * The label to keep for a linked property.
+ *
+ * `displayName` is *presentation*, which Life Tracker owns — Starter Kit
+ * defaults it to the raw property name, so letting it win would turn a
+ * carefully labelled "Energy Level" back into "health_energy_level" on every
+ * card and in the capture dialog. A label the user actually customized (one that
+ * differs from the raw name) is therefore kept; otherwise Starter Kit's is taken,
+ * which is how a freshly imported property gets a sensible label.
+ */
+function resolveDisplayName(definition: PropertyDefinition, property: StarterKitProperty): string {
+    const current = definition.displayName.trim()
+    const customized = current.length > 0 && current !== definition.name
+    return customized ? definition.displayName : property.displayName
+}
+
+/**
  * Fields Starter Kit owns on a linked definition (issue: SK integration).
  *
- * Everything else — `id`, `order`, `valueMapping`, `polarity`, `valueEmojis`,
- * `starterKitLink` — belongs to Life Tracker and must survive every sync.
+ * Everything else — `id`, `order`, `displayName`, `valueMapping`, `polarity`,
+ * `valueEmojis`, `starterKitLink` — belongs to Life Tracker and must survive
+ * every sync.
  */
 export function applyStarterKitStructure(
     definition: PropertyDefinition,
@@ -122,7 +139,7 @@ export function applyStarterKitStructure(
     return {
         ...definition,
         name: property.name,
-        displayName: property.displayName,
+        displayName: resolveDisplayName(definition, property),
         type: normalizeStarterKitType(property.type),
         allowedValues: Array.isArray(property.allowedValues)
             ? (property.allowedValues.slice() as PropertyDefinition['allowedValues'])
