@@ -24,6 +24,12 @@ export const STARTER_KIT_PLUGIN_ID = 'obsidian-starter-kit'
  * future Starter Kit field cannot silently change behavior here.
  */
 export interface StarterKitProperty {
+    /**
+     * Stable id, minted by Starter Kit and never changed — including across a
+     * rename. Optional because a vault whose Starter Kit predates the field has
+     * not been through its backfill yet; links fall back to the name until then.
+     */
+    id?: string
     name: string
     displayName: string
     type: ObsidianPropertyType
@@ -59,7 +65,16 @@ export interface StarterKitPropertyLink {
     noteTypeId: string | null
     /** Cached note type name for display; empty for global properties */
     noteTypeName: string
-    /** Property name in Starter Kit — the join key */
+    /**
+     * Starter Kit's stable property id. The preferred join key: it survives a
+     * rename, which `propertyName` cannot. Absent for links made before Starter
+     * Kit had ids, or against a Starter Kit that predates them.
+     */
+    propertyId?: string
+    /**
+     * Property name in Starter Kit. Kept as the fallback join key, and as the
+     * only readable identification when Starter Kit is not installed.
+     */
     propertyName: string
 }
 

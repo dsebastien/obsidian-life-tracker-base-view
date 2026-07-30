@@ -37,25 +37,41 @@ export interface StarterKitSource {
  * Build the link stored on a definition for a given source.
  */
 export function buildLink(source: StarterKitSource): StarterKitPropertyLink {
-    return {
+    const link: StarterKitPropertyLink = {
         noteTypeId: source.noteType?.id ?? null,
         noteTypeName: source.noteType?.name ?? '',
         propertyName: source.property.name
     }
+    // Only recorded when Starter Kit actually supplies one, so the field's
+    // absence keeps meaning "fall back to the name"
+    if (source.property.id) {
+        link.propertyId = source.property.id
+    }
+    return link
 }
 
 /**
  * Whether a link points at the given source.
+ *
+ * Prefers Starter Kit's stable property id, which survives a rename — matching
+ * on the name alone would orphan a link the moment the user renamed the property
+ * there. The name stays as the fallback for links made before Starter Kit had
+ * ids, and for a Starter Kit old enough not to expose them.
+ *
+ * The note type must always agree: the same property name (or a recycled id)
+ * under a different note type is a different property.
  */
 export function linkMatches(
     link: StarterKitPropertyLink | null | undefined,
     source: StarterKitSource
 ): boolean {
     if (!link) return false
-    return (
-        link.propertyName === source.property.name &&
-        link.noteTypeId === (source.noteType?.id ?? null)
-    )
+    if (link.noteTypeId !== (source.noteType?.id ?? null)) return false
+
+    if (link.propertyId && source.property.id) {
+        return link.propertyId === source.property.id
+    }
+    return link.propertyName === source.property.name
 }
 
 /**
@@ -201,15 +217,43 @@ export function planImport(
     sources: StarterKitSource[],
     definitions: PropertyDefinition[]
 ): ImportPlanEntry[] {
-    const byName = new Map<string, PropertyDefinition>()
-    for (const definition of definitions) {
-        if (definition.name) byName.set(definition.name, definition)
+    // Which definition each source already owns through its link. Resolved up
+    // front because a linked definition is *not* competing for a name — it is
+    // the one whose name is about to change.
+    const linkedFor = new Map<StarterKitSource, PropertyDefinition>()
+    const linkedDefinitionIds = new Set<string>()
+    for (const source of sources) {
+        const linked = definitions.find((definition) =>
+            linkMatches(definition.starterKitLink, source)
+        )
+        if (linked && !linkedDefinitionIds.has(linked.id)) {
+            linkedFor.set(source, linked)
+            linkedDefinitionIds.add(linked.id)
+        }
     }
 
-    // Two note types can define the same property name. Without tracking what
-    // earlier entries already claim, both would plan as `create` (two
-    // definitions writing the same frontmatter key) or both as `adopt` (the
-    // second silently rebinding the first's link and mappings).
+    // Names currently in use, excluding definitions a source will rename: after
+    // `mood` → `feeling`, a *new* Starter Kit `mood` must not be reported as
+    // colliding with the definition that is itself moving off that name.
+    const byName = new Map<string, PropertyDefinition>()
+    for (const definition of definitions) {
+        if (definition.name && !linkedDefinitionIds.has(definition.id)) {
+            byName.set(definition.name, definition)
+        }
+    }
+
+    // Names that link-resolved sources will take. Reserved up front so a source
+    // that merely happens to share a name cannot claim it first purely by being
+    // earlier in the list — the definition that already belongs to a source has
+    // the better claim on its own name.
+    const reservedNames = new Set<string>()
+    for (const source of linkedFor.keys()) {
+        reservedNames.add(source.property.name)
+    }
+
+    // Names claimed by earlier entries in this same plan. Only successful
+    // entries claim: an entry that ends up a conflict changes nothing, so it
+    // must not block a later source that legitimately wants the name.
     const claimedNames = new Set<string>()
 
     return sources.map((source): ImportPlanEntry => {
@@ -218,20 +262,31 @@ export function planImport(
         if (!isImportableSource(source)) {
             return { source, action: 'unmatched', existingId: null }
         }
-        if (claimedNames.has(name)) {
+
+        const linked = linkedFor.get(source)
+        if (linked) {
+            // A rename must not land on a name another definition already uses:
+            // two definitions writing one frontmatter key is the failure this
+            // whole plan exists to prevent
+            const blocker = byName.get(name)
+            if ((blocker && blocker.id !== linked.id) || claimedNames.has(name)) {
+                return { source, action: 'conflict', existingId: linked.id }
+            }
+            claimedNames.add(name)
+            return { source, action: 'relink', existingId: linked.id }
+        }
+
+        if (claimedNames.has(name) || reservedNames.has(name)) {
             return { source, action: 'conflict', existingId: byName.get(name)?.id ?? null }
         }
 
         const existing = byName.get(name)
-        claimedNames.add(name)
-
         if (!existing) {
+            claimedNames.add(name)
             return { source, action: 'create', existingId: null }
         }
-        if (linkMatches(existing.starterKitLink, source)) {
-            return { source, action: 'relink', existingId: existing.id }
-        }
         if (!existing.starterKitLink) {
+            claimedNames.add(name)
             return { source, action: 'adopt', existingId: existing.id }
         }
         return { source, action: 'conflict', existingId: existing.id }
@@ -300,6 +355,16 @@ export function syncLinkedDefinitions(
         // A note type that lost its last enabled mapping would otherwise widen
         // this property's scope from "its notes" to "every note"
         if (!isImportableSource(source)) return definition
+
+        // A rename in Starter Kit must not land on a name another definition
+        // already holds — that would leave two definitions writing one
+        // frontmatter key. Left alone and flagged instead.
+        if (source.property.name !== definition.name) {
+            const taken = definitions.some(
+                (other) => other.id !== definition.id && other.name === source.property.name
+            )
+            if (taken) return definition
+        }
 
         if (isStructureInSync(definition, source)) return definition
 

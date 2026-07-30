@@ -463,3 +463,196 @@ describe('syncLinkedDefinitions — scope safety', () => {
         expect(syncLinkedDefinitions([synced], [source({ noteType: inert })])).toBeNull()
     })
 })
+
+describe('stable property ids — surviving a rename', () => {
+    /** Starter Kit now mints ids; a rename keeps them */
+    function identified(overrides: Partial<StarterKitProperty> = {}): StarterKitProperty {
+        return skProperty({ id: 'prop-123-abcdefg', ...overrides })
+    }
+
+    test('the link records the id when Starter Kit supplies one', () => {
+        const link = buildLink(source({ property: identified() }))
+        expect(link.propertyId).toBe('prop-123-abcdefg')
+        expect(link.propertyName).toBe('mood')
+    })
+
+    test('the link omits the id when Starter Kit has none, keeping the name fallback', () => {
+        const link = buildLink(source())
+        expect(link.propertyId).toBeUndefined()
+        expect(link.propertyName).toBe('mood')
+    })
+
+    test('a renamed property still matches its link', () => {
+        const link = buildLink(source({ property: identified() }))
+        const renamed = source({ property: identified({ name: 'feeling' }) })
+
+        expect(linkMatches(link, renamed)).toBe(true)
+    })
+
+    test('a different property that took over the old name does not match', () => {
+        // The classic rename trap: `mood` becomes `feeling`, then a *new*
+        // property called `mood` appears. Name matching would bind to the wrong one.
+        const link = buildLink(source({ property: identified() }))
+        const impostor = source({ property: identified({ id: 'prop-999-zzzzzzz' }) })
+
+        expect(linkMatches(link, impostor)).toBe(false)
+    })
+
+    test('the note type must still agree, whatever the id says', () => {
+        const link = buildLink(source({ property: identified() }))
+        const elsewhere = source({
+            property: identified(),
+            noteType: noteType({ id: 'nt-2', name: 'Weekly Note' })
+        })
+
+        expect(linkMatches(link, elsewhere)).toBe(false)
+    })
+
+    test('falls back to the name when only one side has an id', () => {
+        // Mid-upgrade: the link predates ids, Starter Kit has backfilled them
+        const legacyLink = buildLink(source())
+        expect(linkMatches(legacyLink, source({ property: identified() }))).toBe(true)
+    })
+
+    test('sync follows a rename through to the definition name', () => {
+        const synced = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: identified() })
+        )
+        expect(synced.name).toBe('mood')
+
+        const result = syncLinkedDefinitions(
+            [synced],
+            [source({ property: identified({ name: 'feeling', displayName: 'Feeling' }) })]
+        )
+
+        expect(result).not.toBeNull()
+        expect(result![0]!.name).toBe('feeling')
+        expect(result![0]!.displayName).toBe('Feeling')
+        // Life-Tracker-owned settings ride through the rename untouched
+        expect(result![0]!.polarity).toBe('higher-is-better')
+        expect(result![0]!.valueEmojis).toEqual({ '1': '😞', '5': '😄' })
+    })
+
+    test('a renamed property is not orphaned', () => {
+        const synced = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: identified() })
+        )
+        const renamed = [source({ property: identified({ name: 'feeling' }) })]
+
+        expect(findOrphanedLinks([synced], renamed)).toEqual([])
+    })
+
+    test('re-importing after a rename refreshes, never duplicates', () => {
+        // planImport must resolve by link, not by name: the definition still
+        // carries the OLD name until a sync runs
+        const synced = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: identified() })
+        )
+        const renamed = source({ property: identified({ name: 'feeling' }) })
+
+        const plan = planImport([renamed], [synced])
+        expect(plan[0]!.action).toBe('relink')
+
+        const result = applyImportPlan([synced], plan, () => 'should-not-be-used')
+        expect(result).toHaveLength(1)
+        expect(result[0]!.name).toBe('feeling')
+        expect(result[0]!.id).toBe(synced.id)
+    })
+})
+
+describe('rename collisions — never two definitions for one key', () => {
+    function identified(overrides: Partial<StarterKitProperty> = {}): StarterKitProperty {
+        return skProperty({ id: 'prop-123-abcdefg', ...overrides })
+    }
+
+    test('a rename onto a name another definition holds is a conflict, not a relink', () => {
+        const linked = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: identified() })
+        )
+        const other = localDefinition({ id: 'other', name: 'feeling' })
+        const renamed = source({ property: identified({ name: 'feeling' }) })
+
+        const plan = planImport([renamed], [linked, other])
+
+        expect(plan[0]!.action).toBe('conflict')
+    })
+
+    test('applying that plan changes nothing', () => {
+        const linked = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: identified() })
+        )
+        const other = localDefinition({ id: 'other', name: 'feeling' })
+        const renamed = source({ property: identified({ name: 'feeling' }) })
+
+        const before = [linked, other]
+        const plan = planImport([renamed], before)
+        const result = applyImportPlan(before, plan, () => 'unused')
+
+        expect(result.map((d) => d.name).sort()).toEqual(['feeling', 'mood'])
+    })
+
+    test('sync refuses the same rename rather than duplicating the name', () => {
+        const linked = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: identified() })
+        )
+        const other = localDefinition({ id: 'other', name: 'feeling' })
+        const renamed = source({ property: identified({ name: 'feeling' }) })
+
+        expect(syncLinkedDefinitions([linked, other], [renamed])).toBeNull()
+    })
+
+    test('sync still performs a rename when the new name is free', () => {
+        const linked = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: identified() })
+        )
+        const other = localDefinition({ id: 'other', name: 'weight' })
+        const renamed = source({ property: identified({ name: 'feeling' }) })
+
+        const result = syncLinkedDefinitions([linked, other], [renamed])
+
+        expect(result).not.toBeNull()
+        expect(result![0]!.name).toBe('feeling')
+    })
+
+    test('a new Starter Kit property may take the name a linked one is vacating', () => {
+        // `mood` → `feeling`, and a brand-new `mood` appears. The old name is
+        // no longer held by anyone once the rename lands, so this must import.
+        const linked = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: identified() })
+        )
+        const renamed = source({ property: identified({ name: 'feeling' }) })
+        const fresh = source({ property: identified({ id: 'prop-999-zzzzzzz', name: 'mood' }) })
+
+        const plan = planImport([renamed, fresh], [linked])
+
+        expect(plan.map((entry) => entry.action)).toEqual(['relink', 'create'])
+    })
+
+    test('a conflicting entry does not claim the name and block a later valid one', () => {
+        // The first source collides with a definition linked elsewhere; the
+        // second legitimately owns that definition and must still resolve
+        const otherType = noteType({ id: 'nt-2', name: 'Weekly Note' })
+        const linkedToOther = applyStarterKitStructure(
+            localDefinition(),
+            source({ property: identified(), noteType: otherType })
+        )
+        const fromFirstType = source({
+            property: identified({ id: 'prop-aaa-bbbbbbb' }),
+            noteType: noteType({ id: 'nt-1' })
+        })
+        const genuine = source({ property: identified(), noteType: otherType })
+
+        const plan = planImport([fromFirstType, genuine], [linkedToOther])
+
+        expect(plan[0]!.action).toBe('conflict')
+        expect(plan[1]!.action).toBe('relink')
+    })
+})
