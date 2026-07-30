@@ -42,6 +42,54 @@ visualizations and aggregations use the mapped numbers. This is ideal for
 tracking mood, energy, or ratings with emoji or words like `bad` / `ok` /
 `great` and still getting heatmaps, trends, and averages.
 
+### Value direction (higher or lower is better)
+
+Number and checkbox properties — and text properties that have a value mapping —
+can say whether **high values are good or bad**:
+
+| Setting           | Meaning                                                   |
+| ----------------- | --------------------------------------------------------- |
+| Neutral (default) | No judgement. The plugin stays colorless about direction. |
+| Higher is better  | Mood, sleep, steps, workouts                              |
+| Lower is better   | Weight, cigarettes, screen time, resting heart rate       |
+
+Setting it does two things:
+
+- The **trend arrow** on line, bar, and area charts turns green when the metric
+  is improving and red when it is worsening. With "lower is better", a falling
+  line is the good news, and the arrow says so. The arrow glyph and the wording
+  ("improving" / "worsening") carry the same meaning, so the color is never the
+  only signal.
+- The **default heatmap color** becomes green for higher-is-better and red for
+  lower-is-better, so "more color = more of the thing" reads correctly either
+  way. This is only a default — any color scheme you pick yourself still wins.
+
+Leaving it neutral keeps the previous behavior exactly.
+
+### Value emojis
+
+Give values their own emoji. Add entries under a property definition, using
+either an exact value or an inclusive range:
+
+| Key    | Emoji | Matches      |
+| ------ | ----- | ------------ |
+| `3`    | 😐    | exactly 3    |
+| `1-2`  | 😞    | 1 through 2  |
+| `8-10` | 😄    | 8 through 10 |
+
+Exact keys win over ranges, so `0-10 → 🙂` plus `10 → 🎉` still celebrates a
+perfect score. Where they show up:
+
+- **Tooltips** on heatmap cells and on line, bar, area, scatter, and bubble chart
+  points, in front of the value. (Pie, doughnut, polar, and radar charts show
+  category distributions rather than tracked values, so they are unaffected.)
+- **The capture dialog**, as a row of one-tap buttons under the number input —
+  tap 😄 instead of typing 5. A range button records its lower bound. The button
+  matching the current value is outlined.
+
+Different from **value mapping** above, which goes the other way (text → number,
+for input). A property can use both.
+
 ## Capture Command
 
 Use the command **Life Tracker: Capture properties** to open the capture modal.

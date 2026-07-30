@@ -114,6 +114,44 @@ export type PropertyAllowedValues = string[] | number[]
 export type ValueMapping = Record<string, number>
 
 /**
+ * Whether high values are good, bad, or neither for a property (issue #21).
+ *
+ * Drives the sentiment the plugin would otherwise have to keep neutral: a rising
+ * mood is an improvement, a rising cigarette count is not. `neutral` is the
+ * default and preserves the previous behavior everywhere.
+ */
+export type ValuePolarity = 'neutral' | 'higher-is-better' | 'lower-is-better'
+
+/** All polarity values, for runtime validation of stored settings. */
+export const VALUE_POLARITIES: readonly ValuePolarity[] = [
+    'neutral',
+    'higher-is-better',
+    'lower-is-better'
+]
+
+/** Human-readable labels for the polarity dropdown */
+export const VALUE_POLARITY_LABELS: Record<ValuePolarity, string> = {
+    'neutral': 'Neutral (no judgement)',
+    'higher-is-better': 'Higher is better',
+    'lower-is-better': 'Lower is better'
+}
+
+/**
+ * Map of value → emoji for display and one-tap entry (issue #22).
+ *
+ * Keys are either an exact value (`"3"`) or an inclusive range (`"1-2"`,
+ * `"-5--1"` for negatives). The reverse direction of `ValueMapping`, which
+ * converts text input into numbers; the two can coexist on one property.
+ *
+ * @example
+ * { "1": "😞", "2": "🙁", "3": "😐", "4": "🙂", "5": "😄" }
+ *
+ * @example
+ * { "0-4": "😞", "5-7": "😐", "8-10": "😄" }
+ */
+export type EmojiMapping = Record<string, string>
+
+/**
  * Definition of a trackable property.
  * Compatible with Obsidian Starter Kit plugin's PropertyDefinition.
  *
@@ -172,6 +210,14 @@ export interface PropertyDefinition {
     mappings: Mapping[]
     /** Custom value mapping for text-to-number conversion (null if not configured) */
     valueMapping: ValueMapping | null
+    /**
+     * Whether high values are good or bad for this property (issue #21).
+     * Optional so property definitions written by earlier versions (and by the
+     * Starter Kit plugin) stay valid; absent is read as `neutral`.
+     */
+    polarity?: ValuePolarity
+    /** Value/range → emoji map for display and one-tap entry (issue #22) */
+    valueEmojis?: EmojiMapping | null
 }
 
 /**
@@ -213,7 +259,9 @@ export function createDefaultPropertyDefinition(id: string, order: number): Prop
         description: '',
         order,
         mappings: [],
-        valueMapping: null
+        valueMapping: null,
+        polarity: 'neutral',
+        valueEmojis: null
     }
 }
 

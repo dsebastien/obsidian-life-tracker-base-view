@@ -1,5 +1,6 @@
-import { formatDateByGranularity } from '../../../utils'
+import { formatDateByGranularity, formatValueWithEmoji } from '../../../utils'
 import { TimeGranularity } from '../../types'
+import type { EmojiMapping } from '../../types'
 
 /**
  * Shared tooltip component for visualizations
@@ -99,11 +100,14 @@ export function formatHeatmapTooltip(
     value: number | null,
     count: number,
     displayName: string,
-    granularity: TimeGranularity = TimeGranularity.Daily
+    granularity: TimeGranularity = TimeGranularity.Daily,
+    /** Value → emoji map from the property definition (issue #22) */
+    valueEmojis?: EmojiMapping | null
 ): { title: string; value: string; subtitle: string } {
     const dateStr = formatDateByGranularity(date, granularity)
 
-    const valueStr = value !== null ? value.toFixed(2) : 'No data'
+    const valueStr =
+        value !== null ? formatValueWithEmoji(value, valueEmojis, value.toFixed(2)) : 'No data'
 
     const subtitle = count > 0 ? `${count} ${count === 1 ? 'entry' : 'entries'}` : ''
 
@@ -120,11 +124,13 @@ export function formatHeatmapTooltip(
 export function formatChartTooltip(
     label: string,
     value: number,
-    datasetLabel: string
+    datasetLabel: string,
+    /** Value → emoji map from the property definition (issue #22) */
+    valueEmojis?: EmojiMapping | null
 ): { title: string; value: string } {
     return {
         title: label,
-        value: `${datasetLabel}: ${value.toFixed(2)}`
+        value: `${datasetLabel}: ${formatValueWithEmoji(value, valueEmojis, value.toFixed(2))}`
     }
 }
 

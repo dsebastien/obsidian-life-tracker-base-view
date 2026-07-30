@@ -1,5 +1,12 @@
 import type { ValidationResult, PropertyEditorConfig } from '../../types'
-import { validateNumber, isEmpty, setupNumberInputBlocking, clampToRange } from '../../../utils'
+import {
+    validateNumber,
+    isEmpty,
+    setupNumberInputBlocking,
+    clampToRange,
+    listEmojiEntries,
+    findEmojiEntry
+} from '../../../utils'
 import { BasePropertyEditor } from './base-editor'
 import { NUMBER_INPUT_ATTRS, NUMBER_SLIDER_STEP } from './editing.constants'
 import { computeSteppedValue } from './number-step.utils'
@@ -14,6 +21,8 @@ export class NumberEditor extends BasePropertyEditor {
     private cleanupInputBlocking: (() => void) | null = null
     private decrementBtn: HTMLButtonElement | null = null
     private incrementBtn: HTMLButtonElement | null = null
+    /** Emoji quick-entry row (issue #22), absent when the property has none */
+    private emojiRowEl: HTMLElement | null = null
 
     constructor(config: PropertyEditorConfig) {
         super(config)
@@ -31,6 +40,90 @@ export class NumberEditor extends BasePropertyEditor {
         } else {
             this.renderInput(container)
         }
+
+        // One-tap emoji entry (issue #22). Not in compact grid cells: the row
+        // would not fit and cards must stay visually stable.
+        if (!this.config.compact) {
+            this.renderEmojiPicker(container)
+        }
+    }
+
+    /**
+     * Row of emoji buttons that set the value in one tap (issue #22).
+     *
+     * A range entry records its lower bound — the only member of a range we can
+     * name unambiguously. Renders nothing when the property has no emojis.
+     */
+    private renderEmojiPicker(container: HTMLElement): void {
+        const entries = listEmojiEntries(this.config.definition.valueEmojis)
+        if (entries.length === 0) return
+
+        const row = container.createDiv({ cls: 'lt-editor-emoji-row' })
+
+        for (const entry of entries) {
+            const label = `Set ${this.getDisplayLabel()} to ${entry.value}`
+            const button = row.createEl('button', {
+                cls: 'lt-editor-emoji-btn',
+                text: entry.emoji,
+                attr: {
+                    'type': 'button',
+                    'aria-label': label,
+                    'title': `${entry.key} ${entry.emoji}`
+                }
+            })
+
+            button.addEventListener('click', (event) => {
+                event.preventDefault()
+                this.applyEmojiValue(entry.value)
+            })
+        }
+
+        this.emojiRowEl = row
+        this.updateEmojiSelection()
+    }
+
+    /**
+     * Record the value behind an emoji button, clamped to the property's range.
+     */
+    private applyEmojiValue(value: number): void {
+        const clamped = clampToRange(value, this.config.definition.numberRange)
+
+        if (this.inputEl) {
+            this.inputEl.value = String(clamped)
+        }
+        if (this.sliderEl) {
+            this.sliderEl.value = String(clamped)
+        }
+
+        this.notifyChange(clamped)
+        this.notifyCommit()
+        this.updateStepperState()
+    }
+
+    /**
+     * Mark the emoji button matching the current value, so the row reflects
+     * state instead of only offering actions.
+     */
+    private updateEmojiSelection(): void {
+        if (!this.emojiRowEl) return
+
+        const current = this.parseValue(this.inputEl?.value)
+        const entries = listEmojiEntries(this.config.definition.valueEmojis)
+        // Resolve through the same precedence the tooltips use, keyed by the
+        // mapping key: comparing against `entry.value` would miss every value
+        // inside a range except its lower bound, and would light up two buttons
+        // when ranges share one
+        const active = findEmojiEntry(current, this.config.definition.valueEmojis)
+        const buttons = Array.from(
+            this.emojiRowEl.querySelectorAll<HTMLElement>('.lt-editor-emoji-btn')
+        )
+
+        buttons.forEach((button, index) => {
+            const entry = entries[index]
+            const selected = entry !== undefined && active !== null && entry.key === active.key
+            button.toggleClass('lt-editor-emoji-btn--selected', selected)
+            button.setAttribute('aria-pressed', selected ? 'true' : 'false')
+        })
     }
 
     private renderSliderWithInput(container: HTMLElement): void {
@@ -220,6 +313,10 @@ export class NumberEditor extends BasePropertyEditor {
      * Disable the −/+ buttons once the value sits at a range bound
      */
     private updateStepperState(): void {
+        // Also refresh the emoji row here: every place that changes the value
+        // already calls this, so the two controls cannot drift out of sync
+        this.updateEmojiSelection()
+
         if (!this.decrementBtn && !this.incrementBtn) return
 
         const numberRange = this.config.definition.numberRange

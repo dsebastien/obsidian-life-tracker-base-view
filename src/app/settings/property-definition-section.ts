@@ -6,13 +6,16 @@ import {
     PROPERTY_TYPES,
     PROPERTY_TYPE_LABELS,
     MAPPING_TYPE_LABELS,
+    VALUE_POLARITY_LABELS,
     createDefaultPropertyDefinition,
     createDefaultMapping,
     type PropertyDefinition,
     type ObsidianPropertyType,
-    type MappingType
+    type MappingType,
+    type ValuePolarity
 } from '../types'
 import { computeNumberRange } from './number-range.utils'
+import { isValidEmojiKey, readPolarity } from '../../utils'
 
 /**
  * Renders and manages the "Property definitions" section of the settings tab
@@ -299,6 +302,14 @@ export class PropertyDefinitionSection {
             this.renderValueMapping(optionsContainer, definition)
         }
 
+        // Polarity and emojis only mean something for values that end up
+        // numeric — that is, number and checkbox properties, plus text
+        // properties that carry a value mapping (issues #21, #22)
+        if (this.supportsValueSemantics(definition)) {
+            this.renderPolarity(optionsContainer, definition)
+            this.renderValueEmojis(optionsContainer, definition)
+        }
+
         // Default value
         this.renderDefaultValue(optionsContainer, definition)
 
@@ -323,6 +334,224 @@ export class PropertyDefinitionSection {
 
         // Mappings (note filtering)
         this.renderMappings(optionsContainer, definition)
+    }
+
+    /**
+     * Whether a property's values end up numeric, and so can carry a polarity
+     * (issue #21) or an emoji mapping (issue #22).
+     *
+     * Numbers and checkboxes always qualify. Text properties qualify once they
+     * have a value mapping, since that is what turns their text into numbers.
+     */
+    private supportsValueSemantics(definition: PropertyDefinition): boolean {
+        if (definition.type === 'number' || definition.type === 'checkbox') return true
+        return (
+            definition.type === 'text' &&
+            definition.valueMapping !== null &&
+            Object.keys(definition.valueMapping).length > 0
+        )
+    }
+
+    /**
+     * "Higher is better / lower is better" dropdown (issue #21).
+     */
+    private renderPolarity(container: HTMLElement, definition: PropertyDefinition): void {
+        new Setting(container)
+            .setName('Value direction')
+            .setDesc(
+                'Whether high values are good or bad. Used to color the trend arrow and to pick a default heatmap color. Leave neutral to keep the plugin from judging.'
+            )
+            .addDropdown((dropdown) => {
+                dropdown
+                    .addOptions(VALUE_POLARITY_LABELS)
+                    .setValue(readPolarity(definition.polarity))
+                    .onChange(async (value) => {
+                        await this.plugin.updateSettings(
+                            (draft) => {
+                                const d = draft.propertyDefinitions.find(
+                                    (d) => d.id === definition.id
+                                )
+                                if (d) {
+                                    d.polarity = value as ValuePolarity
+                                }
+                            },
+                            // Config-only: the data is unchanged, so the view's
+                            // incremental path would skip it entirely
+                            { type: 'property-definitions-changed' }
+                        )
+                    })
+            })
+    }
+
+    /**
+     * Value/range → emoji list (issue #22).
+     */
+    private renderValueEmojis(container: HTMLElement, definition: PropertyDefinition): void {
+        const emojiContainer = container.createDiv({ cls: 'lt-value-mapping-container' })
+
+        new Setting(emojiContainer)
+            .setName('Value emojis')
+            .setDesc(
+                'Show an emoji for a value or range. Keys are a value ("3") or an inclusive range ("1-2"). Emojis appear in tooltips and as one-tap buttons in the capture dialog.'
+            )
+            .addButton((button) => {
+                button
+                    .setIcon('plus')
+                    .setTooltip('Add value emoji')
+                    .onClick(async () => {
+                        // Commit any in-flight text edit before re-rendering,
+                        // same as the value mapping editor above
+                        const activeElement = activeDocument.activeElement as HTMLElement
+                        if (activeElement && activeElement.blur) {
+                            activeElement.blur()
+                        }
+                        await new Promise((resolve) => window.setTimeout(resolve, 50))
+
+                        await this.plugin.updateSettings(
+                            (draft) => {
+                                const d = draft.propertyDefinitions.find(
+                                    (d) => d.id === definition.id
+                                )
+                                if (d) {
+                                    if (!d.valueEmojis) {
+                                        d.valueEmojis = {}
+                                    }
+                                    d.valueEmojis[''] = ''
+                                }
+                            },
+                            { type: 'property-definitions-changed' }
+                        )
+                        this.requestRerender()
+                    })
+            })
+
+        if (!definition.valueEmojis || Object.keys(definition.valueEmojis).length === 0) {
+            emojiContainer.createDiv({
+                cls: 'lt-value-mapping-empty',
+                text: 'No emojis configured.'
+            })
+            return
+        }
+
+        const list = emojiContainer.createDiv({ cls: 'lt-value-mapping-list' })
+
+        for (const [key, emoji] of Object.entries(definition.valueEmojis)) {
+            this.renderValueEmojiItem(list, definition, key, emoji)
+        }
+    }
+
+    private renderValueEmojiItem(
+        container: HTMLElement,
+        definition: PropertyDefinition,
+        key: string,
+        emoji: string
+    ): void {
+        const setting = new Setting(container)
+
+        // The mapping key doubles as the object key *and* as an editable field,
+        // so every handler has to work off where the entry lives *now*, not off
+        // the key this row was rendered with. Typing "10" into a fresh row fires
+        // onChange per keystroke: without tracking, the "1" written by the first
+        // keystroke would be orphaned and the emoji field would keep writing to
+        // a key that no longer exists.
+        let currentKey = key
+        let currentEmoji = emoji
+
+        setting.addText((text) => {
+            const markInvalid = (candidate: string, duplicate: boolean): void => {
+                text.inputEl.toggleClass(
+                    'lt-input-invalid',
+                    duplicate || (candidate.length > 0 && !isValidEmojiKey(candidate))
+                )
+            }
+
+            text.setPlaceholder('Value or range (e.g. 3 or 1-2)')
+                .setValue(key)
+                .onChange(async (newKey) => {
+                    const trimmed = newKey.trim()
+
+                    // Renaming onto an existing entry would silently destroy it.
+                    // Flag it and keep the entry where it is until the conflict
+                    // is resolved. Read the *live* settings rather than the
+                    // render-time `definition`: sibling rows may have been
+                    // renamed since this row was drawn, and a stale snapshot
+                    // would both miss real collisions and invent phantom ones.
+                    const existing =
+                        this.plugin.settings.propertyDefinitions.find((d) => d.id === definition.id)
+                            ?.valueEmojis ?? {}
+                    const duplicate =
+                        trimmed !== currentKey &&
+                        Object.prototype.hasOwnProperty.call(existing, trimmed)
+
+                    markInvalid(trimmed, duplicate)
+                    if (duplicate) return
+
+                    const previousKey = currentKey
+                    currentKey = trimmed
+
+                    await this.plugin.updateSettings(
+                        (draft) => {
+                            const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                            if (!d?.valueEmojis) return
+
+                            delete d.valueEmojis[previousKey]
+                            if (trimmed) {
+                                d.valueEmojis[trimmed] = currentEmoji
+                            }
+                        },
+                        { type: 'property-definitions-changed' }
+                    )
+                })
+            markInvalid(key, false)
+        })
+
+        setting.settingEl.createSpan({ text: '→', cls: 'lt-value-mapping-arrow' })
+
+        setting.addText((text) => {
+            text.setPlaceholder('Emoji')
+                .setValue(emoji)
+                .onChange(async (value) => {
+                    currentEmoji = value.trim()
+
+                    await this.plugin.updateSettings(
+                        (draft) => {
+                            const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                            if (d?.valueEmojis && currentKey in d.valueEmojis) {
+                                d.valueEmojis[currentKey] = currentEmoji
+                            }
+                        },
+                        { type: 'property-definitions-changed' }
+                    )
+                })
+            text.inputEl.addClass('lt-emoji-input')
+        })
+
+        setting.addExtraButton((button) => {
+            button
+                .setIcon('trash')
+                .setTooltip('Remove emoji')
+                .onClick(async () => {
+                    const activeElement = activeDocument.activeElement as HTMLElement
+                    if (activeElement && activeElement.blur) {
+                        activeElement.blur()
+                    }
+                    await new Promise((resolve) => window.setTimeout(resolve, 50))
+
+                    await this.plugin.updateSettings(
+                        (draft) => {
+                            const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                            if (d?.valueEmojis) {
+                                delete d.valueEmojis[currentKey]
+                                if (Object.keys(d.valueEmojis).length === 0) {
+                                    d.valueEmojis = null
+                                }
+                            }
+                        },
+                        { type: 'property-definitions-changed' }
+                    )
+                    this.requestRerender()
+                })
+        })
     }
 
     private renderMappings(container: HTMLElement, definition: PropertyDefinition): void {
@@ -903,7 +1132,9 @@ export class PropertyDefinitionSection {
             description: source.description,
             order: nextOrder,
             mappings: source.mappings.map((m) => ({ ...m })), // Deep copy mappings
-            valueMapping: source.valueMapping ? { ...source.valueMapping } : null // Deep copy value mapping
+            valueMapping: source.valueMapping ? { ...source.valueMapping } : null, // Deep copy value mapping
+            polarity: source.polarity, // issue #21
+            valueEmojis: source.valueEmojis ? { ...source.valueEmojis } : null // Deep copy, issue #22
         }
 
         // Auto-expand the new definition

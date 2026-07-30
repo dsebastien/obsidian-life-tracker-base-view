@@ -9,9 +9,15 @@ import {
     type TagCloudConfig,
     type TimelineConfig,
     type VisualizationConfig,
-    type ConfigGetter
+    type ConfigGetter,
+    type PropertyDefinition
 } from '../types'
-import { HEATMAP_PRESETS, asChartColorScheme, normalizeHeatmapColorScheme } from '../../utils'
+import {
+    HEATMAP_PRESETS,
+    asChartColorScheme,
+    normalizeHeatmapColorScheme,
+    polarityHeatmapPreset
+} from '../../utils'
 import { DEFAULT_CELL_SIZE, DEFAULT_EMBEDDED_HEIGHT } from './view-options'
 import { getBoolConfig, getEnumConfig, getNumberConfig, getStringConfig } from './config-accessors'
 
@@ -21,7 +27,13 @@ import { getBoolConfig, getEnumConfig, getNumberConfig, getStringConfig } from '
 export function getVisualizationConfig(
     vizType: VisualizationType,
     columnConfig: ColumnVisualizationConfig,
-    getConfig: ConfigGetter
+    getConfig: ConfigGetter,
+    /**
+     * Definition of the visualized property, when it has one. Carries the
+     * polarity (issue #21) and emoji mapping (issue #22), which are per
+     * property rather than per view.
+     */
+    definition?: PropertyDefinition | null
 ): VisualizationConfig {
     const granularity =
         getEnumConfig(getConfig, 'granularity', TIME_GRANULARITY_OPTIONS) ?? TimeGranularity.Daily
@@ -31,7 +43,9 @@ export function getVisualizationConfig(
     const baseConfig: VisualizationConfig = {
         granularity,
         showEmptyValues,
-        embeddedHeight
+        embeddedHeight,
+        polarity: definition?.polarity,
+        valueEmojis: definition?.valueEmojis ?? null
     }
 
     // Extract scale, color scheme, reference line, and aggregation method from column config if present
@@ -49,9 +63,13 @@ export function getVisualizationConfig(
             // A per-viz custom mapping wins outright; otherwise resolve a preset
             // name, per-viz first and the view-wide setting as fallback (#82)
             const customScheme = normalizeHeatmapColorScheme(storedColorScheme)
+            // Polarity only supplies a *default* (issue #21): green when more is
+            // better, red when more is worse. Anything the user picked — per
+            // card or view-wide — still wins.
             const colorSchemeName =
                 (typeof storedColorScheme === 'string' ? storedColorScheme : undefined) ??
                 getStringConfig(getConfig, 'heatmapColorScheme') ??
+                polarityHeatmapPreset(definition?.polarity) ??
                 'green'
             const heatmapColorScheme =
                 customScheme ?? HEATMAP_PRESETS[colorSchemeName] ?? HEATMAP_PRESETS['green']!

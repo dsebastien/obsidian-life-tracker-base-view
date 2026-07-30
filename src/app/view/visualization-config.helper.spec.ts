@@ -3,10 +3,13 @@ import type { BasesPropertyId } from 'obsidian'
 import { getVisualizationConfig } from './visualization-config.helper'
 import {
     VisualizationType,
+    createDefaultPropertyDefinition,
     type ChartConfig,
     type ColumnVisualizationConfig,
     type HeatmapConfig,
-    type StoredColorScheme
+    type PropertyDefinition,
+    type StoredColorScheme,
+    type ValuePolarity
 } from '../types'
 import { HEATMAP_PRESETS } from '../../utils'
 
@@ -108,5 +111,82 @@ describe('getVisualizationConfig - chart color scheme narrowing (issue #82)', ()
             mapping: { '1': '#0072b2' }
         }
         expect(chartConfigFor(custom).colorScheme).toBeUndefined()
+    })
+})
+
+describe('getVisualizationConfig - polarity and emojis (issues #21, #22)', () => {
+    function definitionWith(
+        polarity: ValuePolarity | undefined,
+        valueEmojis: Record<string, string> | null = null
+    ): PropertyDefinition {
+        const definition = createDefaultPropertyDefinition('def-1', 0)
+        definition.name = 'mood'
+        definition.type = 'number'
+        definition.polarity = polarity
+        definition.valueEmojis = valueEmojis
+        return definition
+    }
+
+    function configWith(
+        definition: PropertyDefinition | null,
+        viewConfig: Record<string, unknown> = {},
+        colorScheme?: StoredColorScheme
+    ): HeatmapConfig {
+        return getVisualizationConfig(
+            VisualizationType.Heatmap,
+            columnConfig(colorScheme),
+            configGetter(viewConfig),
+            definition
+        ) as HeatmapConfig
+    }
+
+    test('carries polarity and the emoji map onto the visualization config', () => {
+        const config = configWith(definitionWith('higher-is-better', { '1': '😞' }))
+
+        expect(config.polarity).toBe('higher-is-better')
+        expect(config.valueEmojis).toEqual({ '1': '😞' })
+    })
+
+    test('a property with no definition gets neutral semantics', () => {
+        const config = configWith(null)
+
+        expect(config.polarity).toBeUndefined()
+        expect(config.valueEmojis).toBeNull()
+    })
+
+    test('higher-is-better defaults the heatmap to green, lower-is-better to red', () => {
+        expect(configWith(definitionWith('higher-is-better')).colorScheme).toEqual(
+            HEATMAP_PRESETS['green']!
+        )
+        expect(configWith(definitionWith('lower-is-better')).colorScheme).toEqual(
+            HEATMAP_PRESETS['red']!
+        )
+    })
+
+    test('neutral keeps the plugin-wide green default', () => {
+        expect(configWith(definitionWith('neutral')).colorScheme).toEqual(HEATMAP_PRESETS['green']!)
+        expect(configWith(definitionWith(undefined)).colorScheme).toEqual(HEATMAP_PRESETS['green']!)
+    })
+
+    test('polarity is only a default: an explicit view-wide scheme still wins', () => {
+        const config = configWith(definitionWith('lower-is-better'), {
+            heatmapColorScheme: 'blue'
+        })
+        expect(config.colorScheme).toEqual(HEATMAP_PRESETS['blue']!)
+    })
+
+    test('polarity is only a default: an explicit per-card scheme still wins', () => {
+        const config = configWith(definitionWith('lower-is-better'), {}, 'viridis')
+        expect(config.colorScheme).toEqual(HEATMAP_PRESETS['viridis']!)
+    })
+
+    test('polarity never overrides a custom mapping', () => {
+        const custom: StoredColorScheme = {
+            kind: 'discrete',
+            empty: '#eeeeee',
+            mapping: { '1': '#0072b2' }
+        }
+        const config = configWith(definitionWith('lower-is-better'), {}, custom)
+        expect(config.colorScheme).toEqual(custom)
     })
 })

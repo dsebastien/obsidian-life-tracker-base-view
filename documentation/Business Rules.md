@@ -166,6 +166,23 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Colorblind-friendly palettes are first-class options, not an afterthought (issue #136): charts offer a `colorblind` scheme (Okabe-Ito, 8 colors), heatmaps offer the `viridis` and `cividis` gradients
 - New custom heatmap mappings seed from a colorblind-safe blue → orange ramp, and added entries cycle the Okabe-Ito palette. Red → green is deliberately avoided as a default: it is the axis most color vision deficiencies collapse
 
+## Value Polarity
+
+- `polarity` on a property definition is `neutral` (default) | `higher-is-better` | `lower-is-better` — issue #21. Absent or unrecognized reads as `neutral`, so definitions from earlier versions and from the Starter Kit plugin keep working unchanged
+- Neutral means the plugin makes **no judgement** anywhere: no colored trend, no polarity-derived palette. This is the default and preserves all prior behavior
+- Polarity supplies the _default_ heatmap gradient only (green for higher-is-better, red for lower-is-better, so "more color = more of the thing" reads correctly both ways). Precedence: per-card scheme → view-wide `heatmapColorScheme` → polarity → green. Anything the user picked explicitly always wins
+- Chart palettes are **not** polarity-driven: a series color identifies the series, not its goodness. Only the trend indicator carries sentiment
+- Polarity and emojis are offered only for properties whose values are numeric: number, checkbox, and text properties that have a value mapping
+
+## Value Emojis
+
+- `valueEmojis` maps a value or range to an emoji — issue #22. Keys are an exact value (`3`) or an inclusive range (`1-2`, `1..2`, `-5--1`); reversed ranges are normalized, unparseable keys are ignored at render time and flagged in settings
+- Exact keys beat ranges, so `{ "0-10": "🙂", "10": "🎉" }` still celebrates a perfect score. Among overlapping ranges, the first configured one wins
+- Distinct from `valueMapping`, which converts text → number for input. `valueEmojis` goes number → emoji for display; a property may use both
+- Rendered in heatmap tooltips and in cartesian/scatter/bubble chart tooltips (prefixed to the value), and as one-tap entry buttons under the number editor. Pie/doughnut/polar/radar tooltips show category distributions, not tracked values, so they carry no emoji.
+- The button highlighted in the editor is resolved with the same precedence as the tooltip (`findEmojiEntry`), so the selected button and the displayed emoji can never disagree — including for values inside a range. A range button records its lower bound — the only member of a range that can be named unambiguously
+- Emoji quick-entry is not rendered in compact grid cells: the row would not fit and cards must stay visually stable
+
 ## Heatmap Aggregation
 
 - Multiple entries falling in the same cell period are combined via the configured aggregation method: `average` (default, preserves prior behavior) or `sum` for counter-style tracking (calories, sessions per day) — issue #98. Same `average | sum` model as charts (#89). Cell min/max (and therefore color scaling) follow the aggregated value.
@@ -218,7 +235,9 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 
 - Shown automatically on single-dataset cartesian charts (line, bar, area) with enough data for two comparison windows
 - Compares the mean of the last N periods (N = min(7, half the data)) against the previous N; changes below 2% read as flat
-- The arrow color stays neutral: whether "up" is good depends on the tracked metric (see issue #21)
+- The arrow color follows the property's polarity (issue #21): green when the metric is improving, red when worsening, muted when the property is `neutral` or has no definition. A flat trend is always muted — below the meaningful-change threshold there is nothing to judge
+- Color is never the only channel: the arrow glyph (↑/↓/→) and the wording ("improving" / "worsening" in the tooltip and trend row) carry the same meaning
+- Overlay charts combine several properties, so they have no single polarity and stay neutral
 
 ## Visualization Export
 

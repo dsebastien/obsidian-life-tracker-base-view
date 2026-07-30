@@ -1691,7 +1691,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const vizConfig = getVisualizationConfig(
             columnConfig.visualizationType,
             columnConfig,
-            this.cfg
+            this.cfg,
+            // Carries polarity (#21) and the emoji mapping (#22), both of which
+            // live on the property definition rather than the view
+            this.findPropertyDefinition(columnConfig.propertyId)
         )
 
         switch (columnConfig.visualizationType) {
@@ -2276,8 +2279,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
             case 'property-definitions-changed':
                 // Clear cache and refresh - property definitions include value mappings
-                // which affect how data is aggregated for visualizations
+                // which affect how data is aggregated for visualizations.
+                // Definitions also carry config-only settings (polarity #21,
+                // value emojis #22) that leave the data identical; the
+                // incremental path ignores config changes, so force the full
+                // path or the change would not appear until the next reload.
                 this.cacheService.clearAll()
+                this.forceFullRender = true
                 this.onDataUpdated()
                 break
 
@@ -2287,7 +2295,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
             case 'full':
             default:
-                // Full refresh for unknown changes - clear cache to ensure fresh data
+                // Full refresh for unknown changes - clear cache to ensure fresh data.
+                // Deliberately does NOT force the full render path: this is the
+                // catch-all for every untyped `updateSettings` call, and making
+                // it rebuild every card would be a heavy default. Changes that
+                // are config-only announce themselves with a specific type.
                 this.cacheService.clearAll()
                 this.onDataUpdated()
                 break

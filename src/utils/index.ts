@@ -28,6 +28,26 @@ export {
 } from './color.utils'
 export type { ChartColorScheme, HeatmapPresetName } from './color.utils'
 
+// Polarity utilities (issue #21)
+export {
+    readPolarity,
+    resolveTrendSentiment,
+    describeTrendSentiment,
+    polarityHeatmapPreset
+} from './polarity.utils'
+export type { TrendDirection, TrendSentiment } from './polarity.utils'
+
+// Emoji mapping utilities (issue #22)
+export {
+    parseEmojiKey,
+    isValidEmojiKey,
+    resolveValueEmoji,
+    findEmojiEntry,
+    formatValueWithEmoji,
+    listEmojiEntries
+} from './emoji-mapping.utils'
+export type { ParsedEmojiKey, EmojiEntry } from './emoji-mapping.utils'
+
 // Date utilities
 export {
     isValidDate,

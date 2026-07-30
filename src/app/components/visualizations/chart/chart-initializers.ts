@@ -16,7 +16,8 @@ import {
     getColorWithAlpha,
     getBooleanColor,
     getChartColorScheme,
-    prefersReducedMotion
+    prefersReducedMotion,
+    formatValueWithEmoji
 } from '../../../../utils'
 import type { Chart as ChartJsChart } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
@@ -360,7 +361,12 @@ export function initCartesianChart(
                             const value = context.parsed.y
                             // Return empty string for null/undefined values (not "null")
                             if (value === null || value === undefined) return ''
-                            return `${label}: ${formatMetricValue(value, integersOnly)}`
+                            // Emoji summary when the property defines one (#22)
+                            return `${label}: ${formatValueWithEmoji(
+                                value,
+                                chartConfig.valueEmojis,
+                                formatMetricValue(value, integersOnly)
+                            )}`
                         }
                     }
                 },
@@ -457,7 +463,11 @@ export function initScatterChart(
                             if (x === null || x === undefined || y === null || y === undefined)
                                 return ''
                             // x is an epoch-ms timestamp (issue #97)
-                            return `${formatTimestamp(x)}: ${formatMetricValue(y, false)}`
+                            return `${formatTimestamp(x)}: ${formatValueWithEmoji(
+                                y,
+                                chartConfig.valueEmojis,
+                                formatMetricValue(y, false)
+                            )}`
                         }
                     }
                 }
@@ -556,7 +566,12 @@ export function initBubbleChart(
                                     ? raw.count
                                     : 0
                             const entries = count === 1 ? '1 entry' : `${count} entries`
-                            return `Value: ${formatMetricValue(y, false)}, ${entries}`
+                            // Emoji summary when the property defines one (#22)
+                            return `Value: ${formatValueWithEmoji(
+                                y,
+                                chartConfig.valueEmojis,
+                                formatMetricValue(y, false)
+                            )}, ${entries}`
                         }
                     }
                 }

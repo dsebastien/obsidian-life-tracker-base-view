@@ -12,7 +12,14 @@ import type {
 } from '../../../types'
 import { sharedAggregationService } from '../../../services/data-aggregation.service'
 import { ChartLoaderService } from '../../../services/chart-loader.service'
-import { log, getBooleanColor, getChartColorScheme, getColorWithAlpha } from '../../../../utils'
+import {
+    log,
+    getBooleanColor,
+    getChartColorScheme,
+    getColorWithAlpha,
+    resolveTrendSentiment,
+    describeTrendSentiment
+} from '../../../../utils'
 import type { ChartClickElement, ChartInstance } from './chart-types'
 import {
     initBubbleChart,
@@ -234,7 +241,15 @@ export class ChartVisualization extends BaseVisualization {
 
         const arrow = trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'
         const sign = trend.changePercent > 0 ? '+' : ''
-        const description = `${sign}${trend.changePercent.toFixed(1)}% vs previous ${trend.periodCount} ${
+
+        // Whether the move is good or bad depends entirely on the property
+        // (issue #21): rising mood is an improvement, rising cigarettes is not.
+        // Without a configured polarity this stays neutral, as before.
+        const polarity = this.chartConfig.polarity
+        const sentiment = resolveTrendSentiment(trend.direction, polarity)
+        const wording = describeTrendSentiment(trend.direction, polarity)
+
+        const description = `${wording}, ${sign}${trend.changePercent.toFixed(1)}% vs previous ${trend.periodCount} ${
             trend.periodCount === 1 ? 'period' : 'periods'
         }`
 
@@ -242,15 +257,20 @@ export class ChartVisualization extends BaseVisualization {
         // sibling element would push the action buttons around. Only
         // `aria-label` — Obsidian renders it as its styled tooltip.
         titleEl?.createSpan({
-            cls: `lt-trend-indicator lt-trend-indicator--${trend.direction}`,
+            cls: `lt-trend-indicator lt-trend-indicator--${trend.direction} lt-trend-indicator--${sentiment}`,
             text: arrow,
             attr: { 'aria-label': `Trend: ${description}` }
         })
 
-        // Trend row below the chart, same style as the heatmap streak row
+        // Trend row below the chart, same style as the heatmap streak row.
+        // The sentiment class colors this too, so the meaning is not carried by
+        // the arrow's color alone (which colorblind users may not resolve).
         this.trendStatsEl?.createSpan({
-            cls: 'lt-chart-trend-item',
-            text: `Trend: ${arrow} ${sign}${trend.changePercent.toFixed(1)}%`
+            cls: `lt-chart-trend-item lt-chart-trend-item--${sentiment}`,
+            text:
+                sentiment === 'neutral'
+                    ? `Trend: ${arrow} ${sign}${trend.changePercent.toFixed(1)}%`
+                    : `Trend: ${arrow} ${sign}${trend.changePercent.toFixed(1)}% (${wording})`
         })
         this.trendStatsEl?.createSpan({
             cls: 'lt-chart-trend-item',

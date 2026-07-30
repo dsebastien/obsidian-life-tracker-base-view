@@ -7,6 +7,7 @@ import type {
     AggregationMethod
 } from '../column/column-config.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
+import type { EmojiMapping, ValuePolarity } from '../property/property-definition.types'
 
 /**
  * A single data point for visualization.
@@ -241,6 +242,13 @@ export interface VisualizationConfig {
     /** Show empty values: includes dates with no entries AND dates where property value is null/empty */
     showEmptyValues: boolean
     embeddedHeight: number
+    /**
+     * Whether high values are good or bad for the visualized property, taken
+     * from its definition (issue #21). Absent is read as neutral.
+     */
+    polarity?: ValuePolarity
+    /** Value/range → emoji map from the property definition (issue #22) */
+    valueEmojis?: EmojiMapping | null
 }
 
 /**

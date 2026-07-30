@@ -1040,6 +1040,19 @@
         color: var(--text-muted);
     }
 
+    /* Trend sentiment (issue #21): only colored once the property says whether
+       high values are good or bad. Neutral properties keep the muted arrow —
+       the plugin must not guess whether a rise is good news.
+       The arrow glyph (↑/↓/→) and the wording in the tooltip and trend row
+       carry the same information, so color is never the only channel. */
+    .lt-trend-indicator--good {
+        color: var(--color-green);
+    }
+
+    .lt-trend-indicator--bad {
+        color: var(--color-red);
+    }
+
     .lt-section-actions {
         @apply flex items-center gap-1;
     }
@@ -1322,6 +1335,17 @@
     .lt-chart-trend-item:first-child {
         @apply font-medium;
         color: var(--text-normal);
+    }
+
+    /* Trend sentiment on the row item (issue #21). The sentiment class lands on
+       the first child, so it has to beat `.lt-chart-trend-item:first-child`
+       above (0,2,0) — doubled class, and placed after it. */
+    .lt-chart-trend-item--good.lt-chart-trend-item--good {
+        color: var(--color-green);
+    }
+
+    .lt-chart-trend-item--bad.lt-chart-trend-item--bad {
+        color: var(--color-red);
     }
 
     /* Heatmap grid variants */
@@ -1818,6 +1842,46 @@
     /* Quick −/+ entry around the number input (issue #125) */
     .lt-editor-stepper {
         @apply flex items-center gap-2;
+    }
+
+    /* ========================================
+   EMOJI QUICK ENTRY (issue #22)
+   ======================================== */
+
+    /* Wraps rather than scrolls, so a long emoji list never introduces a
+       horizontal scrollbar inside the capture dialog */
+    .lt-editor-emoji-row {
+        @apply flex flex-wrap items-center gap-1.5 mt-2;
+    }
+
+    .lt-editor-emoji-btn {
+        @apply flex items-center justify-center rounded cursor-pointer flex-shrink-0;
+        @apply text-lg leading-none select-none p-0;
+        /* Matches the −/+ step buttons, and the 44px mobile bump below keeps
+           the recommended tap target */
+        width: 36px;
+        height: 36px;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-editor-emoji-btn:hover {
+        background-color: var(--background-modifier-hover);
+    }
+
+    /* The current value's emoji. Bordered rather than only tinted, so the
+       selection does not depend on color perception alone. */
+    .lt-editor-emoji-btn--selected {
+        border-color: var(--interactive-accent);
+        border-width: 2px;
+        background-color: var(--background-modifier-hover);
+    }
+
+    /* Mapping key that does not parse as a value or range, or collides with an
+       existing key (issue #22). Doubled class (0,2,0) so it beats Obsidian's
+       attribute-based `input[type='text']` border rules (0,1,1). */
+    .lt-input-invalid.lt-input-invalid {
+        border-color: var(--text-error);
     }
 
     .lt-editor-step-btn {
@@ -3162,6 +3226,13 @@
         /* Quick −/+ number buttons follow the same touch-target rule */
         .lt-editor-step-btn {
             @apply text-lg;
+            width: 44px;
+            height: 44px;
+        }
+
+        /* Emoji quick-entry buttons too (issue #22) */
+        .lt-editor-emoji-btn {
+            @apply text-xl;
             width: 44px;
             height: 44px;
         }

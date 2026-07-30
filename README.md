@@ -84,7 +84,7 @@ Adjust layout options including number of columns, empty date display, default c
 ### Right-click context menu
 
 ![Customize visualizations](documentation/screenshots/customize-visualizations.png)
-Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), color scheme, reference lines, aggregation method (average or sum — useful when multiple entries share a date, e.g. summing workout calories per day), and a moving average for line/area charts (7/14/30 periods, drawn as a dashed line to smooth noisy data), add another visualization for the same property, maximize, export the chart as a PNG image or the displayed data as CSV (saved to your attachment folder), or reset configuration. Line, bar, and area charts also show a small trend arrow (↑/↓/→) next to the title comparing recent periods against the previous ones — hover it for the percentage change.
+Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), color scheme, reference lines, aggregation method (average or sum — useful when multiple entries share a date, e.g. summing workout calories per day), and a moving average for line/area charts (7/14/30 periods, drawn as a dashed line to smooth noisy data), add another visualization for the same property, maximize, export the chart as a PNG image or the displayed data as CSV (saved to your attachment folder), or reset configuration. Line, bar, and area charts also show a small trend arrow (↑/↓/→) next to the title comparing recent periods against the previous ones — hover it for the percentage change. Set the property's **value direction** and the arrow turns green when the metric is improving and red when it is worsening.
 
 ### Visualize list properties
 
@@ -162,6 +162,8 @@ Property definitions let you configure which frontmatter properties to track acr
 - **Type**: text, number, checkbox, date, datetime, list, or tags
 - **Constraints**: Optional min/max for numbers, allowed values for text/list/tags
 - **Value mapping** (text properties): map text/emoji values to numbers so they can be charted — e.g. `⭐` → 1, `⭐⭐` → 2, or `bad`/`ok`/`great` → 1/2/3. Notes keep showing the original text; visualizations use the mapped numbers. Great for tracking mood or ratings with emoji.
+- **Value direction**: say whether higher is better (mood, steps) or lower is better (weight, screen time). The trend arrow then turns green when things improve and red when they don't, and heatmaps default to a matching color. Leave it neutral and nothing is judged.
+- **Value emojis**: give values or ranges their own emoji (`1-2` → 😞, `3` → 😐, `4-5` → 😄). They appear in tooltips and as one-tap buttons in the capture dialog, so you can log a 5 by tapping 😄.
 - **Default value**: Pre-filled when capturing new data
 - **Note filtering**: Apply the property only to specific notes by folder, tag, or regex pattern
 - **Reordering**: Drag and drop to reorder property definitions (affects modal and grid order)
