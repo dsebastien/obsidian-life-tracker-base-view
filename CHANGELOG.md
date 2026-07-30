@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.20.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.19.0...2.20.0) (2026-07-30)
+
+### Features
+
+* **plugin:** custom heatmap color mappings and colorblind-friendly palettes ([1c03206](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1c0320627066c3458c638197321bfb422b4adf55)), closes [#82](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/82) [#136](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/136) [#82](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/82) [#136](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/136)
+* **plugin:** import linked property definitions from Obsidian Starter Kit ([d99d50e](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/d99d50ec527f1ac5074c3dd04961c17c36e84095))
+* **plugin:** link Starter Kit properties by stable id so renames survive ([8a7ef34](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/8a7ef34c0d1efd0febb0c1432a47c0f4cebc13ba))
+* **plugin:** value polarity and value/range emojis ([b086ece](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/b086ece6d17328596d01849677dd3e40dedff8af)), closes [#21](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/21) [#22](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/22) [#21](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/21) [#22](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/22) [#21](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/21) [#21](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/21) [#22](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/22)
+
+### Bug Fixes
+
+* **build:** record every release in versions.json, and lint before tagging ([895da54](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/895da545bf5fe23bdfc84069a68853bf4b7f1b0d))
+* **plugin:** keep display names on link, and make Starter Kit import scale ([d91e9a6](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/d91e9a60f729f209b0cd83799a4d6bc14d29239d))
+* **plugin:** serialize settings writes, editable map keys, heatmap auto scheme ([839f0a5](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/839f0a5d2a97a4f98530a8da34a36533a33353cc)), closes [21/#22](https://github.com/21/obsidian-life-tracker-base-view/issues/22)
+
 ## [2.19.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.18.0...2.19.0) (2026-07-30)
 
 ### Features
@@ -354,6 +369,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

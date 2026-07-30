@@ -1,5 +1,20 @@
 # Release Notes
 
+## 2.20.0 (2026-07-30)
+
+### Features
+
+- **plugin:** custom heatmap color mappings and colorblind-friendly palettes [#136](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/136) [#82](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/82) [#136](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/136)
+- **plugin:** import linked property definitions from Obsidian Starter Kit
+- **plugin:** link Starter Kit properties by stable id so renames survive
+- **plugin:** value polarity and value/range emojis [#22](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/22) [#21](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/21) [#22](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/22) [#21](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/21) [#21](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/21) [#22](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/22)
+
+### Bug Fixes
+
+- **build:** record every release in versions.json, and lint before tagging
+- **plugin:** keep display names on link, and make Starter Kit import scale
+- **plugin:** serialize settings writes, editable map keys, heatmap auto scheme, closes [21/#22](https://github.com/21/obsidian-life-tracker-base-view/issues/22)
+
 ## 2.19.0 (2026-07-30)
 
 ### Features
