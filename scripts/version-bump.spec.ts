@@ -82,42 +82,47 @@ describe('version format validation', () => {
     })
 })
 
-describe('recordVersion (issue #117)', () => {
-    test('records every release, not just ones with a new minAppVersion', () => {
-        // The original bug: `2.7.4 -> 1.12.0` was already present, so every
-        // later release sharing that minimum was skipped and versions.json
-        // stalled while 2.7.5 through 2.19.0 shipped
+describe('recordVersion', () => {
+    test('records nothing when the minimum has not changed', () => {
+        // versions.json is only read to serve an OLDER plugin version to a user
+        // whose app is too old for the current one. A release that needs the
+        // same minimum as the last recorded one adds no information.
         const existing: VersionsJson = { '0.1.0': '1.10.0', '2.7.4': '1.12.0' }
 
-        const result = recordVersion(existing, '2.20.0', '1.12.0')
-
-        expect(result['2.20.0']).toBe('1.12.0')
-        expect(Object.keys(result)).toHaveLength(3)
+        expect(recordVersion(existing, '2.20.0', '1.12.0')).toBe(existing)
     })
 
-    test('records a release that does raise the minimum', () => {
-        const result = recordVersion({ '1.0.0': '1.10.0' }, '2.0.0', '1.12.0')
-        expect(result).toEqual({ '1.0.0': '1.10.0', '2.0.0': '1.12.0' })
-    })
-
-    test('re-recording the same version is idempotent', () => {
-        const existing: VersionsJson = { '1.0.0': '1.10.0' }
-        expect(recordVersion(existing, '1.0.0', '1.10.0')).toEqual(existing)
-    })
-
-    test('a corrected minAppVersion overwrites the entry for that version', () => {
-        expect(recordVersion({ '1.0.0': '1.10.0' }, '1.0.0', '1.12.0')).toEqual({
-            '1.0.0': '1.12.0'
+    test('records a release that raises the minimum', () => {
+        expect(recordVersion({ '1.0.0': '1.10.0' }, '2.0.0', '1.12.0')).toEqual({
+            '1.0.0': '1.10.0',
+            '2.0.0': '1.12.0'
         })
+    })
+
+    test('records a release that lowers the minimum again', () => {
+        // Compares against the newest recorded entry, not "any value present":
+        // dropping back to an older minimum genuinely widens compatibility and
+        // users on that older app need to know this version works for them
+        expect(recordVersion({ '1.0.0': '1.10.0', '2.0.0': '1.12.0' }, '3.0.0', '1.10.0')).toEqual({
+            '1.0.0': '1.10.0',
+            '2.0.0': '1.12.0',
+            '3.0.0': '1.10.0'
+        })
+    })
+
+    test('compares against the highest version, not insertion order', () => {
+        // Keys are unordered in principle; 10.0.0 must beat 9.0.0
+        const existing: VersionsJson = { '10.0.0': '1.12.0', '9.0.0': '1.10.0' }
+        expect(recordVersion(existing, '11.0.0', '1.12.0')).toBe(existing)
+    })
+
+    test('records the first release into an empty map', () => {
+        expect(recordVersion({}, '1.0.0', '1.10.0')).toEqual({ '1.0.0': '1.10.0' })
     })
 
     test('does not mutate the input', () => {
         const existing: VersionsJson = { '1.0.0': '1.10.0' }
         recordVersion(existing, '2.0.0', '1.12.0')
         expect(existing).toEqual({ '1.0.0': '1.10.0' })
-    })
-
-    test('works from an empty map', () => {
-        expect(recordVersion({}, '1.0.0', '1.10.0')).toEqual({ '1.0.0': '1.10.0' })
     })
 })
