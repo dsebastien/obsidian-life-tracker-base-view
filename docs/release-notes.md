@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.20.1 (2026-07-31)
+
+### Bug Fixes
+
+- **build:** only record a versions.json entry when the minimum changes
+
 ## 2.20.0 (2026-07-30)
 
 ### Features
