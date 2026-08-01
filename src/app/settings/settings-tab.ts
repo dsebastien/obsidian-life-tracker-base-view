@@ -40,6 +40,12 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         containerEl.empty()
         containerEl.addClass('lt-settings')
 
+        // The Starter Kit tab only exists when Starter Kit does. Fall back when
+        // it was the active tab and Starter Kit was disabled since.
+        if (this.activeTab === 'starter-kit' && !this.plugin.starterKit.isAvailable()) {
+            this.activeTab = 'properties'
+        }
+
         // Render tab navigation
         this.renderTabNav(containerEl)
 
@@ -72,10 +78,16 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         const tabs: Array<{ id: SettingsTab; label: string }> = [
             { id: 'properties', label: 'Property definitions' },
             { id: 'visualizations', label: 'Visualizations' },
-            { id: 'dates', label: 'Dates' },
-            { id: 'starter-kit', label: 'Starter Kit' },
-            { id: 'about', label: 'About' }
+            { id: 'dates', label: 'Dates' }
         ]
+
+        // Hidden entirely when Starter Kit is not installed/enabled: nothing in
+        // that tab is actionable without it.
+        if (this.plugin.starterKit.isAvailable()) {
+            tabs.push({ id: 'starter-kit', label: 'Obsidian Starter Kit' })
+        }
+
+        tabs.push({ id: 'about', label: 'About' })
 
         for (const tab of tabs) {
             const tabEl = navEl.createDiv({

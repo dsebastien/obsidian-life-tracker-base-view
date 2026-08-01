@@ -158,7 +158,7 @@ export class StarterKitSection {
 
         this.renderAdoptBanner(containerEl, plan)
 
-        // Preserve Starter Kit's own grouping and order
+        // Preserve Starter Kit's own property order within each note type
         const groups = new Map<string, StarterKitSource[]>()
         for (const source of sources) {
             const name = source.noteType?.name ?? 'Global properties'
@@ -172,7 +172,13 @@ export class StarterKitSection {
 
         containerEl.createEl('h4', { text: 'Browse by note type' })
 
-        for (const [groupName, groupSources] of groups) {
+        // Note types are listed alphabetically: with dozens of them, Starter
+        // Kit's own order makes a given one impossible to find
+        const groupNames = [...groups.keys()].sort((a, b) => a.localeCompare(b))
+
+        for (const groupName of groupNames) {
+            const groupSources = groups.get(groupName)
+            if (!groupSources) continue
             this.renderGroup(containerEl, groupName, groupSources, planBySource)
         }
 
