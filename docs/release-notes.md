@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.20.2 (2026-08-01)
+
+### Bug Fixes
+
+- **plugin:** show the Starter Kit tab only when Starter Kit is present
+
 ## 2.20.1 (2026-07-31)
 
 ### Bug Fixes

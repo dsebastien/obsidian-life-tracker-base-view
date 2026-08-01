@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.20.2](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.20.1...2.20.2) (2026-08-01)
+
+### Bug Fixes
+
+* **plugin:** show the Starter Kit tab only when Starter Kit is present ([4690d61](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4690d618c779cda66aef5322b3dece5fe36ac77b))
+
 ## [2.20.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.20.0...2.20.1) (2026-07-31)
 
 ### Bug Fixes
@@ -375,6 +381,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 
