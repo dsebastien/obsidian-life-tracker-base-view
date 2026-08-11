@@ -100,6 +100,9 @@ export function showCardContextMenu(
     currentAggregationMethod: AggregationMethod | undefined,
     currentMovingAveragePeriod: number | undefined,
     currentRunningTotal: boolean | undefined,
+    /** True when the property holds list values, which take a different
+     *  aggregation path that ignores the moving average and the running total */
+    hasListValues: boolean,
     isFromPreset: boolean,
     isMaximized: boolean,
     canRemove: boolean,
@@ -260,8 +263,10 @@ export function showCardContextMenu(
         const hasColorScheme = supportsColorScheme(vizType)
         const hasReferenceLine = supportsReferenceLine(vizType)
         const hasAggregationMethod = supportsAggregationMethod(vizType)
-        const hasMovingAverage = supportsMovingAverage(vizType)
-        const hasRunningTotal = supportsRunningTotal(vizType)
+        // Both transforms only run on the numeric aggregation path, so they are
+        // hidden rather than shown-but-inert for list-valued properties.
+        const hasMovingAverage = supportsMovingAverage(vizType) && !hasListValues
+        const hasRunningTotal = supportsRunningTotal(vizType) && !hasListValues
 
         const hasHeatmapConfig = vizType === VisualizationType.Heatmap
 

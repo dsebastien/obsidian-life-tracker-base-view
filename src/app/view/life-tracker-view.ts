@@ -1781,6 +1781,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const { config: vizConfig, isFromPreset } = effectiveConfig
         const isMaximized = this.maximizeService.isMaximized(propertyId)
 
+        // List-valued properties take a different aggregation path, which plots
+        // one 0/1 presence dataset per value and applies neither the moving
+        // average nor the running total. Offering those options there would show
+        // a control that silently does nothing. Uncached points fall back to
+        // offering them, which is the previous behavior.
+        const cachedPoints = this.cacheService.getDataPoints(propertyId)
+        const hasListValues = cachedPoints
+            ? this.aggregationService.hasListData(cachedPoints)
+            : false
+
         // Get visualization config for heatmap-specific overrides
         const heatmapConfig: HeatmapMenuConfig | undefined =
             vizConfig.visualizationType === VisualizationType.Heatmap
@@ -1801,6 +1811,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.aggregationMethod,
             vizConfig.movingAveragePeriod,
             vizConfig.runningTotal,
+            hasListValues,
             isFromPreset,
             isMaximized,
             canRemove,

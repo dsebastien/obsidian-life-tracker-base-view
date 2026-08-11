@@ -209,9 +209,12 @@ A few details worth knowing:
 
 - Values recorded in the same period are combined by the **Aggregation** setting first, then the periods accumulate. "Sum" is usually what you want here.
 - The total starts from zero at the left edge of the visible range, so a time frame like **Last 30 days** totals just that month rather than carrying in earlier history.
-- Periods with nothing recorded hold the line flat instead of breaking it — your total has not changed.
+- A note that exists but records no value holds the line flat rather than breaking it, since your total has not changed. Periods with no note at all are not plotted — they are not part of the chart either way, with or without a running total.
 - The legend and CSV export label the series `(running total)`, since it no longer shows the raw property value.
 - A reference line now reads as a target total, which is handy for goals like "500 pages this year".
+- The trend arrow keeps describing your per-period rate, not the total. A cumulative line always climbs when the values are positive, so a trend taken from it would only restate that; "steady 10 a day" reports as flat, which is what you want to know.
+- Clicking a point opens a note from that period, not from everything the total has accumulated so far.
+- Only numeric properties get this option. List-valued properties are charted as one line per value, which has no total to accumulate.
 
 ## Trend Indicator
 

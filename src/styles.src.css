@@ -9,18 +9,21 @@
 @import 'tailwindcss/theme' layer(theme) theme(reference);
 @import 'tailwindcss/utilities' layer(lt-utilities);
 
-/* All custom plugin styles go in lt-components layer for proper cascade isolation */
+/* Custom plugin styles go in the lt-components layer for cascade isolation.
+   Three blocks at the END of this file are deliberately left unlayered, and
+   moving a rule across that boundary changes precedence far more than bumping
+   its specificity does: unlayered author styles beat every layered rule,
+   whatever the selector. Obsidian's own app.css is unlayered, so anything that
+   must outrank it — the compact control-bar buttons, `.lt-hidden`, the focus
+   ring — has to live outside the layer. Each of those blocks documents why. */
 @layer lt-components {
     /* ========================================
    UTILITY CLASSES
    ======================================== */
 
-    /* Visibility toggle - use instead of inline style.display.
-       Doubled class bumps specificity (0,2,0) so it beats neighbouring
-       display-setting classes (.lt-grid, .lt-flex, etc.) regardless of source order. */
-    .lt-hidden.lt-hidden {
-        display: none;
-    }
+    /* NOTE: `.lt-hidden` is intentionally NOT in this layer — see the
+       "Visibility" section at the end of this file. A layered rule cannot hide
+       an element whose `display` comes from an unlayered rule. */
 
     /* Layout utilities - use instead of inline style.display */
     .lt-flex {
@@ -3968,6 +3971,20 @@
         }
     }
 } /* End @layer lt-components */
+
+/* ============================================================
+   Visibility
+   Intentionally unlayered. `.lt-hidden` is the plugin's only way to hide an
+   element (inline styles are not allowed), so it has to beat every rule that
+   sets `display` — including Obsidian's unlayered `button { display:
+   inline-flex }` and the unlayered component rules below. A layered rule could
+   not, no matter how specific. The doubled class also keeps it ahead of the
+   display-setting utilities (.lt-flex, .lt-grid) it sits next to.
+   ============================================================ */
+
+.lt-hidden.lt-hidden {
+    display: none;
+}
 
 /* ============================================================
    Control bar buttons

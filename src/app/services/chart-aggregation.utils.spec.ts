@@ -570,8 +570,16 @@ describe('computeRunningTotal (issue #142)', () => {
         expect(computeRunningTotal([20, 15, 30])).toEqual([20, 35, 65])
     })
 
-    test('starts from zero at the first slot, ignoring anything before the window', () => {
-        expect(computeRunningTotal([5])).toEqual([5])
+    test('starts from zero at the first slot it is given', () => {
+        // The time-frame guarantee: the caller passes only the visible periods,
+        // so the same three periods total identically whether or not earlier
+        // data exists. Anything carried in from before the window would show up
+        // as a different first value here.
+        const visibleOnly = computeRunningTotal([20, 15, 30])
+        const withEarlierPeriodsIncluded = computeRunningTotal([100, 200, 20, 15, 30])
+        expect(visibleOnly).toEqual([20, 35, 65])
+        expect(withEarlierPeriodsIncluded.slice(2)).toEqual([320, 335, 365])
+        expect(visibleOnly[0]).toBe(20)
     })
 
     test('a period with no value carries the previous total forward', () => {
@@ -629,6 +637,70 @@ describe('computeRunningTotal (issue #142)', () => {
         // smooths what is actually plotted.
         const cumulative = computeRunningTotal([20, 15, 30])
         expect(computeMovingAverage(cumulative, 2)).toEqual([20, 27.5, 50])
+    })
+
+    test('composes with average aggregation, not just sum', () => {
+        // Two entries a day, averaged within the day, then accumulated.
+        const dataPoints = [
+            createDataPoint('a1.md', '2026-08-01', { numericValue: 10 }),
+            createDataPoint('a2.md', '2026-08-01', { numericValue: 20 }),
+            createDataPoint('a3.md', '2026-08-02', { numericValue: 4 })
+        ]
+        const aggregated = aggregateForChart(
+            dataPoints,
+            'p' as BasesPropertyId,
+            'P',
+            TimeGranularity.Daily,
+            'average'
+        )
+        expect(aggregated.datasets[0]?.data).toEqual([15, 4])
+        expect(computeRunningTotal(aggregated.datasets[0]!.data)).toEqual([15, 19])
+    })
+
+    test('a period whose note has no value carries the total forward', () => {
+        // An entry exists for Aug 2 but records nothing, so it becomes a slot
+        // with a null value. That is the case that holds the line flat.
+        const dataPoints = [
+            createDataPoint('d1.md', '2026-08-01', { numericValue: 10 }),
+            createDataPoint('d2.md', '2026-08-02'),
+            createDataPoint('d3.md', '2026-08-03', { numericValue: 5 })
+        ]
+        const aggregated = aggregateForChart(
+            dataPoints,
+            'p' as BasesPropertyId,
+            'P',
+            TimeGranularity.Daily
+        )
+        expect(aggregated.datasets[0]?.data).toEqual([10, null, 5])
+        expect(computeRunningTotal(aggregated.datasets[0]!.data)).toEqual([10, 10, 15])
+    })
+
+    test('a period with no note at all is not a slot, so no flat segment appears', () => {
+        // Aug 2 is absent entirely rather than empty. Documented behaviour: it
+        // is not plotted, so the total steps straight from Aug 1 to Aug 3.
+        const dataPoints = [
+            createDataPoint('g1.md', '2026-08-01', { numericValue: 10 }),
+            createDataPoint('g3.md', '2026-08-03', { numericValue: 5 })
+        ]
+        const aggregated = aggregateForChart(
+            dataPoints,
+            'p' as BasesPropertyId,
+            'P',
+            TimeGranularity.Daily
+        )
+        expect(aggregated.labels).toHaveLength(2)
+        expect(computeRunningTotal(aggregated.datasets[0]!.data)).toEqual([10, 15])
+    })
+
+    test('a steady rate reads as flat on the per-period values the trend row uses', () => {
+        // Why the trend is computed from the pre-cumulative series: a constant
+        // 10 per period accumulates to a steeply rising line, and trending over
+        // that would report growth where the behaviour never changed.
+        const perPeriod = [10, 10, 10, 10, 10, 10]
+        const cumulative = computeRunningTotal(perPeriod)
+        expect(cumulative).toEqual([10, 20, 30, 40, 50, 60])
+        expect(computeTrend(perPeriod)?.changePercent).toBe(0)
+        expect(computeTrend(cumulative)?.changePercent).toBeGreaterThan(50)
     })
 
     test('does not mutate its input', () => {

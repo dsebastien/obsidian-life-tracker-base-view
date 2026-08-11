@@ -47,6 +47,13 @@ export class ChartVisualization extends BaseVisualization {
     private bubbleChartData: BubbleChartData | null = null
     private chartContainer: HTMLElement | null = null
     private trendStatsEl: HTMLElement | null = null
+    /**
+     * Per-period values kept aside when a running total replaces the plotted
+     * series, so the trend row still describes the rate (issue #142). Null
+     * whenever the running total is off, in which case the plotted series is
+     * already the per-period one.
+     */
+    private trendSourceData: (number | null)[] | null = null
     private originalData: (number | null)[][] = []
     private animationInterval: number | null = null
     private currentAnimationIndex: number = 0
@@ -150,6 +157,10 @@ export class ChartVisualization extends BaseVisualization {
 
             if (hasListValues && this.isCartesianType()) {
                 // Use list aggregation: creates one dataset per unique value with 0/1 presence
+                // This path applies no running total, so drop any stash from a
+                // previous numeric render rather than leaving it to be read
+                // against a differently shaped dataset.
+                this.trendSourceData = null
                 this.chartData = sharedAggregationService.aggregateListForChart(
                     data,
                     this.propertyId,
@@ -192,7 +203,8 @@ export class ChartVisualization extends BaseVisualization {
         // Create chart container (auto-height, no scrolling)
         this.chartContainer = this.containerEl.createDiv({ cls: 'lt-chart' })
 
-        // Create canvas with aspect ratio for natural sizing
+        // The canvas is sized by `.lt-chart`, which is relatively positioned and
+        // dedicated to it; the canvas itself is out of flow (issue #144).
         this.canvasEl = this.chartContainer.createEl('canvas', { cls: 'lt-chart-canvas' })
 
         // Trend arrow in the title + trend row below the chart (issue #101)
@@ -213,10 +225,18 @@ export class ChartVisualization extends BaseVisualization {
      * export show.
      */
     private applyRunningTotal(chartData: ChartData): void {
+        this.trendSourceData = null
         if (!this.chartConfig.runningTotal) return
 
         const source = chartData.datasets[0]
         if (!source) return
+
+        // Keep the per-period values for the trend row. A cumulative series
+        // rises by construction whenever the data is positive, so a trend taken
+        // over it would report the arithmetic of accumulating rather than any
+        // change in behavior: a steady 10 pages a period becomes 10, 20, 30, 40
+        // and "reads" as +133%. The rate is what the arrow is meant to convey.
+        this.trendSourceData = [...source.data]
 
         source.data = computeRunningTotal(source.data)
         source.label = `${source.label} (running total)`
@@ -263,7 +283,9 @@ export class ChartVisualization extends BaseVisualization {
         const source = sources[0]
         if (!source || sources.length !== 1) return
 
-        const trend = computeTrend(source.data)
+        // With a running total, trend on the per-period values, not the
+        // cumulative ones (see applyRunningTotal).
+        const trend = computeTrend(this.trendSourceData ?? source.data)
         if (!trend) return
 
         const arrow = trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'
@@ -338,7 +360,8 @@ export class ChartVisualization extends BaseVisualization {
         // Create chart container (auto-height, no scrolling)
         this.chartContainer = this.containerEl.createDiv({ cls: 'lt-chart' })
 
-        // Create canvas with aspect ratio for natural sizing
+        // The canvas is sized by `.lt-chart`, which is relatively positioned and
+        // dedicated to it; the canvas itself is out of flow (issue #144).
         this.canvasEl = this.chartContainer.createEl('canvas', { cls: 'lt-chart-canvas' })
 
         // Initialize chart (async, errors handled internally)
@@ -633,6 +656,8 @@ export class ChartVisualization extends BaseVisualization {
 
         let newChartData: ChartData
         if (hasListValues && this.isCartesianType()) {
+            // No running total on this path — see the same reset in render().
+            this.trendSourceData = null
             newChartData = sharedAggregationService.aggregateListForChart(
                 data,
                 this.propertyId,
