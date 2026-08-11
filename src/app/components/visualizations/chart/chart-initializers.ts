@@ -43,6 +43,22 @@ function chartAnimation(): false | undefined {
     return prefersReducedMotion() ? false : undefined
 }
 
+/*
+ * Why every chart below sets `maintainAspectRatio: false` (issue #144).
+ *
+ * Cards are far wider than they are tall. With `maintainAspectRatio: true` and
+ * an `aspectRatio` of 2, Chart.js first derived the height from the width
+ * (`width / 2`), found it taller than the card, and then shrank the *width* back
+ * to `height * aspectRatio` (see `getMaximumSize` in Chart.js' DOM helpers). The
+ * result was a small chart pinned to the left with most of the card empty — the
+ * more columns, the worse it got.
+ *
+ * With it off, the canvas fills its container in both directions. Chart.js needs
+ * a container with a definite height for that, which `.lt-chart` provides
+ * (`flex: 1` plus a `min-height`), and it must be dedicated to the canvas and
+ * relatively positioned — both true of `.lt-chart`.
+ */
+
 /**
  * Above this many points per dataset, line/area charts stop drawing point
  * markers (issue #104). Multi-year daily vaults plot thousands of points; the
@@ -124,8 +140,7 @@ export function initPieChart(
         options: {
             animation: chartAnimation(),
             responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: chartConfig.showLegend,
@@ -197,8 +212,7 @@ export function initRadarChart(
         options: {
             animation: chartAnimation(),
             responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     // Always show legend when there are multiple datasets (list data, overlays)
@@ -336,8 +350,7 @@ export function initCartesianChart(
         options: {
             animation: chartAnimation(),
             responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2,
+            maintainAspectRatio: false,
             layout: {
                 padding: {
                     left: 10,
@@ -447,8 +460,7 @@ export function initScatterChart(
         options: {
             animation: chartAnimation(),
             responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: chartConfig.showLegend
@@ -543,8 +555,7 @@ export function initBubbleChart(
         options: {
             animation: chartAnimation(),
             responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: chartConfig.showLegend

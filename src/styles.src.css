@@ -176,48 +176,8 @@
         @apply w-3.5 h-3.5;
     }
 
-    .lt-control-btn {
-        @apply w-5 h-5 p-0 flex items-center justify-center rounded;
-        @apply cursor-pointer transition-colors duration-150;
-        background-color: var(--background-modifier-hover);
-        border: none;
-        color: var(--text-normal);
-    }
-
-    .lt-control-btn:hover {
-        background-color: var(--interactive-hover);
-    }
-
-    .lt-control-btn svg {
-        @apply w-2.5 h-2.5;
-    }
-
-    /* Wider variants with text label (overlay + reset-order) */
-    .lt-control-btn--overlay,
-    .lt-control-btn--reset-order {
-        @apply w-auto h-auto px-2 py-1 gap-1.5;
-    }
-
-    .lt-control-btn--overlay svg,
-    .lt-control-btn--reset-order svg {
-        @apply w-3 h-3;
-    }
-
-    .lt-control-btn-label {
-        @apply text-xs font-medium;
-    }
-
-    /* Hide label on very small screens */
-    @media (max-width: 400px) {
-        .lt-control-btn-label {
-            @apply hidden;
-        }
-
-        .lt-control-btn--overlay,
-        .lt-control-btn--reset-order {
-            @apply w-6 h-6 p-0;
-        }
-    }
+    /* NOTE: `.lt-control-btn` and its variants are intentionally NOT in this
+       layer — see the "Control bar buttons" section at the end of this file. */
 
     .lt-control-value {
         @apply text-xs font-medium min-w-[1.25rem] text-center;
@@ -1360,9 +1320,12 @@
    CHART VISUALIZATION
    ======================================== */
 
+    /* Dedicated to the canvas and relatively positioned, as Chart.js requires
+       of a responsive chart's container. `flex-1` + `min-height` give the canvas
+       the definite height it needs to fill the card (issue #144). */
     .lt-chart {
-        @apply w-full flex-1;
-        min-height: 150px; /* Minimum height for chart visibility */
+        @apply relative w-full flex-1;
+        min-height: 200px;
     }
 
     .lt-chart-header {
@@ -1374,9 +1337,14 @@
         color: var(--text-normal);
     }
 
+    /* Taken out of flow so the canvas can never feed its own size back into
+       `.lt-chart` (issue #144): an in-flow `width: 100%` canvas keeps the 2:1
+       ratio of its width/height attributes, and in an auto-height card that
+       ratio decided the card's height instead of the other way round. Chart.js
+       sizes the canvas from the container, so the container must be measurable
+       without it. */
     .lt-chart-canvas {
-        @apply w-full;
-        max-height: 100%;
+        @apply absolute inset-0;
     }
 
     /* ========================================
@@ -4000,6 +3968,63 @@
         }
     }
 } /* End @layer lt-components */
+
+/* ============================================================
+   Control bar buttons
+   Intentionally unlayered (issue #144). Obsidian's own
+   `button { padding: var(--size-4-1) var(--size-4-3); height:
+   var(--input-height) }` in app.css is unlayered, so it beats
+   anything in the lt-* layers no matter how specific. In the
+   layer, its 12px side padding ate the whole 20px content box
+   of the compact +/- buttons and squeezed their icons to zero
+   width — visible but empty buttons.
+   ============================================================ */
+
+.lt-control-btn {
+    @apply w-5 h-5 p-0 flex items-center justify-center rounded;
+    @apply cursor-pointer transition-colors duration-150;
+    background-color: var(--background-modifier-hover);
+    border: none;
+    color: var(--text-normal);
+}
+
+.lt-control-btn:hover {
+    background-color: var(--interactive-hover);
+}
+
+/* Doubled class (0,2,1) so the icon size also beats Obsidian's
+   `svg.svg-icon { width: var(--icon-size) }` (0,1,1) — and any theme's
+   copy of it, which loads after plugin CSS. */
+.lt-control-btn.lt-control-btn svg {
+    @apply w-2.5 h-2.5;
+}
+
+/* Wider variants with text label (overlay + reset-order) */
+.lt-control-btn--overlay,
+.lt-control-btn--reset-order {
+    @apply w-auto h-auto px-2 py-1 gap-1.5;
+}
+
+.lt-control-btn--overlay.lt-control-btn--overlay svg,
+.lt-control-btn--reset-order.lt-control-btn--reset-order svg {
+    @apply w-3 h-3;
+}
+
+.lt-control-btn-label {
+    @apply text-xs font-medium;
+}
+
+/* Hide label on very small screens */
+@media (max-width: 400px) {
+    .lt-control-btn-label {
+        @apply hidden;
+    }
+
+    .lt-control-btn--overlay,
+    .lt-control-btn--reset-order {
+        @apply w-6 h-6 p-0;
+    }
+}
 
 /* ============================================================
    Accessibility
