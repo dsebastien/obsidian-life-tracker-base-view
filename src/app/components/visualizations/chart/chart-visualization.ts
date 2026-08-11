@@ -54,6 +54,15 @@ export class ChartVisualization extends BaseVisualization {
      * already the per-period one.
      */
     private trendSourceData: (number | null)[] | null = null
+    /**
+     * Whether the rendered chart came from list aggregation. Dataset *count* is
+     * not enough to decide the incremental path is safe: a numeric series with a
+     * moving average and a list property with two values both produce two
+     * datasets, but the second one means different things (a dashed average vs a
+     * value's presence), so swapping only data and labels would keep the wrong
+     * styling.
+     */
+    private renderedListAggregation = false
     private originalData: (number | null)[][] = []
     private animationInterval: number | null = null
     private currentAnimationIndex: number = 0
@@ -154,6 +163,7 @@ export class ChartVisualization extends BaseVisualization {
         } else {
             // For cartesian charts, check if data contains list values
             const hasListValues = sharedAggregationService.hasListData(data)
+            this.renderedListAggregation = hasListValues && this.isCartesianType()
 
             if (hasListValues && this.isCartesianType()) {
                 // Use list aggregation: creates one dataset per unique value with 0/1 presence
@@ -653,6 +663,15 @@ export class ChartVisualization extends BaseVisualization {
     private updateCartesianChart(data: VisualizationDataPoint[]): void {
         // Check if data contains list values
         const hasListValues = sharedAggregationService.hasListData(data)
+
+        // A property that flips between numeric and list values changes what the
+        // datasets mean, not just how many there are, so the in-place update is
+        // unsafe even when the counts happen to match.
+        if ((hasListValues && this.isCartesianType()) !== this.renderedListAggregation) {
+            this.destroy()
+            this.render(data)
+            return
+        }
 
         let newChartData: ChartData
         if (hasListValues && this.isCartesianType()) {
