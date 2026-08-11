@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.21.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.20.2...2.21.0) (2026-08-11)
+
+### Features
+
+* **plugin:** add a running total option for line and area charts ([#142](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/142)) ([29114a9](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/29114a9349702e21c9ce280879293344e3ce5e90)), closes [#101](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/101)
+
+### Bug Fixes
+
+* **plugin:** keep the visualization settings toolbar inside the dialog ([#143](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/143)) ([a683ef7](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a683ef7d3cee203dc5485437488189000e42714f))
+* **plugin:** show the column layout icons and let charts fill the card ([#144](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/144)) ([6463ef6](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/6463ef63d930e9d14a1d458fb19f33ec26826e31))
+
 ## [2.20.2](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.20.1...2.20.2) (2026-08-01)
 
 ### Bug Fixes
@@ -381,6 +392,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

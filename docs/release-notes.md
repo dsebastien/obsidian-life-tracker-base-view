@@ -1,5 +1,16 @@
 # Release Notes
 
+## 2.21.0 (2026-08-11)
+
+### Features
+
+- **plugin:** add a running total option for line and area charts ([#142](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/142))
+
+### Bug Fixes
+
+- **plugin:** keep the visualization settings toolbar inside the dialog ([#143](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/143))
+- **plugin:** show the column layout icons and let charts fill the card ([#144](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/144))
+
 ## 2.20.2 (2026-08-01)
 
 ### Bug Fixes
