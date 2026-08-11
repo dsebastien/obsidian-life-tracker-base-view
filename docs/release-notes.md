@@ -1,5 +1,12 @@
 # Release Notes
 
+## 2.21.1 (2026-08-11)
+
+### Bug Fixes
+
+- **plugin:** address adversarial review findings on the 2.21.0 changes, closes [143/#144](https://github.com/143/obsidian-life-tracker-base-view/issues/144) [#144](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/144)
+- **plugin:** rebuild the chart when a property flips between numeric and list
+
 ## 2.21.0 (2026-08-11)
 
 ### Features

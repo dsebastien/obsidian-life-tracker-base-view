@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.21.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.21.0...2.21.1) (2026-08-11)
+
+### Bug Fixes
+
+* **plugin:** address adversarial review findings on the 2.21.0 changes ([5671a56](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/5671a569a3ece81b6f2ab948291d0bbf48b7aab9)), closes [143/#144](https://github.com/143/obsidian-life-tracker-base-view/issues/144) [#144](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/144)
+* **plugin:** rebuild the chart when a property flips between numeric and list ([d92bc56](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/d92bc56d6a420a2c0e22a271fd768359c6c845fe)), closes [#101](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/101)
+
 ## [2.21.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.20.2...2.21.0) (2026-08-11)
 
 ### Features
@@ -392,6 +399,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 
