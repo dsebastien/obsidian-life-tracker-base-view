@@ -1,8 +1,7 @@
 # Custom heatmap color schemes (#82) + colorblind-friendly palettes (#136)
 
 Status: **done** — implemented 2026-07-30, pending manual runtime verification in a
-vault. See `documentation/history/2026-07-30.md` for what shipped and why the
-issue's step 5 (settings migration) turned out to be unnecessary.
+vault. The issue's step 5 (settings migration) turned out to be unnecessary.
 
 ## Goal
 

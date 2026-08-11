@@ -1,8 +1,7 @@
 # Obsidian Starter Kit integration
 
 Status: **phase 1 done** — implemented 2026-07-30, pending manual runtime
-verification in a vault. Phases 2-3 (note-type-aware views) not started. See
-`documentation/history/2026-07-30.md`.
+verification in a vault. Phases 2-3 (note-type-aware views) not started.
 
 ## Why
 

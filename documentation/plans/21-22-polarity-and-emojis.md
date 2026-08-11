@@ -1,8 +1,7 @@
 # Value polarity (#21) + value/range emojis (#22)
 
 Status: **done** — implemented 2026-07-30, pending manual runtime verification in a
-vault. See `documentation/history/2026-07-30.md`, including the open question about
-whether the polarity-derived heatmap default can ever fire.
+vault. Open question: whether the polarity-derived heatmap default can ever fire.
 
 ## Goal
 

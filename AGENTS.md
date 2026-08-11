@@ -6,7 +6,7 @@ Three locations, do not mix them:
 
 - `README.md` — GitHub landing page; pitch, features, install, quick start.
 - `docs/` — end-user guide, published via GitHub Pages (Jekyll).
-- `documentation/` — technical documentation for you and coding agents (architecture, domain model, business rules, history, plans).
+- `documentation/` — technical documentation for you and coding agents (architecture, domain model, business rules, plans).
 
 ## Project overview
 
@@ -21,9 +21,8 @@ Three locations, do not mix them:
 Before making any change, read these in order:
 
 1. `documentation/Business Rules.md` — mandatory invariants (see below).
-2. The most recent `documentation/history/yyyy-mm-dd.md` file — what was last done and any open blockers.
-3. Active plans under `documentation/plans/` — what the current direction is.
-4. Relevant sections of `node_modules/obsidian/obsidian.d.ts` whenever you are about to use an Obsidian API you have not recently used. Do not guess API shapes; they change between versions.
+2. Active plans under `documentation/plans/` — what the current direction is.
+3. Relevant sections of `node_modules/obsidian/obsidian.d.ts` whenever you are about to use an Obsidian API you have not recently used. Do not guess API shapes; they change between versions.
 
 ### Definition of done
 
@@ -33,7 +32,6 @@ A change is only "done" when **all** of the following hold:
 - `bun run lint` passes with zero warnings (the repo is configured with `--max-warnings 0`).
 - `bun test` passes; new logic has new `.spec.ts` coverage next to the file it tests.
 - `bun run build` completes without errors.
-- The day's file in `documentation/history/` has been updated with what was done, decisions made, and any open questions.
 - If a plan in `documentation/plans/` drove the work, it has been updated or closed.
 - Any user-visible change to behavior, commands, or settings is reflected in `README.md` and/or `docs/`.
 
@@ -64,16 +62,6 @@ You **cannot** self-verify UI behavior — Obsidian is a GUI app and agents do n
 - Whenever making plans, store or update those in `documentation/plans`
 - Whenever making plans, focus on actionable information
 - **Clarity over grammar**: Always prioritize clarity and conciseness over perfect grammar. Terse, clear documentation is better than verbose, grammatically perfect text
-
-History is maintained in `documentation/history/yyyy-mm-dd.md` files, organized chronologically. Each file documents:
-
-- What was accomplished that day
-- Key decisions made
-- Domain model changes
-- Implementation progress
-- Open questions or blockers
-
-These files are optimized for conciseness and clarity to quickly onboard agents in new sessions.
 
 ### Business Rules Compliance
 
