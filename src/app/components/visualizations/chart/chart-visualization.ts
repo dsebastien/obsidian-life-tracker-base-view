@@ -28,7 +28,11 @@ import {
     initRadarChart,
     initScatterChart
 } from './chart-initializers'
-import { computeMovingAverage, computeTrend } from '../../../services/chart-aggregation.utils'
+import {
+    computeMovingAverage,
+    computeRunningTotal,
+    computeTrend
+} from '../../../services/chart-aggregation.utils'
 
 /**
  * Chart.js-based visualization for line and bar charts
@@ -162,6 +166,10 @@ export class ChartVisualization extends BaseVisualization {
                     this.chartConfig.aggregationMethod
                 )
 
+                // Accumulate before overlaying (issue #142): the moving average
+                // is taken over whichever series is plotted.
+                this.applyRunningTotal(this.chartData)
+
                 // Append the moving-average overlay when configured (issue #101)
                 this.applyMovingAverage(this.chartData)
             }
@@ -193,6 +201,25 @@ export class ChartVisualization extends BaseVisualization {
 
         // Initialize chart (async, errors handled internally)
         void this.initChart()
+    }
+
+    /**
+     * Replace the plotted values with their cumulative total (issue #142).
+     * Runs before `applyMovingAverage`, so a moving average is taken over the
+     * series that actually ends up on the chart.
+     *
+     * The label gains a suffix: the series no longer means what the bare
+     * property name says, and this label is what both the legend and the CSV
+     * export show.
+     */
+    private applyRunningTotal(chartData: ChartData): void {
+        if (!this.chartConfig.runningTotal) return
+
+        const source = chartData.datasets[0]
+        if (!source) return
+
+        source.data = computeRunningTotal(source.data)
+        source.label = `${source.label} (running total)`
     }
 
     /**
@@ -620,6 +647,9 @@ export class ChartVisualization extends BaseVisualization {
                 this.chartConfig.granularity,
                 this.chartConfig.aggregationMethod
             )
+
+            // Same order as the initial render (issue #142)
+            this.applyRunningTotal(newChartData)
 
             // Keep the moving-average overlay in sync (issue #101). A
             // dataset-count change (toggling the option) falls through to

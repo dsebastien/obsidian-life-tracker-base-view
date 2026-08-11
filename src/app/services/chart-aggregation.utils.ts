@@ -90,6 +90,30 @@ export function computeMovingAverage(values: (number | null)[], period: number):
 }
 
 /**
+ * Cumulative total across periods (issue #142). Values inside a single period
+ * are already combined by `combineValues`, so this only accumulates left to
+ * right.
+ *
+ * Nulls are not gaps here, and not zeros:
+ * - a period with no value carries the previous total forward, because the
+ *   accumulated total genuinely has not changed;
+ * - periods before the first value stay null, so nothing is drawn until there
+ *   is something to accumulate.
+ *
+ * The accumulation always starts at 0 at the first slot it is given, so a chart
+ * limited to a time frame totals only what that window contains.
+ */
+export function computeRunningTotal(values: (number | null)[]): (number | null)[] {
+    let total: number | null = null
+    return values.map((value) => {
+        if (value !== null) {
+            total = (total ?? 0) + value
+        }
+        return total
+    })
+}
+
+/**
  * Change below this magnitude (in percent) is reported as a flat trend
  */
 const TREND_FLAT_THRESHOLD_PERCENT = 2

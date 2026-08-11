@@ -11,6 +11,7 @@ import {
     aggregateForBubbleChart,
     aggregateForOverlayChart,
     computeMovingAverage,
+    computeRunningTotal,
     computeTrend,
     type OverlayPropertyData
 } from './chart-aggregation.utils'
@@ -560,6 +561,80 @@ describe('computeMovingAverage (issue #101)', () => {
     test('window with only nulls yields null', () => {
         const result = computeMovingAverage([null, null, 6], 2)
         expect(result).toEqual([null, null, 6])
+    })
+})
+
+describe('computeRunningTotal (issue #142)', () => {
+    test('accumulates left to right', () => {
+        // The example from the issue: 20, 15, 30 pages read.
+        expect(computeRunningTotal([20, 15, 30])).toEqual([20, 35, 65])
+    })
+
+    test('starts from zero at the first slot, ignoring anything before the window', () => {
+        expect(computeRunningTotal([5])).toEqual([5])
+    })
+
+    test('a period with no value carries the previous total forward', () => {
+        // The accumulated total has not changed, so the line stays flat rather
+        // than dropping to zero or breaking.
+        expect(computeRunningTotal([10, null, 5])).toEqual([10, 10, 15])
+    })
+
+    test('leading periods without a value stay null', () => {
+        // Nothing is drawn before there is something to accumulate.
+        expect(computeRunningTotal([null, null, 4, 6])).toEqual([null, null, 4, 10])
+    })
+
+    test('all nulls stay null', () => {
+        expect(computeRunningTotal([null, null])).toEqual([null, null])
+    })
+
+    test('negative values reduce the total', () => {
+        // e.g. a weight-change property: the total can go back down.
+        expect(computeRunningTotal([10, -4, 2])).toEqual([10, 6, 8])
+    })
+
+    test('zero is a value, not a gap', () => {
+        expect(computeRunningTotal([0, 3])).toEqual([0, 3])
+    })
+
+    test('empty input yields empty output', () => {
+        expect(computeRunningTotal([])).toEqual([])
+    })
+
+    test('over aggregated data: two sessions in one day sum, then accumulate', () => {
+        // The pipeline the chart runs: aggregateForChart combines the values
+        // inside each period, computeRunningTotal accumulates across periods.
+        const dataPoints = [
+            createDataPoint('s1.md', '2026-08-01', { numericValue: 12 }),
+            createDataPoint('s2.md', '2026-08-01', { numericValue: 8 }),
+            createDataPoint('s3.md', '2026-08-02', { numericValue: 15 }),
+            createDataPoint('s4.md', '2026-08-03', { numericValue: 30 })
+        ]
+        const aggregated = aggregateForChart(
+            dataPoints,
+            'pages_read' as BasesPropertyId,
+            'Pages read',
+            TimeGranularity.Daily,
+            'sum'
+        )
+
+        expect(aggregated.datasets[0]?.data).toEqual([20, 15, 30])
+        // The table from the issue.
+        expect(computeRunningTotal(aggregated.datasets[0]!.data)).toEqual([20, 35, 65])
+    })
+
+    test('a moving average taken afterwards runs over the cumulative series', () => {
+        // applyRunningTotal runs before applyMovingAverage, so the overlay
+        // smooths what is actually plotted.
+        const cumulative = computeRunningTotal([20, 15, 30])
+        expect(computeMovingAverage(cumulative, 2)).toEqual([20, 27.5, 50])
+    })
+
+    test('does not mutate its input', () => {
+        const values = [1, 2, 3]
+        computeRunningTotal(values)
+        expect(values).toEqual([1, 2, 3])
     })
 })
 

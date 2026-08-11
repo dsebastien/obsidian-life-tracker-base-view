@@ -58,6 +58,7 @@ export function getVisualizationConfig(
     const referenceLine = columnConfig.referenceLine
     const aggregationMethod = columnConfig.aggregationMethod
     const movingAveragePeriod = columnConfig.movingAveragePeriod
+    const runningTotal = columnConfig.runningTotal
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
@@ -120,6 +121,7 @@ export function getVisualizationConfig(
                 referenceLine,
                 aggregationMethod,
                 movingAveragePeriod,
+                runningTotal,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -136,6 +138,7 @@ export function getVisualizationConfig(
                 referenceLine,
                 aggregationMethod,
                 movingAveragePeriod,
+                runningTotal,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 

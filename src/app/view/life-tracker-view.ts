@@ -1800,6 +1800,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.referenceLine,
             vizConfig.aggregationMethod,
             vizConfig.movingAveragePeriod,
+            vizConfig.runningTotal,
             isFromPreset,
             isMaximized,
             canRemove,
@@ -1993,6 +1994,32 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         propertyId,
                         visualizationId,
                         { movingAveragePeriod: action.movingAveragePeriod }
+                    )
+                }
+                this.applyConfigChange(propertyId, visualizationId, displayName)
+                break
+
+            case 'configureRunningTotal':
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        const newId = this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme,
+                            preset.referenceLine
+                        )
+                        this.columnConfigService.updateVisualizationConfig(propertyId, newId, {
+                            runningTotal: action.runningTotal
+                        })
+                    }
+                } else {
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { runningTotal: action.runningTotal }
                     )
                 }
                 this.applyConfigChange(propertyId, visualizationId, displayName)

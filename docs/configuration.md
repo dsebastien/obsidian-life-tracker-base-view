@@ -130,15 +130,16 @@ Configured via the view's settings panel (gear icon).
 
 Stored per view, per visualization. Access via right-click context menu.
 
-| Setting         | Description                                                                     |
-| --------------- | ------------------------------------------------------------------------------- |
-| Type            | Visualization type                                                              |
-| Scale           | Min/max range (auto or preset)                                                  |
-| Color scheme    | Color palette; heatmaps add Viridis/Cividis and a custom value-to-color mapping |
-| Reference line  | Target line with value and label                                                |
-| Aggregation     | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps  |
-| Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                 |
-| Heatmap options | Cell size, day/month labels (heatmap only)                                      |
+| Setting         | Description                                                                      |
+| --------------- | -------------------------------------------------------------------------------- |
+| Type            | Visualization type                                                               |
+| Scale           | Min/max range (auto or preset)                                                   |
+| Color scheme    | Color palette; heatmaps add Viridis/Cividis and a custom value-to-color mapping  |
+| Reference line  | Target line with value and label                                                 |
+| Aggregation     | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps   |
+| Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                  |
+| Running total   | Off (default) or Enabled — plots the cumulative total; line and area charts only |
+| Heatmap options | Cell size, day/month labels (heatmap only)                                       |
 
 Aggregation also applies to overlay charts (set in the overlay's own config,
 where it is shared across all of the overlay's properties — see [Overlay Config](#overlay-config)).

@@ -13,6 +13,8 @@ export {
     supportsAggregationMethod,
     supportsMovingAverage,
     MOVING_AVERAGE_PERIOD_OPTIONS,
+    supportsRunningTotal,
+    RUNNING_TOTAL_SUPPORTED_TYPES,
     supportsImageExport
 } from './column-config.types'
 export type {

@@ -303,6 +303,8 @@ export interface ChartConfig extends VisualizationConfig {
     aggregationMethod?: AggregationMethod
     /** Rolling mean window for line/area charts; undefined = off (issue #101) */
     movingAveragePeriod?: number
+    /** Plot the cumulative total instead of the per-period value (issue #142) */
+    runningTotal?: boolean
     /** Show the trend arrow and trend row (default true) */
     showTrendInfo?: boolean
     /** Legend placement for pie/doughnut/polar charts (default 'right') */

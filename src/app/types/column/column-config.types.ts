@@ -78,6 +78,8 @@ export interface ColumnVisualizationConfig {
     aggregationMethod?: AggregationMethod
     /** Rolling mean window for line/area charts; undefined = off (issue #101) */
     movingAveragePeriod?: number
+    /** Plot the cumulative total instead of the per-period value (issue #142) */
+    runningTotal?: boolean
 }
 
 /**
@@ -176,6 +178,23 @@ export const MOVING_AVERAGE_SUPPORTED_TYPES: VisualizationType[] = [
  */
 export function supportsMovingAverage(vizType: VisualizationType): boolean {
     return MOVING_AVERAGE_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
+ * Visualization types that can plot a running total (issue #142).
+ * A cumulative series only reads as progress on a continuous time axis, which
+ * rules out the categorical and radial types.
+ */
+export const RUNNING_TOTAL_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.LineChart,
+    VisualizationType.AreaChart
+]
+
+/**
+ * Check if a visualization type supports plotting a running total
+ */
+export function supportsRunningTotal(vizType: VisualizationType): boolean {
+    return RUNNING_TOTAL_SUPPORTED_TYPES.includes(vizType)
 }
 
 /**

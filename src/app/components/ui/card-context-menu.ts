@@ -9,6 +9,7 @@ import {
     supportsAggregationMethod,
     supportsImageExport,
     supportsMovingAverage,
+    supportsRunningTotal,
     MOVING_AVERAGE_PERIOD_OPTIONS,
     DEFAULT_AGGREGATION_METHOD,
     type ScaleConfig,
@@ -98,6 +99,7 @@ export function showCardContextMenu(
     currentReferenceLine: ReferenceLineConfig | undefined,
     currentAggregationMethod: AggregationMethod | undefined,
     currentMovingAveragePeriod: number | undefined,
+    currentRunningTotal: boolean | undefined,
     isFromPreset: boolean,
     isMaximized: boolean,
     canRemove: boolean,
@@ -259,6 +261,7 @@ export function showCardContextMenu(
         const hasReferenceLine = supportsReferenceLine(vizType)
         const hasAggregationMethod = supportsAggregationMethod(vizType)
         const hasMovingAverage = supportsMovingAverage(vizType)
+        const hasRunningTotal = supportsRunningTotal(vizType)
 
         const hasHeatmapConfig = vizType === VisualizationType.Heatmap
 
@@ -268,6 +271,7 @@ export function showCardContextMenu(
             !hasReferenceLine &&
             !hasAggregationMethod &&
             !hasMovingAverage &&
+            !hasRunningTotal &&
             !hasHeatmapConfig
         ) {
             optionsContent.createDiv({
@@ -545,6 +549,32 @@ export function showCardContextMenu(
                 onAction({
                     type: 'configureMovingAverage',
                     movingAveragePeriod: value === '' ? undefined : parseInt(value, 10)
+                })
+            })
+        }
+
+        // Running total dropdown (line/area charts, issue #142)
+        if (hasRunningTotal) {
+            const rtGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            rtGroup.createEl('label', { text: 'Running total' })
+
+            const rtSelect = rtGroup.createEl('select', { cls: 'lt-card-popover-select' })
+
+            const offOption = rtSelect.createEl('option', { value: 'off', text: 'Off' })
+            const onOption = rtSelect.createEl('option', { value: 'on', text: 'Enabled' })
+
+            if (currentRunningTotal) {
+                onOption.selected = true
+            } else {
+                offOption.selected = true
+            }
+
+            rtSelect.addEventListener('change', () => {
+                const enabled = rtSelect.value === 'on'
+                close()
+                onAction({
+                    type: 'configureRunningTotal',
+                    runningTotal: enabled
                 })
             })
         }

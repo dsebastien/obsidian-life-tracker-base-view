@@ -201,6 +201,18 @@ Example uses:
 
 For line and area charts, enable a moving average from the card's right-click menu (7, 14, or 30 periods). It renders as a thin dashed line in the chart's color, smoothing noisy daily metrics like mood, weight, or steps. Each point is the mean of the recorded values in the trailing window — missing periods are skipped, not counted as 0.
 
+## Running Total
+
+For line and area charts, switch **Running total** to **Enabled** in the card's right-click menu to plot the cumulative total instead of the per-period value. A `pages_read` of 20, 15, then 30 is drawn as 20 → 35 → 65, so you can see progress toward a long-term goal instead of session-by-session values. It works for any numeric property: pages read, distance covered, money saved, tasks completed.
+
+A few details worth knowing:
+
+- Values recorded in the same period are combined by the **Aggregation** setting first, then the periods accumulate. "Sum" is usually what you want here.
+- The total starts from zero at the left edge of the visible range, so a time frame like **Last 30 days** totals just that month rather than carrying in earlier history.
+- Periods with nothing recorded hold the line flat instead of breaking it — your total has not changed.
+- The legend and CSV export label the series `(running total)`, since it no longer shows the raw property value.
+- A reference line now reads as a target total, which is handy for goals like "500 pages this year".
+
 ## Trend Indicator
 
 Single-dataset line, bar, and area charts show a small ↑ / ↓ / → arrow next to the card title, plus a trend row below the chart (e.g. `Trend: ↑ +12.3% · vs previous 7 periods`), comparing the average of the most recent periods (up to 7) against the previous ones. Hover the arrow for the same detail. The display stays neutral in color, since whether "up" is good depends on what you track. Toggle it with the **Show trend** view option.

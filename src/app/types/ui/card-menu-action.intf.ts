@@ -17,6 +17,7 @@ export type CardMenuAction =
     | { type: 'configureReferenceLine'; referenceLine: ReferenceLineConfig }
     | { type: 'configureAggregationMethod'; aggregationMethod: AggregationMethod | undefined }
     | { type: 'configureMovingAverage'; movingAveragePeriod: number | undefined }
+    | { type: 'configureRunningTotal'; runningTotal: boolean }
     | { type: 'configureHeatmapCellSize'; cellSize: number | undefined }
     | { type: 'configureHeatmapShowMonthLabels'; showMonthLabels: boolean | undefined }
     | { type: 'configureHeatmapShowDayLabels'; showDayLabels: boolean | undefined }
