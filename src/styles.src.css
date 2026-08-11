@@ -775,13 +775,15 @@
         max-height: min(80vh, 560px);
     }
 
+    /* Wraps: the number of buttons varies with the visualization type, so a
+       single non-wrapping row overflows the popover (issue #143). */
     .lt-card-popover-header {
-        @apply flex items-center justify-between gap-3 px-4 py-3;
+        @apply flex flex-wrap items-center gap-2 px-4 py-3;
         border-bottom: 1px solid var(--background-modifier-border);
     }
 
     .lt-card-popover-btn {
-        @apply flex items-center gap-2 px-3 py-1.5 text-sm rounded cursor-pointer;
+        @apply flex shrink-0 items-center gap-2 px-3 py-1.5 text-sm rounded cursor-pointer;
         @apply transition-colors duration-150;
         background-color: var(--background-secondary);
         border: 1px solid var(--background-modifier-border);
@@ -904,7 +906,7 @@
         }
 
         .lt-card-popover-header {
-            @apply flex-wrap gap-2 px-3 py-2;
+            @apply px-3 py-2;
         }
 
         .lt-card-popover-btn {
