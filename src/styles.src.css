@@ -1677,6 +1677,13 @@
         @apply w-40;
     }
 
+    /* Persistent label for the required toggle: hover-only tooltips are
+       invisible on mobile (issue #148). */
+    .lt-required-label {
+        @apply text-xs whitespace-nowrap;
+        color: var(--text-muted);
+    }
+
     /* On narrow screens the row's buttons squeeze the text inputs down to
        nothing (issue #147): let the control rows wrap and give each text
        input a full row of its own. Doubled class beats the fixed w-40. */

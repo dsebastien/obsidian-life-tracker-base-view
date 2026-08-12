@@ -233,8 +233,11 @@ export class PropertyDefinitionSection {
                 })
         })
 
-        // Required toggle
+        // Required toggle. The label is persistent rather than tooltip-only:
+        // hover is unavailable on mobile (issue #148).
         mainSetting.addToggle((toggle) => {
+            const label = createSpan({ cls: 'lt-required-label', text: 'Required' })
+            toggle.toggleEl.before(label)
             toggle
                 .setTooltip('Required')
                 .setValue(definition.required ?? false)
