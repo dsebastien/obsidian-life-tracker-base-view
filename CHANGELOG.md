@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.21.2](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.21.1...2.21.2) (2026-08-12)
+
+### Bug Fixes
+
+* **plugin:** apply the default value to the editor in the capture modal ([#145](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/145)) ([2682b1c](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/2682b1c29ce4fd4999339d0e9744ce1ee26a440f))
+* **plugin:** refresh the view when the time granularity changes ([#146](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/146)) ([c3e9c77](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c3e9c7749288d11d00568bbe0b3dd9f5db3ed293))
+
 ## [2.21.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.21.0...2.21.1) (2026-08-11)
 
 ### Bug Fixes
@@ -399,6 +406,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

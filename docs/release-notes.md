@@ -1,5 +1,12 @@
 # Release Notes
 
+## 2.21.2 (2026-08-12)
+
+### Bug Fixes
+
+- **plugin:** apply the default value to the editor in the capture modal ([#145](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/145))
+- **plugin:** refresh the view when the time granularity changes ([#146](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/146))
+
 ## 2.21.1 (2026-08-11)
 
 ### Bug Fixes
