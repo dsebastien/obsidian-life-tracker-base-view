@@ -849,8 +849,7 @@ export class PropertyCaptureModal extends Modal {
                 text: 'Use default'
             })
             btn.addEventListener('click', () => {
-                this.currentValue = definition.defaultValue
-                this.validateAndNavigateNext()
+                this.applyDefaultValue(definition)
             })
         } else {
             // Other editors: wrap input with button. The stepper wrapper (when
@@ -874,11 +873,25 @@ export class PropertyCaptureModal extends Modal {
                     text: 'Use default'
                 })
                 btn.addEventListener('click', () => {
-                    this.currentValue = definition.defaultValue
-                    this.validateAndNavigateNext()
+                    this.applyDefaultValue(definition)
                 })
             }
         }
+    }
+
+    /**
+     * Apply the configured default value and move on (issue #145).
+     *
+     * The editor has to be written to, not just `currentValue`: the validation
+     * run by `validateAndNavigateNext` asks the editor for its own value, so
+     * setting only `currentValue` left an empty required field failing with
+     * "This field is required" — the exact case the button exists to resolve.
+     * `setValue` does not fire `onChange`, hence the explicit `currentValue`.
+     */
+    private applyDefaultValue(definition: PropertyDefinition): void {
+        this.currentValue = definition.defaultValue
+        this.currentEditor?.setValue(definition.defaultValue)
+        this.validateAndNavigateNext()
     }
 
     /**

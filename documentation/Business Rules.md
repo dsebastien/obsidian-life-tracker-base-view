@@ -256,6 +256,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Pending debounced edits MUST be flushed to disk before any editor teardown (re-render, unload) — typed values are never silently discarded (issue #90)
 - Invalid non-empty values never reach disk; writing an empty value clears the property (issue #91)
 - Failed frontmatter writes are surfaced to the user via a Notice
+- "Use default" writes the default **through the editor**, not just into the modal's pending value: validation asks the editor for its own value, so an empty required field would otherwise reject its own default with "This field is required" (issue #145)
 
 ## Batch Capture Provider Resolution
 
