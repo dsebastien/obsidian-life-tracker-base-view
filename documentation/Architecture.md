@@ -126,7 +126,7 @@ All editors:
 - **DataAggregationService**: Groups data by time granularity, produces visualization-ready structures
 - **FrontmatterService**: Read/write frontmatter, validate against property definitions
 - **ColumnConfigService**: Manages per-property visualization configs (persisted in view config)
-- **MaximizeStateService**: Handles card maximize/minimize state, escape key handler
+- **MaximizeStateService**: Handles card maximize/minimize state (keyed by visualization ID, not property ID — see issue #151), escape key handler
 
 ### Visualizations
 

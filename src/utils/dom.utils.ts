@@ -28,6 +28,7 @@ export const CSS_SELECTOR = {
  */
 export const DATA_ATTR = {
     PROPERTY_ID: 'propertyId',
+    VISUALIZATION_ID: 'visualizationId',
     FILE_PATH: 'filePath',
     ROW_INDEX: 'rowIndex'
 } as const
@@ -37,6 +38,7 @@ export const DATA_ATTR = {
  */
 export const DATA_ATTR_FULL = {
     PROPERTY_ID: 'data-property-id',
+    VISUALIZATION_ID: 'data-visualization-id',
     FILE_PATH: 'data-file-path',
     ROW_INDEX: 'data-row-index'
 } as const

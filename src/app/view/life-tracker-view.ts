@@ -92,9 +92,10 @@ import {
 import { OverlayEditModal, type EditableProperty } from '../components/modals/overlay-edit-modal'
 
 /**
- * Data attribute for visualization ID
+ * Data attribute for visualization ID.
+ * Re-exported locally for readability; the shared constant is the source of truth.
  */
-const DATA_ATTR_VISUALIZATION_ID = 'data-visualization-id'
+const DATA_ATTR_VISUALIZATION_ID = DATA_ATTR_FULL.VISUALIZATION_ID
 
 /**
  * Debounce window (ms) for coalescing bursts of data updates into one rebuild.
@@ -1211,7 +1212,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             cls: 'lt-card lt-card--overlay',
             attr: {
                 'data-overlay-id': overlayConfig.id,
-                [DATA_ATTR_FULL.PROPERTY_ID]: overlayConfig.id // Use overlay ID for maximize functionality
+                [DATA_ATTR_FULL.PROPERTY_ID]: overlayConfig.id,
+                // Overlays are independent visualizations; their overlay ID is
+                // also their visualization ID, which is what maximize keys on.
+                [DATA_ATTR_VISUALIZATION_ID]: overlayConfig.id
             }
         })
 
@@ -1251,9 +1255,9 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             overlayConfig.referenceLines
         )
 
-        // Wire up maximize callback (using overlay ID)
-        visualization.setMaximizeCallback((propertyId, maximize) => {
-            this.maximizeService.handleMaximizeToggle(propertyId, maximize)
+        // Wire up maximize callback (using overlay ID, which is this card's visualization ID)
+        visualization.setMaximizeCallback((maximize) => {
+            this.maximizeService.handleMaximizeToggle(overlayConfig.id, maximize)
         })
 
         // Wire up pinning (issue #123)
@@ -1317,8 +1321,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const visualization = this.createVisualization(cardEl, columnConfig, displayName)
 
         // Wire up maximize callback (using visualization ID)
-        visualization.setMaximizeCallback((propertyId, maximize) => {
-            this.maximizeService.handleMaximizeToggle(propertyId, maximize)
+        visualization.setMaximizeCallback((maximize) => {
+            this.maximizeService.handleMaximizeToggle(columnConfig.id, maximize)
         })
 
         // Wire up pinning (issue #123)
@@ -1455,8 +1459,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.setupCardEventHandlers(cardEl, newConfig.propertyId, newConfig.id, displayName, false)
 
         const visualization = this.createVisualization(cardEl, newConfig, displayName)
-        visualization.setMaximizeCallback((pid, maximize) => {
-            this.maximizeService.handleMaximizeToggle(pid, maximize)
+        visualization.setMaximizeCallback((maximize) => {
+            this.maximizeService.handleMaximizeToggle(newConfig.id, maximize)
         })
         // Keep the pin control alive across in-place rebuilds (issue #123)
         const pinItem: OrderedCardItem = { kind: 'property', id: newConfig.propertyId }
@@ -1801,7 +1805,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         }
 
         const { config: vizConfig, isFromPreset } = effectiveConfig
-        const isMaximized = this.maximizeService.isMaximized(propertyId)
+        const isMaximized = this.maximizeService.isMaximized(visualizationId)
 
         // List-valued properties take a different aggregation path, which plots
         // one 0/1 presence dataset per value and applies neither the moving
@@ -2121,8 +2125,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 break
 
             case 'toggleMaximize': {
-                const isCurrentlyMaximized = this.maximizeService.isMaximized(propertyId)
-                this.maximizeService.handleMaximizeToggle(propertyId, !isCurrentlyMaximized)
+                const isCurrentlyMaximized = this.maximizeService.isMaximized(visualizationId)
+                this.maximizeService.handleMaximizeToggle(visualizationId, !isCurrentlyMaximized)
                 break
             }
 

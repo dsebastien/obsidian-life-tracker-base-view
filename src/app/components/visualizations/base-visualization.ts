@@ -2,9 +2,12 @@ import { setIcon, type App, type BasesPropertyId } from 'obsidian'
 import type { ExportTable, VisualizationConfig, VisualizationDataPoint } from '../../types'
 
 /**
- * Callback for maximize toggle
+ * Callback for maximize toggle.
+ *
+ * Carries no identity: several visualizations can share one property, so the
+ * wiring code closes over the visualization ID instead (issue #151).
  */
-export type MaximizeCallback = (propertyId: BasesPropertyId, maximize: boolean) => void
+export type MaximizeCallback = (maximize: boolean) => void
 
 /**
  * Animation state
@@ -352,7 +355,7 @@ export abstract class BaseVisualization {
         this.stopAnimationIfPlaying()
 
         if (this.onMaximizeToggle) {
-            this.onMaximizeToggle(this.propertyId, !this.isMaximized)
+            this.onMaximizeToggle(!this.isMaximized)
         }
     }
 

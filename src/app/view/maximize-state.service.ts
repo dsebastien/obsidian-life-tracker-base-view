@@ -15,9 +15,13 @@ export interface VisualizationEntry {
 /**
  * Service for managing card maximize/minimize state.
  * Handles escape key listeners and DOM class updates.
+ *
+ * State is keyed by visualization ID, not property ID: one property can back
+ * several visualizations, and maximizing one of them must not maximize its
+ * siblings (issue #151).
  */
 export class MaximizeStateService {
-    private maximizedPropertyId: BasesPropertyId | null = null
+    private maximizedVisualizationId: string | null = null
     private escapeHandler: ((e: KeyboardEvent) => void) | null = null
 
     constructor(
@@ -28,24 +32,24 @@ export class MaximizeStateService {
     ) {}
 
     /**
-     * Get the currently maximized property ID
+     * Get the currently maximized visualization ID
      */
-    getMaximizedPropertyId(): BasesPropertyId | null {
-        return this.maximizedPropertyId
+    getMaximizedVisualizationId(): string | null {
+        return this.maximizedVisualizationId
     }
 
     /**
-     * Check if a property is currently maximized
+     * Check if a visualization is currently maximized
      */
-    isMaximized(propertyId: BasesPropertyId): boolean {
-        return this.maximizedPropertyId === propertyId
+    isMaximized(visualizationId: string): boolean {
+        return this.maximizedVisualizationId === visualizationId
     }
 
     /**
-     * Toggle maximize state for a property
+     * Toggle maximize state for a visualization
      */
-    handleMaximizeToggle(propertyId: BasesPropertyId, maximize: boolean): void {
-        const previousMaximized = this.maximizedPropertyId
+    handleMaximizeToggle(visualizationId: string, maximize: boolean): void {
+        const previousMaximized = this.maximizedVisualizationId
 
         // Clean up any existing escape handler first
         if (this.escapeHandler) {
@@ -54,14 +58,14 @@ export class MaximizeStateService {
         }
 
         if (maximize) {
-            this.maximizedPropertyId = propertyId
+            this.maximizedVisualizationId = visualizationId
 
             // Add escape key handler - use arrow function that reads current state
             this.escapeHandler = (e: KeyboardEvent): void => {
-                if (e.key === 'Escape' && this.maximizedPropertyId) {
+                if (e.key === 'Escape' && this.maximizedVisualizationId) {
                     e.preventDefault()
                     e.stopPropagation()
-                    this.handleMaximizeToggle(this.maximizedPropertyId, false)
+                    this.handleMaximizeToggle(this.maximizedVisualizationId, false)
                 }
             }
             activeDocument.addEventListener('keydown', this.escapeHandler)
@@ -69,7 +73,7 @@ export class MaximizeStateService {
             // Add maximized class to container
             this.containerEl.classList.add('lt-container--has-maximized')
         } else {
-            this.maximizedPropertyId = null
+            this.maximizedVisualizationId = null
 
             // Remove maximized class from container
             this.containerEl.classList.remove('lt-container--has-maximized')
@@ -77,9 +81,8 @@ export class MaximizeStateService {
 
         // Update visualization states
         const visualizations = this.getVisualizations()
-        for (const viz of visualizations.values()) {
-            const isMaximized = viz.propertyId === this.maximizedPropertyId
-            viz.visualization.setMaximized(isMaximized)
+        for (const [vizId, viz] of visualizations) {
+            viz.visualization.setMaximized(vizId === this.maximizedVisualizationId)
         }
 
         // Update card classes
@@ -87,12 +90,13 @@ export class MaximizeStateService {
         if (gridEl) {
             const cards = gridEl.querySelectorAll(CSS_SELECTOR.CARD)
             cards.forEach((card) => {
-                const cardPropertyId = card.getAttribute(DATA_ATTR_FULL.PROPERTY_ID)
+                const cardVisualizationId = card.getAttribute(DATA_ATTR_FULL.VISUALIZATION_ID)
 
-                // Skip unconfigured cards (those without data-property-id) - they never participate in maximize state
-                if (!cardPropertyId) {
+                // Skip unconfigured cards (those without data-visualization-id) - they never
+                // participate in maximize state
+                if (!cardVisualizationId) {
                     // Ensure unconfigured cards are hidden when another card is maximized
-                    if (this.maximizedPropertyId) {
+                    if (this.maximizedVisualizationId) {
                         card.classList.add('lt-card--hidden')
                     } else {
                         card.classList.remove('lt-card--hidden')
@@ -100,13 +104,16 @@ export class MaximizeStateService {
                     return
                 }
 
-                // Only configured cards with matching propertyId should be maximized
-                if (this.maximizedPropertyId && cardPropertyId === this.maximizedPropertyId) {
+                // Only the card carrying the maximized visualization should be maximized
+                if (
+                    this.maximizedVisualizationId &&
+                    cardVisualizationId === this.maximizedVisualizationId
+                ) {
                     card.classList.add('lt-card--maximized')
                     card.classList.remove('lt-card--hidden')
                 } else {
                     card.classList.remove('lt-card--maximized')
-                    if (this.maximizedPropertyId) {
+                    if (this.maximizedVisualizationId) {
                         card.classList.add('lt-card--hidden')
                     } else {
                         card.classList.remove('lt-card--hidden')
@@ -115,29 +122,15 @@ export class MaximizeStateService {
             })
         }
 
-        // Re-render the maximized visualization(s) to fit new size
-        if (maximize) {
-            for (const viz of visualizations.values()) {
-                if (viz.propertyId === propertyId) {
-                    const dataPoints = this.getDataPoints(propertyId, viz.propertyDisplayName)
-                    // Skip update for overlays (they return empty array from getDataPoints)
-                    if (dataPoints.length > 0) {
-                        viz.visualization.update(dataPoints)
-                    }
-                }
-            }
-        } else if (previousMaximized) {
-            // Re-render the previously maximized visualization(s)
-            for (const viz of visualizations.values()) {
-                if (viz.propertyId === previousMaximized) {
-                    const dataPoints = this.getDataPoints(
-                        previousMaximized,
-                        viz.propertyDisplayName
-                    )
-                    // Skip update for overlays (they return empty array from getDataPoints)
-                    if (dataPoints.length > 0) {
-                        viz.visualization.update(dataPoints)
-                    }
+        // Re-render the affected visualization to fit its new size
+        const affectedId = maximize ? visualizationId : previousMaximized
+        if (affectedId) {
+            const viz = visualizations.get(affectedId)
+            if (viz) {
+                const dataPoints = this.getDataPoints(viz.propertyId, viz.propertyDisplayName)
+                // Skip update for overlays (they return empty array from getDataPoints)
+                if (dataPoints.length > 0) {
+                    viz.visualization.update(dataPoints)
                 }
             }
         }
@@ -151,7 +144,7 @@ export class MaximizeStateService {
             activeDocument.removeEventListener('keydown', this.escapeHandler)
             this.escapeHandler = null
         }
-        this.maximizedPropertyId = null
+        this.maximizedVisualizationId = null
         this.containerEl.classList.remove('lt-container--has-maximized')
     }
 }

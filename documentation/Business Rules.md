@@ -51,12 +51,15 @@ Custom filename date patterns (issue #139) let users map their own naming conven
 
 ## Maximize State
 
-- Only configured cards (with `data-property-id`) participate in maximize/minimize
+- Maximize state is keyed by **visualization ID**, never by property ID: one property can back several visualizations, and maximizing one must not affect its siblings (issue #151)
+- At most one visualization is maximized at a time
+- Only configured cards (with `data-visualization-id`) participate in maximize/minimize
 - Unconfigured cards are hidden when another card is maximized, but never receive maximize state
 - Escape key minimizes the currently maximized card
-- Overlay visualizations use their overlay ID as the data-property-id, allowing them to be maximized independently
+- Overlay visualizations use their overlay ID as both `data-property-id` and `data-visualization-id`, allowing them to be maximized independently
 - Each overlay is treated as an independent visualization for maximize purposes
 - When overlays are maximized/minimized, they receive the maximize state but are not re-rendered (overlays use pre-aggregated chart data)
+- Only the visualization being maximized (or the one being restored) is re-rendered
 
 ## Property Types in Visualizations
 
