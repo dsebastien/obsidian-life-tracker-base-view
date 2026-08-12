@@ -201,6 +201,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     // Track previous time frame for change detection
     private previousTimeFrame: TimeFrame | null = null
 
+    // Track previous time granularity for change detection. The incremental
+    // path only re-aggregates data with the existing visualization configs, so
+    // a granularity change has to fall through to the full re-render (#146).
+    private previousGranularity: TimeGranularity | null = null
+
     // Signature of the last rendered card order, used to detect order changes
     // (e.g., user dragged a card, or a property/overlay was added/removed).
     private previousOrderSignature: string | null = null
@@ -519,6 +524,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const currentTimeFrame =
             getEnumConfig(this.cfg, 'timeFrame', TIME_FRAME_OPTIONS) ?? TimeFrame.AllTime
 
+        // Get current time granularity from config (issue #146)
+        const currentGranularity =
+            getEnumConfig(this.cfg, 'granularity', TIME_GRANULARITY_OPTIONS) ??
+            TimeGranularity.Daily
+
         if (canIncrementalUpdate) {
             // Fast path: update existing visualizations in place
             this.performIncrementalUpdate(entries)
@@ -531,12 +541,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             // Update tracking
             this.previousHeatmapSettings = currentHeatmapSettings
             this.previousTimeFrame = currentTimeFrame
+            this.previousGranularity = currentGranularity
             return
         }
 
         // Update tracking for full re-render path
         this.previousHeatmapSettings = currentHeatmapSettings
         this.previousTimeFrame = currentTimeFrame
+        this.previousGranularity = currentGranularity
         this.previousOrderSignature = newOrderSignature
         this.currentEffectiveOrder = effectiveOrder
 
@@ -684,6 +696,16 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const currentTimeFrame =
             getEnumConfig(this.cfg, 'timeFrame', TIME_FRAME_OPTIONS) ?? TimeFrame.AllTime
         if (this.previousTimeFrame !== null && this.previousTimeFrame !== currentTimeFrame) {
+            return false
+        }
+
+        // Check if the time granularity has changed (issue #146). Granularity
+        // decides how entries are bucketed into periods, which is baked into
+        // each visualization's config on the full re-render path only.
+        const currentGranularity =
+            getEnumConfig(this.cfg, 'granularity', TIME_GRANULARITY_OPTIONS) ??
+            TimeGranularity.Daily
+        if (this.previousGranularity !== null && this.previousGranularity !== currentGranularity) {
             return false
         }
 

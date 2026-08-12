@@ -119,6 +119,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - View-config reads in `ColumnConfigService` are memoized per render cycle and invalidated at the start of each cycle (and on every write)
 - Line/area datasets above 500 points render without point markers (`pointRadius: 0`, hover and hit radius preserved); dense scatter charts shrink their dots. No data points are ever dropped
 - Chart.js' decimation plugin is deliberately not enabled: it requires a linear/time x scale with `parsing: false`, while these charts use a category scale of formatted period labels
+- The incremental fast path only re-aggregates data against the **existing** visualization configs. Every view setting baked into those configs — time frame, time granularity, control-bar visibility, trend and streak toggles — MUST therefore invalidate the fast path in `canDoIncrementalUpdate`, or the change only appears after the Base is reopened (issue #146). A setting added to the view options without a matching guard is silently ignored until reload
 
 ## Card Ordering
 
