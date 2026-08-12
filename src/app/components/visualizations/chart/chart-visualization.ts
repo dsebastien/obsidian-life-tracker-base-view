@@ -294,7 +294,11 @@ export class ChartVisualization extends BaseVisualization {
         if (!source || sources.length !== 1) return
 
         // With a running total, trend on the per-period values, not the
-        // cumulative ones (see applyRunningTotal).
+        // cumulative ones (see applyRunningTotal). Say so in the label: next
+        // to an ever-rising cumulative line, a bare "Trend: ↓" reads as a
+        // contradiction (issue #149) — it describes the per-period rate.
+        const isPerPeriodRate = this.trendSourceData !== null
+        const trendLabel = isPerPeriodRate ? 'Per-period trend' : 'Trend'
         const trend = computeTrend(this.trendSourceData ?? source.data)
         if (!trend) return
 
@@ -318,7 +322,7 @@ export class ChartVisualization extends BaseVisualization {
         titleEl?.createSpan({
             cls: `lt-trend-indicator lt-trend-indicator--${trend.direction} lt-trend-indicator--${sentiment}`,
             text: arrow,
-            attr: { 'aria-label': `Trend: ${description}` }
+            attr: { 'aria-label': `${trendLabel}: ${description}` }
         })
 
         // Trend row below the chart, same style as the heatmap streak row.
@@ -328,8 +332,8 @@ export class ChartVisualization extends BaseVisualization {
             cls: `lt-chart-trend-item lt-chart-trend-item--${sentiment}`,
             text:
                 sentiment === 'neutral'
-                    ? `Trend: ${arrow} ${sign}${trend.changePercent.toFixed(1)}%`
-                    : `Trend: ${arrow} ${sign}${trend.changePercent.toFixed(1)}% (${wording})`
+                    ? `${trendLabel}: ${arrow} ${sign}${trend.changePercent.toFixed(1)}%`
+                    : `${trendLabel}: ${arrow} ${sign}${trend.changePercent.toFixed(1)}% (${wording})`
         })
         this.trendStatsEl?.createSpan({
             cls: 'lt-chart-trend-item',

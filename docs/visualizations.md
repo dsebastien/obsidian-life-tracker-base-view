@@ -212,7 +212,7 @@ A few details worth knowing:
 - A note that exists but records no value holds the line flat rather than breaking it, since your total has not changed. Periods with no note at all are not plotted — they are not part of the chart either way, with or without a running total.
 - The legend and CSV export label the series `(running total)`, since it no longer shows the raw property value.
 - A reference line now reads as a target total, which is handy for goals like "500 pages this year".
-- The trend arrow keeps describing your per-period rate, not the total. A cumulative line always climbs when the values are positive, so a trend taken from it would only restate that; "steady 10 a day" reports as flat, which is what you want to know.
+- The trend arrow keeps describing your per-period rate, not the total, and the trend row is labeled **Per-period trend** to make that explicit. A cumulative line always climbs when the values are positive, so a trend taken from it would only restate that; "steady 10 a day" reports as flat, which is what you want to know. A ↓ next to a rising total is not a contradiction: your total grew, but by less than in the previous periods.
 - Clicking a point opens a note from that period, not from everything the total has accumulated so far.
 - Only numeric properties get this option. List-valued properties are charted as one line per value, which has no total to accumulate.
 
