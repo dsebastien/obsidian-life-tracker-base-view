@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.21.4](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.21.3...2.21.4) (2026-08-12)
+
+### Bug Fixes
+
+* **plugin:** color numeric pie segments with the heatmap value scale ([#150](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/150)) ([3deb57b](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/3deb57b53fd355d3ea901560cf4fe6afb1950b57))
+* **plugin:** label the trend as per-period on running-total charts ([#149](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/149)) ([64211b3](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/64211b36a96eeaa78193f565f4d48c30f69d4dce))
+* **plugin:** show a persistent label on the required property toggle ([#148](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/148)) ([4aa03e7](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aa03e7519bf29d28f123402b3326cefce5d89d0))
+* **plugin:** wrap property row controls so inputs stay usable on mobile ([#147](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/147)) ([e1d6c71](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/e1d6c7129fcdbe447372481968b49fb03857e682))
+
 ## [2.21.3](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.21.2...2.21.3) (2026-08-12)
 
 ### Bug Fixes
@@ -412,6 +421,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

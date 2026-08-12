@@ -1,5 +1,14 @@
 # Release Notes
 
+## 2.21.4 (2026-08-12)
+
+### Bug Fixes
+
+- **plugin:** color numeric pie segments with the heatmap value scale ([#150](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/150))
+- **plugin:** label the trend as per-period on running-total charts ([#149](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/149))
+- **plugin:** show a persistent label on the required property toggle ([#148](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/148))
+- **plugin:** wrap property row controls so inputs stay usable on mobile ([#147](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/147))
+
 ## 2.21.3 (2026-08-12)
 
 ### Bug Fixes
