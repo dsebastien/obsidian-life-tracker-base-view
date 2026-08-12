@@ -15,13 +15,14 @@ Before capturing data, define which properties to track:
 2. Click **Add definition**
 3. Configure each property:
 
-| Field       | Description                                        |
-| ----------- | -------------------------------------------------- |
-| Name        | Frontmatter property key                           |
-| Type        | text, number, checkbox, date, datetime, list, tags |
-| Default     | Pre-filled value for new entries                   |
-| Constraints | Min/max/step for numbers, allowed values for text  |
-| Note filter | Folder, tag, or regex pattern to limit scope       |
+| Field       | Description                                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Name        | Frontmatter property key                                                                                               |
+| Type        | text, number, checkbox, date, datetime, list, tags                                                                     |
+| Required    | Labeled toggle in the row; required properties come first in the capture modal and drive the "Missing required" filter |
+| Default     | Pre-filled value for new entries                                                                                       |
+| Constraints | Min/max/step for numbers, allowed values for text                                                                      |
+| Note filter | Folder, tag, or regex pattern to limit scope                                                                           |
 
 For **number** properties you can set a **min**, **max**, and optional **step**. The step controls the slider granularity (e.g. `1` for whole-number scores, `0.5` for half points); leave it empty to allow fine decimal values. If you fill in only one bound, the other is inferred automatically (min → `max = min + 100`, max → `min = 0`) and the inferred value is shown so there's no silent guessing.
 
