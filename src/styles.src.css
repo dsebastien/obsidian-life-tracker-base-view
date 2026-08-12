@@ -1677,6 +1677,24 @@
         @apply w-40;
     }
 
+    /* On narrow screens the row's buttons squeeze the text inputs down to
+       nothing (issue #147): let the control rows wrap and give each text
+       input a full row of its own. Doubled class beats the fixed w-40. */
+    @media (max-width: 640px) {
+        .lt-property-header .setting-item-control,
+        .lt-value-mapping-list .setting-item-control,
+        .lt-mapping-item .setting-item-control {
+            @apply flex-wrap;
+        }
+
+        .lt-property-name-input.lt-property-name-input,
+        .lt-mapping-value-input.lt-mapping-value-input,
+        .lt-value-mapping-list .setting-item-control input[type='text'] {
+            @apply w-full;
+            flex: 1 1 100%;
+        }
+    }
+
     .lt-property-details {
         @apply ml-8 mt-2 pl-4;
         border-left: 2px solid var(--background-modifier-border);
