@@ -16,6 +16,7 @@ import {
     getColorWithAlpha,
     getBooleanColor,
     getChartColorScheme,
+    getValueMatchedSegmentColors,
     prefersReducedMotion,
     formatValueWithEmoji
 } from '../../../../utils'
@@ -108,19 +109,33 @@ export function initPieChart(
     // 1. Data is boolean AND
     // 2. No custom color scheme is set (undefined or 'default')
     // Otherwise, respect the user's custom color scheme choice
-    const useSemanticBooleanColors =
-        isBoolean && (!chartConfig.colorScheme || chartConfig.colorScheme === 'default')
+    const hasExplicitScheme = !!chartConfig.colorScheme && chartConfig.colorScheme !== 'default'
+    const useSemanticBooleanColors = isBoolean && !hasExplicitScheme
+
+    // Numeric segments match the heatmap's value → color mapping so the same
+    // value shows the same color in both visualizations (issue #150). An
+    // explicit chart color scheme still wins.
+    const valueMatchedColors =
+        !isBoolean && !hasExplicitScheme && chartConfig.valueColorScheme
+            ? getValueMatchedSegmentColors(
+                  pieChartData.labels,
+                  chartConfig.valueColorScheme,
+                  chartConfig.scale
+              )
+            : null
 
     // Generate colors for each segment
+    const segmentColor = (label: string, index: number): string => {
+        if (useSemanticBooleanColors) return getBooleanColor(label)
+        return valueMatchedColors?.[index] ?? colors[index % colors.length]!
+    }
+
     const backgroundColors = pieChartData.labels.map((label, index) => {
-        const color = useSemanticBooleanColors
-            ? getBooleanColor(label)
-            : colors[index % colors.length]!
-        return getColorWithAlpha(color, 0.7)
+        return getColorWithAlpha(segmentColor(label, index), 0.7)
     })
 
     const borderColors = pieChartData.labels.map((label, index) => {
-        return useSemanticBooleanColors ? getBooleanColor(label) : colors[index % colors.length]!
+        return segmentColor(label, index)
     })
 
     return new Chart(ctx, {

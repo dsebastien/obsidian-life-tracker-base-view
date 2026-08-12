@@ -25,7 +25,8 @@ export {
     isDiscreteHeatmapScheme,
     normalizeHeatmapColorScheme,
     createDefaultDiscreteScheme,
-    nextDiscreteEntryColor
+    nextDiscreteEntryColor,
+    getValueMatchedSegmentColors
 } from './color.utils'
 export type { ChartColorScheme, HeatmapPresetName } from './color.utils'
 

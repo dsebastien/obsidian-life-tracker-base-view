@@ -258,6 +258,48 @@ export function normalizeHeatmapColorScheme(raw: unknown): HeatmapColorScheme | 
 }
 
 /**
+ * Neutral swatch for values a heatmap would paint with its `empty` color.
+ * The schemes' `empty` is a CSS variable, which canvas-based Chart.js cannot
+ * resolve — this is the level-0 hex every built-in preset uses.
+ */
+const NEUTRAL_SEGMENT_COLOR = '#ebedf0'
+
+/**
+ * Color chart segments by their value using the heatmap's value → color
+ * mapping, so the same value shows the same color in a pie/doughnut chart
+ * and in a heatmap of the same property (issue #150).
+ *
+ * Returns null when any label is non-numeric: only numeric values have a
+ * position on the heatmap scale, so categorical data keeps the chart palette.
+ *
+ * Bounds mirror the heatmap's: data min/max, with a configured scale
+ * overriding either end (see HeatmapVisualization).
+ */
+export function getValueMatchedSegmentColors(
+    labels: readonly string[],
+    scheme: HeatmapColorScheme,
+    scale?: { min: number | null; max: number | null } | null
+): string[] | null {
+    if (labels.length === 0) return null
+
+    const values = labels.map((label) => (label.trim() === '' ? NaN : Number(label)))
+    if (values.some((value) => !Number.isFinite(value))) return null
+
+    const min = scale?.min ?? Math.min(...values)
+    const max = scale?.max ?? Math.max(...values)
+
+    return values.map((value) => {
+        const resolved = resolveHeatmapCellColor(value, scheme, min, max)
+        if (!resolved.startsWith('var(')) return resolved
+        // The heatmap shows this value as "empty" via a CSS variable —
+        // substitute a concrete neutral for the canvas.
+        if (isDiscreteHeatmapScheme(scheme)) return NEUTRAL_SEGMENT_COLOR
+        const levelZero = scheme.levels[0]
+        return levelZero && !levelZero.startsWith('var(') ? levelZero : NEUTRAL_SEGMENT_COLOR
+    })
+}
+
+/**
  * Map a value in [min, max] to a heatmap intensity level.
  *
  * - null/undefined → 0 (empty).

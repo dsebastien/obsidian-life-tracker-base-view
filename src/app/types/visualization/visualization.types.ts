@@ -297,6 +297,13 @@ export interface ChartConfig extends VisualizationConfig {
     aggregateByValue?: boolean
     /** Color scheme for chart colors */
     colorScheme?: ChartColorScheme
+    /**
+     * The heatmap's value → color scheme for the same property, so
+     * pie/doughnut/polarArea segments over numeric values can match the
+     * heatmap's colors (issue #150). Only honored when no explicit chart
+     * color scheme is chosen.
+     */
+    valueColorScheme?: HeatmapColorScheme
     /** Reference line configuration for cartesian charts */
     referenceLine?: ReferenceLineConfig
     /** How to combine multiple values within a time period (cartesian/bubble charts) */

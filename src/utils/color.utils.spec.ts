@@ -16,6 +16,7 @@ import {
     nextDiscreteEntryColor,
     asChartColorScheme,
     getChartColorScheme,
+    getValueMatchedSegmentColors,
     COLORBLIND_SAFE_PALETTE,
     HEATMAP_COLOR_SCHEME_OPTIONS
 } from './color.utils'
@@ -564,5 +565,67 @@ describe('asChartColorScheme', () => {
     test('rejects unknown values', () => {
         expect(asChartColorScheme(undefined)).toBeUndefined()
         expect(asChartColorScheme('chartreuse')).toBeUndefined()
+    })
+})
+
+describe('getValueMatchedSegmentColors (issue #150)', () => {
+    const green = HEATMAP_PRESETS['green']!
+
+    test('maps numeric labels to the same colors the heatmap would use', () => {
+        const colors = getValueMatchedSegmentColors(['1', '2', '3', '4', '5'], green)
+        expect(colors).toEqual([
+            resolveHeatmapCellColor(1, green, 1, 5),
+            resolveHeatmapCellColor(2, green, 1, 5),
+            resolveHeatmapCellColor(3, green, 1, 5),
+            resolveHeatmapCellColor(4, green, 1, 5),
+            resolveHeatmapCellColor(5, green, 1, 5)
+        ])
+        // Highest value gets the strongest gradient level
+        expect(colors![4]).toBe(green.levels[4])
+    })
+
+    test('label order does not change the value → color mapping', () => {
+        const ordered = getValueMatchedSegmentColors(['1', '3', '5'], green)
+        const shuffled = getValueMatchedSegmentColors(['5', '1', '3'], green)
+        expect(shuffled).toEqual([ordered![2]!, ordered![0]!, ordered![1]!])
+    })
+
+    test('a configured scale overrides the data-derived bounds, like the heatmap', () => {
+        const colors = getValueMatchedSegmentColors(['2', '3'], green, { min: 1, max: 5 })
+        expect(colors).toEqual([
+            resolveHeatmapCellColor(2, green, 1, 5),
+            resolveHeatmapCellColor(3, green, 1, 5)
+        ])
+    })
+
+    test('uses the discrete mapping when the scheme is discrete', () => {
+        const scheme: DiscreteHeatmapColorScheme = {
+            kind: 'discrete',
+            empty: 'var(--background-modifier-border)',
+            mapping: { '1': '#111111', '2': '#222222' }
+        }
+        expect(getValueMatchedSegmentColors(['1', '2'], scheme)).toEqual(['#111111', '#222222'])
+    })
+
+    test('returns null for non-numeric or empty labels so categorical data keeps the chart palette', () => {
+        expect(getValueMatchedSegmentColors(['true', 'false'], green)).toBeNull()
+        expect(getValueMatchedSegmentColors(['happy', 'sad'], green)).toBeNull()
+        expect(getValueMatchedSegmentColors(['1', ''], green)).toBeNull()
+        expect(getValueMatchedSegmentColors([], green)).toBeNull()
+    })
+
+    test('substitutes a concrete color when the heatmap would paint a CSS variable', () => {
+        // Value 0 on a 0-based scale resolves to the scheme's `empty` CSS
+        // variable, which a canvas cannot resolve
+        const colors = getValueMatchedSegmentColors(['0', '5'], green)
+        expect(colors![0]!.startsWith('var(')).toBe(false)
+        const discrete: DiscreteHeatmapColorScheme = {
+            kind: 'discrete',
+            empty: 'var(--background-modifier-border)',
+            mapping: { '5': '#555555' }
+        }
+        const discreteColors = getValueMatchedSegmentColors(['3', '5'], discrete)
+        expect(discreteColors![0]!.startsWith('var(')).toBe(false)
+        expect(discreteColors![1]).toBe('#555555')
     })
 })

@@ -161,7 +161,21 @@ export function getVisualizationConfig(
         case VisualizationType.RadarChart:
         case VisualizationType.PolarAreaChart:
         case VisualizationType.ScatterChart:
-        case VisualizationType.BubbleChart:
+        case VisualizationType.BubbleChart: {
+            // Resolve the heatmap scheme the same property's heatmap would
+            // use, so pie/doughnut/polarArea segments over numeric values can
+            // match its colors (issue #150). Same precedence as the heatmap
+            // case above, minus the per-card string name: on a chart card
+            // that names a chart palette, not a heatmap preset.
+            const customScheme = normalizeHeatmapColorScheme(storedColorScheme)
+            const viewWideName = getStringConfig(getConfig, 'heatmapColorScheme')
+            const valueSchemeName =
+                (viewWideName === HEATMAP_SCHEME_AUTO ? undefined : viewWideName) ??
+                polarityHeatmapPreset(definition?.polarity) ??
+                'green'
+            const valueColorScheme =
+                customScheme ?? HEATMAP_PRESETS[valueSchemeName] ?? HEATMAP_PRESETS['green']!
+
             return {
                 ...baseConfig,
                 chartType: mapVisualizationTypeToChartType(vizType),
@@ -170,11 +184,13 @@ export function getVisualizationConfig(
                 tension: 0.3,
                 scale,
                 colorScheme,
+                valueColorScheme,
                 aggregationMethod,
                 legendPosition:
                     getEnumConfig(getConfig, 'chartLegendPosition', CHART_LEGEND_POSITIONS) ??
                     'right'
             } as ChartConfig
+        }
 
         case VisualizationType.TagCloud:
             return {

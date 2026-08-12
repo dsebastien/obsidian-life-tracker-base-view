@@ -63,6 +63,8 @@ Chart tooltips show whole-number values without trailing decimals, so counts lik
 
 These charts show proportions and distributions.
 
+**Colors match the heatmap**: when the segments are numeric values (a 1-5 mood, a rating), pie, doughnut, and polar area charts color each segment with the same value → color scale a heatmap of that property uses — the view-wide heatmap color scheme, or the default derived from the property's value direction — so the same value looks the same in both visualizations. Picking an explicit color scheme on the chart card overrides this, and non-numeric values (categories, tags) keep the regular chart palette.
+
 ### Pie Chart
 
 Best for: Part-to-whole relationships
