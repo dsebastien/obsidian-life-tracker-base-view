@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.21.3 (2026-08-12)
+
+### Bug Fixes
+
+- **plugin:** maximize the clicked graph, not its property sibling ([#151](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/151))
+
 ## 2.21.2 (2026-08-12)
 
 ### Bug Fixes
