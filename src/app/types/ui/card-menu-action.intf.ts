@@ -4,7 +4,8 @@ import type {
     ScaleConfig,
     ReferenceLineConfig,
     AggregationMethod,
-    StoredColorScheme
+    StoredColorScheme,
+    TargetConfig
 } from '../column/column-config.types'
 
 /**
@@ -18,6 +19,8 @@ export type CardMenuAction =
     | { type: 'configureAggregationMethod'; aggregationMethod: AggregationMethod | undefined }
     | { type: 'configureMovingAverage'; movingAveragePeriod: number | undefined }
     | { type: 'configureRunningTotal'; runningTotal: boolean }
+    /** Set or clear the goal target for this visualization (issue #6) */
+    | { type: 'configureTarget'; target: TargetConfig }
     | { type: 'configureHeatmapCellSize'; cellSize: number | undefined }
     | { type: 'configureHeatmapShowMonthLabels'; showMonthLabels: boolean | undefined }
     | { type: 'configureHeatmapShowDayLabels'; showDayLabels: boolean | undefined }

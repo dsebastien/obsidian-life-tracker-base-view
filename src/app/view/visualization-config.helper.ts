@@ -8,6 +8,8 @@ import {
     type HeatmapConfig,
     type TagCloudConfig,
     type TimelineConfig,
+    type ProgressConfig,
+    normalizeTargetConfig,
     type VisualizationConfig,
     type ConfigGetter,
     type PropertyDefinition
@@ -59,6 +61,7 @@ export function getVisualizationConfig(
     const aggregationMethod = columnConfig.aggregationMethod
     const movingAveragePeriod = columnConfig.movingAveragePeriod
     const runningTotal = columnConfig.runningTotal
+    const target = normalizeTargetConfig(columnConfig.target)
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
@@ -122,6 +125,7 @@ export function getVisualizationConfig(
                 aggregationMethod,
                 movingAveragePeriod,
                 runningTotal,
+                target,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -139,6 +143,7 @@ export function getVisualizationConfig(
                 aggregationMethod,
                 movingAveragePeriod,
                 runningTotal,
+                target,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -153,6 +158,7 @@ export function getVisualizationConfig(
                 colorScheme,
                 referenceLine,
                 aggregationMethod,
+                target,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -208,6 +214,13 @@ export function getVisualizationConfig(
                 ...baseConfig,
                 colorScheme
             } as TimelineConfig
+
+        case VisualizationType.Progress:
+            return {
+                ...baseConfig,
+                target,
+                showHitRate: getBoolConfig(getConfig, 'progressShowHitRate') ?? true
+            } as ProgressConfig
 
         default:
             return baseConfig

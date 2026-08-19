@@ -54,7 +54,8 @@ Custom filename date patterns (issue #139) let users map their own naming conven
 - Scale-supporting types: Heatmap, BarChart, LineChart, AreaChart, RadarChart, ScatterChart, BubbleChart
 - Non-scale types: PieChart, DoughnutChart, PolarAreaChart, TagCloud, Timeline
 - Color scheme-supporting types: Heatmap, BarChart, LineChart, AreaChart, PieChart, DoughnutChart, RadarChart, PolarAreaChart, ScatterChart, BubbleChart, Timeline
-- Non-color scheme types: TagCloud
+- Non-color scheme types: TagCloud, Progress
+- Target-supporting types: Progress, LineChart, BarChart, AreaChart (see [Goals and Targets](#goals-and-targets))
 - Heatmap and chart schemes are drawn from separate lists (see [Heatmap Color Schemes](#heatmap-color-schemes)); only heatmaps can carry an inline custom scheme
 
 ## Maximize State
@@ -309,6 +310,24 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Discrete heatmap schemes are never overridden: they map specific values to specific colors on purpose, and replacing them would destroy the meaning the user encoded.
 - Structural changes (thicker card and cell borders, no dimmed affordances, stronger focus rings and grid rules) come from the `lt-high-contrast` class the Life Tracker and Grid views put on their container.
 - Toggling it redraws the Life Tracker view (canvas colors are baked in at render time); the Grid view only re-applies the class.
+
+## Goals and Targets
+
+- A target (issue #6) reads as one sentence: "<metric> of <property> per <period> must be <direction> <value>". `{ metric: 'count', period: 'weekly', direction: 'at-least', value: 3 }` is "do it on 3 days a week".
+- Metrics: `count` (entries with a non-zero value), `sum`, `average`, `latest`. `count` deliberately excludes zero — a note recording `push_ups: 0` says the exercise was _not_ done, and counting it would make any "N days a week" target trivially true for anyone who logs daily.
+- Targets are stored per visualization, so one property can carry several (e.g. squats: days-per-week on one card, reps-per-week on another).
+- Supported by the progress ring and by cartesian charts, which draw the target as a reference line. An explicitly configured reference line still wins over the target's.
+- Targets read from a `.base` file are validated field by field; anything malformed is dropped whole rather than half-applied — a ring silently measuring the wrong thing is worse than no ring.
+
+## Progress Ring
+
+- The ring shows the period the _view's last day_ falls in, not an average of the range: it is the only number still actionable (issue #126).
+- When the view ends on a period with no entries at all, the ring shows zero rather than falling back to the last period with data. A week where nothing was logged is a week the target was missed.
+- That synthesized empty period is not counted in the hit rate — only periods that actually contain entries are.
+- Status drives color: `met` (green), `close` (yellow, at or above the warn threshold, default 50% of the target), `behind` (red).
+- `close` only applies to at-least targets. An at-most target that is not met has already been exceeded — there is nothing close about it.
+- The ring fills as a fraction of the target for both directions, so a full ring on an at-most target means the budget is spent.
+- A progress card with no target renders a "set a target" prompt, never an empty state: the user must not be sent looking for missing data.
 
 ## Card Reordering
 

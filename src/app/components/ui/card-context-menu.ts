@@ -10,6 +10,9 @@ import {
     supportsImageExport,
     supportsMovingAverage,
     supportsRunningTotal,
+    supportsTarget,
+    TimeGranularity,
+    DEFAULT_TARGET_WARN_THRESHOLD,
     MOVING_AVERAGE_PERIOD_OPTIONS,
     DEFAULT_AGGREGATION_METHOD,
     type ScaleConfig,
@@ -17,8 +20,12 @@ import {
     type AggregationMethod,
     type CardMenuCallback,
     type DiscreteHeatmapColorScheme,
-    type StoredColorScheme
+    type StoredColorScheme,
+    type TargetConfig,
+    type TargetDirection,
+    type TargetMetric
 } from '../../types'
+import { describeTarget } from '../visualizations/progress/progress-visualization'
 import {
     COLOR_SCHEME_OPTIONS,
     HEATMAP_COLOR_SCHEME_OPTIONS,
@@ -100,6 +107,7 @@ export function showCardContextMenu(
     currentAggregationMethod: AggregationMethod | undefined,
     currentMovingAveragePeriod: number | undefined,
     currentRunningTotal: boolean | undefined,
+    currentTarget: TargetConfig | undefined,
     /** True when the property holds list values, which take a different
      *  aggregation path that ignores the moving average and the running total */
     hasListValues: boolean,
@@ -267,6 +275,7 @@ export function showCardContextMenu(
         // hidden rather than shown-but-inert for list-valued properties.
         const hasMovingAverage = supportsMovingAverage(vizType) && !hasListValues
         const hasRunningTotal = supportsRunningTotal(vizType) && !hasListValues
+        const hasTarget = supportsTarget(vizType)
 
         const hasHeatmapConfig = vizType === VisualizationType.Heatmap
 
@@ -277,6 +286,7 @@ export function showCardContextMenu(
             !hasAggregationMethod &&
             !hasMovingAverage &&
             !hasRunningTotal &&
+            !hasTarget &&
             !hasHeatmapConfig
         ) {
             optionsContent.createDiv({
@@ -430,6 +440,39 @@ export function showCardContextMenu(
                     close()
                     showDiscreteColorSchemeModal(discreteScheme, (scheme) => {
                         onAction({ type: 'configureColorScheme', colorScheme: scheme })
+                    })
+                })
+            }
+        }
+
+        // Target configuration (issue #6)
+        if (hasTarget) {
+            const targetGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            targetGroup.createEl('label', {
+                text: currentTarget?.enabled ? `Target: ${describeTarget(currentTarget)}` : 'Target'
+            })
+
+            const editBtn = targetGroup.createEl('button', {
+                cls: 'lt-card-popover-select',
+                text: currentTarget?.enabled ? 'Edit target' : 'Set a target'
+            })
+            editBtn.addEventListener('click', () => {
+                showTargetModal(currentTarget, (target) => {
+                    close()
+                    onAction({ type: 'configureTarget', target })
+                })
+            })
+
+            if (currentTarget?.enabled) {
+                const clearBtn = targetGroup.createEl('button', {
+                    cls: 'lt-card-popover-select',
+                    text: 'Clear target'
+                })
+                clearBtn.addEventListener('click', () => {
+                    close()
+                    onAction({
+                        type: 'configureTarget',
+                        target: { ...currentTarget, enabled: false }
                     })
                 })
             }
@@ -1047,6 +1090,151 @@ function showDiscreteColorSchemeModal(
 
     activeDocument.addEventListener('keydown', handleEscape)
     rowsEl.querySelector<HTMLInputElement>('.lt-mapping-value')?.focus()
+}
+
+/**
+ * Options for the target modal's dropdowns, in the order they are presented
+ */
+const TARGET_METRIC_OPTIONS: ReadonlyArray<{ value: TargetMetric; label: string }> = [
+    { value: 'count', label: 'Entries with a value (e.g. days done)' },
+    { value: 'sum', label: 'Total of the values' },
+    { value: 'average', label: 'Average of the values' },
+    { value: 'latest', label: 'Most recent value' }
+]
+
+const TARGET_PERIOD_OPTIONS: ReadonlyArray<{ value: TimeGranularity; label: string }> = [
+    { value: TimeGranularity.Daily, label: 'Day' },
+    { value: TimeGranularity.Weekly, label: 'Week' },
+    { value: TimeGranularity.Monthly, label: 'Month' },
+    { value: TimeGranularity.Quarterly, label: 'Quarter' },
+    { value: TimeGranularity.Yearly, label: 'Year' }
+]
+
+const TARGET_DIRECTION_OPTIONS: ReadonlyArray<{ value: TargetDirection; label: string }> = [
+    { value: 'at-least', label: 'At least (reach it)' },
+    { value: 'at-most', label: 'At most (stay under)' }
+]
+
+/**
+ * Show a modal for target configuration (issue #6).
+ *
+ * The four inputs read as one sentence — "<metric> per <period> must be
+ * <direction> <value>" — and a live preview of that sentence sits under them,
+ * because the combination is easy to get subtly wrong.
+ */
+function showTargetModal(
+    currentTarget: TargetConfig | undefined,
+    onConfirm: (target: TargetConfig) => void
+): void {
+    const overlay = activeDocument.body.createDiv({ cls: 'lt-scale-modal-overlay' })
+    const modal = overlay.createDiv({
+        cls: 'lt-scale-modal',
+        attr: { 'role': 'dialog', 'aria-modal': 'true', 'aria-label': 'Configure target' }
+    })
+    trapFocus(modal)
+
+    modal.createDiv({ cls: 'lt-scale-modal-header', text: 'Configure target' })
+
+    const form = modal.createDiv({ cls: 'lt-scale-modal-form' })
+
+    const metricGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
+    metricGroup.createSpan({ text: 'Measure:' })
+    const metricSelect = metricGroup.createEl('select', { cls: 'lt-scale-modal-input' })
+    for (const option of TARGET_METRIC_OPTIONS) {
+        const el = metricSelect.createEl('option', { value: option.value, text: option.label })
+        if ((currentTarget?.metric ?? 'count') === option.value) el.selected = true
+    }
+
+    const periodGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
+    periodGroup.createSpan({ text: 'Per:' })
+    const periodSelect = periodGroup.createEl('select', { cls: 'lt-scale-modal-input' })
+    for (const option of TARGET_PERIOD_OPTIONS) {
+        const el = periodSelect.createEl('option', { value: option.value, text: option.label })
+        if ((currentTarget?.period ?? TimeGranularity.Weekly) === option.value) el.selected = true
+    }
+
+    const directionGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
+    directionGroup.createSpan({ text: 'Goal:' })
+    const directionSelect = directionGroup.createEl('select', { cls: 'lt-scale-modal-input' })
+    for (const option of TARGET_DIRECTION_OPTIONS) {
+        const el = directionSelect.createEl('option', { value: option.value, text: option.label })
+        if ((currentTarget?.direction ?? 'at-least') === option.value) el.selected = true
+    }
+
+    const valueGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
+    valueGroup.createSpan({ text: 'Value:' })
+    const valueInput = valueGroup.createEl('input', {
+        type: 'number',
+        cls: 'lt-scale-modal-input',
+        placeholder: 'e.g., 3'
+    })
+    valueInput.value = String(currentTarget?.value ?? '')
+
+    const unitGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
+    unitGroup.createSpan({ text: 'Unit (optional):' })
+    const unitInput = unitGroup.createEl('input', {
+        type: 'text',
+        cls: 'lt-scale-modal-input',
+        placeholder: 'e.g., reps, kg, days'
+    })
+    unitInput.value = currentTarget?.unit ?? ''
+
+    const previewEl = form.createDiv({ cls: 'lt-scale-modal-preview' })
+
+    const readForm = (): TargetConfig => ({
+        enabled: true,
+        value: parseFloat(valueInput.value.trim()) || 0,
+        metric: metricSelect.value as TargetMetric,
+        period: periodSelect.value as TimeGranularity,
+        direction: directionSelect.value as TargetDirection,
+        warnThreshold: currentTarget?.warnThreshold ?? DEFAULT_TARGET_WARN_THRESHOLD,
+        unit: unitInput.value.trim() || undefined
+    })
+
+    const updatePreview = (): void => {
+        previewEl.textContent = describeTarget(readForm())
+    }
+    updatePreview()
+
+    for (const input of [metricSelect, periodSelect, directionSelect, valueInput, unitInput]) {
+        input.addEventListener('change', updatePreview)
+        input.addEventListener('input', updatePreview)
+    }
+
+    const handleEscape = (e: KeyboardEvent): void => {
+        if (e.key === 'Escape') cleanup()
+    }
+
+    const cleanup = (): void => {
+        activeDocument.removeEventListener('keydown', handleEscape)
+        overlay.remove()
+    }
+
+    activeDocument.addEventListener('keydown', handleEscape)
+    overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) cleanup()
+    })
+
+    const buttons = modal.createDiv({ cls: 'lt-scale-modal-buttons' })
+
+    const cancelBtn = buttons.createEl('button', {
+        cls: 'lt-scale-modal-btn lt-scale-modal-btn--secondary',
+        text: 'Cancel'
+    })
+    cancelBtn.addEventListener('click', cleanup)
+
+    const confirmBtn = buttons.createEl('button', {
+        cls: 'lt-scale-modal-btn lt-scale-modal-btn--primary',
+        text: 'Apply'
+    })
+    confirmBtn.addEventListener('click', () => {
+        const value = parseFloat(valueInput.value.trim())
+        if (isNaN(value)) {
+            return
+        }
+        onConfirm(readForm())
+        cleanup()
+    })
 }
 
 /**

@@ -4003,6 +4003,131 @@
     }
 
     /* ========================================
+   PROGRESS RING (issues #6, #126)
+   ======================================== */
+
+    .lt-progress {
+        @apply flex flex-col items-center justify-center gap-2 flex-1 min-h-0;
+    }
+
+    .lt-progress-ring {
+        @apply relative inline-flex items-center justify-center;
+        width: 120px;
+        height: 120px;
+        /* Status drives every colored part of the ring through one variable */
+        --lt-progress-color: var(--color-red);
+    }
+
+    .lt-progress-ring[role='button'] {
+        @apply cursor-pointer;
+    }
+
+    .lt-progress-ring--met {
+        --lt-progress-color: var(--color-green);
+    }
+
+    .lt-progress-ring--close {
+        --lt-progress-color: var(--color-yellow);
+    }
+
+    .lt-progress-ring--behind {
+        --lt-progress-color: var(--color-red);
+    }
+
+    .lt-progress-ring-svg {
+        @apply w-full h-full;
+        /* Start the arc at 12 o'clock instead of 3 */
+        transform: rotate(-90deg);
+    }
+
+    .lt-progress-ring-track {
+        fill: none;
+        stroke: var(--background-modifier-border);
+    }
+
+    .lt-progress-ring-arc {
+        fill: none;
+        stroke: var(--lt-progress-color);
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.35s ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .lt-progress-ring-arc {
+            transition: none;
+        }
+    }
+
+    .lt-progress-ring-center {
+        @apply absolute inset-0 flex flex-col items-center justify-center;
+    }
+
+    .lt-progress-value {
+        @apply font-bold leading-none;
+        font-size: var(--h3-size, 1.5em);
+        color: var(--lt-progress-color);
+    }
+
+    .lt-progress-goal {
+        @apply text-xs mt-1;
+        color: var(--text-muted);
+    }
+
+    .lt-progress-target {
+        @apply text-xs text-center;
+        color: var(--text-muted);
+    }
+
+    .lt-progress-hit-rate {
+        @apply text-xs text-center;
+        color: var(--text-normal);
+    }
+
+    /* One bar per recent period: the trend behind the hit rate */
+    .lt-progress-strip {
+        @apply flex items-end justify-center gap-1 w-full mt-auto;
+        height: 24px;
+    }
+
+    .lt-progress-strip-bar {
+        @apply rounded-sm;
+        width: 6px;
+        min-height: 2px;
+        background-color: var(--background-modifier-border);
+    }
+
+    .lt-progress-strip-bar--met {
+        background-color: var(--color-green);
+    }
+
+    .lt-progress-strip-bar--close {
+        background-color: var(--color-yellow);
+    }
+
+    .lt-progress-strip-bar--behind {
+        background-color: var(--color-red);
+    }
+
+    .lt-progress-empty {
+        @apply flex flex-col items-center justify-center gap-2 flex-1 text-center;
+    }
+
+    .lt-progress-empty-icon {
+        @apply text-2xl;
+    }
+
+    .lt-progress-empty-text {
+        @apply text-sm;
+        color: var(--text-muted);
+    }
+
+    /* Live sentence under the target modal's inputs */
+    .lt-scale-modal-preview {
+        @apply text-xs mt-2;
+        color: var(--text-muted);
+    }
+
+    /* ========================================
    HIGH CONTRAST MODE (issue #137)
    ======================================== */
 
@@ -4062,6 +4187,19 @@
     .lt-high-contrast :focus-visible {
         outline: 3px solid var(--interactive-accent);
         outline-offset: 2px;
+    }
+
+    .lt-high-contrast .lt-progress-ring-track {
+        stroke: var(--text-normal);
+    }
+
+    .lt-high-contrast .lt-progress-strip-bar {
+        border: 1px solid var(--text-normal);
+    }
+
+    .lt-high-contrast .lt-progress-target,
+    .lt-high-contrast .lt-progress-goal {
+        color: var(--text-normal);
     }
 
     .lt-high-contrast .lt-tooltip {

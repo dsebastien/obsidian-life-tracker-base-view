@@ -35,7 +35,8 @@ export const CONTEXT_MENU_VISUALIZATION_OPTIONS: ContextMenuVisualizationOption[
     { type: VisualizationType.ScatterChart, label: 'Scatter chart', icon: 'scatter-chart' },
     { type: VisualizationType.BubbleChart, label: 'Bubble chart', icon: 'circle-dot' },
     { type: VisualizationType.TagCloud, label: 'Cloud', icon: 'cloud' },
-    { type: VisualizationType.Timeline, label: 'Timeline', icon: 'calendar' }
+    { type: VisualizationType.Timeline, label: 'Timeline', icon: 'calendar' },
+    { type: VisualizationType.Progress, label: 'Progress ring', icon: 'target' }
 ]
 
 /**
@@ -114,6 +115,12 @@ export const CONFIG_CARD_VISUALIZATION_OPTIONS: ConfigCardVisualizationOption[] 
         label: 'Timeline',
         icon: 'calendar',
         description: 'Date distribution'
+    },
+    {
+        type: VisualizationType.Progress,
+        label: 'Progress ring',
+        icon: 'target',
+        description: 'Progress toward a goal target'
     }
 ]
 
@@ -133,7 +140,8 @@ export const SETTINGS_TAB_VISUALIZATION_OPTIONS: Record<string, string> = {
     [VisualizationType.ScatterChart]: 'Scatter chart',
     [VisualizationType.BubbleChart]: 'Bubble chart',
     [VisualizationType.TagCloud]: 'Cloud',
-    [VisualizationType.Timeline]: 'Timeline'
+    [VisualizationType.Timeline]: 'Timeline',
+    [VisualizationType.Progress]: 'Progress ring'
 }
 
 /**

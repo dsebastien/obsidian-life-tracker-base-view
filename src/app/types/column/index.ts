@@ -15,7 +15,13 @@ export {
     MOVING_AVERAGE_PERIOD_OPTIONS,
     supportsRunningTotal,
     RUNNING_TOTAL_SUPPORTED_TYPES,
-    supportsImageExport
+    supportsImageExport,
+    supportsTarget,
+    normalizeTargetConfig,
+    TARGET_SUPPORTED_TYPES,
+    TARGET_METRICS,
+    TARGET_DIRECTIONS,
+    DEFAULT_TARGET_WARN_THRESHOLD
 } from './column-config.types'
 export type {
     ScaleConfig,
@@ -26,7 +32,10 @@ export type {
     LegacyColumnConfigMap,
     OverlayVisualizationConfig,
     OverlayConfigMap,
-    AggregationMethod
+    AggregationMethod,
+    TargetConfig,
+    TargetMetric,
+    TargetDirection
 } from './column-config.types'
 export type { ColumnConfigResult } from './column-config-result.intf'
 export type { ColumnConfigCallback } from './column-config-callback.intf'

@@ -2,6 +2,7 @@ import type { BasesPropertyId } from 'obsidian'
 import { VisualizationType } from '../visualization/visualization-type.intf'
 import type { ChartColorScheme, HeatmapPresetName } from '../../../utils/color.utils'
 import type { HeatmapColorScheme } from '../visualization/visualization.types'
+import { TimeGranularity, TIME_GRANULARITY_OPTIONS } from '../visualization/time-granularity.intf'
 
 /**
  * What a visualization's `colorScheme` can hold: the name of a built-in chart or
@@ -35,6 +36,57 @@ export interface ReferenceLineConfig {
     /** Optional custom label (defaults to "Target: {value}") */
     label?: string
 }
+
+/**
+ * What a target measures inside each period (issue #6).
+ *
+ * - `count`: number of entries with a meaningful value — "meditate 5 days/week"
+ * - `sum`: total of the values — "150 squats/week"
+ * - `average`: mean of the values — "average mood of at least 7"
+ * - `latest`: the most recent value in the period — "weigh at most 80kg"
+ */
+export type TargetMetric = 'count' | 'sum' | 'average' | 'latest'
+
+/** Every valid target metric, for runtime validation of stored config */
+export const TARGET_METRICS: readonly TargetMetric[] = ['count', 'sum', 'average', 'latest']
+
+/**
+ * Whether hitting the target means reaching it or staying under it (issue #6)
+ */
+export type TargetDirection = 'at-least' | 'at-most'
+
+/** Every valid target direction, for runtime validation of stored config */
+export const TARGET_DIRECTIONS: readonly TargetDirection[] = ['at-least', 'at-most']
+
+/**
+ * A goal to track a property against (issue #6).
+ *
+ * Read as one sentence: "<metric> of <property> per <period> must be
+ * <direction> <value>". "Meditate 5 days a week" is
+ * `{ metric: 'count', period: 'weekly', direction: 'at-least', value: 5 }`.
+ */
+export interface TargetConfig {
+    /** Whether the target is active */
+    enabled: boolean
+    /** The number to reach (at-least) or stay under (at-most) */
+    value: number
+    /** What is measured inside each period */
+    metric: TargetMetric
+    /** The window the target applies to */
+    period: TimeGranularity
+    /** Whether success means reaching the value or staying under it */
+    direction: TargetDirection
+    /**
+     * Fraction of the target (0-1) below which progress reads as "behind"
+     * rather than "close". Defaults to `DEFAULT_TARGET_WARN_THRESHOLD`.
+     */
+    warnThreshold?: number
+    /** Optional unit shown next to the numbers, e.g. "reps" or "kg" */
+    unit?: string
+}
+
+/** Default point where progress stops reading as "close" and starts as "behind" */
+export const DEFAULT_TARGET_WARN_THRESHOLD = 0.5
 
 /**
  * How multiple data points in the same time period are combined into a single value.
@@ -80,6 +132,8 @@ export interface ColumnVisualizationConfig {
     movingAveragePeriod?: number
     /** Plot the cumulative total instead of the per-period value (issue #142) */
     runningTotal?: boolean
+    /** Goal to track this property against (issue #6) */
+    target?: TargetConfig
 }
 
 /**
@@ -195,6 +249,69 @@ export const RUNNING_TOTAL_SUPPORTED_TYPES: VisualizationType[] = [
  */
 export function supportsRunningTotal(vizType: VisualizationType): boolean {
     return RUNNING_TOTAL_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
+ * Visualization types that can be driven by a target (issue #6).
+ *
+ * The progress ring exists to show one, and cartesian charts draw it as a
+ * reference line. Everything else has no place to put it.
+ */
+export const TARGET_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.Progress,
+    VisualizationType.LineChart,
+    VisualizationType.BarChart,
+    VisualizationType.AreaChart
+]
+
+/**
+ * Validate a target read from view config.
+ *
+ * View config comes from a `.base` file on disk and can be hand-edited, so
+ * every field is checked. A target with a non-numeric value or an unknown
+ * metric is dropped entirely rather than half-applied: a ring silently
+ * measuring the wrong thing is worse than no ring.
+ */
+export function normalizeTargetConfig(raw: unknown): TargetConfig | undefined {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined
+
+    const candidate = raw as Record<string, unknown>
+
+    const value = candidate['value']
+    if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+
+    const metric = candidate['metric']
+    if (!TARGET_METRICS.includes(metric as TargetMetric)) return undefined
+
+    const period = candidate['period']
+    if (!TIME_GRANULARITY_OPTIONS.includes(period as TimeGranularity)) return undefined
+
+    const direction = candidate['direction']
+    if (!TARGET_DIRECTIONS.includes(direction as TargetDirection)) return undefined
+
+    const warnThreshold = candidate['warnThreshold']
+    const unit = candidate['unit']
+
+    return {
+        // Absent means enabled: a target written by hand is meant to be on
+        enabled: candidate['enabled'] !== false,
+        value,
+        metric: metric as TargetMetric,
+        period: period as TimeGranularity,
+        direction: direction as TargetDirection,
+        warnThreshold:
+            typeof warnThreshold === 'number' && warnThreshold >= 0 && warnThreshold <= 1
+                ? warnThreshold
+                : DEFAULT_TARGET_WARN_THRESHOLD,
+        ...(typeof unit === 'string' && unit.trim() ? { unit: unit.trim() } : {})
+    }
+}
+
+/**
+ * Check if a visualization type supports a target
+ */
+export function supportsTarget(vizType: VisualizationType): boolean {
+    return TARGET_SUPPORTED_TYPES.includes(vizType)
 }
 
 /**

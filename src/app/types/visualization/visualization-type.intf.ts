@@ -13,5 +13,7 @@ export enum VisualizationType {
     ScatterChart = 'scatter-chart',
     BubbleChart = 'bubble-chart',
     TagCloud = 'tag-cloud',
+    /** Circular progress toward a goal target (issue #126) */
+    Progress = 'progress',
     Timeline = 'timeline'
 }

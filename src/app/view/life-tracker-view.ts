@@ -26,6 +26,7 @@ import {
     type TagCloudConfig,
     type VisualizationDataPoint,
     type VisualizationDateRange,
+    type ProgressConfig,
     type SettingsChangeInfo,
     type ResolvedDateAnchor,
     type DateAnchorConfig,
@@ -44,6 +45,7 @@ import { HeatmapVisualization } from '../components/visualizations/heatmap/heatm
 import { ChartVisualization } from '../components/visualizations/chart/chart-visualization'
 import { TagCloudVisualization } from '../components/visualizations/tag-cloud/tag-cloud-visualization'
 import { TimelineVisualization } from '../components/visualizations/timeline/timeline-visualization'
+import { ProgressVisualization } from '../components/visualizations/progress/progress-visualization'
 import { createEmptyState, EMPTY_STATE_MESSAGES } from '../components/ui/empty-state'
 import { createColumnConfigCard } from '../components/ui/column-config-card'
 import { showCardContextMenu, type HeatmapMenuConfig } from '../components/ui/card-context-menu'
@@ -1821,6 +1823,15 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     vizConfig
                 )
 
+            case VisualizationType.Progress:
+                return new ProgressVisualization(
+                    cardEl,
+                    this.app,
+                    columnConfig.propertyId,
+                    displayName,
+                    vizConfig as ProgressConfig
+                )
+
             default:
                 // Fallback to heatmap
                 return new HeatmapVisualization(
@@ -1890,6 +1901,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.aggregationMethod,
             vizConfig.movingAveragePeriod,
             vizConfig.runningTotal,
+            vizConfig.target,
             hasListValues,
             isFromPreset,
             isMaximized,
@@ -2110,6 +2122,32 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         propertyId,
                         visualizationId,
                         { runningTotal: action.runningTotal }
+                    )
+                }
+                this.applyConfigChange(propertyId, visualizationId, displayName)
+                break
+
+            case 'configureTarget':
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        const newId = this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme,
+                            preset.referenceLine
+                        )
+                        this.columnConfigService.updateVisualizationConfig(propertyId, newId, {
+                            target: action.target
+                        })
+                    }
+                } else {
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { target: action.target }
                     )
                 }
                 this.applyConfigChange(propertyId, visualizationId, displayName)

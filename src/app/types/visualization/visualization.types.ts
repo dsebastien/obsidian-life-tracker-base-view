@@ -4,7 +4,8 @@ import type { ResolvedDateAnchor } from '../view/date-anchor.types'
 import type {
     ScaleConfig,
     ReferenceLineConfig,
-    AggregationMethod
+    AggregationMethod,
+    TargetConfig
 } from '../column/column-config.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
 import type { EmojiMapping, ValuePolarity } from '../property/property-definition.types'
@@ -193,6 +194,45 @@ export interface TagCloudItem {
 }
 
 /**
+ * How a period compares to its target (issue #126)
+ */
+export type ProgressStatus = 'met' | 'close' | 'behind'
+
+/**
+ * One period measured against a target
+ */
+export interface ProgressPeriod {
+    /** Start of the period */
+    date: Date
+    /** The period's value, folded according to the target's metric */
+    actual: number
+    /** Whether the target was met */
+    met: boolean
+    status: ProgressStatus
+    /** `actual` as a fraction of the target, clamped to 0-1 */
+    ratio: number
+    /** Notes that contributed to this period */
+    filePaths: string[]
+}
+
+/**
+ * Aggregated data for the progress ring visualization (issues #6, #126)
+ */
+export interface ProgressData {
+    propertyId: BasesPropertyId
+    displayName: string
+    target: TargetConfig
+    /** Every period in range, ascending */
+    periods: ProgressPeriod[]
+    /** The period the ring shows: the one the view's last day falls in */
+    current: ProgressPeriod | null
+    /** How many periods met the target */
+    metCount: number
+    /** How many periods the range covers */
+    periodCount: number
+}
+
+/**
  * Aggregated data for timeline visualization
  */
 export interface TimelineData {
@@ -325,6 +365,8 @@ export interface ChartConfig extends VisualizationConfig {
     showTrendInfo?: boolean
     /** Legend placement for pie/doughnut/polar charts (default 'right') */
     legendPosition?: ChartLegendPosition
+    /** Goal target, drawn as a reference line on cartesian charts (issue #6) */
+    target?: TargetConfig
 }
 
 /**
@@ -348,6 +390,18 @@ export interface TagCloudConfig extends VisualizationConfig {
     maxFontSize: number
     sortBy: 'frequency' | 'alphabetical'
     maxTags: number
+}
+
+/**
+ * Progress ring configuration (issue #126).
+ *
+ * The target is optional so the card can render a "configure a target" prompt
+ * instead of failing when the type is chosen before the goal is set.
+ */
+export interface ProgressConfig extends VisualizationConfig {
+    target?: TargetConfig
+    /** Show the hit rate across the selected range below the ring (default true) */
+    showHitRate?: boolean
 }
 
 /**

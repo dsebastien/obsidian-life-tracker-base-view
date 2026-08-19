@@ -476,6 +476,19 @@ export class ChartVisualization extends BaseVisualization {
                     })
                 }
 
+                // A goal target draws itself as a reference line (issue #6), so
+                // a target set on a chart is visible without configuring the
+                // same number twice. An explicit reference line still wins.
+                const target = this.chartConfig.target
+                if (target?.enabled && !this.chartConfig.referenceLine?.enabled) {
+                    const colors = getChartColorScheme(this.chartConfig.colorScheme)
+                    referenceLines.push({
+                        value: target.value,
+                        label: `Target: ${target.value}${target.unit ? ` ${target.unit}` : ''}`,
+                        color: colors[0] ?? '#8884d8'
+                    })
+                }
+
                 // Overlay reference lines (one per dataset/property)
                 if (this.overlayReferenceLines && this.chartData.datasets) {
                     const colors = getChartColorScheme(this.chartConfig.colorScheme)

@@ -119,11 +119,45 @@ Right-click any visualization card to access:
 - **Change visualization**: Switch to a different chart type
 - **Configure scale**: Set min/max values (auto-detect or presets)
 - **Configure color scheme**: Choose a color palette; heatmaps also offer colorblind-friendly gradients and a custom value-to-color mapping
+- **Configure target**: Set a goal for this property (see Goals and Targets below)
 - **Reference line**: Add a horizontal target line
 - **Add visualization**: Create another visualization for the same property
 - **Remove visualization**: Delete this visualization (if multiple exist)
 - **Maximize**: Expand to full view
 - **Reset**: Clear configuration and return to selection
+
+## Goals and Targets
+
+Set a goal on any card through the context menu → **Configure target**. A target
+reads as one sentence:
+
+> _\<measure\>_ per _\<period\>_ must be _\<at least / at most\>_ _\<value\>_
+
+| Measure               | Meaning                  | Example goal                 |
+| --------------------- | ------------------------ | ---------------------------- |
+| Entries with a value  | Days you actually did it | "Push-ups on 3 days a week"  |
+| Total of the values   | Volume added up          | "150 squats a week"          |
+| Average of the values | Mean over the period     | "Average mood of at least 7" |
+| Most recent value     | The last reading         | "At most 80 kg"              |
+
+Days you logged as `0` do not count toward "entries with a value" — writing
+`push_ups: 0` records that you did not do it.
+
+Targets are per visualization, so one property can carry two goals at once: a
+consistency ring (days a week) and a volume ring (reps a week) side by side.
+
+Line, bar and area charts draw the target as a horizontal reference line.
+
+### Progress Ring
+
+Pick **Progress ring** as the visualization type to see a goal as a circle:
+
+- The ring is the period you are **currently in** — this week, not an average of
+  the whole range. It is the only number you can still act on.
+- Green means met, yellow means most of the way there, red means behind.
+- Underneath: how many periods met the target across the selected range, and a
+  strip of bars showing the last twelve periods.
+- A week where nothing was logged shows as zero, not as the last week with data.
 
 ## Maximize Mode
 

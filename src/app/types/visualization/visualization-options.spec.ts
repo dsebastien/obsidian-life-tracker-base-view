@@ -19,7 +19,7 @@ describe('Visualization Options Synchronization', () => {
     describe('VisualizationType enum', () => {
         test('should have expected number of visualization types', () => {
             // Update this number when adding/removing visualization types
-            expect(allTypes.length).toBe(12)
+            expect(allTypes.length).toBe(13)
         })
 
         test('should contain all expected visualization types', () => {
@@ -35,7 +35,8 @@ describe('Visualization Options Synchronization', () => {
                 VisualizationType.ScatterChart,
                 VisualizationType.BubbleChart,
                 VisualizationType.TagCloud,
-                VisualizationType.Timeline
+                VisualizationType.Timeline,
+                VisualizationType.Progress
             ]
             expect(allTypes.sort()).toEqual(expectedTypes.sort())
         })

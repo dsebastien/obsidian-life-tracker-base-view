@@ -35,6 +35,10 @@ export type {
     BubblePoint,
     ScatterChartData,
     BubbleChartData,
+    ProgressStatus,
+    ProgressPeriod,
+    ProgressData,
+    ProgressConfig,
     TagCloudData,
     TagCloudItem,
     TimelineData,
@@ -72,7 +76,13 @@ export {
     MOVING_AVERAGE_PERIOD_OPTIONS,
     supportsRunningTotal,
     RUNNING_TOTAL_SUPPORTED_TYPES,
-    supportsImageExport
+    supportsImageExport,
+    supportsTarget,
+    normalizeTargetConfig,
+    TARGET_SUPPORTED_TYPES,
+    TARGET_METRICS,
+    TARGET_DIRECTIONS,
+    DEFAULT_TARGET_WARN_THRESHOLD
 } from './column'
 export type {
     ScaleConfig,
@@ -86,7 +96,10 @@ export type {
     ColumnConfigResult,
     ColumnConfigCallback,
     EffectiveConfigResult,
-    AggregationMethod
+    AggregationMethod,
+    TargetConfig,
+    TargetMetric,
+    TargetDirection
 } from './column'
 
 // Editor types
