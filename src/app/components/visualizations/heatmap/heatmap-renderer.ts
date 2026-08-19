@@ -47,6 +47,50 @@ function buildCellMap(cells: HeatmapCell[]): Map<string, HeatmapCell> {
 }
 
 /**
+ * Minimum horizontal room (px) a month label needs before the next one may
+ * start. Short month names render at text-xs (12px): 3-4 characters plus a
+ * little breathing space (issue #157).
+ */
+export const MIN_MONTH_LABEL_SPACING_PX = 32
+
+/**
+ * Decide which week columns of the daily heatmap get a month label
+ * (issue #157). A label goes on the first week of each month, but only when
+ * enough horizontal space has elapsed since the previous label — labels
+ * overflow into adjacent slots, so two month starts close together (small
+ * cells, short months) otherwise render as "JulAug". Skipped labels are
+ * dropped, not moved: a label anywhere but the month's first week would
+ * mislabel the column under it.
+ *
+ * Returns the indices of the weeks that get a label.
+ */
+export function planMonthLabelWeeks(weeks: Date[], cellSize: number, cellGap: number): Set<number> {
+    const labeledWeeks = new Set<number>()
+    const slotWidth = cellSize + cellGap
+    let currentMonth = -1
+    let lastLabelIndex = -1
+
+    for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
+        const weekStart = weeks[weekIndex]
+        if (!weekStart) continue
+
+        const monthNum = getMonth(weekStart)
+        if (monthNum === currentMonth) continue
+        currentMonth = monthNum
+
+        const hasRoom =
+            lastLabelIndex < 0 ||
+            (weekIndex - lastLabelIndex) * slotWidth >= MIN_MONTH_LABEL_SPACING_PX
+        if (!hasRoom) continue
+
+        labeledWeeks.add(weekIndex)
+        lastLabelIndex = weekIndex
+    }
+
+    return labeledWeeks
+}
+
+/**
  * Render the heatmap grid based on granularity
  */
 export function renderHeatmapGrid(
@@ -202,23 +246,22 @@ function renderDailyHeatmap(
         const monthLabelsContainer = monthRow.createDiv({ cls: 'lt-heatmap-month-labels lt-flex' })
         setCssProps(monthLabelsContainer, { gap: config.cellGap })
 
-        // Create a slot for each week - only fill in month name when month changes
-        let currentMonthForLabels = -1
+        // Create a slot for each week - a label only lands on the first week
+        // of a month, and only when it won't collide with the previous label
+        // (issue #157)
+        const labeledWeeks = planMonthLabelWeeks(weeks, config.cellSize, config.cellGap)
         for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
             const weekStart = weeks[weekIndex]
             if (!weekStart) continue
 
-            const monthNum = getMonth(weekStart)
             const slot = monthLabelsContainer.createDiv({
                 cls: 'lt-heatmap-month-slot lt-flex-shrink-0'
             })
             setCssProps(slot, { width: config.cellSize })
 
-            // Only show month name at the start of a new month
-            if (monthNum !== currentMonthForLabels) {
+            if (labeledWeeks.has(weekIndex)) {
                 slot.textContent = getMonthName(weekStart)
                 slot.classList.add('lt-heatmap-month-label')
-                currentMonthForLabels = monthNum
             }
         }
 
