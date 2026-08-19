@@ -1,5 +1,10 @@
 import { setIcon, type App, type BasesPropertyId } from 'obsidian'
-import type { ExportTable, VisualizationConfig, VisualizationDataPoint } from '../../types'
+import type {
+    ExportTable,
+    VisualizationConfig,
+    VisualizationDataPoint,
+    VisualizationDateRange
+} from '../../types'
 
 /**
  * Callback for maximize toggle.
@@ -185,6 +190,17 @@ export abstract class BaseVisualization {
      * Update the visualization with new data
      */
     abstract update(data: VisualizationDataPoint[]): void
+
+    /**
+     * Tell the visualization which date span the view currently covers,
+     * regardless of which dates actually carry a value for this property
+     * (issue #153). Time-based visualizations use it so their axis spans the
+     * whole selected period instead of starting at the first logged value.
+     * Subclasses that don't care ignore it.
+     */
+    setViewDateRange(_range: VisualizationDateRange | null): void {
+        // Default implementation does nothing
+    }
 
     /**
      * Handle container resize - subclasses should override to handle resize

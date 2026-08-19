@@ -190,6 +190,52 @@ describe('DataAggregationService.aggregateForHeatmap', () => {
         expect(result.cells[0]!.value).toBe(3)
     })
 
+    test('the view date range widens the heatmap span (issue #153)', () => {
+        // Only the 20th carries a value, but the view covers the whole month
+        const points = [makeDataPoint('a.md', '2024-03-20', 3)]
+
+        const result = service.aggregateForHeatmap(
+            points,
+            PROP_ID,
+            'Energy',
+            TimeGranularity.Daily,
+            undefined,
+            { minDate: new Date('2024-03-01'), maxDate: new Date('2024-03-31') }
+        )
+
+        expect(result.minDate).toEqual(new Date('2024-03-01'))
+        expect(result.maxDate).toEqual(new Date('2024-03-31'))
+        // Cells still only exist where there is data
+        expect(result.cells).toHaveLength(1)
+    })
+
+    test('the view date range never narrows the span', () => {
+        const points = [
+            makeDataPoint('a.md', '2024-02-10', 3),
+            makeDataPoint('b.md', '2024-04-10', 5)
+        ]
+
+        const result = service.aggregateForHeatmap(
+            points,
+            PROP_ID,
+            'Energy',
+            TimeGranularity.Daily,
+            undefined,
+            { minDate: new Date('2024-03-01'), maxDate: new Date('2024-03-31') }
+        )
+
+        expect(result.minDate).toEqual(new Date('2024-02-10'))
+        expect(result.maxDate).toEqual(new Date('2024-04-10'))
+    })
+
+    test('without a view date range the span still follows the data', () => {
+        const points = [makeDataPoint('a.md', '2024-03-20', 3)]
+        const result = service.aggregateForHeatmap(points, PROP_ID, 'Energy', TimeGranularity.Daily)
+
+        expect(result.minDate).toEqual(new Date('2024-03-20'))
+        expect(result.maxDate).toEqual(new Date('2024-03-20'))
+    })
+
     test('two points on the same day are averaged by default', () => {
         const points = [
             makeDataPoint('a.md', '2024-03-01', 4),

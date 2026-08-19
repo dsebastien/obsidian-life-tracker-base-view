@@ -6,6 +6,7 @@ export type {
     ExportTable,
     TrendInfo,
     HeatmapData,
+    VisualizationDateRange,
     HeatmapCell,
     HeatmapStreakStats,
     ChartData,

@@ -42,6 +42,13 @@ Custom filename date patterns (issue #139) let users map their own naming conven
 2. Global presets match by case-insensitive property name
 3. Unconfigured properties show selection card
 
+## Heatmap Date Span
+
+- A heatmap spans the full period covered by the view's entries, not just the periods that carry a value for the visualized property (issue #153). Optional properties otherwise made the grid start at the first day that happened to be filled in, hiding the beginning of the selected range.
+- The span is computed from the date anchors of all entries left after time-frame filtering, before any per-property value filtering.
+- The span can only widen, never narrow: data points outside the view range are still drawn.
+- `showEmptyValues` still governs whether periods without data render as cells or as blank placeholders — it never changes the span.
+
 ## Visualization Types
 
 - Scale-supporting types: Heatmap, BarChart, LineChart, AreaChart, RadarChart, ScatterChart, BubbleChart

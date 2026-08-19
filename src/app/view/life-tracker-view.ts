@@ -25,6 +25,7 @@ import {
     type HeatmapConfig,
     type TagCloudConfig,
     type VisualizationDataPoint,
+    type VisualizationDateRange,
     type SettingsChangeInfo,
     type ResolvedDateAnchor,
     type DateAnchorConfig,
@@ -149,6 +150,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
     // Track showEmptyValues setting for change detection (keyed by visualization ID)
     private visualizationShowEmptyValues: Map<string, boolean> = new Map()
+
+    /**
+     * Date span covered by the entries currently displayed, regardless of
+     * which of them carry a value. Time-based visualizations use it so their
+     * axis spans the whole selected period rather than starting at the first
+     * logged value (issue #153).
+     */
+    private viewDateRange: VisualizationDateRange | null = null
 
     // Grid settings (runtime state)
     private gridSettings: GridSettings = { ...DEFAULT_GRID_SETTINGS }
@@ -652,6 +661,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const currentPropertyIds = new Set(propertyIds)
         this.columnConfigService.cleanupOrphanedConfigs(currentPropertyIds)
 
+        this.viewDateRange = this.computeViewDateRange(filteredEntries, dateAnchors)
+
         // Use async batched rendering to prevent UI freezing
         void this.renderCardsAsync(effectiveOrder, filteredEntries, dateAnchors, renderCycle)
     }
@@ -677,6 +688,31 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             }
             return isDateInTimeFrame(anchor.date, dateRange)
         })
+    }
+
+    /**
+     * Compute the date span the given entries cover, from their date anchors.
+     * Entries without an anchor are ignored; null when none has one.
+     *
+     * This span is what the *view* shows, so it is derived before any
+     * per-property value filtering: a property that is only filled in some
+     * days must still be charted across the whole period (issue #153).
+     */
+    private computeViewDateRange(
+        entries: BasesEntry[],
+        dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>
+    ): VisualizationDateRange | null {
+        let minDate: Date | null = null
+        let maxDate: Date | null = null
+
+        for (const entry of entries) {
+            const anchor = dateAnchors.get(entry)
+            if (!anchor) continue
+            if (!minDate || anchor.date < minDate) minDate = anchor.date
+            if (!maxDate || anchor.date > maxDate) maxDate = anchor.date
+        }
+
+        return minDate && maxDate ? { minDate, maxDate } : null
     }
 
     /**
@@ -912,6 +948,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             timeFrameDateRange
         )
 
+        this.viewDateRange = this.computeViewDateRange(filteredEntries, dateAnchors)
+
         for (const viz of stale) {
             const propertyDefinition = this.findPropertyDefinition(viz.propertyId)
 
@@ -924,6 +962,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 showEmptyValues
             )
             this.cacheService.setDataPoints(viz.propertyId, dataPoints)
+            viz.visualization.setViewDateRange(this.viewDateRange)
             viz.visualization.update(dataPoints)
         }
     }
@@ -1333,6 +1372,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // Set animation duration from plugin settings
         visualization.setAnimationDuration(this.plugin.settings.animationDuration)
 
+        // Tell time-based visualizations which period the view covers, so they
+        // span it even when this property has no value in parts of it (#153)
+        visualization.setViewDateRange(this.viewDateRange)
+
         // Render and store by visualization ID
         visualization.render(dataPoints)
 
@@ -1436,6 +1479,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.getShowEmptyValues()
             )
             this.cacheService.setDataPoints(propertyId, dataPoints)
+            this.viewDateRange = this.computeViewDateRange(filteredEntries, dateAnchors)
         }
 
         // Tear down the old visualization instance and its tracking entries.

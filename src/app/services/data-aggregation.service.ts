@@ -12,6 +12,7 @@ import {
     type TagCloudData,
     type TimelineData,
     type VisualizationDataPoint,
+    type VisualizationDateRange,
     type ResolvedDateAnchor
 } from '../types'
 import { compareAsc, min, max } from 'date-fns'
@@ -140,7 +141,8 @@ export class DataAggregationService {
         propertyId: BasesPropertyId,
         displayName: string,
         granularity: TimeGranularity,
-        aggregationMethod: AggregationMethod = DEFAULT_AGGREGATION_METHOD
+        aggregationMethod: AggregationMethod = DEFAULT_AGGREGATION_METHOD,
+        viewDateRange?: VisualizationDateRange | null
     ): HeatmapData {
         // Filter to points with dates
         const validPoints = dataPoints.filter((p) => p.dateAnchor !== null)
@@ -149,8 +151,14 @@ export class DataAggregationService {
             return this.createEmptyHeatmapData(propertyId, displayName, granularity)
         }
 
-        // Get date range from valid points
+        // Span the whole period the view covers when it is known, so periods
+        // without a value for this property are still drawn (issue #153).
+        // Optional properties otherwise made the grid start at the first day
+        // that happened to be filled in.
         const dates = validPoints.map((p) => p.dateAnchor!.date)
+        if (viewDateRange) {
+            dates.push(viewDateRange.minDate, viewDateRange.maxDate)
+        }
         const minDate = min(dates)
         const maxDate = max(dates)
 

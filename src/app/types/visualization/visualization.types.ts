@@ -49,6 +49,15 @@ export interface ExportTable {
 }
 
 /**
+ * A closed date span. Used to tell a visualization which period the view is
+ * showing, independently of which dates actually carry a value (issue #153).
+ */
+export interface VisualizationDateRange {
+    minDate: Date
+    maxDate: Date
+}
+
+/**
  * Aggregated data for heatmap visualization
  */
 export interface HeatmapData {

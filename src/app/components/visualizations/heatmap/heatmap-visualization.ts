@@ -5,7 +5,8 @@ import type {
     ExportTable,
     HeatmapConfig,
     HeatmapData,
-    VisualizationDataPoint
+    VisualizationDataPoint,
+    VisualizationDateRange
 } from '../../../types'
 import { sharedAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
@@ -49,6 +50,16 @@ export class HeatmapVisualization extends BaseVisualization {
     private detachScrollTracking: (() => void) | null = null
     /** Whether the user is looking at the end (freshest data) of the heatmap */
     private wasScrolledToEnd = true
+    /**
+     * Period the view covers, independent of which dates carry a value. Keeps
+     * the grid spanning the whole selected range for optional properties
+     * (issue #153).
+     */
+    private viewDateRange: VisualizationDateRange | null = null
+
+    override setViewDateRange(range: VisualizationDateRange | null): void {
+        this.viewDateRange = range
+    }
 
     constructor(
         containerEl: HTMLElement,
@@ -76,7 +87,8 @@ export class HeatmapVisualization extends BaseVisualization {
             this.propertyId,
             this.displayName,
             this.heatmapConfig.granularity,
-            this.heatmapConfig.aggregationMethod
+            this.heatmapConfig.aggregationMethod,
+            this.viewDateRange
         )
 
         // Apply scale override if configured
@@ -190,7 +202,8 @@ export class HeatmapVisualization extends BaseVisualization {
             this.propertyId,
             this.displayName,
             this.heatmapConfig.granularity,
-            this.heatmapConfig.aggregationMethod
+            this.heatmapConfig.aggregationMethod,
+            this.viewDateRange
         )
 
         // Apply scale override if configured
