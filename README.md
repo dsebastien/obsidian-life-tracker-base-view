@@ -72,7 +72,7 @@ View your tracked data with different visualization types: area charts, heatmaps
 ### Select visualization type
 
 ![Select visualization type](documentation/screenshots/select-visualization-type.png)
-Choose from 12 visualization types when configuring a new property: Heatmap, Bar Chart, Line Chart, Area Chart, Pie Chart, Doughnut Chart, Radar Chart, Polar Area Chart, Scatter Chart, Bubble Chart, Tag Cloud, and Timeline.
+Choose from 13 visualization types when configuring a new property: Heatmap, Bar Chart, Line Chart, Area Chart, Pie Chart, Doughnut Chart, Radar Chart, Polar Area Chart, Scatter Chart, Bubble Chart, Tag Cloud, Timeline, and Progress Ring.
 
 ### Customize time granularity
 
@@ -88,6 +88,11 @@ Adjust layout options including number of columns, empty date display, default c
 
 ![Customize visualizations](documentation/screenshots/customize-visualizations.png)
 Right-click any card to change visualization type, configure scale (auto-detect or preset ranges like 0-1, 0-5, 0-10, 0-100), color scheme, reference lines, aggregation method (average or sum — useful when multiple entries share a date, e.g. summing workout calories per day), a moving average for line/area charts (7/14/30 periods, drawn as a dashed line to smooth noisy data), and a running total for line/area charts (plots the cumulative total — 20, 15, 30 pages read becomes 20 → 35 → 65 — to track progress toward a long-term goal), add another visualization for the same property, maximize, export the chart as a PNG image or the displayed data as CSV (saved to your attachment folder), or reset configuration. Line, bar, and area charts also show a small trend arrow (↑/↓/→) next to the title comparing recent periods against the previous ones — hover it for the percentage change. Set the property's **value direction** and the arrow turns green when the metric is improving and red when it is worsening.
+
+### Goals and progress rings
+
+![Progress ring](documentation/screenshots/progress-ring.png)
+Set a goal on any property — "3 days a week", "150 reps a week", "10 000 steps a day", "at most 80 kg" — and track it with a progress ring. The ring shows the period you are currently in, green when met and red when behind, with the hit rate across the range, your current and best streak, and a bar per recent period underneath. Goals belong to a visualization rather than to a property, so one property can carry a consistency goal and a volume goal side by side. Line, bar and area charts draw the target as a reference line.
 
 ### Visualize list properties
 

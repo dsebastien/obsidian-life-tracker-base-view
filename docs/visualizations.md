@@ -149,6 +149,8 @@ Best for: Goals you either hit or miss
 - Good for: "3 days a week", "150 reps a week", "10 000 steps a day", "at most
   80 kg"
 
+![Progress ring](https://github.com/dsebastien/obsidian-life-tracker-base-view/blob/main/documentation/screenshots/progress-ring.png?raw=true)
+
 A progress ring needs a target — see [Goals and Targets](#goals-and-targets)
 below. Until one is set, the card shows a prompt instead of a chart.
 
