@@ -40,24 +40,33 @@ Write patterns with placeholders:
 
 Examples:
 
-| Pattern                       | Matches                  |
-| ----------------------------- | ------------------------ |
-| `Journal {{date}}`            | `Journal 2026-07-30`     |
-| `{{year}}{{month}}{{day}}`    | `20260730`               |
-| `{{day}}.{{month}}.{{year}}`  | `30.07.2026`             |
-| `{{date}}*`                   | `2026-07-30 (Thursday)`  |
-| `* {{year}}-W{{week}}`        | `Weekly review 2026-W31` |
-| `{{year}} {{quarter}} review` | `2026 Q3 review`         |
+| Pattern                       | Matches                        |
+| ----------------------------- | ------------------------------ |
+| `Journal {{date}}`            | `Journal 2026-07-30`           |
+| `{{year}}{{month}}{{day}}`    | `20260730`                     |
+| `{{day}}.{{month}}.{{year}}`  | `30.07.2026`                   |
+| `{{date}}*`                   | `2026-07-30 (Thursday)`        |
+| `* {{year}}-W{{week}}`        | `Weekly review 2026-W31`       |
+| `{{year}} {{quarter}} review` | `2026 Q3 review`               |
+| `daily/{{date}}`              | `daily/2026-07-30.md`          |
+| `*/daily/{{date}}`            | `personal/daily/2026-07-30.md` |
 
 Good to know:
 
 - The whole filename must match the pattern — use `*` for the parts that vary.
+- A pattern containing `/` matches the note's **path**, not just its name, so
+  `daily/{{date}}` only matches notes inside the `daily` folder. Use this when
+  the same filename exists in several folders and only one of them holds your
+  tracked notes.
 - Matching ignores case, so `journal 2026-07-30` matches `Journal {{date}}` too.
 - The time period is derived from the placeholders you use: a day (or
   `{{date}}`) means daily notes, `{{week}}` weekly, `{{quarter}}` quarterly,
   a month monthly, a year alone yearly.
 - Patterns are tried top to bottom, before the built-in formats. The built-in
   formats always keep working, so nothing breaks if you add none.
+- "Capture today" prefers a note matched by one of your own patterns over a
+  note that only matched a built-in format, so a folder-scoped pattern reliably
+  wins over an identically named note elsewhere.
 - Every pattern shows either an example of what it matches or an explanation of
   what's wrong with it, right below the input.
 - "Capture today" also uses your patterns to find today's note.

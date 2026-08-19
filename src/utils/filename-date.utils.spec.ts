@@ -6,6 +6,7 @@ import {
     getDateFromISOWeek,
     matchFilenameDatePattern,
     parseDateFromFilename,
+    parseDateFromPath,
     renderFilenameDatePatternExample,
     setCustomFilenameDatePatterns,
     validateFilenameDatePattern
@@ -343,6 +344,62 @@ describe('filename-date-utils', () => {
             expect(renderFilenameDatePatternExample('{{nope}} {{year}}', date)).toBe(
                 '{{nope}} 2026'
             )
+        })
+    })
+
+    describe('folder-scoped patterns (issue #152)', () => {
+        test('a pattern with a folder only matches notes in that folder', () => {
+            setCustomFilenameDatePatterns(['daily/{{date}}'])
+
+            const inDaily = parseDateFromPath('daily/2026-02-25.md')
+            expect(inDaily?.origin).toBe('custom')
+            expect(inDaily?.date).toEqual(new Date(2026, 1, 25))
+
+            // Same name elsewhere: only the built-in ISO pattern can match it
+            expect(parseDateFromPath('work/2026-02-25.md')?.origin).toBe('built-in')
+        })
+
+        test('nested folders are matched literally', () => {
+            setCustomFilenameDatePatterns(['journal/daily/{{date}}'])
+
+            expect(parseDateFromPath('journal/daily/2026-02-25.md')?.origin).toBe('custom')
+            expect(parseDateFromPath('journal/2026-02-25.md')?.origin).toBe('built-in')
+        })
+
+        test('a wildcard can stand in for intermediate folders', () => {
+            setCustomFilenameDatePatterns(['*/daily/{{date}}'])
+
+            expect(parseDateFromPath('personal/daily/2026-02-25.md')?.origin).toBe('custom')
+        })
+
+        test('folderless patterns still match on the basename alone', () => {
+            setCustomFilenameDatePatterns(['Journal {{date}}'])
+
+            expect(parseDateFromPath('anywhere/deep/Journal 2026-02-25.md')?.origin).toBe('custom')
+        })
+
+        test('removing a pattern stops it from matching', () => {
+            setCustomFilenameDatePatterns(['daily/{{date}}', 'work/{{date}}'])
+            expect(parseDateFromPath('work/2026-02-25.md')?.origin).toBe('custom')
+
+            setCustomFilenameDatePatterns(['daily/{{date}}'])
+            expect(parseDateFromPath('work/2026-02-25.md')?.origin).toBe('built-in')
+        })
+
+        test('the extension is optional', () => {
+            setCustomFilenameDatePatterns(['daily/{{date}}'])
+
+            expect(parseDateFromPath('daily/2026-02-25')?.origin).toBe('custom')
+        })
+
+        test('parseDateFromFilename keeps basenames containing dots intact', () => {
+            setCustomFilenameDatePatterns(['{{date}} v1.2'])
+
+            expect(parseDateFromFilename('2026-02-25 v1.2')?.origin).toBe('custom')
+        })
+
+        test('built-in matches are reported as built-in', () => {
+            expect(parseDateFromFilename('2026-02-25')?.origin).toBe('built-in')
         })
     })
 

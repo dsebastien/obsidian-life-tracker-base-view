@@ -133,8 +133,9 @@ The plugin reads dates from filenames such as `2026-07-30`, `2026-W31`, `2026-07
 | `{{day}}.{{month}}.{{year}}` | `30.07.2026`             |
 | `{{date}}*`                  | `2026-07-30 (Thursday)`  |
 | `* {{year}}-W{{week}}`       | `Weekly review 2026-W31` |
+| `daily/{{date}}`             | `daily/2026-07-30.md`    |
 
-Use `*` for parts that vary. Each pattern shows a live example of what it matches, and the built-in formats always keep working.
+Use `*` for parts that vary. A pattern containing `/` matches the note's path instead of just its name, so `daily/{{date}}` only matches notes inside the `daily` folder — handy when the same filename exists in several folders. Each pattern shows a live example of what it matches, and the built-in formats always keep working.
 
 ### Overlay Charts
 

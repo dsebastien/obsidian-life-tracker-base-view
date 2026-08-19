@@ -99,6 +99,13 @@ export interface CompiledFilenameDatePattern {
     granularity: TimeGranularity
     /** Token for each capture group of `regex`, in order */
     groups: FilenameDateTokenName[]
+    /**
+     * Whether the pattern describes a path (it contains `/`) rather than a
+     * bare filename. Path patterns are matched against the note's vault
+     * relative path without its extension, so `daily/{{date}}` only matches
+     * notes inside `daily/` (issue #152).
+     */
+    matchesPath: boolean
 }
 
 /**
@@ -251,7 +258,8 @@ export function compileFilenameDatePattern(pattern: string): FilenameDatePattern
             source: trimmed,
             regex: new RegExp(`^${regexSource}$`, 'i'),
             granularity: inferGranularity(seen),
-            groups
+            groups,
+            matchesPath: trimmed.includes('/')
         }
     }
 }
@@ -528,30 +536,84 @@ export function getCustomFilenameDatePatterns(): readonly CompiledFilenameDatePa
 }
 
 /**
- * Parse a date from a filename (without extension).
- * Configured patterns win over the built-in ones (issue #139).
+ * Where a parsed date came from: one of the user's configured patterns, or the
+ * always-available built-in ISO patterns. Callers that must pick between
+ * several matching notes use this to prefer explicitly configured locations
+ * over the generic fallback (issue #152).
  */
-export function parseDateFromFilename(
-    filename: string
-): { date: Date; granularity: TimeGranularity } | null {
+export type FilenameDateMatchOrigin = 'custom' | 'built-in'
+
+/**
+ * A date resolved from a note's name or path
+ */
+export interface ParsedFilenameDate {
+    date: Date
+    granularity: TimeGranularity
+    origin: FilenameDateMatchOrigin
+}
+
+/**
+ * Strip the extension from a vault path or filename
+ */
+function stripExtension(path: string): string {
+    const lastSlash = path.lastIndexOf('/')
+    const lastDot = path.lastIndexOf('.')
+    return lastDot > lastSlash ? path.slice(0, lastDot) : path
+}
+
+/**
+ * Parse a date from a note's vault-relative path.
+ *
+ * Configured patterns win over the built-in ones (issue #139). A configured
+ * pattern that contains a `/` describes a *path*, so it is matched against the
+ * whole path minus its extension; folderless patterns keep matching the
+ * basename alone (issue #152).
+ *
+ * The extension is optional: both `daily/2026-02-25.md` and `daily/2026-02-25`
+ * resolve identically.
+ */
+export function parseDateFromPath(path: string): ParsedFilenameDate | null {
+    return parseDateFromExtensionlessPath(stripExtension(path))
+}
+
+/**
+ * Shared implementation: `path` must already be free of its extension
+ */
+function parseDateFromExtensionlessPath(withoutExtension: string): ParsedFilenameDate | null {
+    const basename = withoutExtension.slice(withoutExtension.lastIndexOf('/') + 1)
+
     for (const pattern of customPatterns) {
-        const result = matchFilenameDatePattern(filename, pattern)
+        const candidate = pattern.matchesPath ? withoutExtension : basename
+        const result = matchFilenameDatePattern(candidate, pattern)
         if (result) {
-            return result
+            return { ...result, origin: 'custom' }
         }
     }
 
     for (const pattern of BUILT_IN_DATE_PATTERNS) {
-        const match = filename.match(pattern.regex)
+        const match = basename.match(pattern.regex)
         if (match) {
             const date = pattern.parser(match)
             if (date) {
-                return { date, granularity: pattern.granularity }
+                return { date, granularity: pattern.granularity, origin: 'built-in' }
             }
         }
     }
 
     return null
+}
+
+/**
+ * Parse a date from a filename (without extension).
+ *
+ * Kept for callers that only have a basename. Prefer `parseDateFromPath` when
+ * the full path is available: patterns scoped to a folder can only be honored
+ * there (issue #152).
+ */
+export function parseDateFromFilename(filename: string): ParsedFilenameDate | null {
+    // A basename never carries an extension, so it is already "extensionless":
+    // stripping again would truncate names that legitimately contain a dot
+    return parseDateFromExtensionlessPath(filename)
 }
 
 /**

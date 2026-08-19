@@ -1,6 +1,6 @@
 import type { BasesEntry, BasesPropertyId, Value } from 'obsidian'
 import type { DateAnchorConfig, DateAnchorSource, ResolvedDateAnchor } from '../types'
-import { parseDateFromFilename, extractDate, isDateLike } from '../../utils'
+import { parseDateFromPath, extractDate, isDateLike } from '../../utils'
 
 /**
  * Service for resolving date anchors from entries
@@ -67,9 +67,9 @@ export class DateAnchorService {
         entry: BasesEntry,
         source: DateAnchorSource & { type: 'filename' }
     ): ResolvedDateAnchor | null {
-        const filename = entry.file.basename
-
-        const parsed = parseDateFromFilename(filename)
+        // Parse the full path, not just the basename: configured patterns can
+        // be scoped to a folder (`daily/{{date}}`) and only match there (#152)
+        const parsed = parseDateFromPath(entry.file.path)
         if (parsed) {
             return {
                 date: parsed.date,

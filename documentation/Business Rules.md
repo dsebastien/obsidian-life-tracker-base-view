@@ -29,6 +29,7 @@ Custom filename date patterns (issue #139) let users map their own naming conven
 
 - Patterns use `{{token}}` placeholders — `{{date}}`, `{{year}}`, `{{month}}`, `{{day}}`, `{{week}}`, `{{quarter}}` — plus `*` as a wildcard for arbitrary text. Same token vocabulary as the other plugins in this family, so users learn it once.
 - Patterns match the whole basename (anchored), case-insensitively. Literal text is regex-escaped.
+- A pattern containing `/` is a **path** pattern: it is matched against the note's vault-relative path minus its extension, so `daily/{{date}}` only matches notes inside `daily/` (issue #152). Patterns without `/` keep matching the basename alone, wherever the note lives.
 - Custom patterns are tried before the built-in formats, in the order configured; the built-ins always remain as a fallback so vaults with no configuration keep working unchanged.
 - Granularity is inferred from the tokens, never configured: `{{date}}` or year+month+day → daily; year+`{{week}}` → weekly; year+`{{quarter}}` → quarterly; year+month → monthly; year alone → yearly.
 - Validation rules: a pattern needs `{{date}}` or `{{year}}`; `{{day}}` needs `{{month}}`; `{{week}}`, `{{quarter}}` and month/day tokens are mutually exclusive; `{{date}}` cannot be combined with other date tokens; a token can appear only once.
@@ -290,8 +291,9 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 
 ## Capture Today Command
 
-- Resolves today's note by basename match on any daily-granularity filename pattern — built-in (YYYY-MM-DD) or custom (issue #139)
-- When several notes match, the most recently modified one wins
+- Resolves today's note by matching the note path against any daily-granularity filename pattern — built-in (YYYY-MM-DD) or custom (issue #139)
+- Notes matched by a custom pattern beat notes matched only by a built-in pattern: a configured (possibly folder-scoped) pattern states where the user's daily notes live (issue #152)
+- Within the same group, the most recently modified note wins
 
 ## Reduced Motion
 

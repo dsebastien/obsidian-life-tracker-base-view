@@ -74,6 +74,12 @@ export class DateSettingsSection {
         const wildcardRow = helpEl.createDiv({ cls: 'lt-filename-pattern-help-row' })
         wildcardRow.createSpan({ cls: 'lt-filename-pattern-token', text: '*' })
         wildcardRow.createSpan({ text: 'Any text, e.g. * {{date}} matches "Journal 2026-07-30"' })
+
+        const folderRow = helpEl.createDiv({ cls: 'lt-filename-pattern-help-row' })
+        folderRow.createSpan({ cls: 'lt-filename-pattern-token', text: '/' })
+        folderRow.createSpan({
+            text: 'A pattern containing / matches the note path, so daily/{{date}} only matches notes inside the daily folder'
+        })
     }
 
     private renderPatternsList(container: HTMLElement): void {
@@ -148,8 +154,9 @@ export class DateSettingsSection {
         }
 
         const example = renderFilenameDatePatternExample(pattern, new Date())
+        const scope = result.compiled.matchesPath ? 'path' : 'name'
         statusEl.addClass('lt-filename-pattern-status--valid')
-        statusEl.textContent = `Matches "${example}" — ${result.compiled.granularity} notes`
+        statusEl.textContent = `Matches ${scope} "${example}" — ${result.compiled.granularity} notes`
     }
 
     private async addNewPattern(): Promise<void> {

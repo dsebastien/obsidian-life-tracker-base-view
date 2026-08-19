@@ -2,7 +2,7 @@ import { Notice, type TFile } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import { TimeGranularity, type BatchFilterMode } from '../types'
 import { PropertyCaptureModal } from '../components/modals/property-capture-modal'
-import { isSameDay, parseDateFromFilename } from '../../utils'
+import { isSameDay, parseDateFromPath } from '../../utils'
 
 /**
  * Context for the property capture dialog
@@ -73,28 +73,40 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
 }
 
 /**
- * Find today's daily note: a markdown file whose basename resolves to today's
- * date at daily granularity — either a built-in pattern (YYYY-MM-DD) or one of
- * the user's custom filename date patterns (issue #139). When several notes
- * match (e.g. duplicates across folders), the most recently modified one wins.
+ * Find today's daily note: a markdown file whose path resolves to today's date
+ * at daily granularity — either a built-in pattern (YYYY-MM-DD) or one of the
+ * user's custom filename date patterns (issue #139).
+ *
+ * Notes matched by a configured pattern beat notes that only matched a
+ * built-in one: a user who wrote `daily/{{date}}` told us where their daily
+ * notes live, so an identically named note in another folder must not win just
+ * because it was touched more recently (issue #152). Ties inside the same
+ * group are broken by modification time, freshest first.
  */
 function findTodayNote(plugin: LifeTrackerPlugin): TFile | null {
     const today = new Date()
 
-    const candidates = plugin.app.vault.getMarkdownFiles().filter((file) => {
-        const parsed = parseDateFromFilename(file.basename)
-        return (
+    const candidates: Array<{ file: TFile; fromCustomPattern: boolean }> = []
+
+    for (const file of plugin.app.vault.getMarkdownFiles()) {
+        const parsed = parseDateFromPath(file.path)
+        if (
             parsed !== null &&
             parsed.granularity === TimeGranularity.Daily &&
             isSameDay(parsed.date, today)
-        )
-    })
-
-    if (candidates.length > 1) {
-        candidates.sort((a, b) => b.stat.mtime - a.stat.mtime)
+        ) {
+            candidates.push({ file, fromCustomPattern: parsed.origin === 'custom' })
+        }
     }
 
-    return candidates[0] ?? null
+    candidates.sort((a, b) => {
+        if (a.fromCustomPattern !== b.fromCustomPattern) {
+            return a.fromCustomPattern ? -1 : 1
+        }
+        return b.file.stat.mtime - a.file.stat.mtime
+    })
+
+    return candidates[0]?.file ?? null
 }
 
 /**

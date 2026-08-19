@@ -93,6 +93,7 @@ export {
     renderFilenameDatePatternExample,
     matchFilenameDatePattern,
     parseDateFromFilename,
+    parseDateFromPath,
     setCustomFilenameDatePatterns,
     getCustomFilenameDatePatterns,
     getDateFromISOWeek
@@ -101,7 +102,9 @@ export type {
     FilenameDateTokenName,
     FilenameDateTokenDefinition,
     CompiledFilenameDatePattern,
-    FilenameDatePatternCompilation
+    FilenameDatePatternCompilation,
+    FilenameDateMatchOrigin,
+    ParsedFilenameDate
 } from './filename-date.utils'
 
 // DOM utilities
