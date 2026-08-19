@@ -1,4 +1,5 @@
 import type { App, BasesPropertyId } from 'obsidian'
+import { Notice } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
 import { TimeGranularity } from '../../../types'
 import type {
@@ -12,7 +13,13 @@ import { sharedAggregationService } from '../../../services/data-aggregation.ser
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
 import { applyCellColor, renderHeatmapGrid } from './heatmap-renderer'
 import { TouchNavigationGate } from '../touch-navigation'
-import { parseISO, isSameDay, isSameMonth, isSameYear } from 'date-fns'
+import { parseISO, isSameDay, isSameMonth, isSameYear, format as formatDate } from 'date-fns'
+import {
+    computeRecord,
+    formatRecordValue,
+    isRecordImprovement,
+    shouldAnnounceRecord
+} from '../../../services/record.utils'
 import {
     log,
     CSS_SELECTOR,
@@ -43,6 +50,12 @@ const GRANULARITY_UNIT: Record<TimeGranularity, string> = {
 export class HeatmapVisualization extends BaseVisualization {
     private heatmapConfig: HeatmapConfig
     private tooltip: Tooltip | null = null
+    /**
+     * Value of the personal record currently displayed (issue #56), so a data
+     * update that strictly beats it can be celebrated. Null until a record has
+     * been rendered — the first render only records, it never announces.
+     */
+    private lastRecordValue: number | null = null
     private gridEl: HTMLElement | null = null
     private scrollEl: HTMLElement | null = null
     private streaksEl: HTMLElement | null = null
@@ -161,6 +174,9 @@ export class HeatmapVisualization extends BaseVisualization {
         this.streaksEl = heatmapEl.createDiv({ cls: 'lt-heatmap-streaks' })
         this.renderStreakStats()
 
+        // Personal record chip (issue #56) — first render never announces
+        this.renderRecordInfo(data, false)
+
         // Scroll horizontally to the end so the freshest data is visible.
         // Defer to next frame so the browser has computed layout/scrollWidth.
         this.scrollToEnd(scrollEl)
@@ -250,6 +266,9 @@ export class HeatmapVisualization extends BaseVisualization {
 
         // Refresh streak stats (cells changed, so streaks may have too)
         this.renderStreakStats()
+
+        // A data update can set a new personal record (issue #56)
+        this.renderRecordInfo(data, true)
     }
 
     /**
@@ -452,6 +471,41 @@ export class HeatmapVisualization extends BaseVisualization {
         this.streaksEl.createSpan({
             cls: 'lt-heatmap-streaks-item',
             text: `Active: ${activeCount}`
+        })
+    }
+
+    /**
+     * Render the personal record chip in the streak row and, on updates,
+     * celebrate a strict improvement with a notice (issue #56). Only shown for
+     * properties with a polarity — the plugin cannot call a value a "best"
+     * without knowing which direction is good. Independent of the streak
+     * toggle: the row element always exists.
+     */
+    private renderRecordInfo(data: VisualizationDataPoint[], mayAnnounce: boolean): void {
+        if (!this.streaksEl) return
+
+        this.streaksEl.querySelector('.lt-record-item')?.remove()
+
+        const polarity = this.heatmapConfig.polarity
+        const record = computeRecord(data, polarity)
+        if (!record) {
+            this.lastRecordValue = null
+            return
+        }
+
+        if (
+            mayAnnounce &&
+            isRecordImprovement(this.lastRecordValue, record, polarity) &&
+            shouldAnnounceRecord(this.propertyId, record.value)
+        ) {
+            new Notice(`🏆 New record! ${this.displayName}: ${formatRecordValue(record.value)}`)
+        }
+        this.lastRecordValue = record.value
+
+        const dateSuffix = record.date ? ` (${formatDate(record.date, 'MMM d, yyyy')})` : ''
+        this.streaksEl.createSpan({
+            cls: 'lt-heatmap-streaks-item lt-record-item',
+            text: `🏆 Record: ${formatRecordValue(record.value)}${dateSuffix}`
         })
     }
 

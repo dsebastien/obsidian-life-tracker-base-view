@@ -300,6 +300,14 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Color is never the only channel: the arrow glyph (↑/↓/→) and the wording ("improving" / "worsening" in the tooltip and trend row) carry the same meaning
 - Overlay charts combine several properties, so they have no single polarity and stay neutral
 
+## Personal Records
+
+- A personal record (issue #56) is the best **raw entry value** ever recorded for a property — never a period aggregate: "longest meditation: 30 min" is a single session, not a daily average
+- Polarity is the opt-in and decides the direction: `higher-is-better` records the maximum, `lower-is-better` the minimum, and `neutral` (or no definition) shows nothing, per the no-judgement rule
+- Ties keep the earliest entry: a record is set by whoever reached it first
+- Shown as a "🏆 Record: value (date)" chip on single-dataset cartesian charts (in the trend row, independent of the trend toggle) and on heatmaps (in the streak row, independent of the streak toggle)
+- A "🏆 New record!" notice fires when a data update strictly beats the record displayed earlier in the session. The first render never announces — reopening a view must stay silent — and one property + value announces at most once across all visualizations showing it
+
 ## Visualization Export
 
 - CSV export serializes exactly what the visualization displays (aggregated values), not raw frontmatter

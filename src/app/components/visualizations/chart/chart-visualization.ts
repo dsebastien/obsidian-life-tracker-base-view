@@ -37,6 +37,14 @@ import {
     computeTrend
 } from '../../../services/chart-aggregation.utils'
 import { buildCartesianReferenceLines } from './reference-lines.utils'
+import {
+    computeRecord,
+    formatRecordValue,
+    isRecordImprovement,
+    shouldAnnounceRecord
+} from '../../../services/record.utils'
+import { Notice } from 'obsidian'
+import { format as formatDate } from 'date-fns'
 
 /**
  * Chart.js-based visualization for line and bar charts
@@ -56,6 +64,12 @@ export class ChartVisualization extends BaseVisualization {
     private bubbleChartData: BubbleChartData | null = null
     private chartContainer: HTMLElement | null = null
     private trendStatsEl: HTMLElement | null = null
+    /**
+     * Value of the personal record currently displayed (issue #56), so a data
+     * update that strictly beats it can be celebrated. Null until a record has
+     * been rendered — the first render only records, it never announces.
+     */
+    private lastRecordValue: number | null = null
     /**
      * Per-period values kept aside when a running total replaces the plotted
      * series, so the trend row still describes the rate (issue #142). Null
@@ -227,6 +241,9 @@ export class ChartVisualization extends BaseVisualization {
         // Trend arrow in the title + trend row below the chart (issue #101)
         this.trendStatsEl = this.containerEl.createDiv({ cls: 'lt-chart-trend' })
         this.renderTrendInfo()
+
+        // Personal record chip (issue #56) — first render never announces
+        this.renderRecordInfo(data, false)
 
         // Initialize chart (async, errors handled internally)
         void this.initChart()
@@ -751,6 +768,47 @@ export class ChartVisualization extends BaseVisualization {
 
         // Trend may have changed with the data (issue #101)
         this.renderTrendInfo()
+
+        // A data update can set a new personal record (issue #56)
+        this.renderRecordInfo(data, true)
+    }
+
+    /**
+     * Render the personal record chip in the trend row and, on updates,
+     * celebrate a strict improvement with a notice (issue #56). Only shown on
+     * single-dataset cartesian charts for properties with a polarity — the
+     * plugin cannot call a value a "best" without knowing which direction is
+     * good.
+     */
+    private renderRecordInfo(data: VisualizationDataPoint[], mayAnnounce: boolean): void {
+        if (!this.trendStatsEl || !this.isCartesianType()) return
+
+        this.trendStatsEl.querySelector('.lt-record-item')?.remove()
+
+        const sources = (this.chartData?.datasets ?? []).filter((d) => !d.isMovingAverage)
+        if (sources.length !== 1) return
+
+        const polarity = this.chartConfig.polarity
+        const record = computeRecord(data, polarity)
+        if (!record) {
+            this.lastRecordValue = null
+            return
+        }
+
+        if (
+            mayAnnounce &&
+            isRecordImprovement(this.lastRecordValue, record, polarity) &&
+            shouldAnnounceRecord(this.propertyId, record.value)
+        ) {
+            new Notice(`🏆 New record! ${this.displayName}: ${formatRecordValue(record.value)}`)
+        }
+        this.lastRecordValue = record.value
+
+        const dateSuffix = record.date ? ` (${formatDate(record.date, 'MMM d, yyyy')})` : ''
+        this.trendStatsEl.createSpan({
+            cls: 'lt-chart-trend-item lt-record-item',
+            text: `🏆 Record: ${formatRecordValue(record.value)}${dateSuffix}`
+        })
     }
 
     /**
