@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.22.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.21.4...2.22.0) (2026-08-19)
+
+### Features
+
+* **plugin:** add a high contrast mode ([f65d6d4](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/f65d6d4de8499e5ea2a0979abff0b38b0a81f2ea)), closes [#137](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/137)
+* **plugin:** add goals, targets and a progress ring ([703df96](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/703df968fd3879b443f3a4c52d625ac9cf3f7eb4)), closes [#6](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/6) [#126](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/126)
+* **plugin:** color progress rings by the goal's direction ([f7aad6b](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/f7aad6b08a02d39cf3c4d7235a27620b1b023b88))
+
+### Bug Fixes
+
+* **plugin:** hide the drag handle on a maximized card ([4f80f5f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4f80f5f978dcca905ac050b8e759c30141346301))
+* **plugin:** inspect on first tap, open on second ([a678905](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a67890538a8749850b833fc391f14ba05ccb2dbc)), closes [#154](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/154)
+* **plugin:** scope filename date patterns to their folder ([9ddfb91](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/9ddfb91529b27a89364f22fda01c879acf4d3673)), closes [#152](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/152)
+* **plugin:** span heatmaps over the whole selected period ([acb8b96](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/acb8b968e853b10888a3f6933b0cdd3e8daf1f4f)), closes [#153](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/153)
+* **plugin:** treat a missing measurement as unknown, not zero ([1d2b737](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1d2b737837f54ca027a28014c11a49698e8735ea))
+
 ## [2.21.4](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.21.3...2.21.4) (2026-08-12)
 
 ### Bug Fixes
@@ -421,6 +437,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

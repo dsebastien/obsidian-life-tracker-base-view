@@ -1,5 +1,21 @@
 # Release Notes
 
+## 2.22.0 (2026-08-19)
+
+### Features
+
+- **plugin:** add a high contrast mode
+- **plugin:** add goals, targets and a progress ring [#126](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/126)
+- **plugin:** color progress rings by the goal's direction
+
+### Bug Fixes
+
+- **plugin:** hide the drag handle on a maximized card
+- **plugin:** inspect on first tap, open on second
+- **plugin:** scope filename date patterns to their folder
+- **plugin:** span heatmaps over the whole selected period
+- **plugin:** treat a missing measurement as unknown, not zero
+
 ## 2.21.4 (2026-08-12)
 
 ### Bug Fixes
