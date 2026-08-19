@@ -34,6 +34,7 @@ import {
     type PropertyDefinition
 } from '../types'
 import type { OverlayPropertyData } from '../services/chart-aggregation.utils'
+import { aggregateForRangeChart } from '../services/range-aggregation.utils'
 import { DateAnchorService } from '../services/date-anchor.service'
 import {
     DataAggregationService,
@@ -1249,13 +1250,27 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             getEnumConfig(this.cfg, 'granularity', TIME_GRANULARITY_OPTIONS) ??
             TimeGranularity.Daily
 
+        // Range charts read exactly two properties: start and end (issue #81)
+        const isRangeChart = overlayConfig.visualizationType === VisualizationType.RangeChart
+        const rangeChartData =
+            isRangeChart && propertiesData.length >= 2
+                ? aggregateForRangeChart(
+                      propertiesData[0]!,
+                      propertiesData[1]!,
+                      overlayConfig.displayName,
+                      granularity
+                  )
+                : null
+
         // Aggregate data for the overlay chart
-        const chartData = this.aggregationService.aggregateForOverlayChart(
-            propertiesData,
-            overlayConfig.displayName,
-            granularity,
-            overlayConfig.aggregationMethod
-        )
+        const chartData = isRangeChart
+            ? null
+            : this.aggregationService.aggregateForOverlayChart(
+                  propertiesData,
+                  overlayConfig.displayName,
+                  granularity,
+                  overlayConfig.aggregationMethod
+              )
 
         // Create the card element
         const cardEl = this.gridEl.createDiv({
@@ -1292,8 +1307,10 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             this.cfg
         ) as ChartConfig
 
-        // Enable legend for overlay charts (show property names)
-        chartConfig.showLegend = true
+        // Enable legend for overlay charts (show property names). A range
+        // chart has one dataset whose start/end names live in the tooltip, so
+        // its legend stays off (issue #81)
+        chartConfig.showLegend = !isRangeChart
 
         // Create chart visualization with overlay reference lines
         const visualization = new ChartVisualization(
@@ -1319,7 +1336,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         visualization.setAnimationDuration(this.plugin.settings.animationDuration)
 
         // Render with the pre-aggregated chart data
-        visualization.renderChartData(chartData)
+        if (rangeChartData) {
+            visualization.renderRangeChartData(rangeChartData)
+        } else if (chartData) {
+            visualization.renderChartData(chartData)
+        }
 
         // Attach the drag handle AFTER render — renderChartData calls
         // `this.containerEl.empty()` internally and would wipe the handle if

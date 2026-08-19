@@ -3472,6 +3472,11 @@
         @apply flex items-center gap-3 mb-4;
     }
 
+    .lt-property-selection-hint {
+        @apply text-xs mt-1;
+        color: var(--text-muted);
+    }
+
     .lt-property-selection-label {
         @apply text-sm font-medium w-24 shrink-0;
         color: var(--text-normal);

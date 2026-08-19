@@ -172,6 +172,19 @@ export function getVisualizationConfig(
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
+        case VisualizationType.RangeChart:
+            // Range charts render as Chart.js floating bars (issue #81); the
+            // per-period aggregation options do not apply
+            return {
+                ...baseConfig,
+                chartType: 'bar',
+                showLegend: getBoolConfig(getConfig, 'chartShowLegend') ?? false,
+                showGrid: getBoolConfig(getConfig, 'chartShowGrid') ?? true,
+                tension: 0,
+                scale,
+                colorScheme
+            } as ChartConfig
+
         case VisualizationType.PieChart:
         case VisualizationType.DoughnutChart:
         case VisualizationType.RadarChart:
@@ -248,6 +261,7 @@ export function mapVisualizationTypeToChartType(
         case VisualizationType.AreaChart:
             return 'line'
         case VisualizationType.BarChart:
+        case VisualizationType.RangeChart:
             return 'bar'
         case VisualizationType.PieChart:
             return 'pie'

@@ -361,6 +361,7 @@ export const MOVING_AVERAGE_PERIOD_OPTIONS = [7, 14, 30]
  * image (issue #102). Heatmap, tag cloud and timeline are DOM-based.
  */
 export const IMAGE_EXPORT_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.RangeChart,
     VisualizationType.LineChart,
     VisualizationType.BarChart,
     VisualizationType.AreaChart,
@@ -435,8 +436,23 @@ export type OverlayConfigMap = Record<string, OverlayVisualizationConfig>
 export const OVERLAY_SUPPORTED_TYPES: VisualizationType[] = [
     VisualizationType.LineChart,
     VisualizationType.BarChart,
-    VisualizationType.AreaChart
+    VisualizationType.AreaChart,
+    VisualizationType.RangeChart
 ]
+
+/**
+ * Visualization types that only exist as overlays (issue #81): they combine
+ * several properties, so a single-property card can never render them. Kept
+ * out of the single-property type pickers and the preset dropdown.
+ */
+export const OVERLAY_ONLY_TYPES: VisualizationType[] = [VisualizationType.RangeChart]
+
+/**
+ * Check if a visualization type can only be created as an overlay
+ */
+export function isOverlayOnly(vizType: VisualizationType): boolean {
+    return OVERLAY_ONLY_TYPES.includes(vizType)
+}
 
 /**
  * Check if a visualization type supports overlay mode

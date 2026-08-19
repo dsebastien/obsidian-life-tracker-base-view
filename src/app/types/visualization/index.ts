@@ -10,6 +10,7 @@ export type {
     HeatmapCell,
     StreakStats,
     ChartData,
+    RangeChartData,
     ChartDataset,
     PieChartData,
     ScatterPoint,

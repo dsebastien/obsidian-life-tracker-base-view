@@ -3,8 +3,10 @@ import type {
     ChartConfig,
     ChartData,
     PieChartData,
+    RangeChartData,
     ScatterChartData,
     CartesianTooltipContext,
+    RangeTooltipContext,
     ChartClickElement,
     ChartDatasetConfig,
     ChartInstance,
@@ -25,6 +27,7 @@ import type { AnnotationOptions } from 'chartjs-plugin-annotation'
 import type { ReferenceLineSpec } from './reference-lines.utils'
 import { format } from 'date-fns'
 import { areAllValuesIntegers, formatMetricValue } from './chart-format.utils'
+import { formatHoursAsTime } from '../../../services/range-aggregation.utils'
 
 /** Format an epoch-ms x value as a compact date for scatter axis ticks / tooltips. */
 function formatTimestamp(ms: number): string {
@@ -498,6 +501,114 @@ export function initCartesianChart(
 /**
  * Initialize scatter chart
  */
+/**
+ * Initialize a range chart (issue #81): floating bars per period, spanning
+ * from a start property's value to an end property's value. In time mode the
+ * y-axis and tooltips read as clock times, wrapping past midnight.
+ */
+export function initRangeChart(
+    Chart: ChartClass,
+    ctx: CanvasRenderingContext2D,
+    data: RangeChartData,
+    chartConfig: ChartConfig,
+    onClick: (elements: ChartClickElement[]) => void
+): ChartInstance {
+    const colors = getChartColorScheme(chartConfig.colorScheme)
+    const color = colors[0] ?? '#8884d8'
+
+    const flatValues = data.bars.flatMap((bar) => (bar === null ? [] : bar))
+    const integersOnly = areAllValuesIntegers(flatValues)
+    const formatValue = (value: number): string =>
+        data.timeMode ? formatHoursAsTime(value) : formatMetricValue(value, integersOnly)
+
+    return new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.labels,
+            datasets: [
+                {
+                    label: data.displayName,
+                    // Chart.js floating bars: one [start, end] tuple per slot
+                    data: data.bars as unknown as number[],
+                    backgroundColor: getColorWithAlpha(color, 0.55),
+                    borderColor: color,
+                    borderWidth: 1.5,
+                    borderRadius: 3,
+                    borderSkipped: false
+                }
+            ]
+        },
+        options: {
+            animation: chartAnimation(),
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 60 // Extra space for last x-axis labels
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: chartConfig.showLegend
+                },
+                tooltip: {
+                    enabled: true,
+                    callbacks: {
+                        label: (context: RangeTooltipContext): string[] => {
+                            const raw = context.raw as [number, number] | null
+                            if (!raw) return []
+                            const [start, end] = raw
+                            return [
+                                `${data.startLabel}: ${formatValue(start)}`,
+                                `${data.endLabel}: ${formatValue(end)}`
+                            ]
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    offset: true,
+                    bounds: 'ticks',
+                    grid: {
+                        display: chartConfig.showGrid,
+                        offset: true
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                        autoSkipPadding: 10,
+                        includeBounds: true,
+                        align: 'center'
+                    }
+                },
+                y: {
+                    display: true,
+                    grid: {
+                        display: chartConfig.showGrid
+                    },
+                    ticks: {
+                        // Whole hours in time mode: "21:00", "22:00", ...
+                        ...(data.timeMode ? { stepSize: 1 } : {}),
+                        callback: (value): string => formatValue(Number(value))
+                    },
+                    ...(chartConfig.scale?.min != null ? { min: chartConfig.scale.min } : {}),
+                    ...(chartConfig.scale?.max != null ? { max: chartConfig.scale.max } : {})
+                }
+            },
+            onClick: (_event: unknown, elements: ChartClickElement[]) => {
+                onClick(elements)
+            }
+        }
+    })
+}
+
 export function initScatterChart(
     Chart: ChartClass,
     ctx: CanvasRenderingContext2D,

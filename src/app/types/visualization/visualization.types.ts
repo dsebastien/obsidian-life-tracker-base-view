@@ -108,6 +108,26 @@ export interface ChartData {
 }
 
 /**
+ * Aggregated data for a range chart (issue #81): one floating bar per period,
+ * spanning from a start property's value to an end property's value.
+ */
+export interface RangeChartData {
+    displayName: string
+    /** Display name of the property providing the bar's start */
+    startLabel: string
+    /** Display name of the property providing the bar's end */
+    endLabel: string
+    /** Period labels (x-axis) */
+    labels: string[]
+    /** [start, end] per period in axis units; null when either side is missing */
+    bars: ([number, number] | null)[]
+    /** Files backing each period (union of both properties' entries) */
+    filePaths: string[][]
+    /** Values are times of day: format the y-axis and tooltips as HH:mm */
+    timeMode: boolean
+}
+
+/**
  * Dataset for chart visualization
  */
 export interface ChartDataset {

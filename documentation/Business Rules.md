@@ -98,7 +98,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 ## Overlay Charts
 
 - Overlay visualizations require at least 2 properties
-- Only cartesian chart types support overlay mode: LineChart, BarChart, AreaChart
+- Only cartesian chart types support overlay mode: LineChart, BarChart, AreaChart — plus RangeChart, which exists ONLY as an overlay (issue #81)
 - Legends are always shown for overlay charts (to identify each property's line/bar)
 - When a property in an overlay is removed from Base, it is automatically removed from the overlay
 - If an overlay drops below 2 properties after cleanup, the overlay is deleted entirely
@@ -106,6 +106,17 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Overlays can optionally hide individual property visualizations via `hideIndividualVisualizations` setting
 - When a property is in multiple overlays, it is hidden if ANY overlay has `hideIndividualVisualizations` enabled
 - Data points are still cached for hidden properties (needed for overlay rendering)
+
+## Range Charts
+
+- A range chart (issue #81) is an overlay-only type drawing one floating bar per period from a **start** property's value to an **end** property's value (e.g. "To Bed" → "Wake Up"). It requires exactly 2 properties; start and end are positional — the first selected property is the start
+- Overlay-only types never appear in single-property type pickers or the preset dropdown: a single property cannot render them
+- Value parsing per entry: a bare time of day ("23:30"), the time part of an ISO datetime, then the plain numeric value. The raw string is read before the numeric value because a text property with a value mapping coerces unmapped strings to 0
+- If any value is a time of day, the whole chart runs in time mode: y-axis ticks and tooltips read as HH:mm, wrapping past midnight
+- Midnight handling in time mode: an end earlier than its start crosses midnight and is pushed into the next day (+24h). When the starts themselves spread over more than half a day, the small-hours starts are pushed into the next day too, so all bars cluster on one continuous band
+- A period missing either side yields no bar, never a made-up value; a period with several entries uses the first parseable value per side
+- Per-period aggregation options (average/sum), reference lines, targets, and legends do not apply to range charts
+- CSV export writes the formatted clock times in time mode — it serializes what the chart displays
 
 ## Card Pinning
 

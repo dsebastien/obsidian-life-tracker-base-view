@@ -5,6 +5,7 @@ export type {
     ChartInstance,
     ChartClickElement,
     CartesianTooltipContext,
+    RangeTooltipContext,
     PieTooltipContext,
     PointTooltipContext
 } from './chart'
@@ -29,6 +30,7 @@ export type {
     HeatmapCell,
     StreakStats,
     ChartData,
+    RangeChartData,
     ChartDataset,
     PieChartData,
     ScatterPoint,
@@ -86,7 +88,9 @@ export {
     X_AXIS_SOURCES,
     DEFAULT_X_AXIS_SOURCE,
     X_AXIS_SOURCE_SUPPORTED_TYPES,
-    supportsXAxisSource
+    supportsXAxisSource,
+    OVERLAY_ONLY_TYPES,
+    isOverlayOnly
 } from './column'
 export type {
     ScaleConfig,

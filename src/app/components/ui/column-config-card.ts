@@ -1,6 +1,7 @@
 import { setIcon } from 'obsidian'
 import {
     CONFIG_CARD_VISUALIZATION_OPTIONS,
+    isOverlayOnly,
     SCALE_PRESETS,
     supportsScale,
     type ScaleConfig,
@@ -32,6 +33,10 @@ export function createColumnConfigCard(
     const scaleSection = card.createDiv({ cls: 'lt-config-scale-section lt-hidden' })
 
     for (const option of CONFIG_CARD_VISUALIZATION_OPTIONS) {
+        // Overlay-only types combine several properties (issue #81); a
+        // single-property card can never render them
+        if (isOverlayOnly(option.type)) continue
+
         const optionBtn = optionsGrid.createDiv({ cls: 'lt-config-option' })
         optionBtn.setAttribute('role', 'button')
         optionBtn.setAttribute('tabindex', '0')

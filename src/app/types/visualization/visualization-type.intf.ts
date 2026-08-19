@@ -15,5 +15,7 @@ export enum VisualizationType {
     TagCloud = 'tag-cloud',
     /** Circular progress toward a goal target (issue #126) */
     Progress = 'progress',
-    Timeline = 'timeline'
+    Timeline = 'timeline',
+    /** Start-to-end span per period from two properties (issue #81) */
+    RangeChart = 'range-chart'
 }

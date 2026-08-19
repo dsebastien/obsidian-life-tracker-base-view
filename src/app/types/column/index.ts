@@ -25,7 +25,9 @@ export {
     X_AXIS_SOURCES,
     DEFAULT_X_AXIS_SOURCE,
     X_AXIS_SOURCE_SUPPORTED_TYPES,
-    supportsXAxisSource
+    supportsXAxisSource,
+    OVERLAY_ONLY_TYPES,
+    isOverlayOnly
 } from './column-config.types'
 export type {
     ScaleConfig,

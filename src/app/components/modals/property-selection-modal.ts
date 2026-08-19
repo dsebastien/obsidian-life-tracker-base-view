@@ -37,6 +37,7 @@ export class PropertySelectionModal extends Modal {
     private propertyListEl: HTMLElement | null = null
     private confirmBtn: HTMLButtonElement | null = null
     private nameInputEl: HTMLInputElement | null = null
+    private typeHintEl: HTMLElement | null = null
 
     constructor(
         plugin: LifeTrackerPlugin,
@@ -130,7 +131,8 @@ export class PropertySelectionModal extends Modal {
         const options = [
             { value: VisualizationType.LineChart, label: 'Line chart' },
             { value: VisualizationType.BarChart, label: 'Bar chart' },
-            { value: VisualizationType.AreaChart, label: 'Area chart' }
+            { value: VisualizationType.AreaChart, label: 'Area chart' },
+            { value: VisualizationType.RangeChart, label: 'Range chart (start → end)' }
         ]
 
         for (const opt of options) {
@@ -143,9 +145,24 @@ export class PropertySelectionModal extends Modal {
             }
         }
 
+        // A range chart reads its two properties positionally (issue #81)
+        this.typeHintEl = typeRow.createDiv({ cls: 'lt-property-selection-hint' })
+        this.updateTypeHint()
+
         select.addEventListener('change', () => {
             this.visualizationType = select.value as VisualizationType
+            this.updateTypeHint()
+            this.updateConfirmButton()
         })
+    }
+
+    private updateTypeHint(): void {
+        if (!this.typeHintEl) return
+        this.typeHintEl.setText(
+            this.visualizationType === VisualizationType.RangeChart
+                ? 'Pick exactly 2 properties: the first selected is the start, the second the end (e.g. To Bed → Wake Up).'
+                : ''
+        )
     }
 
     private renderNameInput(): void {
@@ -185,13 +202,16 @@ export class PropertySelectionModal extends Modal {
     }
 
     private getGeneratedName(): string {
-        const selectedNames: string[] = []
-        for (const prop of this.availableProperties) {
-            if (this.selectedPropertyIds.has(prop.id)) {
-                selectedNames.push(prop.displayName)
-            }
-        }
-        return selectedNames.join(' vs ')
+        // Keep the user's selection order: for a range chart the first pick is
+        // the start and the second the end (issue #81)
+        const nameById = new Map(
+            this.availableProperties.map((prop) => [prop.id, prop.displayName])
+        )
+        const selectedNames = [...this.selectedPropertyIds]
+            .map((id) => nameById.get(id))
+            .filter((name): name is string => name !== undefined)
+        const separator = this.visualizationType === VisualizationType.RangeChart ? ' → ' : ' vs '
+        return selectedNames.join(separator)
     }
 
     private renderPropertyList(): void {
@@ -261,6 +281,18 @@ export class PropertySelectionModal extends Modal {
         if (!this.confirmBtn) return
 
         const count = this.selectedPropertyIds.size
+
+        // A range chart is exactly start + end (issue #81); other overlay
+        // types accept any 2+
+        if (this.visualizationType === VisualizationType.RangeChart) {
+            this.confirmBtn.disabled = count !== 2
+            this.confirmBtn.textContent =
+                count === 2
+                    ? 'Create range chart'
+                    : 'Range chart needs exactly 2 properties (start, end)'
+            return
+        }
+
         this.confirmBtn.disabled = count < 2
         this.confirmBtn.textContent =
             count < 2 ? `Select at least 2 properties` : `Create overlay (${count} properties)`
@@ -268,6 +300,11 @@ export class PropertySelectionModal extends Modal {
 
     private handleConfirm(): void {
         if (this.selectedPropertyIds.size < 2) return
+        if (
+            this.visualizationType === VisualizationType.RangeChart &&
+            this.selectedPropertyIds.size !== 2
+        )
+            return
 
         const result: PropertySelectionResult = {
             propertyIds: Array.from(this.selectedPropertyIds),

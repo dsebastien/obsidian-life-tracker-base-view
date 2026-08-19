@@ -7,6 +7,7 @@ import type {
     ChartData,
     ExportTable,
     PieChartData,
+    RangeChartData,
     ReferenceLineConfig,
     ScatterChartData,
     VisualizationDataPoint
@@ -28,6 +29,7 @@ import {
     initCartesianChart,
     initPieChart,
     initRadarChart,
+    initRangeChart,
     initScatterChart,
     referenceLineBounds
 } from './chart-initializers'
@@ -43,6 +45,7 @@ import {
     isRecordImprovement,
     shouldAnnounceRecord
 } from '../../../services/record.utils'
+import { formatHoursAsTime } from '../../../services/range-aggregation.utils'
 import { Notice } from 'obsidian'
 import { format as formatDate } from 'date-fns'
 
@@ -62,6 +65,8 @@ export class ChartVisualization extends BaseVisualization {
     private pieChartData: PieChartData | null = null
     private scatterChartData: ScatterChartData | null = null
     private bubbleChartData: BubbleChartData | null = null
+    /** Pre-aggregated range chart data (issue #81); overlays only */
+    private rangeChartData: RangeChartData | null = null
     private chartContainer: HTMLElement | null = null
     private trendStatsEl: HTMLElement | null = null
     /**
@@ -146,6 +151,7 @@ export class ChartVisualization extends BaseVisualization {
         this.pieChartData = null
         this.scatterChartData = null
         this.bubbleChartData = null
+        this.rangeChartData = null
 
         // Aggregate data based on chart type (use shared service)
         if (this.isPieType()) {
@@ -410,6 +416,7 @@ export class ChartVisualization extends BaseVisualization {
         this.pieChartData = null
         this.scatterChartData = null
         this.bubbleChartData = null
+        this.rangeChartData = null
 
         // Use the provided chart data directly
         this.chartData = data
@@ -438,18 +445,69 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
+     * Render a range chart with pre-aggregated data (issue #81). Range charts
+     * only exist as overlays, so like renderChartData this bypasses the
+     * per-property aggregation entirely.
+     */
+    renderRangeChartData(data: RangeChartData): void {
+        // A previous chart (if any) is bound to a canvas this render is
+        // about to remove — destroy it so its listeners die with it
+        this.disposeChart()
+
+        // Reset all data
+        this.chartData = null
+        this.pieChartData = null
+        this.scatterChartData = null
+        this.bubbleChartData = null
+        this.rangeChartData = data
+
+        const hasAnyBar = data.bars.some((bar) => bar !== null)
+        if (data.labels.length === 0 || !hasAnyBar) {
+            this.showEmptyState(
+                `No periods with both "${data.startLabel}" and "${data.endLabel}" found`
+            )
+            return
+        }
+
+        // Clear container
+        this.containerEl.empty()
+
+        // Create section header
+        this.createSectionHeader(this.displayName)
+
+        // Create chart container (auto-height, no scrolling)
+        this.chartContainer = this.containerEl.createDiv({ cls: 'lt-chart' })
+
+        // The canvas is sized by `.lt-chart`, which is relatively positioned and
+        // dedicated to it; the canvas itself is out of flow (issue #144).
+        this.canvasEl = this.chartContainer.createEl('canvas', { cls: 'lt-chart-canvas' })
+        this.touchNavigation.observe(this.canvasEl)
+
+        // Initialize chart (async, errors handled internally)
+        void this.initChart()
+    }
+
+    /**
      * Initialize Chart.js
      */
     private async initChart(): Promise<void> {
         const canvas = this.canvasEl
         if (!canvas) return
 
-        // Check we have appropriate data for the chart type
-        if (this.isPieType() && !this.pieChartData) return
-        if (this.isScatterType() && !this.scatterChartData) return
-        if (this.isBubbleType() && !this.bubbleChartData) return
-        if (!this.isPieType() && !this.isScatterType() && !this.isBubbleType() && !this.chartData)
-            return
+        // Check we have appropriate data for the chart type. Range data is
+        // its own mode (issue #81): when present it wins outright
+        if (!this.rangeChartData) {
+            if (this.isPieType() && !this.pieChartData) return
+            if (this.isScatterType() && !this.scatterChartData) return
+            if (this.isBubbleType() && !this.bubbleChartData) return
+            if (
+                !this.isPieType() &&
+                !this.isScatterType() &&
+                !this.isBubbleType() &&
+                !this.chartData
+            )
+                return
+        }
 
         try {
             // Use ChartLoaderService for efficient loading (registers only once)
@@ -470,7 +528,15 @@ export class ChartVisualization extends BaseVisualization {
             if (!ctx) return
 
             // Build chart configuration based on type
-            if (this.isPieType() && this.pieChartData) {
+            if (this.rangeChartData) {
+                this.chart = initRangeChart(
+                    Chart,
+                    ctx,
+                    this.rangeChartData,
+                    this.chartConfig,
+                    (elements) => this.handleRangeChartClick(elements)
+                )
+            } else if (this.isPieType() && this.pieChartData) {
                 this.chart = initPieChart(
                     Chart,
                     ctx,
@@ -874,6 +940,23 @@ export class ChartVisualization extends BaseVisualization {
      * Tabular view of the currently rendered chart data (issue #102)
      */
     override getExportData(): ExportTable | null {
+        if (this.rangeChartData) {
+            const data = this.rangeChartData
+            const formatValue = (value: number): string | number =>
+                data.timeMode ? formatHoursAsTime(value) : value
+            return {
+                headers: ['Period', data.startLabel, data.endLabel],
+                rows: data.labels.map((label, i) => {
+                    const bar = data.bars[i]
+                    return [
+                        label,
+                        bar ? formatValue(bar[0]) : null,
+                        bar ? formatValue(bar[1]) : null
+                    ]
+                })
+            }
+        }
+
         if (this.pieChartData) {
             const data = this.pieChartData
             return {
@@ -1069,6 +1152,25 @@ export class ChartVisualization extends BaseVisualization {
         if (filePaths && filePaths.length > 0) {
             // On touch, the first tap only reveals the tooltip (issue #154)
             if (!this.touchNavigation.shouldNavigate(`${element.datasetIndex}:${element.index}`)) {
+                return
+            }
+            this.openFilePaths(filePaths)
+        }
+    }
+
+    /**
+     * Handle range chart click - open the period's files (issue #81)
+     */
+    private handleRangeChartClick(elements: ChartClickElement[]): void {
+        if (!this.rangeChartData || elements.length === 0) return
+
+        const element = elements[0]
+        if (!element) return
+
+        const filePaths = this.rangeChartData.filePaths[element.index]
+        if (filePaths && filePaths.length > 0) {
+            // On touch, the first tap only reveals the tooltip (issue #154)
+            if (!this.touchNavigation.shouldNavigate(`range:${element.index}`)) {
                 return
             }
             this.openFilePaths(filePaths)

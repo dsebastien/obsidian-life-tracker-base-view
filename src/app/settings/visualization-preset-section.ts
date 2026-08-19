@@ -7,6 +7,7 @@ import {
 import {
     VisualizationType,
     SETTINGS_TAB_VISUALIZATION_OPTIONS,
+    isOverlayOnly,
     SCALE_PRESETS_RECORD,
     supportsScale,
     supportsColorScheme,
@@ -155,7 +156,15 @@ export class VisualizationPresetSection {
         // Visualization type dropdown
         setting.addDropdown((dropdown) => {
             dropdown
-                .addOptions(SETTINGS_TAB_VISUALIZATION_OPTIONS)
+                // Presets are per property, so overlay-only types (issue #81)
+                // are not offered
+                .addOptions(
+                    Object.fromEntries(
+                        Object.entries(SETTINGS_TAB_VISUALIZATION_OPTIONS).filter(
+                            ([value]) => !isOverlayOnly(value as VisualizationType)
+                        )
+                    )
+                )
                 .setValue(preset.visualizationType)
                 .onChange(async (value) => {
                     await this.plugin.updatePreset(preset.id, (p) => {

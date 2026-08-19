@@ -36,7 +36,8 @@ export const CONTEXT_MENU_VISUALIZATION_OPTIONS: ContextMenuVisualizationOption[
     { type: VisualizationType.BubbleChart, label: 'Bubble chart', icon: 'circle-dot' },
     { type: VisualizationType.TagCloud, label: 'Cloud', icon: 'cloud' },
     { type: VisualizationType.Timeline, label: 'Timeline', icon: 'calendar' },
-    { type: VisualizationType.Progress, label: 'Progress ring', icon: 'gauge' }
+    { type: VisualizationType.Progress, label: 'Progress ring', icon: 'gauge' },
+    { type: VisualizationType.RangeChart, label: 'Range chart', icon: 'candlestick-chart' }
 ]
 
 /**
@@ -121,6 +122,12 @@ export const CONFIG_CARD_VISUALIZATION_OPTIONS: ConfigCardVisualizationOption[] 
         label: 'Progress ring',
         icon: 'gauge',
         description: 'Progress toward a goal target'
+    },
+    {
+        type: VisualizationType.RangeChart,
+        label: 'Range chart',
+        icon: 'candlestick-chart',
+        description: 'Start-to-end span per period (two properties)'
     }
 ]
 
@@ -141,7 +148,8 @@ export const SETTINGS_TAB_VISUALIZATION_OPTIONS: Record<string, string> = {
     [VisualizationType.BubbleChart]: 'Bubble chart',
     [VisualizationType.TagCloud]: 'Cloud',
     [VisualizationType.Timeline]: 'Timeline',
-    [VisualizationType.Progress]: 'Progress ring'
+    [VisualizationType.Progress]: 'Progress ring',
+    [VisualizationType.RangeChart]: 'Range chart'
 }
 
 /**

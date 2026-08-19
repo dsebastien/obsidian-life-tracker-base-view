@@ -44,7 +44,8 @@ export interface OverlayEditCallbacks {
 const CHART_TYPE_OPTIONS = [
     { value: VisualizationType.LineChart, label: 'Line chart', icon: 'line-chart' },
     { value: VisualizationType.BarChart, label: 'Bar chart', icon: 'bar-chart-2' },
-    { value: VisualizationType.AreaChart, label: 'Area chart', icon: 'activity' }
+    { value: VisualizationType.AreaChart, label: 'Area chart', icon: 'activity' },
+    { value: VisualizationType.RangeChart, label: 'Range chart', icon: 'candlestick-chart' }
 ]
 
 /**
@@ -213,6 +214,8 @@ export class OverlayEditModal extends Modal {
             typeBtn.addEventListener('click', () => {
                 this.visualizationType = option.value
                 this.refreshChartTypeButtons(typeGrid)
+                // A range chart constrains the property count (issue #81)
+                this.updateSaveButton()
             })
         }
     }
@@ -243,6 +246,8 @@ export class OverlayEditModal extends Modal {
             typeBtn.addEventListener('click', () => {
                 this.visualizationType = option.value
                 this.refreshChartTypeButtons(container)
+                // A range chart constrains the property count (issue #81)
+                this.updateSaveButton()
             })
         }
     }
@@ -429,12 +434,20 @@ export class OverlayEditModal extends Modal {
     private updateSaveButton(): void {
         if (!this.saveBtn) return
 
-        const isValid = this.selectedPropertyIds.size >= 2 && this.displayName.trim().length > 0
+        // A range chart is exactly start + end (issue #81); other overlay
+        // types accept any 2+
+        const isRangeChart = this.visualizationType === VisualizationType.RangeChart
+        const propertyCountValid = isRangeChart
+            ? this.selectedPropertyIds.size === 2
+            : this.selectedPropertyIds.size >= 2
+        const isValid = propertyCountValid && this.displayName.trim().length > 0
         this.saveBtn.disabled = !isValid
 
         if (this.errorEl) {
-            if (this.selectedPropertyIds.size < 2) {
-                this.errorEl.textContent = 'Select at least 2 properties'
+            if (!propertyCountValid) {
+                this.errorEl.textContent = isRangeChart
+                    ? 'A range chart needs exactly 2 properties (start, end)'
+                    : 'Select at least 2 properties'
                 this.errorEl.classList.add('lt-overlay-edit-error--visible')
             } else if (this.displayName.trim().length === 0) {
                 this.errorEl.textContent = 'Display name is required'
@@ -530,6 +543,11 @@ export class OverlayEditModal extends Modal {
 
     private handleSave(): void {
         if (this.selectedPropertyIds.size < 2) return
+        if (
+            this.visualizationType === VisualizationType.RangeChart &&
+            this.selectedPropertyIds.size !== 2
+        )
+            return
         if (this.displayName.trim().length === 0) return
 
         // Build reference lines record

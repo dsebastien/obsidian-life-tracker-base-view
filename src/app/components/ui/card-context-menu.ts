@@ -2,6 +2,7 @@ import { setIcon } from 'obsidian'
 import {
     VisualizationType,
     CONTEXT_MENU_VISUALIZATION_OPTIONS,
+    isOverlayOnly,
     SCALE_PRESETS,
     supportsScale,
     supportsColorScheme,
@@ -777,6 +778,10 @@ export function showCardContextMenu(
 
     // Create type items
     for (const option of CONTEXT_MENU_VISUALIZATION_OPTIONS) {
+        // Overlay-only types combine several properties (issue #81); this
+        // menu configures a single property's visualization
+        if (isOverlayOnly(option.type)) continue
+
         const isSelected = option.type === selectedType
         const item = typeList.createDiv({
             cls: `lt-card-popover-type-item ${isSelected ? 'lt-card-popover-type-item--selected' : ''}`,
