@@ -6,6 +6,7 @@ import {
 } from './reference-lines.utils'
 import type { BasesPropertyId } from 'obsidian'
 import { TimeGranularity, type ChartConfig, type ChartDataset } from '../../../types'
+import { buildReferenceLineAnnotations, referenceLineBounds } from './chart-initializers'
 
 const baseConfig = {
     granularity: TimeGranularity.Daily,
@@ -128,5 +129,123 @@ describe('buildCartesianReferenceLines (issue #156)', () => {
 
         expect(lines).toHaveLength(1)
         expect(lines[0]!.label).toBe('Mood: 7')
+    })
+})
+
+describe('cumulative target under a running total (issue #158)', () => {
+    const target = {
+        enabled: true,
+        value: 50,
+        metric: 'sum',
+        period: TimeGranularity.Daily,
+        direction: 'at-least'
+    } as const
+
+    test('the target accumulates when its period matches the granularity', () => {
+        const lines = buildCartesianReferenceLines(
+            { ...baseConfig, runningTotal: true, target: { ...target } },
+            undefined,
+            []
+        )
+
+        expect(lines).toHaveLength(1)
+        expect(lines[0]!.cumulativePerPeriod).toBe(true)
+        expect(lines[0]!.label).toBe('Target: 50 per day (cumulative)')
+    })
+
+    test('a period-mismatched target is dropped rather than drawn wrong', () => {
+        const lines = buildCartesianReferenceLines(
+            {
+                ...baseConfig,
+                runningTotal: true,
+                target: { ...target, period: TimeGranularity.Weekly },
+                referenceLine: { enabled: true, value: 200 }
+            },
+            undefined,
+            []
+        )
+
+        // The static "per week" goal has no honest slope on a daily axis;
+        // the explicit reference line is untouched
+        expect(lines).toHaveLength(1)
+        expect(lines[0]!.label).toBe('Reference: 200')
+    })
+
+    test('without a running total the target stays a horizontal line', () => {
+        const lines = buildCartesianReferenceLines(
+            { ...baseConfig, target: { ...target } },
+            undefined,
+            []
+        )
+
+        expect(lines[0]!.cumulativePerPeriod).toBeUndefined()
+    })
+
+    test('a cumulative annotation slopes from value to value × periods', () => {
+        const lines = buildCartesianReferenceLines(
+            { ...baseConfig, runningTotal: true, target: { ...target } },
+            undefined,
+            []
+        )
+        const annotations = buildReferenceLineAnnotations(lines, 5)
+        const annotation = annotations['referenceLine0'] as unknown as Record<string, unknown>
+
+        expect(annotation['xMin']).toBe(0)
+        expect(annotation['xMax']).toBe(4)
+        expect(annotation['yMin']).toBe(50)
+        expect(annotation['yMax']).toBe(250)
+    })
+
+    test('a horizontal annotation keeps both y endpoints at the value', () => {
+        const lines = buildCartesianReferenceLines(
+            { ...baseConfig, referenceLine: { enabled: true, value: 75 } },
+            undefined,
+            []
+        )
+        const annotations = buildReferenceLineAnnotations(lines, 5)
+        const annotation = annotations['referenceLine0'] as unknown as Record<string, unknown>
+
+        expect(annotation['xMin']).toBeUndefined()
+        expect(annotation['yMin']).toBe(75)
+        expect(annotation['yMax']).toBe(75)
+    })
+
+    test('a single period degenerates to a horizontal line at the value', () => {
+        const lines = buildCartesianReferenceLines(
+            { ...baseConfig, runningTotal: true, target: { ...target } },
+            undefined,
+            []
+        )
+        const annotations = buildReferenceLineAnnotations(lines, 1)
+        const annotation = annotations['referenceLine0'] as unknown as Record<string, unknown>
+
+        expect(annotation['xMin']).toBeUndefined()
+        expect(annotation['yMin']).toBe(50)
+        expect(annotation['yMax']).toBe(50)
+    })
+
+    test('suggested bounds cover the cumulative end value', () => {
+        const lines = buildCartesianReferenceLines(
+            { ...baseConfig, runningTotal: true, target: { ...target } },
+            undefined,
+            []
+        )
+        const { suggestedMin, suggestedMax } = referenceLineBounds(lines, 10, baseConfig)
+
+        expect(suggestedMin).toBe(50)
+        expect(suggestedMax).toBe(500)
+    })
+
+    test('an explicit user scale still wins over suggested bounds', () => {
+        const config = { ...baseConfig, scale: { min: 0, max: 100 } } as ChartConfig
+        const lines = buildCartesianReferenceLines(
+            { ...config, runningTotal: true, target: { ...target } },
+            undefined,
+            []
+        )
+        const { suggestedMin, suggestedMax } = referenceLineBounds(lines, 10, config)
+
+        expect(suggestedMin).toBeUndefined()
+        expect(suggestedMax).toBeUndefined()
     })
 })

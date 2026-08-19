@@ -23,11 +23,13 @@ import {
 } from '../../../../utils'
 import type { ChartClickElement, ChartInstance } from './chart-types'
 import {
+    buildReferenceLineAnnotations,
     initBubbleChart,
     initCartesianChart,
     initPieChart,
     initRadarChart,
-    initScatterChart
+    initScatterChart,
+    referenceLineBounds
 } from './chart-initializers'
 import {
     computeMovingAverage,
@@ -716,6 +718,11 @@ export class ChartVisualization extends BaseVisualization {
             }
         }
 
+        // A cumulative target line depends on the period count (issue #158),
+        // so the annotations and the bounds that keep them visible must track
+        // the new labels rather than the ones the chart was built with
+        this.refreshReferenceLines(newChartData)
+
         // Clear animation state since data changed
         this.originalData = []
 
@@ -723,6 +730,37 @@ export class ChartVisualization extends BaseVisualization {
 
         // Trend may have changed with the data (issue #101)
         this.renderTrendInfo()
+    }
+
+    /**
+     * Rebuild the reference line annotations and suggested y-bounds against
+     * the current labels. Horizontal lines are unaffected by the label count,
+     * but a cumulative target line (issue #158) ends at value × periods.
+     */
+    private refreshReferenceLines(chartData: ChartData): void {
+        if (!this.chart || !this.isCartesianType()) return
+
+        const annotationOptions = this.chart.options.plugins?.annotation
+        if (!annotationOptions) return
+
+        const referenceLines = buildCartesianReferenceLines(
+            this.chartConfig,
+            this.overlayReferenceLines,
+            chartData.datasets
+        )
+        const labelCount = chartData.labels.length
+        annotationOptions.annotations = buildReferenceLineAnnotations(referenceLines, labelCount)
+
+        const yScale = this.chart.options.scales?.['y']
+        if (yScale) {
+            const { suggestedMin, suggestedMax } = referenceLineBounds(
+                referenceLines,
+                labelCount,
+                this.chartConfig
+            )
+            yScale.suggestedMin = suggestedMin
+            yScale.suggestedMax = suggestedMax
+        }
     }
 
     /**

@@ -254,6 +254,89 @@ export function initRadarChart(
 }
 
 /**
+ * The y-value a reference line reaches by the chart's last period. Horizontal
+ * lines sit at their value; a cumulative target line (issue #158) climbs to
+ * `value × periods`.
+ */
+function referenceLineEndValue(line: ReferenceLineSpec, labelCount: number): number {
+    return line.cumulativePerPeriod ? line.value * Math.max(1, labelCount) : line.value
+}
+
+/**
+ * suggestedMin/Max so every reference line stays visible; an explicit user
+ * scale still wins (min/max override suggested bounds).
+ */
+export function referenceLineBounds(
+    referenceLines: ReferenceLineSpec[] | undefined,
+    labelCount: number,
+    chartConfig: ChartConfig
+): { suggestedMin: number | undefined; suggestedMax: number | undefined } {
+    const startValues = (referenceLines ?? []).map((line) => line.value)
+    const endValues = (referenceLines ?? []).map((line) => referenceLineEndValue(line, labelCount))
+    return {
+        suggestedMin:
+            startValues.length > 0 && chartConfig.scale?.min == null
+                ? Math.min(...startValues, ...endValues)
+                : undefined,
+        suggestedMax:
+            endValues.length > 0 && chartConfig.scale?.max == null
+                ? Math.max(...startValues, ...endValues)
+                : undefined
+    }
+}
+
+/**
+ * Build the annotation set for a cartesian chart's reference lines.
+ *
+ * Horizontal lines span the full width at their value. A cumulative target
+ * line (issue #158) slopes from `value` at the first period to
+ * `value × periods` at the last, matching how a running total accrues —
+ * exported so the incremental update path can rebuild it when the period
+ * count changes.
+ */
+export function buildReferenceLineAnnotations(
+    referenceLines: ReferenceLineSpec[] | undefined,
+    labelCount: number
+): Record<string, AnnotationOptions> {
+    const annotations: Record<string, AnnotationOptions> = {}
+
+    if (referenceLines && referenceLines.length > 0) {
+        referenceLines.forEach((line, index) => {
+            // Anchor each label per its spec: reference labels sit at the
+            // right edge, the goal target's at the left, so two lines at the
+            // same value stay individually readable (issue #156)
+            const position = line.labelPosition ?? 'end'
+            const isSloped = line.cumulativePerPeriod === true && labelCount > 1
+            annotations[`referenceLine${index}`] = {
+                type: 'line',
+                // A sloped line needs explicit x endpoints (category indices);
+                // a horizontal one spans the chart on its own
+                ...(isSloped ? { xMin: 0, xMax: labelCount - 1 } : {}),
+                yMin: line.value,
+                yMax: referenceLineEndValue(line, labelCount),
+                borderColor: line.color,
+                borderWidth: 2,
+                borderDash: line.dash ?? [5, 5],
+                label: {
+                    display: true,
+                    content: line.label,
+                    position,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    color: 'white',
+                    font: { size: 11, weight: 'normal' },
+                    padding: 4,
+                    borderRadius: 3,
+                    xAdjust: position === 'start' ? 10 : -10,
+                    yAdjust: 0
+                }
+            }
+        })
+    }
+
+    return annotations
+}
+
+/**
  * Initialize cartesian chart (line, bar, area)
  */
 export function initCartesianChart(
@@ -315,51 +398,20 @@ export function initCartesianChart(
     // Map chart type (area uses line type)
     const chartJsType = chartConfig.chartType === 'line' ? 'line' : chartConfig.chartType
 
+    const labelCount = chartData.labels.length
+
     // Reference lines outside the data range were invisible: the annotation
     // plugin does not extend the scale. suggestedMin/Max widen the auto-fit
     // range to include every reference line value; an explicit user scale
     // still wins (min/max below override suggested bounds).
-    const referenceValues = (referenceLines ?? []).map((line) => line.value)
-    const suggestedMin =
-        referenceValues.length > 0 && chartConfig.scale?.min == null
-            ? Math.min(...referenceValues)
-            : undefined
-    const suggestedMax =
-        referenceValues.length > 0 && chartConfig.scale?.max == null
-            ? Math.max(...referenceValues)
-            : undefined
+    const { suggestedMin, suggestedMax } = referenceLineBounds(
+        referenceLines,
+        labelCount,
+        chartConfig
+    )
 
     // Build annotation configuration if reference lines exist
-    const annotations: Record<string, AnnotationOptions> = {}
-
-    if (referenceLines && referenceLines.length > 0) {
-        referenceLines.forEach((line, index) => {
-            // Anchor each label per its spec: reference labels sit at the
-            // right edge, the goal target's at the left, so two lines at the
-            // same value stay individually readable (issue #156)
-            const position = line.labelPosition ?? 'end'
-            annotations[`referenceLine${index}`] = {
-                type: 'line',
-                yMin: line.value,
-                yMax: line.value,
-                borderColor: line.color,
-                borderWidth: 2,
-                borderDash: line.dash ?? [5, 5],
-                label: {
-                    display: true,
-                    content: line.label,
-                    position,
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    color: 'white',
-                    font: { size: 11, weight: 'normal' },
-                    padding: 4,
-                    borderRadius: 3,
-                    xAdjust: position === 'start' ? 10 : -10,
-                    yAdjust: 0
-                }
-            }
-        })
-    }
+    const annotations = buildReferenceLineAnnotations(referenceLines, labelCount)
 
     return new Chart(ctx, {
         type: chartJsType as ChartType,

@@ -1,6 +1,7 @@
 import type { BasesPropertyId } from 'obsidian'
 import type { ChartConfig, ChartDataset, ReferenceLineConfig } from '../../../types'
 import { getChartColorScheme } from '../../../../utils'
+import { periodLabel } from '../../../services/progress-aggregation.utils'
 
 /**
  * One horizontal line to draw across a cartesian chart, with enough styling
@@ -15,6 +16,12 @@ export interface ReferenceLineSpec {
     dash?: number[]
     /** Where the label anchors; opposite ends keep coinciding lines readable */
     labelPosition?: 'start' | 'end'
+    /**
+     * Draw as a line accumulating `value` per plotted period instead of a
+     * horizontal one — the goal target's shape when the chart plots a running
+     * total (issue #158)
+     */
+    cumulativePerPeriod?: boolean
 }
 
 /** Dash pattern for explicit reference lines */
@@ -60,13 +67,34 @@ export function buildCartesianReferenceLines(
     // set on a chart is visible without configuring the same number twice
     const target = chartConfig.target
     if (target?.enabled) {
-        referenceLines.push({
-            value: target.value,
-            label: `Target: ${target.value}${target.unit ? ` ${target.unit}` : ''}`,
-            color: colors[0] ?? '#8884d8',
-            dash: TARGET_LINE_DASH,
-            labelPosition: 'start'
-        })
+        const unit = target.unit ? ` ${target.unit}` : ''
+
+        if (chartConfig.runningTotal) {
+            // Against a cumulative series a static per-period target is
+            // misleading: "50 per day" must climb 50 a day alongside the data
+            // (issue #158). That only translates cleanly when the target's
+            // period matches the plotted granularity — a "per week" goal has
+            // no honest slope on a daily axis, so it is dropped rather than
+            // drawn wrong.
+            if (target.period === chartConfig.granularity) {
+                referenceLines.push({
+                    value: target.value,
+                    label: `Target: ${target.value}${unit} per ${periodLabel(target.period, 1)} (cumulative)`,
+                    color: colors[0] ?? '#8884d8',
+                    dash: TARGET_LINE_DASH,
+                    labelPosition: 'start',
+                    cumulativePerPeriod: true
+                })
+            }
+        } else {
+            referenceLines.push({
+                value: target.value,
+                label: `Target: ${target.value}${unit}`,
+                color: colors[0] ?? '#8884d8',
+                dash: TARGET_LINE_DASH,
+                labelPosition: 'start'
+            })
+        }
     }
 
     // Overlay reference lines (one per dataset/property)

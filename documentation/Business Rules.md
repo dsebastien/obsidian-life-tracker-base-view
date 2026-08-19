@@ -318,6 +318,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Targets are stored per visualization, so one property can carry several (e.g. squats: days-per-week on one card, reps-per-week on another).
 - Supported by the progress ring and by cartesian charts, which draw the target as a reference line. A target and an explicitly configured reference line are BOTH drawn (issue #156) — they answer different questions; the target line uses a tighter dash pattern and anchors its label at the left edge while reference labels anchor at the right, so the two stay readable even at the same value.
 - Targets read from a `.base` file are validated field by field; anything malformed is dropped whole rather than half-applied — a ring silently measuring the wrong thing is worse than no ring.
+- When the chart plots a running total, the target line accumulates with it (issue #158): it slopes from `value` at the first period to `value × periods` at the last, and its label says "(cumulative)". This only holds when the target's period matches the plotted granularity — a "per week" goal has no honest slope on a daily axis, so a period-mismatched target is not drawn at all under a running total rather than drawn wrong. Explicit reference lines are unaffected: a user-configured horizontal threshold stays horizontal.
 
 ## Progress Ring
 
