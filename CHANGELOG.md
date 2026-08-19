@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.23.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.22.0...2.23.0) (2026-08-19)
+
+### Features
+
+* **plugin:** add a range chart for start-to-end spans ([3fedbca](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/3fedbcac95dd36028b8ffe21661c5221552d8abe)), closes [#81](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/81) [#81](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/81)
+* **plugin:** let charts plot note names on the x-axis ([c9453d8](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c9453d82390196732adbad00637caedd1b6053e5)), closes [#69](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/69)
+* **plugin:** track and celebrate personal records ([c2ebe15](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/c2ebe15e2ac23a987d4274b74fb5638ae5c35c9a)), closes [#56](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/56)
+
+### Bug Fixes
+
+* **plugin:** accumulate the target line under a running total ([15b9f7e](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/15b9f7ef31cf2fa6bf4eaa946d85c700dd63038d)), closes [#158](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/158)
+* **plugin:** draw the target and the reference line together ([a94374d](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/a94374db779ea795e27ff382f97ba96a582e8ffe)), closes [#156](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/156)
+* **plugin:** give the progress ring its own icon ([cec88f2](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/cec88f2771b72cb46d3ed25059c0e1ca4274935a)), closes [#159](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/159)
+* **plugin:** keep heatmap month labels from overlapping ([2ed8c7b](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/2ed8c7baf3593736750d9f966737d510d93cbbcc)), closes [#157](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/157)
+* **plugin:** stop modal labels from sliding under the inputs ([873791e](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/873791e7d41242379c9a22f7317ae580c9c9bbb5)), closes [#155](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/155)
+
 ## [2.22.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.21.4...2.22.0) (2026-08-19)
 
 ### Features
@@ -437,6 +453,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

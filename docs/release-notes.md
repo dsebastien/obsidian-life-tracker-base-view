@@ -1,5 +1,21 @@
 # Release Notes
 
+## 2.23.0 (2026-08-19)
+
+### Features
+
+- **plugin:** add a range chart for start-to-end spans [#81](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/81)
+- **plugin:** let charts plot note names on the x-axis
+- **plugin:** track and celebrate personal records
+
+### Bug Fixes
+
+- **plugin:** accumulate the target line under a running total
+- **plugin:** draw the target and the reference line together
+- **plugin:** give the progress ring its own icon
+- **plugin:** keep heatmap month labels from overlapping
+- **plugin:** stop modal labels from sliding under the inputs
+
 ## 2.22.0 (2026-08-19)
 
 ### Features
