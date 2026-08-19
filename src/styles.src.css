@@ -579,6 +579,9 @@
         background-color: var(--background-primary);
         border: 1px solid var(--background-modifier-border);
         min-width: 280px;
+        /* Never exceed the viewport, so labels and inputs can wrap instead
+           of overlapping on small screens (issue #155) */
+        max-width: min(92vw, 400px);
     }
 
     .lt-scale-modal-header {
@@ -591,11 +594,16 @@
     }
 
     .lt-scale-modal-input-group {
-        @apply flex items-center gap-3;
+        /* Wrap when the label and input don't fit side by side, instead of
+           letting the label slide underneath the input (issue #155) */
+        @apply flex items-center gap-3 flex-wrap;
     }
 
     .lt-scale-modal-input-group span {
-        @apply text-sm font-medium w-10;
+        /* Natural width: a fixed width clipped labels longer than the scale
+           modal's original "Min:"/"Max:" under the inputs (issue #155) */
+        @apply text-sm font-medium flex-shrink-0;
+        min-width: 2.5rem;
         color: var(--text-muted);
     }
 
@@ -604,6 +612,9 @@
         background-color: var(--background-secondary);
         border: 1px solid var(--background-modifier-border);
         color: var(--text-normal);
+        /* Below this the input wraps to its own line rather than shrinking
+           into an unusable sliver (issue #155) */
+        min-width: 8rem;
     }
 
     .lt-scale-modal-input:focus {
