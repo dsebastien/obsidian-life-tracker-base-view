@@ -10,6 +10,7 @@ import {
     type TimelineConfig,
     type ProgressConfig,
     normalizeTargetConfig,
+    X_AXIS_SOURCES,
     type VisualizationConfig,
     type ConfigGetter,
     type PropertyDefinition
@@ -62,6 +63,12 @@ export function getVisualizationConfig(
     const movingAveragePeriod = columnConfig.movingAveragePeriod
     const runningTotal = columnConfig.runningTotal
     const target = normalizeTargetConfig(columnConfig.target)
+    // Config comes from a .base file that can be hand-edited: an unknown
+    // x-axis source falls back to the date axis rather than leaking through
+    const xAxisSource =
+        columnConfig.xAxisSource && X_AXIS_SOURCES.includes(columnConfig.xAxisSource)
+            ? columnConfig.xAxisSource
+            : undefined
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
@@ -126,6 +133,7 @@ export function getVisualizationConfig(
                 movingAveragePeriod,
                 runningTotal,
                 target,
+                xAxisSource,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -144,6 +152,7 @@ export function getVisualizationConfig(
                 movingAveragePeriod,
                 runningTotal,
                 target,
+                xAxisSource,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -159,6 +168,7 @@ export function getVisualizationConfig(
                 referenceLine,
                 aggregationMethod,
                 target,
+                xAxisSource,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 

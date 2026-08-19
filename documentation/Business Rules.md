@@ -158,6 +158,15 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Display labels use capitalized first letter (e.g., "Running" not "running")
 - Legends are always shown when multiple datasets exist (list data, overlays)
 
+## Chart X-Axis Source
+
+- Line, bar, and area charts can plot note names on the x-axis instead of time periods (`xAxisSource: 'note-name'`, issue #69) — one point per note, for Bases whose notes aren't date-shaped (books, projects, people)
+- On the note-name axis, points follow the Base view's own sort order: the user controls the axis by sorting the view. Entries need no date anchor
+- There is no time grouping on this axis, so the aggregation method does not apply; missing values stay null gaps (issue #92); moving average, running total, and the trend indicator operate over notes instead of periods
+- List-valued properties keep the time-based presence aggregation: the option is hidden for them rather than shown inert
+- An unknown stored `xAxisSource` value falls back to the date axis
+- Radar charts share the cartesian aggregation path but keep the date axis: their spokes are periods by design
+
 ## Missing Values in Charts
 
 - Missing (null) values are skipped during aggregation, never coerced to 0 — a 0 would skew averages and render fake dips (issue #92)

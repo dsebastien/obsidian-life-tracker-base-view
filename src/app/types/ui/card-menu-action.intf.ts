@@ -5,7 +5,8 @@ import type {
     ReferenceLineConfig,
     AggregationMethod,
     StoredColorScheme,
-    TargetConfig
+    TargetConfig,
+    XAxisSource
 } from '../column/column-config.types'
 
 /**
@@ -19,6 +20,8 @@ export type CardMenuAction =
     | { type: 'configureAggregationMethod'; aggregationMethod: AggregationMethod | undefined }
     | { type: 'configureMovingAverage'; movingAveragePeriod: number | undefined }
     | { type: 'configureRunningTotal'; runningTotal: boolean }
+    /** Choose what the x-axis plots: time periods or note names (issue #69) */
+    | { type: 'configureXAxisSource'; xAxisSource: XAxisSource | undefined }
     /** Set or clear the goal target for this visualization (issue #6) */
     | { type: 'configureTarget'; target: TargetConfig }
     | { type: 'configureHeatmapCellSize'; cellSize: number | undefined }

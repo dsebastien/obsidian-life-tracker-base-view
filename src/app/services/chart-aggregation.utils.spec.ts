@@ -7,6 +7,7 @@ import {
     aggregateListForChart,
     aggregateForPieChart,
     aggregateForChart,
+    aggregateForNoteChart,
     aggregateForScatterChart,
     aggregateForBubbleChart,
     aggregateForOverlayChart,
@@ -749,5 +750,72 @@ describe('computeTrend (issue #101)', () => {
         const trend = computeTrend([2, null, 4, null])
         expect(trend?.direction).toBe('up')
         expect(trend?.changePercent).toBe(100)
+    })
+})
+
+describe('aggregateForNoteChart (issue #69)', () => {
+    const propertyId = 'note.rating' as BasesPropertyId
+
+    test('returns empty data for no points', () => {
+        const result = aggregateForNoteChart([], propertyId, 'Rating')
+        expect(result.labels).toEqual([])
+        expect(result.datasets).toEqual([])
+    })
+
+    test('plots one point per note, labeled with the note name', () => {
+        const dataPoints = [
+            createDataPoint('Books/Dune.md', '2025-01-01', { numericValue: 5 }),
+            createDataPoint('Books/Foundation.md', '2025-01-02', { numericValue: 4 })
+        ]
+        const result = aggregateForNoteChart(dataPoints, propertyId, 'Rating')
+
+        expect(result.labels).toEqual(['Dune', 'Foundation'])
+        expect(result.datasets).toHaveLength(1)
+        expect(result.datasets[0]!.data).toEqual([5, 4])
+        expect(result.datasets[0]!.filePaths).toEqual([['Books/Dune.md'], ['Books/Foundation.md']])
+    })
+
+    test('keeps the order the entries arrive in (the view sort order)', () => {
+        // Deliberately not chronological: the axis follows the Base view's
+        // own sorting, not the date anchors
+        const dataPoints = [
+            createDataPoint('Zebra.md', '2025-03-01', { numericValue: 1 }),
+            createDataPoint('Alpha.md', '2025-01-01', { numericValue: 2 })
+        ]
+        const result = aggregateForNoteChart(dataPoints, propertyId, 'Rating')
+
+        expect(result.labels).toEqual(['Zebra', 'Alpha'])
+    })
+
+    test('includes entries without a date anchor', () => {
+        const dataPoints = [
+            createDataPoint('No Date Note.md', null, { numericValue: 3 }),
+            createDataPoint('Dated.md', '2025-01-01', { numericValue: 7 })
+        ]
+        const result = aggregateForNoteChart(dataPoints, propertyId, 'Rating')
+
+        expect(result.labels).toEqual(['No Date Note', 'Dated'])
+        expect(result.datasets[0]!.data).toEqual([3, 7])
+    })
+
+    test('keeps missing values as null gaps, never 0 (issue #92)', () => {
+        const dataPoints = [
+            createDataPoint('A.md', null, { numericValue: 5 }),
+            createDataPoint('B.md', null, {}),
+            createDataPoint('C.md', null, { numericValue: 2 })
+        ]
+        const result = aggregateForNoteChart(dataPoints, propertyId, 'Rating')
+
+        expect(result.datasets[0]!.data).toEqual([5, null, 2])
+    })
+
+    test('strips only the extension from the note name', () => {
+        const dataPoints = [
+            createDataPoint('Deep/Folder/My Note v1.2.md', null, { numericValue: 1 }),
+            createDataPoint('.hidden.md', null, { numericValue: 2 })
+        ]
+        const result = aggregateForNoteChart(dataPoints, propertyId, 'Rating')
+
+        expect(result.labels).toEqual(['My Note v1.2', '.hidden'])
     })
 })

@@ -15,6 +15,8 @@ import {
     DEFAULT_TARGET_WARN_THRESHOLD,
     MOVING_AVERAGE_PERIOD_OPTIONS,
     DEFAULT_AGGREGATION_METHOD,
+    DEFAULT_X_AXIS_SOURCE,
+    supportsXAxisSource,
     type ScaleConfig,
     type ReferenceLineConfig,
     type AggregationMethod,
@@ -24,7 +26,8 @@ import {
     type TargetConfig,
     type TargetDirection,
     type TargetMetric,
-    type ValuePolarity
+    type ValuePolarity,
+    type XAxisSource
 } from '../../types'
 import { describeTarget } from '../visualizations/progress/progress-visualization'
 import {
@@ -108,6 +111,7 @@ export function showCardContextMenu(
     currentAggregationMethod: AggregationMethod | undefined,
     currentMovingAveragePeriod: number | undefined,
     currentRunningTotal: boolean | undefined,
+    currentXAxisSource: XAxisSource | undefined,
     currentTarget: TargetConfig | undefined,
     /** Polarity of the visualized property, used to default a new target's
      *  direction and to flag a contradictory one (issue #21) */
@@ -279,6 +283,9 @@ export function showCardContextMenu(
         // hidden rather than shown-but-inert for list-valued properties.
         const hasMovingAverage = supportsMovingAverage(vizType) && !hasListValues
         const hasRunningTotal = supportsRunningTotal(vizType) && !hasListValues
+        // List values take the time-based presence aggregation, which has no
+        // note-name variant — hide the option rather than show an inert one
+        const hasXAxisSource = supportsXAxisSource(vizType) && !hasListValues
         const hasTarget = supportsTarget(vizType)
 
         const hasHeatmapConfig = vizType === VisualizationType.Heatmap
@@ -290,6 +297,7 @@ export function showCardContextMenu(
             !hasAggregationMethod &&
             !hasMovingAverage &&
             !hasRunningTotal &&
+            !hasXAxisSource &&
             !hasTarget &&
             !hasHeatmapConfig
         ) {
@@ -569,6 +577,39 @@ export function showCardContextMenu(
                 onAction({
                     type: 'configureAggregationMethod',
                     aggregationMethod: value === DEFAULT_AGGREGATION_METHOD ? undefined : value
+                })
+            })
+        }
+
+        // X-axis source dropdown (cartesian charts, issue #69)
+        if (hasXAxisSource) {
+            const xAxisGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            xAxisGroup.createEl('label', { text: 'X-axis' })
+
+            const xAxisSelect = xAxisGroup.createEl('select', { cls: 'lt-card-popover-select' })
+
+            const dateOption = xAxisSelect.createEl('option', {
+                value: 'date',
+                text: 'Date'
+            })
+            const noteNameOption = xAxisSelect.createEl('option', {
+                value: 'note-name',
+                text: 'Note name'
+            })
+
+            const effectiveXAxis = currentXAxisSource ?? DEFAULT_X_AXIS_SOURCE
+            if (effectiveXAxis === 'note-name') {
+                noteNameOption.selected = true
+            } else {
+                dateOption.selected = true
+            }
+
+            xAxisSelect.addEventListener('change', () => {
+                const value = xAxisSelect.value as XAxisSource
+                close()
+                onAction({
+                    type: 'configureXAxisSource',
+                    xAxisSource: value === DEFAULT_X_AXIS_SOURCE ? undefined : value
                 })
             })
         }

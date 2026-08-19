@@ -187,14 +187,9 @@ export class ChartVisualization extends BaseVisualization {
                     this.chartConfig.granularity
                 )
             } else {
-                // Standard numeric aggregation
-                this.chartData = sharedAggregationService.aggregateForChart(
-                    data,
-                    this.propertyId,
-                    this.displayName,
-                    this.chartConfig.granularity,
-                    this.chartConfig.aggregationMethod
-                )
+                // Standard numeric aggregation: by time period, or one point
+                // per note when the x-axis plots note names (issue #69)
+                this.chartData = this.aggregateNumericChartData(data)
 
                 // Accumulate before overlaying (issue #142): the moving average
                 // is taken over whichever series is plotted.
@@ -207,7 +202,9 @@ export class ChartVisualization extends BaseVisualization {
             if (this.chartData.labels.length === 0) {
                 const message = hasListValues
                     ? `No list data with dates found for "${this.displayName}"`
-                    : `No numeric data with dates found for "${this.displayName}"`
+                    : this.usesNoteNameAxis()
+                      ? `No data found for "${this.displayName}"`
+                      : `No numeric data with dates found for "${this.displayName}"`
                 this.showEmptyState(message)
                 return
             }
@@ -233,6 +230,36 @@ export class ChartVisualization extends BaseVisualization {
 
         // Initialize chart (async, errors handled internally)
         void this.initChart()
+    }
+
+    /**
+     * Whether this chart plots one point per note instead of time periods
+     * (issue #69). Radar charts share the cartesian aggregation path but keep
+     * the date axis: their spokes are periods by design.
+     */
+    private usesNoteNameAxis(): boolean {
+        return this.chartConfig.xAxisSource === 'note-name' && this.isCartesianType()
+    }
+
+    /**
+     * Numeric aggregation for cartesian/radar charts: by time period, or one
+     * point per note when the x-axis plots note names (issue #69).
+     */
+    private aggregateNumericChartData(data: VisualizationDataPoint[]): ChartData {
+        if (this.usesNoteNameAxis()) {
+            return sharedAggregationService.aggregateForNoteChart(
+                data,
+                this.propertyId,
+                this.displayName
+            )
+        }
+        return sharedAggregationService.aggregateForChart(
+            data,
+            this.propertyId,
+            this.displayName,
+            this.chartConfig.granularity,
+            this.chartConfig.aggregationMethod
+        )
     }
 
     /**
@@ -670,13 +697,7 @@ export class ChartVisualization extends BaseVisualization {
                 this.chartConfig.granularity
             )
         } else {
-            newChartData = sharedAggregationService.aggregateForChart(
-                data,
-                this.propertyId,
-                this.displayName,
-                this.chartConfig.granularity,
-                this.chartConfig.aggregationMethod
-            )
+            newChartData = this.aggregateNumericChartData(data)
 
             // Same order as the initial render (issue #142)
             this.applyRunningTotal(newChartData)

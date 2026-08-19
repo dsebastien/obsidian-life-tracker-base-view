@@ -21,7 +21,11 @@ export {
     TARGET_SUPPORTED_TYPES,
     TARGET_METRICS,
     TARGET_DIRECTIONS,
-    DEFAULT_TARGET_WARN_THRESHOLD
+    DEFAULT_TARGET_WARN_THRESHOLD,
+    X_AXIS_SOURCES,
+    DEFAULT_X_AXIS_SOURCE,
+    X_AXIS_SOURCE_SUPPORTED_TYPES,
+    supportsXAxisSource
 } from './column-config.types'
 export type {
     ScaleConfig,
@@ -35,7 +39,8 @@ export type {
     AggregationMethod,
     TargetConfig,
     TargetMetric,
-    TargetDirection
+    TargetDirection,
+    XAxisSource
 } from './column-config.types'
 export type { ColumnConfigResult } from './column-config-result.intf'
 export type { ColumnConfigCallback } from './column-config-callback.intf'

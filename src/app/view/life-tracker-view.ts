@@ -1901,6 +1901,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.aggregationMethod,
             vizConfig.movingAveragePeriod,
             vizConfig.runningTotal,
+            vizConfig.xAxisSource,
             vizConfig.target,
             this.findPropertyDefinition(propertyId)?.polarity,
             hasListValues,
@@ -2123,6 +2124,32 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         propertyId,
                         visualizationId,
                         { runningTotal: action.runningTotal }
+                    )
+                }
+                this.applyConfigChange(propertyId, visualizationId, displayName)
+                break
+
+            case 'configureXAxisSource':
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        const newId = this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme,
+                            preset.referenceLine
+                        )
+                        this.columnConfigService.updateVisualizationConfig(propertyId, newId, {
+                            xAxisSource: action.xAxisSource
+                        })
+                    }
+                } else {
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { xAxisSource: action.xAxisSource }
                     )
                 }
                 this.applyConfigChange(propertyId, visualizationId, displayName)

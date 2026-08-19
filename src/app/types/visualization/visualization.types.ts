@@ -5,7 +5,8 @@ import type {
     ScaleConfig,
     ReferenceLineConfig,
     AggregationMethod,
-    TargetConfig
+    TargetConfig,
+    XAxisSource
 } from '../column/column-config.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
 import type { EmojiMapping, ValuePolarity } from '../property/property-definition.types'
@@ -370,6 +371,8 @@ export interface ChartConfig extends VisualizationConfig {
     movingAveragePeriod?: number
     /** Plot the cumulative total instead of the per-period value (issue #142) */
     runningTotal?: boolean
+    /** What the x-axis plots: time periods (default) or one point per note (issue #69) */
+    xAxisSource?: XAxisSource
     /** Show the trend arrow and trend row (default true) */
     showTrendInfo?: boolean
     /** Legend placement for pie/doughnut/polar charts (default 'right') */

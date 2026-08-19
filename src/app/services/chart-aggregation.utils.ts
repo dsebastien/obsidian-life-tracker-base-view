@@ -216,6 +216,46 @@ export function aggregateForChart(
 }
 
 /**
+ * Note name (basename without extension) from a vault-relative file path.
+ */
+function noteNameFromPath(filePath: string): string {
+    const base = filePath.slice(filePath.lastIndexOf('/') + 1)
+    const dot = base.lastIndexOf('.')
+    return dot > 0 ? base.slice(0, dot) : base
+}
+
+/**
+ * Aggregate data for a cartesian chart whose x-axis plots one point per note
+ * instead of time periods (issue #69).
+ *
+ * Points keep the order the entries arrive in — the Base view's own sort
+ * order — so the user controls the axis by sorting the view. Entries need no
+ * date anchor: this axis exists precisely for Bases whose notes aren't
+ * date-shaped. Entries without a value stay null (a gap), never 0
+ * (issue #92).
+ */
+export function aggregateForNoteChart(
+    dataPoints: VisualizationDataPoint[],
+    propertyId: BasesPropertyId,
+    displayName: string
+): ChartData {
+    if (dataPoints.length === 0) {
+        return { propertyId, displayName, labels: [], datasets: [] }
+    }
+
+    const labels = dataPoints.map((p) => noteNameFromPath(p.filePath))
+    const data = dataPoints.map((p) => p.numericValue)
+    const filePaths = dataPoints.map((p) => [p.filePath])
+
+    return {
+        propertyId,
+        displayName,
+        labels,
+        datasets: [{ label: displayName, data, filePaths }]
+    }
+}
+
+/**
  * Label used for entries without a value.
  */
 const NO_DATA_LABEL = 'No data'

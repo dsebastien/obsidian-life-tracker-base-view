@@ -27,6 +27,7 @@ import { getTimeKey, normalizeDate } from './date-grouping.utils'
 import { computeHeatmapStreaks } from './heatmap-streak.utils'
 import {
     aggregateForChart as chartAggregation,
+    aggregateForNoteChart as noteChartAggregation,
     aggregateForPieChart as pieChartAggregation,
     aggregateForScatterChart as scatterChartAggregation,
     aggregateForBubbleChart as bubbleChartAggregation,
@@ -231,6 +232,18 @@ export class DataAggregationService {
         aggregationMethod?: AggregationMethod
     ): ChartData {
         return chartAggregation(dataPoints, propertyId, displayName, granularity, aggregationMethod)
+    }
+
+    /**
+     * Aggregate data for a chart whose x-axis plots one point per note
+     * (issue #69). Points keep the view's own sort order.
+     */
+    aggregateForNoteChart(
+        dataPoints: VisualizationDataPoint[],
+        propertyId: BasesPropertyId,
+        displayName: string
+    ): ChartData {
+        return noteChartAggregation(dataPoints, propertyId, displayName)
     }
 
     /**

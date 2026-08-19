@@ -89,6 +89,23 @@ export interface TargetConfig {
 export const DEFAULT_TARGET_WARN_THRESHOLD = 0.5
 
 /**
+ * What the x-axis of a cartesian chart plots (issue #69).
+ * - 'date': group entries into time periods via the date anchor (default —
+ *   preserves prior behavior)
+ * - 'note-name': one point per note, labeled with the note's name, in the
+ *   view's own sort order. Entries need no date anchor on this axis
+ */
+export type XAxisSource = 'date' | 'note-name'
+
+/** Every valid x-axis source, for runtime validation of stored config */
+export const X_AXIS_SOURCES: readonly XAxisSource[] = ['date', 'note-name']
+
+/**
+ * Default x-axis source when none is configured.
+ */
+export const DEFAULT_X_AXIS_SOURCE: XAxisSource = 'date'
+
+/**
  * How multiple data points in the same time period are combined into a single value.
  * - 'average': arithmetic mean (default — preserves previous behavior)
  * - 'sum': add the values together (e.g., total workout calories across multiple sessions per day)
@@ -134,6 +151,8 @@ export interface ColumnVisualizationConfig {
     runningTotal?: boolean
     /** Goal to track this property against (issue #6) */
     target?: TargetConfig
+    /** What the x-axis plots: time periods or one point per note (issue #69) */
+    xAxisSource?: XAxisSource
 }
 
 /**
@@ -217,6 +236,24 @@ export const AGGREGATION_METHOD_SUPPORTED_TYPES: VisualizationType[] = [
  */
 export function supportsAggregationMethod(vizType: VisualizationType): boolean {
     return AGGREGATION_METHOD_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
+ * Visualization types whose x-axis can plot note names instead of time
+ * periods (issue #69). Only the cartesian trio: every other type either has
+ * no x-axis or derives it from something other than the date grouping.
+ */
+export const X_AXIS_SOURCE_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.LineChart,
+    VisualizationType.AreaChart,
+    VisualizationType.BarChart
+]
+
+/**
+ * Check if a visualization type supports choosing the x-axis source
+ */
+export function supportsXAxisSource(vizType: VisualizationType): boolean {
+    return X_AXIS_SOURCE_SUPPORTED_TYPES.includes(vizType)
 }
 
 /**
