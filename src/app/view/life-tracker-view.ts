@@ -240,6 +240,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         // Create container
         this.containerEl = scrollEl.createDiv({ cls: 'lt-container' })
+        this.applyHighContrastClass()
 
         // Initialize services
         this.dateAnchorService = new DateAnchorService()
@@ -385,6 +386,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             // Then file creation time as last resort
             this.dateAnchorService.createMetadataConfig('ctime', 2)
         ]
+    }
+
+    /**
+     * Mirror the high contrast setting onto the container so the stylesheet
+     * can thicken borders and drop dimming (issue #137)
+     */
+    private applyHighContrastClass(): void {
+        this.containerEl.classList.toggle('lt-high-contrast', this.plugin.settings.highContrast)
     }
 
     /** Read the per-view "show empty values" setting (defaults to false). */
@@ -2399,6 +2408,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
             case 'confetti-setting-changed':
                 // This doesn't affect the visualization view, no refresh needed
+                break
+
+            case 'high-contrast-changed':
+                // Borders and dimming are CSS-only, but chart and heatmap
+                // colors are baked in at render time, so redraw (issue #137)
+                this.applyHighContrastClass()
+                this.forceFullRender = true
+                this.onDataUpdated()
                 break
 
             case 'full':

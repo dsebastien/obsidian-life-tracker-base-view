@@ -153,6 +153,7 @@ export class GridView extends BasesView implements FileProvider {
         this.plugin = plugin
         this.scrollEl = scrollEl
         this.containerEl = scrollEl.createDiv({ cls: 'lt-grid-view-container' })
+        this.applyHighContrastClass()
 
         // Initialize services
         this.frontmatterService = new FrontmatterService(plugin.app)
@@ -1423,7 +1424,20 @@ export class GridView extends BasesView implements FileProvider {
             case 'animation-duration-changed':
             case 'confetti-setting-changed':
                 break
+
+            case 'high-contrast-changed':
+                // CSS-only for the grid: no data or column change (issue #137)
+                this.applyHighContrastClass()
+                break
         }
+    }
+
+    /**
+     * Mirror the high contrast setting onto the container so the stylesheet
+     * can thicken borders and drop dimming (issue #137)
+     */
+    private applyHighContrastClass(): void {
+        this.containerEl.classList.toggle('lt-high-contrast', this.plugin.settings.highContrast)
     }
 
     /**

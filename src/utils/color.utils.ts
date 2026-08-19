@@ -67,6 +67,72 @@ export const HEATMAP_PRESETS: Record<string, GradientHeatmapColorScheme> = {
 }
 
 /**
+ * Maximum-contrast heatmap gradient (issue #137).
+ *
+ * Levels are picked for the largest possible step between neighbours rather
+ * than for a pleasant ramp, and stay distinguishable on both light and dark
+ * themes as well as in grayscale.
+ */
+export const HIGH_CONTRAST_HEATMAP_SCHEME: GradientHeatmapColorScheme = {
+    kind: 'gradient',
+    empty: HEATMAP_EMPTY_COLOR,
+    levels: ['#ffffff', '#ffd60a', '#ff9f0a', '#ff3b30', '#7a0010']
+}
+
+/**
+ * Maximum-contrast qualitative palette for charts (issue #137).
+ *
+ * Highly saturated hues that keep their punch against both a light and a dark
+ * background, unlike the single-family presets whose adjacent entries differ
+ * mostly in lightness.
+ */
+export const HIGH_CONTRAST_CHART_PALETTE: readonly string[] = [
+    '#0a84ff',
+    '#ff3b30',
+    '#00c853',
+    '#ff9f0a',
+    '#bf5af2',
+    '#00d1d1',
+    '#ffd60a',
+    '#ff2d95'
+]
+
+/**
+ * Whether maximum-contrast rendering is on. Module state, set once from the
+ * plugin settings, so every render path picks it up without threading a flag
+ * through each visualization (same approach as the week start day).
+ */
+let highContrastMode = false
+
+/**
+ * Turn maximum-contrast rendering on or off (issue #137)
+ */
+export function setHighContrastMode(enabled: boolean): void {
+    highContrastMode = enabled
+}
+
+/**
+ * Whether maximum-contrast rendering is currently on
+ */
+export function isHighContrastMode(): boolean {
+    return highContrastMode
+}
+
+/**
+ * The scheme a heatmap should actually render with.
+ *
+ * High contrast replaces gradients, whose levels are chosen for looks, but
+ * never a discrete scheme: those map specific values to specific colors on
+ * purpose, and overriding them would destroy the meaning the user encoded.
+ */
+export function resolveEffectiveHeatmapScheme(scheme: HeatmapColorScheme): HeatmapColorScheme {
+    if (!highContrastMode || isDiscreteHeatmapScheme(scheme)) {
+        return scheme
+    }
+    return HIGH_CONTRAST_HEATMAP_SCHEME
+}
+
+/**
  * Names of the built-in heatmap gradient presets.
  */
 export type HeatmapPresetName =
@@ -192,13 +258,15 @@ export function resolveHeatmapCellColor(
     min: number,
     max: number
 ): string {
-    if (value === null || value === undefined) return scheme.empty
+    const effective = resolveEffectiveHeatmapScheme(scheme)
 
-    if (isDiscreteHeatmapScheme(scheme)) {
-        return scheme.mapping[String(value)] ?? scheme.fallback ?? scheme.empty
+    if (value === null || value === undefined) return effective.empty
+
+    if (isDiscreteHeatmapScheme(effective)) {
+        return effective.mapping[String(value)] ?? effective.fallback ?? effective.empty
     }
 
-    return getHeatmapColor(getColorLevelForValue(value, min, max), scheme)
+    return getHeatmapColor(getColorLevelForValue(value, min, max), effective)
 }
 
 /**
@@ -430,6 +498,9 @@ export const COLOR_SCHEME_OPTIONS: ReadonlyArray<{ value: ChartColorScheme; labe
  * Get chart colors for a specific scheme
  */
 export function getChartColorScheme(scheme: ChartColorScheme | undefined): string[] {
+    // High contrast overrides the chosen palette on purpose: the point of the
+    // mode is legibility, not the look the scheme was picked for (issue #137)
+    if (highContrastMode) return [...HIGH_CONTRAST_CHART_PALETTE]
     if (!scheme) return CHART_COLOR_PRESETS.default
     return CHART_COLOR_PRESETS[scheme] ?? CHART_COLOR_PRESETS.default
 }
@@ -577,14 +648,17 @@ export function applyHeatmapColorScheme(
     element: HTMLElement,
     colorScheme: HeatmapColorScheme
 ): void {
-    if (!colorScheme || isDiscreteHeatmapScheme(colorScheme)) return
+    if (!colorScheme) return
 
-    element.style.setProperty(HEATMAP_CSS_VARS.EMPTY, colorScheme.empty)
-    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_0, colorScheme.levels[0] ?? '')
-    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_1, colorScheme.levels[1] ?? '')
-    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_2, colorScheme.levels[2] ?? '')
-    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_3, colorScheme.levels[3] ?? '')
-    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_4, colorScheme.levels[4] ?? '')
+    const effective = resolveEffectiveHeatmapScheme(colorScheme)
+    if (isDiscreteHeatmapScheme(effective)) return
+
+    element.style.setProperty(HEATMAP_CSS_VARS.EMPTY, effective.empty)
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_0, effective.levels[0] ?? '')
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_1, effective.levels[1] ?? '')
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_2, effective.levels[2] ?? '')
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_3, effective.levels[3] ?? '')
+    element.style.setProperty(HEATMAP_CSS_VARS.LEVEL_4, effective.levels[4] ?? '')
 }
 
 /**

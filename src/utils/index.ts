@@ -26,7 +26,12 @@ export {
     normalizeHeatmapColorScheme,
     createDefaultDiscreteScheme,
     nextDiscreteEntryColor,
-    getValueMatchedSegmentColors
+    getValueMatchedSegmentColors,
+    setHighContrastMode,
+    isHighContrastMode,
+    resolveEffectiveHeatmapScheme,
+    HIGH_CONTRAST_CHART_PALETTE,
+    HIGH_CONTRAST_HEATMAP_SCHEME
 } from './color.utils'
 export type { ChartColorScheme, HeatmapPresetName } from './color.utils'
 

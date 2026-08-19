@@ -4001,6 +4001,79 @@
             @apply w-auto;
         }
     }
+
+    /* ========================================
+   HIGH CONTRAST MODE (issue #137)
+   ======================================== */
+
+    /* Opt-in maximum-visibility rendering. Chart and heatmap palettes are
+       swapped in TypeScript (colors are painted onto a canvas); everything
+       structural is handled here: thicker borders, no dimming, stronger
+       focus rings and separators. */
+
+    .lt-high-contrast .lt-card {
+        border-width: 3px;
+        border-color: var(--text-normal);
+    }
+
+    .lt-high-contrast .lt-card:hover,
+    .lt-high-contrast .lt-card--maximized {
+        border-color: var(--interactive-accent);
+    }
+
+    .lt-high-contrast .lt-section-title {
+        @apply font-bold;
+        color: var(--text-normal);
+    }
+
+    /* Nothing is dimmed: muted text and faded affordances go to full strength */
+    .lt-high-contrast .lt-card-drag-handle,
+    .lt-high-contrast .lt-pin-btn,
+    .lt-high-contrast .lt-play-btn,
+    .lt-high-contrast .lt-maximize-btn {
+        @apply opacity-100;
+        color: var(--text-normal);
+    }
+
+    .lt-high-contrast .lt-heatmap-legend,
+    .lt-high-contrast .lt-heatmap-month-label,
+    .lt-high-contrast .lt-heatmap-day-label,
+    .lt-high-contrast .lt-heatmap-streaks,
+    .lt-high-contrast .lt-chart-trend,
+    .lt-high-contrast .lt-empty-text {
+        color: var(--text-normal);
+    }
+
+    /* Cells get an outline so adjacent levels stay separable even for someone
+       who cannot tell the two colors apart */
+    .lt-high-contrast .lt-heatmap-cell {
+        border: 1px solid var(--text-normal);
+    }
+
+    .lt-high-contrast .lt-heatmap-cell:hover {
+        @apply ring-4;
+    }
+
+    .lt-high-contrast .lt-heatmap-placeholder {
+        border: 1px dashed var(--text-faint);
+    }
+
+    /* Focus must be unmistakable */
+    .lt-high-contrast :focus-visible {
+        outline: 3px solid var(--interactive-accent);
+        outline-offset: 2px;
+    }
+
+    .lt-high-contrast .lt-tooltip {
+        border: 2px solid var(--text-normal);
+    }
+
+    /* Grid view: thicker rules between rows and columns */
+    .lt-high-contrast .lt-grid-view-table th,
+    .lt-high-contrast .lt-grid-view-table td {
+        border-color: var(--text-normal);
+        border-width: 2px;
+    }
 } /* End @layer lt-components */
 
 /* ============================================================

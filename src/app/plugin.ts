@@ -13,6 +13,7 @@ import {
     createCoalescingWriter,
     log,
     setCustomFilenameDatePatterns,
+    setHighContrastMode,
     setWeekStartDay
 } from '../utils'
 import { produce } from 'immer'
@@ -198,7 +199,7 @@ export class LifeTrackerPlugin extends Plugin {
         if (!loadedSettings) {
             log('Using default settings', 'debug')
             this.settings = produce(DEFAULT_SETTINGS, (draft) => draft)
-            this.applyDateSettings()
+            this.applyRuntimeSettings()
             return
         }
 
@@ -228,6 +229,11 @@ export class LifeTrackerPlugin extends Plugin {
                 draft.weekStartsOn = loadedSettings.weekStartsOn
             }
 
+            // Load high contrast mode (issue #137)
+            if (typeof loadedSettings.highContrast === 'boolean') {
+                draft.highContrast = loadedSettings.highContrast
+            }
+
             // Load custom filename date patterns (issue #139). Entries can be
             // hand-edited in data.json, so keep anything with a usable pattern
             // and backfill missing ids (the settings UI keys on them).
@@ -241,7 +247,7 @@ export class LifeTrackerPlugin extends Plugin {
             }
         })
 
-        this.applyDateSettings()
+        this.applyRuntimeSettings()
         log(`Settings loaded`, 'debug', loadedSettings)
     }
 
@@ -256,6 +262,16 @@ export class LifeTrackerPlugin extends Plugin {
         setCustomFilenameDatePatterns(
             this.settings.filenameDatePatterns.map((entry) => entry.pattern)
         )
+    }
+
+    /**
+     * Push every setting that render code reads from module state rather than
+     * from a prop: the date settings above, plus high contrast (issue #137),
+     * which every color lookup consults.
+     */
+    private applyRuntimeSettings(): void {
+        this.applyDateSettings()
+        setHighContrastMode(this.settings.highContrast)
     }
 
     /**
@@ -284,7 +300,7 @@ export class LifeTrackerPlugin extends Plugin {
         changeInfo: SettingsChangeInfo = { type: 'full' }
     ): Promise<void> {
         this.settings = produce(this.settings, updater)
-        this.applyDateSettings()
+        this.applyRuntimeSettings()
         await this.saveSettings()
         this.notifySettingsChanged(changeInfo)
     }

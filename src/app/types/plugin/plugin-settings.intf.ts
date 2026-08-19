@@ -76,6 +76,12 @@ export interface PluginSettings {
      * resolving an entry's date from its filename (issue #139)
      */
     filenameDatePatterns: FilenameDatePattern[]
+
+    /**
+     * Maximum-contrast rendering: thick borders, strong colors, no dimmed
+     * elements. For users who need high visibility (issue #137).
+     */
+    highContrast: boolean
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -84,5 +90,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     propertyDefinitions: [],
     showConfettiOnCapture: true,
     weekStartsOn: 1,
-    filenameDatePatterns: []
+    filenameDatePatterns: [],
+    highContrast: false
 }

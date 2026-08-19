@@ -57,6 +57,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Persistent settings**: grid layout and card configurations saved per view
 - **Empty states**: helpful messages when data is missing or misconfigured
 - **Confetti celebration**: optional animation when completing property capture
+- **High contrast mode**: maximum-contrast rendering (thick borders, strong colors, nothing dimmed) for users who need high visibility
 - **Mobile support**: responsive grid (becomes cards view on smaller screens), mobile-friendly data entry modal, tap a chart point or heatmap cell to inspect it and tap again to open the note
 
 ## Screenshots

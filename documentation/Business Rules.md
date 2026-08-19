@@ -302,6 +302,14 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Notes matched by a custom pattern beat notes matched only by a built-in pattern: a configured (possibly folder-scoped) pattern states where the user's daily notes live (issue #152)
 - Within the same group, the most recently modified note wins
 
+## High Contrast Mode
+
+- Opt-in global setting (Settings → Visualizations → Accessibility), off by default (issue #137).
+- While on, chart palettes and gradient heatmap schemes are replaced by maximum-contrast palettes, overriding whatever scheme the view or preset selected — legibility is the point of the mode.
+- Discrete heatmap schemes are never overridden: they map specific values to specific colors on purpose, and replacing them would destroy the meaning the user encoded.
+- Structural changes (thicker card and cell borders, no dimmed affordances, stronger focus rings and grid rules) come from the `lt-high-contrast` class the Life Tracker and Grid views put on their container.
+- Toggling it redraws the Life Tracker view (canvas colors are baked in at render time); the Grid view only re-applies the class.
+
 ## Card Reordering
 
 - The drag handle is hidden while a card is maximized: a maximized card fills the view alone, so there is nothing to reorder it against.

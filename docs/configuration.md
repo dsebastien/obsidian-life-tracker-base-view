@@ -12,6 +12,18 @@ Access via **Settings → Life Tracker**.
 Settings are grouped into tabs: **Property definitions**, **Visualizations**,
 **Dates** and **About**.
 
+### High Contrast
+
+In the **Visualizations** tab, under **Accessibility**. Off by default.
+
+Turn it on for maximum-visibility rendering: thick card and cell borders, strong
+saturated chart and heatmap colors, nothing dimmed, and unmistakable focus
+outlines. It overrides the color scheme chosen per view or per preset — that is
+the point of the mode.
+
+Custom value-to-color heatmap mappings are the one exception: those colors are
+your own encoding of what each value means, so they are left untouched.
+
 ### First Day of the Week
 
 In the **Dates** tab. Choose whether weeks start on **Monday** (default) or

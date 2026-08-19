@@ -57,6 +57,25 @@ export class VisualizationPresetSection {
     ) {}
 
     render(containerEl: HTMLElement): void {
+        // Accessibility
+        new Setting(containerEl).setName('Accessibility').setHeading()
+
+        new Setting(containerEl)
+            .setName('High contrast')
+            .setDesc(
+                'Maximum contrast rendering: thick borders, strong colors, no dimmed elements. Overrides the chosen color schemes.'
+            )
+            .addToggle((toggle) => {
+                toggle.setValue(this.plugin.settings.highContrast).onChange(async (value) => {
+                    await this.plugin.updateSettings(
+                        (draft) => {
+                            draft.highContrast = value
+                        },
+                        { type: 'high-contrast-changed' }
+                    )
+                })
+            })
+
         // Animation settings
         new Setting(containerEl).setName('Animation').setHeading()
 

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 import {
     HEATMAP_PRESETS,
     getHeatmapColor,
@@ -18,7 +18,12 @@ import {
     getChartColorScheme,
     getValueMatchedSegmentColors,
     COLORBLIND_SAFE_PALETTE,
-    HEATMAP_COLOR_SCHEME_OPTIONS
+    HEATMAP_COLOR_SCHEME_OPTIONS,
+    setHighContrastMode,
+    isHighContrastMode,
+    resolveEffectiveHeatmapScheme,
+    HIGH_CONTRAST_CHART_PALETTE,
+    HIGH_CONTRAST_HEATMAP_SCHEME
 } from './color.utils'
 import type { DiscreteHeatmapColorScheme, HeatmapColorScheme } from '../app/types'
 
@@ -627,5 +632,53 @@ describe('getValueMatchedSegmentColors (issue #150)', () => {
         const discreteColors = getValueMatchedSegmentColors(['3', '5'], discrete)
         expect(discreteColors![0]!.startsWith('var(')).toBe(false)
         expect(discreteColors![1]).toBe('#555555')
+    })
+})
+
+afterEach(() => {
+    // High contrast is module state; keep tests independent
+    setHighContrastMode(false)
+})
+
+describe('high contrast mode (issue #137)', () => {
+    test('is off by default', () => {
+        expect(isHighContrastMode()).toBe(false)
+    })
+
+    test('chart palettes are replaced while it is on', () => {
+        expect(getChartColorScheme('blue')).not.toEqual([...HIGH_CONTRAST_CHART_PALETTE])
+
+        setHighContrastMode(true)
+        expect(getChartColorScheme('blue')).toEqual([...HIGH_CONTRAST_CHART_PALETTE])
+        expect(getChartColorScheme(undefined)).toEqual([...HIGH_CONTRAST_CHART_PALETTE])
+
+        setHighContrastMode(false)
+        expect(getChartColorScheme('blue')).not.toEqual([...HIGH_CONTRAST_CHART_PALETTE])
+    })
+
+    test('gradient heatmap schemes are replaced while it is on', () => {
+        const green = HEATMAP_PRESETS['green']!
+
+        expect(resolveEffectiveHeatmapScheme(green)).toBe(green)
+
+        setHighContrastMode(true)
+        expect(resolveEffectiveHeatmapScheme(green)).toBe(HIGH_CONTRAST_HEATMAP_SCHEME)
+    })
+
+    test('discrete heatmap schemes are left alone: their colors carry meaning', () => {
+        const discrete = createDefaultDiscreteScheme()
+
+        setHighContrastMode(true)
+        expect(resolveEffectiveHeatmapScheme(discrete)).toBe(discrete)
+        expect(resolveHeatmapCellColor(1, discrete, 1, 5)).toBe(
+            discrete.mapping['1'] ?? discrete.empty
+        )
+    })
+
+    test('cell colors follow the high contrast gradient', () => {
+        const green = HEATMAP_PRESETS['green']!
+
+        setHighContrastMode(true)
+        expect(resolveHeatmapCellColor(5, green, 1, 5)).toBe(HIGH_CONTRAST_HEATMAP_SCHEME.levels[4])
     })
 })
