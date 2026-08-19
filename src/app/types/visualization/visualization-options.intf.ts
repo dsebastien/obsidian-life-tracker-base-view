@@ -36,7 +36,7 @@ export const CONTEXT_MENU_VISUALIZATION_OPTIONS: ContextMenuVisualizationOption[
     { type: VisualizationType.BubbleChart, label: 'Bubble chart', icon: 'circle-dot' },
     { type: VisualizationType.TagCloud, label: 'Cloud', icon: 'cloud' },
     { type: VisualizationType.Timeline, label: 'Timeline', icon: 'calendar' },
-    { type: VisualizationType.Progress, label: 'Progress ring', icon: 'target' }
+    { type: VisualizationType.Progress, label: 'Progress ring', icon: 'gauge' }
 ]
 
 /**
@@ -119,7 +119,7 @@ export const CONFIG_CARD_VISUALIZATION_OPTIONS: ConfigCardVisualizationOption[] 
     {
         type: VisualizationType.Progress,
         label: 'Progress ring',
-        icon: 'target',
+        icon: 'gauge',
         description: 'Progress toward a goal target'
     }
 ]

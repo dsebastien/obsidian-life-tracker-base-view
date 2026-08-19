@@ -180,6 +180,13 @@ describe('Visualization Options Synchronization', () => {
                 expect(configCardIcons.get(type)).toBe(icon)
             }
         })
+
+        test('every visualization type should have a unique icon (issue #159)', () => {
+            // The progress ring and the polar area chart once shared 'target',
+            // making them indistinguishable in the type pickers
+            const icons = CONTEXT_MENU_VISUALIZATION_OPTIONS.map((opt) => opt.icon)
+            expect(new Set(icons).size).toBe(icons.length)
+        })
     })
 
     describe('Regression prevention', () => {
