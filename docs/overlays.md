@@ -24,6 +24,7 @@ Only cartesian charts support overlays:
 - **Line Chart**: Best for comparing trends
 - **Bar Chart**: Best for comparing values
 - **Area Chart**: Best for comparing volume
+- **Range Chart**: Best for start-to-end spans (see [Range Charts](#range-charts))
 
 ## Editing an Overlay
 
@@ -55,6 +56,35 @@ Each property in an overlay can have its own reference line:
 2. In the **Reference lines** section, toggle each property
 3. Enter target values for enabled properties
 4. Lines are color-coded to match each property's dataset
+
+## Range Charts
+
+A range chart draws one floating bar per period, spanning from a **start**
+property's value to an **end** property's value — built for activity times:
+
+- **Sleep**: `To Bed` → `Wake Up`
+- **Work hours**: `Work Start` → `Work End`
+- **Numeric spreads**: `Min Weight` → `Max Weight`
+
+Create one like any overlay ("Add overlay" → chart type **Range chart**), with
+**exactly 2 properties**: the first selected property is the start, the second
+the end.
+
+Value handling:
+
+- Values can be times of day (`23:30`), datetimes (the time part is used), or
+  plain numbers.
+- If any value is a time, the whole chart runs in time mode: the y-axis and
+  tooltips read as clock times (`HH:mm`).
+- Spans that end "before" they start cross midnight and are drawn into the
+  next day: a 23:30 → 07:15 night renders as one continuous bar. Late-evening
+  and small-hours start times cluster on one band instead of jumping between
+  the axis ends.
+- A period missing either property shows no bar.
+
+Per-period aggregation, reference lines, targets, and the legend do not apply
+to range charts; clicking a bar opens the period's notes, and CSV export
+writes the formatted times.
 
 ## Legend
 

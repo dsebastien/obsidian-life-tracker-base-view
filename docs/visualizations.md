@@ -5,7 +5,7 @@ nav_order: 12
 
 # Visualizations
 
-Life Tracker supports 12 visualization types, each suited for different kinds of data.
+Life Tracker supports 13 visualization types, each suited for different kinds of data.
 
 ## Cartesian Charts
 
@@ -58,6 +58,19 @@ Best for: Multi-dimensional data
 - Hovering a bubble shows the value and the exact number of entries in that period
 
 Chart tooltips show whole-number values without trailing decimals, so counts like habit completions read as `3` rather than `3.00`.
+
+### Range Chart
+
+Draws one floating bar per period, spanning from a **start** property's value
+to an **end** property's value — sleep from "To Bed" to "Wake Up", work hours
+from "Start" to "End", or any numeric spread.
+
+- Range charts combine two properties, so they are created as overlays: see
+  [Overlay Charts](overlays.md#range-charts).
+- Values can be times of day (`23:30`), datetimes, or plain numbers. If any
+  value is a time, the axis and tooltips read as clock times (`HH:mm`).
+- Spans that end "before" they start cross midnight and are drawn into the
+  next day, so a 23:30 → 07:15 night renders as one continuous bar.
 
 ## Circular Charts
 
@@ -170,6 +183,21 @@ For properties containing arrays/lists (like tags):
 - Show 0/1 presence per time period
 - Legend identifies each value
 
+## X-Axis Source
+
+Line, bar, and area charts normally group entries into time periods. The
+**X-axis** option in the card's right-click menu offers an alternative:
+
+- **Date** (default): group entries by period via the date anchor.
+- **Note name**: one point per note, labeled with the note's name, in the
+  Base view's own sort order — sort the view to arrange the axis. Entries
+  don't need a date, which makes this ideal for Bases whose notes aren't
+  date-shaped (books with ratings, projects with scores, people).
+
+On the note-name axis there is no time grouping, so the Aggregation setting
+does not apply; the moving average, running total, and trend indicator operate
+over notes instead of periods. List-valued properties keep the date axis.
+
 ## Scale Configuration
 
 For numeric visualizations, configure the Y-axis scale:
@@ -205,10 +233,13 @@ value-to-color control. See [Heatmap](#heatmap).
 
 For cartesian charts only (Line, Bar, Area):
 
-- Add horizontal lines at target values
-- Useful for goals and thresholds
-- Custom labels (defaults to "Target: {value}")
+- Add horizontal lines at threshold values
+- Useful for limits and milestones
+- Custom labels (defaults to "Reference: {value}")
 - Color matches the dataset
+- Drawn together with the goal target's line when both are configured: the
+  target uses a tighter dash and anchors its label at the left edge, the
+  reference line at the right
 
 Example uses:
 
@@ -274,6 +305,20 @@ to weigh yourself shows a grey ring and a dash — not a weight of 0 kg, which
 would otherwise satisfy an "at most 80 kg" goal every time you skipped the
 scale. Those periods are left out of the hit rate as well.
 
+## Personal Records
+
+Properties with a **polarity** (see value polarity in
+[Configuration](configuration.md)) show their personal best: a
+"🏆 Record: value (date)" chip below single-dataset line, bar, and area
+charts, and in the heatmap's streak row.
+
+- **Higher is better** records the maximum; **lower is better** the minimum.
+- Neutral properties show nothing — without a direction there is no "best".
+- The record reads raw entry values, not period aggregates: "longest
+  meditation: 30 min" is a single session, not a daily average.
+- When new data beats the record displayed earlier in the session, a
+  "🏆 New record!" notice celebrates it.
+
 ## Moving Average
 
 For line and area charts, enable a moving average from the card's right-click menu (7, 14, or 30 periods). It renders as a thin dashed line in the chart's color, smoothing noisy daily metrics like mood, weight, or steps. Each point is the mean of the recorded values in the trailing window — missing periods are skipped, not counted as 0.
@@ -289,6 +334,7 @@ A few details worth knowing:
 - A note that exists but records no value holds the line flat rather than breaking it, since your total has not changed. Periods with no note at all are not plotted — they are not part of the chart either way, with or without a running total.
 - The legend and CSV export label the series `(running total)`, since it no longer shows the raw property value.
 - A reference line now reads as a target total, which is handy for goals like "500 pages this year".
+- A **goal target** whose period matches the chart's granularity accumulates alongside the data: "50 per day" draws as a line climbing 50 a day, labeled `(cumulative)`, so you can see whether the total keeps pace with the goal. A target with a different period (e.g. "per week" on a daily chart) has no honest slope on that axis and is not drawn while the running total is on.
 - The trend arrow keeps describing your per-period rate, not the total, and the trend row is labeled **Per-period trend** to make that explicit. A cumulative line always climbs when the values are positive, so a trend taken from it would only restate that; "steady 10 a day" reports as flat, which is what you want to know. A ↓ next to a rising total is not a contradiction: your total grew, but by less than in the previous periods.
 - Clicking a point opens a note from that period, not from everything the total has accumulated so far.
 - Only numeric properties get this option. List-valued properties are charted as one line per value, which has no total to accumulate.

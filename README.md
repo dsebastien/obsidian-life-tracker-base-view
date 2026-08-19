@@ -14,7 +14,7 @@ You can find more details and background information here: https://www.knowii.ne
 
 ### Visualizations
 
-- **12 visualization types**: Heatmap, Line, Bar, Area, Pie, Doughnut, Radar, Polar Area, Scatter, Bubble, Tag Cloud, Timeline
+- **13 visualization types**: Heatmap, Line, Bar, Area, Pie, Doughnut, Radar, Polar Area, Scatter, Bubble, Tag Cloud, Timeline, Range
 - **GitHub-style heatmaps** with 7 color schemes (green, blue, purple, orange, red, plus colorblind-friendly viridis and cividis), a custom value-to-color mapping for rating scales like mood 1-5, and average/sum aggregation for multi-entry days
 - **Animated charts** with configurable duration and play/pause controls
 - **Interactive elements**: click chart elements to open source notes, hover for detailed tooltips
@@ -24,6 +24,8 @@ You can find more details and background information here: https://www.knowii.ne
 
 - **Multiple visualizations per property**: add multiple visualization cards for the same property to compare different chart types or configurations side by side
 - **Overlay charts**: combine multiple properties on a single chart to visualize correlations (e.g., sleep vs mood, exercise vs energy), with option to hide individual property cards
+- **Range charts**: plot a start-to-end span per period from two properties — sleep from "To Bed" to "Wake Up", work hours, or any numeric range — with a clock-time axis that handles spans crossing midnight
+- **X-axis source**: line, bar, and area charts can plot one point per note (labeled with the note name, in the view's sort order) instead of grouping by date — ideal for Bases of books, projects, or people
 - **List property visualization**: list/tag properties automatically visualized with occurrence counts (pie/doughnut) or presence tracking over time (line/bar)
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
 - **First day of the week**: choose Monday (default) or Sunday for week grouping and heatmap columns
@@ -35,7 +37,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Progressive rendering**: card outlines appear instantly and fill in one by one, so large dashboards are usable while they draw
 - **Visualization presets**: auto-apply settings to properties by name pattern
 - **Scale configuration**: auto-detect or manual min/max for numeric visualizations
-- **Reference lines**: add horizontal target lines to cartesian charts (line, bar, area) to track values against goals (e.g., weight target)
+- **Reference lines**: add horizontal reference lines to cartesian charts (line, bar, area) to track values against thresholds (e.g., weight target); shown alongside the goal target's own line when both are set
 - **Color schemes**: 6 chart color schemes (green, blue, purple, orange, red, and a colorblind-friendly palette) for all chart types
 - **Chart options**: toggle legend, grid lines, and more
 - **Responsive resizing**: visualizations automatically adjust to available space
@@ -57,7 +59,8 @@ You can find more details and background information here: https://www.knowii.ne
 - **Persistent settings**: grid layout and card configurations saved per view
 - **Empty states**: helpful messages when data is missing or misconfigured
 - **Confetti celebration**: optional animation when completing property capture
-- **Goals and targets**: set a goal per visualization — "3 days a week", "150 reps a week", "at most 80 kg" — and see progress against it
+- **Goals and targets**: set a goal per visualization — "3 days a week", "150 reps a week", "at most 80 kg" — and see progress against it; with a running total the target line accumulates alongside the data
+- **Personal records**: properties with a polarity show their personal best (🏆) on charts and heatmaps, and beating it pops a "New record!" notice
 - **Progress ring**: circular progress toward a target for the period you're in, color-coded, with the hit rate and recent trend underneath
 - **High contrast mode**: maximum-contrast rendering (thick borders, strong colors, nothing dimmed) for users who need high visibility
 - **Mobile support**: responsive grid (becomes cards view on smaller screens), mobile-friendly data entry modal, tap a chart point or heatmap cell to inspect it and tap again to open the note
@@ -151,7 +154,7 @@ Combine multiple properties on a single chart to visualize correlations and patt
 
 ![Create overlay chart](documentation/screenshots/create-overlay-chart.png)
 
-Click "Create overlay" to select which properties to combine. Only cartesian chart types (Line, Bar, Area) support overlays.
+Click "Create overlay" to select which properties to combine. Cartesian chart types (Line, Bar, Area) and the Range chart support overlays. A Range chart takes exactly two properties (start and end — e.g. "To Bed" and "Wake Up") and draws one floating bar per period between them, with a clock-time axis when the values are times of day.
 
 ![Overlay multiple properties](documentation/screenshots/overlay-multiple-properties-with-overlay-charts.png)
 

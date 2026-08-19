@@ -160,6 +160,7 @@ Stored per view, per visualization. Access via right-click context menu.
 | Aggregation     | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps   |
 | Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                  |
 | Running total   | Off (default) or Enabled — plots the cumulative total; line and area charts only |
+| X-axis          | Date (default) or Note name — one point per note; line, bar, and area charts     |
 | Heatmap options | Cell size, day/month labels (heatmap only)                                       |
 
 Aggregation also applies to overlay charts (set in the overlay's own config,
