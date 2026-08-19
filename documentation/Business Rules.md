@@ -302,6 +302,10 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Notes matched by a custom pattern beat notes matched only by a built-in pattern: a configured (possibly folder-scoped) pattern states where the user's daily notes live (issue #152)
 - Within the same group, the most recently modified note wins
 
+## Card Reordering
+
+- The drag handle is hidden while a card is maximized: a maximized card fills the view alone, so there is nothing to reorder it against.
+
 ## Touch Interaction
 
 - On touch input (finger or pen), the first tap on a chart data point or heatmap cell only inspects it: the tooltip shows and nothing is opened. A second tap on the same target within 5 seconds opens the underlying note (issue #154).

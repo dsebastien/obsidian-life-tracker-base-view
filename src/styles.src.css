@@ -330,6 +330,12 @@
         @apply opacity-100;
     }
 
+    /* A maximized card fills the view on its own, so there is nothing to
+       reorder it against: hide its drag handle. */
+    .lt-card--maximized .lt-card-drag-handle {
+        @apply hidden;
+    }
+
     /* Backdrop overlay */
     .lt-container--has-maximized::before {
         content: '';
