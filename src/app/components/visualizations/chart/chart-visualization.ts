@@ -34,6 +34,7 @@ import {
     computeRunningTotal,
     computeTrend
 } from '../../../services/chart-aggregation.utils'
+import { buildCartesianReferenceLines } from './reference-lines.utils'
 
 /**
  * Chart.js-based visualization for line and bar charts
@@ -459,57 +460,15 @@ export class ChartVisualization extends BaseVisualization {
                     (elements) => this.handleBubbleChartClick(elements)
                 )
             } else if (this.chartData) {
-                // Build reference lines array if configured
-                const referenceLines: Array<{ value: number; label: string; color: string }> = []
-
-                // Single property reference line
-                if (this.chartConfig.referenceLine?.enabled) {
-                    const colors = getChartColorScheme(this.chartConfig.colorScheme)
-                    const color = colors[0] ?? '#8884d8'
-                    const label =
-                        this.chartConfig.referenceLine.label ??
-                        `Target: ${this.chartConfig.referenceLine.value}`
-                    referenceLines.push({
-                        value: this.chartConfig.referenceLine.value,
-                        label,
-                        color
-                    })
-                }
-
-                // A goal target draws itself as a reference line (issue #6), so
-                // a target set on a chart is visible without configuring the
-                // same number twice. An explicit reference line still wins.
-                const target = this.chartConfig.target
-                if (target?.enabled && !this.chartConfig.referenceLine?.enabled) {
-                    const colors = getChartColorScheme(this.chartConfig.colorScheme)
-                    referenceLines.push({
-                        value: target.value,
-                        label: `Target: ${target.value}${target.unit ? ` ${target.unit}` : ''}`,
-                        color: colors[0] ?? '#8884d8'
-                    })
-                }
-
-                // Overlay reference lines (one per dataset/property)
-                if (this.overlayReferenceLines && this.chartData.datasets) {
-                    const colors = getChartColorScheme(this.chartConfig.colorScheme)
-                    this.chartData.datasets.forEach((dataset, index) => {
-                        const propertyId = dataset.propertyId
-                        if (propertyId) {
-                            const refLineConfig = this.overlayReferenceLines?.[propertyId]
-                            if (refLineConfig?.enabled) {
-                                const color = colors[index % colors.length] ?? '#8884d8'
-                                const label =
-                                    refLineConfig.label ??
-                                    `${dataset.label}: ${refLineConfig.value}`
-                                referenceLines.push({
-                                    value: refLineConfig.value,
-                                    label,
-                                    color
-                                })
-                            }
-                        }
-                    })
-                }
+                // Every horizontal line this chart draws: explicit reference
+                // line, goal target, and overlay per-property lines. Both the
+                // reference line and the target render when both are set
+                // (issue #156)
+                const referenceLines = buildCartesianReferenceLines(
+                    this.chartConfig,
+                    this.overlayReferenceLines,
+                    this.chartData.datasets
+                )
 
                 this.chart = initCartesianChart(
                     Chart,

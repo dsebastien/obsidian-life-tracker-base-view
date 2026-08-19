@@ -316,7 +316,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - A target (issue #6) reads as one sentence: "<metric> of <property> per <period> must be <direction> <value>". `{ metric: 'count', period: 'weekly', direction: 'at-least', value: 3 }` is "do it on 3 days a week".
 - Metrics: `count` (entries with a non-zero value), `sum`, `average`, `latest`. `count` deliberately excludes zero — a note recording `push_ups: 0` says the exercise was _not_ done, and counting it would make any "N days a week" target trivially true for anyone who logs daily.
 - Targets are stored per visualization, so one property can carry several (e.g. squats: days-per-week on one card, reps-per-week on another).
-- Supported by the progress ring and by cartesian charts, which draw the target as a reference line. An explicitly configured reference line still wins over the target's.
+- Supported by the progress ring and by cartesian charts, which draw the target as a reference line. A target and an explicitly configured reference line are BOTH drawn (issue #156) — they answer different questions; the target line uses a tighter dash pattern and anchors its label at the left edge while reference labels anchor at the right, so the two stay readable even at the same value.
 - Targets read from a `.base` file are validated field by field; anything malformed is dropped whole rather than half-applied — a ring silently measuring the wrong thing is worse than no ring.
 
 ## Progress Ring
@@ -356,4 +356,4 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Reference lines are disabled by default and must be explicitly enabled per property
 - For overlay charts, each property can have its own independent reference line
 - Reference line colors match the dataset color for visual consistency
-- Default label format is "Target: {value}" if no custom label is provided
+- Default label format is "Reference: {value}" if no custom label is provided — "Target:" is the goal target line's prefix, and the two must not read alike (issue #156)

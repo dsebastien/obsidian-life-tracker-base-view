@@ -22,6 +22,7 @@ import {
 } from '../../../../utils'
 import type { Chart as ChartJsChart } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
+import type { ReferenceLineSpec } from './reference-lines.utils'
 import { format } from 'date-fns'
 import { areAllValuesIntegers, formatMetricValue } from './chart-format.utils'
 
@@ -261,7 +262,7 @@ export function initCartesianChart(
     chartData: ChartData,
     chartConfig: ChartConfig,
     onClick: (elements: ChartClickElement[]) => void,
-    referenceLines?: Array<{ value: number; label: string; color: string }>
+    referenceLines?: ReferenceLineSpec[]
 ): ChartInstance {
     // Use fill property from config (area charts have fill: true, line charts have fill: false)
     const shouldFill = chartConfig.fill ?? false
@@ -333,23 +334,27 @@ export function initCartesianChart(
 
     if (referenceLines && referenceLines.length > 0) {
         referenceLines.forEach((line, index) => {
+            // Anchor each label per its spec: reference labels sit at the
+            // right edge, the goal target's at the left, so two lines at the
+            // same value stay individually readable (issue #156)
+            const position = line.labelPosition ?? 'end'
             annotations[`referenceLine${index}`] = {
                 type: 'line',
                 yMin: line.value,
                 yMax: line.value,
                 borderColor: line.color,
                 borderWidth: 2,
-                borderDash: [5, 5], // Dashed line
+                borderDash: line.dash ?? [5, 5],
                 label: {
                     display: true,
                     content: line.label,
-                    position: 'end',
+                    position,
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     color: 'white',
                     font: { size: 11, weight: 'normal' },
                     padding: 4,
                     borderRadius: 3,
-                    xAdjust: -10,
+                    xAdjust: position === 'start' ? 10 : -10,
                     yAdjust: 0
                 }
             }

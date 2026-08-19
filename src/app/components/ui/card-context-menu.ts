@@ -1305,7 +1305,7 @@ function showReferenceLineModal(
     const labelInput = labelGroup.createEl('input', {
         type: 'text',
         cls: 'lt-scale-modal-input',
-        placeholder: 'e.g., Target: 75'
+        placeholder: 'e.g., Reference: 75'
     })
     if (currentReferenceLine?.label) {
         labelInput.value = currentReferenceLine.label
