@@ -23,7 +23,8 @@ import {
     type StoredColorScheme,
     type TargetConfig,
     type TargetDirection,
-    type TargetMetric
+    type TargetMetric,
+    type ValuePolarity
 } from '../../types'
 import { describeTarget } from '../visualizations/progress/progress-visualization'
 import {
@@ -108,6 +109,9 @@ export function showCardContextMenu(
     currentMovingAveragePeriod: number | undefined,
     currentRunningTotal: boolean | undefined,
     currentTarget: TargetConfig | undefined,
+    /** Polarity of the visualized property, used to default a new target's
+     *  direction and to flag a contradictory one (issue #21) */
+    currentPolarity: ValuePolarity | undefined,
     /** True when the property holds list values, which take a different
      *  aggregation path that ignores the moving average and the running total */
     hasListValues: boolean,
@@ -457,7 +461,7 @@ export function showCardContextMenu(
                 text: currentTarget?.enabled ? 'Edit target' : 'Set a target'
             })
             editBtn.addEventListener('click', () => {
-                showTargetModal(currentTarget, (target) => {
+                showTargetModal(currentTarget, currentPolarity, (target) => {
                     close()
                     onAction({ type: 'configureTarget', target })
                 })
@@ -1116,6 +1120,26 @@ const TARGET_DIRECTION_OPTIONS: ReadonlyArray<{ value: TargetDirection; label: s
 ]
 
 /**
+ * Warn when the chosen direction contradicts the property's polarity (#21).
+ *
+ * Not blocking: "at least 3 days recorded" on a property marked lower-is-better
+ * is unusual but legitimate. Returns null when the two agree, or when the
+ * property carries no polarity — most do not.
+ */
+function describePolarityMismatch(
+    direction: TargetDirection,
+    polarity: ValuePolarity | undefined
+): string | null {
+    if (polarity === 'lower-is-better' && direction === 'at-least') {
+        return 'This property is marked "lower is better", but the goal asks for more of it.'
+    }
+    if (polarity === 'higher-is-better' && direction === 'at-most') {
+        return 'This property is marked "higher is better", but the goal caps it.'
+    }
+    return null
+}
+
+/**
  * Show a modal for target configuration (issue #6).
  *
  * The four inputs read as one sentence — "<metric> per <period> must be
@@ -1124,6 +1148,7 @@ const TARGET_DIRECTION_OPTIONS: ReadonlyArray<{ value: TargetDirection; label: s
  */
 function showTargetModal(
     currentTarget: TargetConfig | undefined,
+    polarity: ValuePolarity | undefined,
     onConfirm: (target: TargetConfig) => void
 ): void {
     const overlay = activeDocument.body.createDiv({ cls: 'lt-scale-modal-overlay' })
@@ -1156,9 +1181,13 @@ function showTargetModal(
     const directionGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
     directionGroup.createSpan({ text: 'Goal:' })
     const directionSelect = directionGroup.createEl('select', { cls: 'lt-scale-modal-input' })
+    // A property marked "lower is better" almost always wants a ceiling, so it
+    // preselects one — only as a default, for a target being created (#21)
+    const defaultDirection: TargetDirection =
+        polarity === 'lower-is-better' ? 'at-most' : 'at-least'
     for (const option of TARGET_DIRECTION_OPTIONS) {
         const el = directionSelect.createEl('option', { value: option.value, text: option.label })
-        if ((currentTarget?.direction ?? 'at-least') === option.value) el.selected = true
+        if ((currentTarget?.direction ?? defaultDirection) === option.value) el.selected = true
     }
 
     const valueGroup = form.createDiv({ cls: 'lt-scale-modal-input-group' })
@@ -1180,6 +1209,7 @@ function showTargetModal(
     unitInput.value = currentTarget?.unit ?? ''
 
     const previewEl = form.createDiv({ cls: 'lt-scale-modal-preview' })
+    const polarityWarningEl = form.createDiv({ cls: 'lt-scale-modal-warning' })
 
     const readForm = (): TargetConfig => ({
         enabled: true,
@@ -1192,7 +1222,9 @@ function showTargetModal(
     })
 
     const updatePreview = (): void => {
-        previewEl.textContent = describeTarget(readForm())
+        const draft = readForm()
+        previewEl.textContent = describeTarget(draft)
+        polarityWarningEl.textContent = describePolarityMismatch(draft.direction, polarity) ?? ''
     }
     updatePreview()
 

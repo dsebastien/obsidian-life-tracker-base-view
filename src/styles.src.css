@@ -4173,6 +4173,16 @@
         color: var(--text-muted);
     }
 
+    /* Shown when the goal direction contradicts the property's polarity */
+    .lt-scale-modal-warning {
+        @apply text-xs mt-1;
+        color: var(--text-warning, var(--color-yellow));
+    }
+
+    .lt-scale-modal-warning:empty {
+        @apply hidden;
+    }
+
     /* ========================================
    HIGH CONTRAST MODE (issue #137)
    ======================================== */

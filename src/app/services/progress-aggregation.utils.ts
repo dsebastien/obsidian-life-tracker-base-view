@@ -91,9 +91,17 @@ export function progressRatio(actual: number, target: TargetConfig): number {
 /**
  * Classify a period for coloring: met, close to the target, or behind.
  *
- * "Close" only exists for an at-least target, where it means the period is
- * still running and most of the way there. An at-most target that is not met
- * has already been blown past — there is nothing "close" about it.
+ * The colour ramp follows the target's *direction*, which is what says whether
+ * filling the ring is a good thing:
+ *
+ * - `at-least` is a goal to reach, so the ring runs red → yellow → green as it
+ *   fills.
+ * - `at-most` is a budget to stay under, so it runs green → yellow → red: the
+ *   warning belongs *before* the ceiling is crossed, not after.
+ *
+ * "Close" needs a meaningful zero to measure against, so it is limited to the
+ * metrics that accumulate from nothing. Being at 79 of an 80 kg ceiling is not
+ * "99% of the way through a budget" — the scale simply does not start at 0.
  */
 export function progressStatus(
     actual: number,
@@ -104,16 +112,26 @@ export function progressStatus(
         return 'no-data'
     }
 
-    if (isTargetMet(actual, target)) {
-        return 'met'
-    }
+    const met = isTargetMet(actual, target)
+    const warnAt = target.warnThreshold ?? DEFAULT_TARGET_WARN_THRESHOLD
+    const nearTarget = accumulatesFromZero(target.metric) && progressRatio(actual, target) >= warnAt
 
     if (target.direction === 'at-most') {
-        return 'behind'
+        // Over the ceiling is a miss; under it but close is the warning
+        if (!met) return 'behind'
+        return nearTarget ? 'close' : 'met'
     }
 
-    const warnAt = target.warnThreshold ?? DEFAULT_TARGET_WARN_THRESHOLD
-    return progressRatio(actual, target) >= warnAt ? 'close' : 'behind'
+    if (met) return 'met'
+    return nearTarget ? 'close' : 'behind'
+}
+
+/**
+ * Whether a metric counts up from a meaningful zero, which is what makes
+ * "fraction of the target" a fair reading of how far along a period is
+ */
+export function accumulatesFromZero(metric: TargetConfig['metric']): boolean {
+    return metric === 'count' || metric === 'sum'
 }
 
 /**

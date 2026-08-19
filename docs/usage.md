@@ -154,7 +154,9 @@ Pick **Progress ring** as the visualization type to see a goal as a circle:
 
 - The ring is the period you are **currently in** — this week, not an average of
   the whole range. It is the only number you can still act on.
-- Green means met, yellow means most of the way there, red means behind.
+- Colors follow the goal's direction: a "reach it" goal runs red → yellow →
+  green as the ring fills; a "stay under" budget runs green → yellow → red, so
+  the warning arrives before you cross the line, not after.
 - Underneath: how many periods met the target across the selected range, your
   current and best streak, and a strip of bars for the last 26 periods.
 - Streaks count periods that **met** the goal — two squat sessions in a

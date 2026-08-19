@@ -78,10 +78,35 @@ describe('progressStatus', () => {
         expect(progressStatus(1, config)).toBe('behind')
     })
 
-    test('for an at-most target, being far under is met, not behind', () => {
-        const config = target({ value: 80, direction: 'at-most' })
-        expect(progressStatus(70, config)).toBe('met')
-        expect(progressStatus(90, config)).toBe('behind')
+    test('an at-most budget runs green to red: comfortable, near the ceiling, over it', () => {
+        const config = target({
+            value: 10,
+            metric: 'sum',
+            direction: 'at-most',
+            warnThreshold: 0.5
+        })
+        expect(progressStatus(2, config)).toBe('met')
+        expect(progressStatus(8, config)).toBe('close')
+        expect(progressStatus(12, config)).toBe('behind')
+    })
+
+    test('an at-least goal runs red to green: behind, nearly there, met', () => {
+        const config = target({ value: 10, metric: 'sum', warnThreshold: 0.5 })
+        expect(progressStatus(2, config)).toBe('behind')
+        expect(progressStatus(8, config)).toBe('close')
+        expect(progressStatus(12, config)).toBe('met')
+    })
+
+    test('metrics without a meaningful zero skip the warning band', () => {
+        // 79 of an 80 kg ceiling is not "99% of a budget": the scale does not
+        // start at 0, so latest and average are met or missed, nothing between
+        const config = target({ value: 80, metric: 'latest', direction: 'at-most' })
+        expect(progressStatus(79, config)).toBe('met')
+        expect(progressStatus(81, config)).toBe('behind')
+
+        const average = target({ value: 7, metric: 'average' })
+        expect(progressStatus(4, average)).toBe('behind')
+        expect(progressStatus(7, average)).toBe('met')
     })
 })
 

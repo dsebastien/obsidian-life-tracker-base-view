@@ -143,7 +143,8 @@ Best for: Event sequences
 Best for: Goals you either hit or miss
 
 - Circular progress toward a target for the period you are **currently in**
-- Green when met, yellow when most of the way there, red when behind
+- Colors follow the goal's direction: a "reach it" goal runs red → yellow →
+  green as the ring fills, a "stay under" budget runs green → yellow → red
 - The hit rate and your current/best streak sit below the ring, with a strip of
   bars for the last 26 periods
 - Good for: "3 days a week", "150 reps a week", "10 000 steps a day", "at most
@@ -240,6 +241,27 @@ a week). The goal appears in the card title so the two stay distinguishable.
 Supported by the progress ring and by Line, Bar and Area charts, which draw the
 target as a horizontal reference line. An explicitly configured reference line
 takes precedence over the target's.
+
+### Colors
+
+The ring colors itself from the goal's direction, so filling it always reads
+the right way round:
+
+| Goal                 | Empty ring | Approaching | At the target     |
+| -------------------- | ---------- | ----------- | ----------------- |
+| At least (reach it)  | Red        | Yellow      | Green             |
+| At most (stay under) | Green      | Yellow      | Red once exceeded |
+
+The yellow warning band needs a meaningful zero to measure against, so it only
+applies to "entries with a value" and "total of the values". A weight of 79
+against an 80 kg ceiling is not "99% of a budget" — that scale does not start at
+zero — so "average" and "most recent value" goals are simply met or missed.
+
+If you have set a property's **value direction** in the plugin settings
+(_higher is better_ / _lower is better_), it preselects the matching goal
+direction when you create a target, and warns you if you pick the opposite. It
+does not override the colors: the direction you chose is the explicit statement
+of what you want, and most properties carry no value direction at all.
 
 ### Periods with nothing recorded
 

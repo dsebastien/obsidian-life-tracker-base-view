@@ -1902,6 +1902,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.movingAveragePeriod,
             vizConfig.runningTotal,
             vizConfig.target,
+            this.findPropertyDefinition(propertyId)?.polarity,
             hasListValues,
             isFromPreset,
             isMaximized,
