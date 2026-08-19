@@ -98,6 +98,15 @@ Cards that aren't showing a visualization yet — an unconfigured property, or o
 with no data in the selected time frame — have no star; configure them (or
 right-click a configured one) to pin.
 
+### On Mobile
+
+There is no hover on a touch screen, so tapping a chart point or a heatmap cell
+only _inspects_ it: the tooltip appears and nothing else happens. Tap the same
+point or cell again to open the note behind it. Heatmap tooltips say "Tap again
+to open" while that second tap is expected.
+
+With a mouse, a single click still opens the note straight away.
+
 ### Animation Controls
 
 - **Play/Pause**: Control chart animations

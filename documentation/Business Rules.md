@@ -302,6 +302,14 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Notes matched by a custom pattern beat notes matched only by a built-in pattern: a configured (possibly folder-scoped) pattern states where the user's daily notes live (issue #152)
 - Within the same group, the most recently modified note wins
 
+## Touch Interaction
+
+- On touch input (finger or pen), the first tap on a chart data point or heatmap cell only inspects it: the tooltip shows and nothing is opened. A second tap on the same target within 5 seconds opens the underlying note (issue #154).
+- Mouse and keyboard interaction is unchanged: a click or Enter opens the note straight away.
+- The pointer type is read from `pointerdown` on the canvas / heatmap grid, so a device switching between mouse and touch behaves correctly without any setting.
+- Tapping a different target re-arms that one instead of navigating; a re-render disarms.
+- Heatmap tooltips replace their subtitle with "Tap again to open" while a cell is armed, so the two-step interaction is discoverable where hover does not exist.
+
 ## Reduced Motion
 
 - Decorative animations (confetti, Chart.js animations, CSS keyframe animations) MUST respect the OS-level `prefers-reduced-motion` setting (issue #109)

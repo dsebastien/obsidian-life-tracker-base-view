@@ -1,5 +1,6 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
+import { TouchNavigationGate } from '../touch-navigation'
 import type {
     BubbleChartData,
     ChartConfig,
@@ -41,6 +42,11 @@ export class ChartVisualization extends BaseVisualization {
     private chartConfig: ChartConfig
     private chart: ChartInstance | null = null
     private canvasEl: HTMLCanvasElement | null = null
+    /**
+     * Tap-to-inspect gate: on touch screens the first tap on a point shows its
+     * tooltip and only a second tap opens the note (issue #154)
+     */
+    private readonly touchNavigation = new TouchNavigationGate()
     private chartData: ChartData | null = null
     private pieChartData: PieChartData | null = null
     private scatterChartData: ScatterChartData | null = null
@@ -216,6 +222,7 @@ export class ChartVisualization extends BaseVisualization {
         // The canvas is sized by `.lt-chart`, which is relatively positioned and
         // dedicated to it; the canvas itself is out of flow (issue #144).
         this.canvasEl = this.chartContainer.createEl('canvas', { cls: 'lt-chart-canvas' })
+        this.touchNavigation.observe(this.canvasEl)
 
         // Trend arrow in the title + trend row below the chart (issue #101)
         this.trendStatsEl = this.containerEl.createDiv({ cls: 'lt-chart-trend' })
@@ -377,6 +384,7 @@ export class ChartVisualization extends BaseVisualization {
         // The canvas is sized by `.lt-chart`, which is relatively positioned and
         // dedicated to it; the canvas itself is out of flow (issue #144).
         this.canvasEl = this.chartContainer.createEl('canvas', { cls: 'lt-chart-canvas' })
+        this.touchNavigation.observe(this.canvasEl)
 
         // Initialize chart (async, errors handled internally)
         void this.initChart()
@@ -830,6 +838,7 @@ export class ChartVisualization extends BaseVisualization {
 
     override destroy(): void {
         this.disposeChart()
+        this.touchNavigation.dispose()
         this.canvasEl = null
         this.chartContainer = null
         this.trendStatsEl = null
@@ -969,6 +978,10 @@ export class ChartVisualization extends BaseVisualization {
 
         const filePaths = dataset.filePaths[element.index]
         if (filePaths && filePaths.length > 0) {
+            // On touch, the first tap only reveals the tooltip (issue #154)
+            if (!this.touchNavigation.shouldNavigate(`${element.datasetIndex}:${element.index}`)) {
+                return
+            }
             this.openFilePaths(filePaths)
         }
     }
@@ -984,6 +997,9 @@ export class ChartVisualization extends BaseVisualization {
 
         const filePaths = this.pieChartData.filePaths[element.index]
         if (filePaths && filePaths.length > 0) {
+            if (!this.touchNavigation.shouldNavigate(`pie:${element.index}`)) {
+                return
+            }
             this.openFilePaths(filePaths)
         }
     }
@@ -999,6 +1015,9 @@ export class ChartVisualization extends BaseVisualization {
 
         const filePath = this.scatterChartData.filePaths[element.index]
         if (filePath) {
+            if (!this.touchNavigation.shouldNavigate(`scatter:${element.index}`)) {
+                return
+            }
             this.openFileByPath(filePath)
         }
     }
@@ -1014,6 +1033,9 @@ export class ChartVisualization extends BaseVisualization {
 
         const filePaths = this.bubbleChartData.filePaths[element.index]
         if (filePaths && filePaths.length > 0) {
+            if (!this.touchNavigation.shouldNavigate(`bubble:${element.index}`)) {
+                return
+            }
             this.openFilePaths(filePaths)
         }
     }

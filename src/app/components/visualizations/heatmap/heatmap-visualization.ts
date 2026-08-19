@@ -11,6 +11,7 @@ import type {
 import { sharedAggregationService } from '../../../services/data-aggregation.service'
 import { Tooltip, formatHeatmapTooltip } from '../../ui/tooltip'
 import { applyCellColor, renderHeatmapGrid } from './heatmap-renderer'
+import { TouchNavigationGate } from '../touch-navigation'
 import { parseISO, isSameDay, isSameMonth, isSameYear } from 'date-fns'
 import {
     log,
@@ -21,6 +22,9 @@ import {
     isDiscreteHeatmapScheme,
     setCssProps
 } from '../../../../utils'
+
+/** Shown instead of the tooltip subtitle when a cell is armed for opening */
+const TAP_AGAIN_HINT = 'Tap again to open'
 
 /**
  * Streak unit label per granularity (singular form)
@@ -50,6 +54,11 @@ export class HeatmapVisualization extends BaseVisualization {
     private detachScrollTracking: (() => void) | null = null
     /** Whether the user is looking at the end (freshest data) of the heatmap */
     private wasScrolledToEnd = true
+    /**
+     * Tap-to-inspect gate: on touch screens the first tap on a cell shows its
+     * tooltip and only a second tap opens the note (issue #154)
+     */
+    private readonly touchNavigation = new TouchNavigationGate()
     /**
      * Period the view covers, independent of which dates carry a value. Keeps
      * the grid spanning the whole selected range for optional properties
@@ -369,6 +378,7 @@ export class HeatmapVisualization extends BaseVisualization {
             this.pendingScrollFrame = null
         }
         this.releaseRenderedGrid()
+        this.touchNavigation.dispose()
         this.heatmapData = null
     }
 
@@ -507,7 +517,7 @@ export class HeatmapVisualization extends BaseVisualization {
         }
         const onClick = (event: MouseEvent): void => {
             const cell = cellFrom(event)
-            if (cell) this.handleCellClick(cell)
+            if (cell) this.handleCellClick(cell, event)
         }
         const onFocusIn = (event: FocusEvent): void => {
             const cell = cellFrom(event)
@@ -520,6 +530,8 @@ export class HeatmapVisualization extends BaseVisualization {
             const cell = cellFrom(event)
             if (cell) this.handleCellKeydown(event, cell)
         }
+
+        this.touchNavigation.observe(gridEl)
 
         gridEl.addEventListener('mouseover', onMouseOver)
         gridEl.addEventListener('mouseout', onMouseOut)
@@ -535,6 +547,7 @@ export class HeatmapVisualization extends BaseVisualization {
             gridEl.removeEventListener('focusin', onFocusIn)
             gridEl.removeEventListener('focusout', onFocusOut)
             gridEl.removeEventListener('keydown', onKeyDown)
+            this.touchNavigation.reset()
             this.detachListeners = null
         }
     }
@@ -571,7 +584,7 @@ export class HeatmapVisualization extends BaseVisualization {
     /**
      * Handle cell hover - show tooltip
      */
-    private handleCellHover(event: MouseEvent, cellEl: HTMLElement): void {
+    private handleCellHover(event: MouseEvent, cellEl: HTMLElement, hint?: string): void {
         if (!this.tooltip) return
 
         const content = this.formatCellTooltip(cellEl)
@@ -583,7 +596,7 @@ export class HeatmapVisualization extends BaseVisualization {
             event.clientY - 10,
             content.title,
             content.value,
-            content.subtitle
+            hint ?? content.subtitle
         )
     }
 
@@ -645,7 +658,7 @@ export class HeatmapVisualization extends BaseVisualization {
     /**
      * Handle cell click - open related files
      */
-    private handleCellClick(cellEl: HTMLElement): void {
+    private handleCellClick(cellEl: HTMLElement, event?: MouseEvent): void {
         if (!this.heatmapData) return
 
         const dateStr = cellEl.dataset['date']
@@ -657,6 +670,16 @@ export class HeatmapVisualization extends BaseVisualization {
         const cell = this.heatmapData.cells.find((c) => isSameDay(c.date, date))
 
         if (cell && cell.filePaths.length > 0) {
+            // On touch there is no hover, so the first tap shows the tooltip
+            // and only a second tap on the same cell opens the note (#154)
+            if (!this.touchNavigation.shouldNavigate(dateStr)) {
+                if (event) {
+                    this.handleCellHover(event, cellEl, TAP_AGAIN_HINT)
+                } else {
+                    this.handleCellFocus(cellEl)
+                }
+                return
+            }
             this.openFilePaths(cell.filePaths)
         }
     }
