@@ -324,7 +324,12 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - The ring shows the period the _view's last day_ falls in, not an average of the range: it is the only number still actionable (issue #126).
 - When the view ends on a period with no entries at all, the ring shows zero rather than falling back to the last period with data. A week where nothing was logged is a week the target was missed.
 - That synthesized empty period is not counted in the hit rate — only periods that actually contain entries are.
-- Status drives color: `met` (green), `close` (yellow, at or above the warn threshold, default 50% of the target), `behind` (red).
+- Status drives color: `met` (green), `close` (yellow, at or above the warn threshold, default 50% of the target), `behind` (red), `no-data` (neutral).
+- `no-data` applies to `average` and `latest` targets only: a period with nothing recorded is _unknown_, not zero. Without it, "at most 80 kg" would read as met in every week the user forgot to weigh themselves. `count` and `sum` treat an empty period as a real zero — doing nothing all week genuinely is 0 days and 0 reps.
+- A `no-data` period is never counted as met, and is excluded from the hit rate's denominator.
+- The ring's title carries the goal (`Squats · ≥ 3 days/week`) because card titles are per property and one property can carry several goals. The `/period` suffix is only added for `count` and `sum`, the metrics that accumulate — "≤ 80 kg per week" would read as a rate.
+- Streaks count periods that **met** the target, not periods with any data: two squats in a three-a-week goal is not a week of the habit. Same present-reaching rule as the heatmap's streaks (issue #100).
+- The history strip shows the last 26 periods, stretched to the card width.
 - `close` only applies to at-least targets. An at-most target that is not met has already been exceeded — there is nothing close about it.
 - The ring fills as a fraction of the target for both directions, so a full ring on an at-most target means the budget is spent.
 - A progress card with no target renders a "set a target" prompt, never an empty state: the user must not be sent looking for missing data.

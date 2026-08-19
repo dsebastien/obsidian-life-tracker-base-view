@@ -28,8 +28,11 @@ const RING_STROKE = 12
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
-/** How many recent periods the sparkline strip shows */
-const RECENT_PERIOD_COUNT = 12
+/**
+ * How many recent periods the strip shows. Bars share the available width, so
+ * this is a history depth rather than a layout constraint.
+ */
+const RECENT_PERIOD_COUNT = 26
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -77,7 +80,7 @@ export class ProgressVisualization extends BaseVisualization {
         const target = this.progressConfig.target
 
         this.containerEl.empty()
-        this.createSectionHeader(this.displayName)
+        this.createSectionHeader(this.cardTitle(target))
 
         if (!target?.enabled) {
             this.progressData = null
@@ -101,8 +104,30 @@ export class ProgressVisualization extends BaseVisualization {
 
         if (this.progressConfig.showHitRate !== false) {
             this.renderHitRate(wrapper, this.progressData)
+            this.renderStreaks(wrapper, this.progressData)
             this.renderRecentPeriods(wrapper, this.progressData)
         }
+    }
+
+    /**
+     * A property can carry several goals at once (days a week *and* reps a
+     * week), and the card title is per property — so the goal goes in the
+     * title, or the two rings would be indistinguishable at a glance.
+     */
+    private cardTitle(target: TargetConfig | undefined): string {
+        if (!target?.enabled) return this.displayName
+
+        const comparator = target.direction === 'at-most' ? '≤' : '≥'
+        const amount = formatAmount(target.value)
+        const unit = target.unit ? ` ${target.unit}` : ''
+        // A rate only makes sense for metrics that accumulate: "≥ 150 reps per
+        // week" reads right, "≤ 80 kg per week" does not
+        const per =
+            target.metric === 'count' || target.metric === 'sum'
+                ? `/${periodLabel(target.period, 1)}`
+                : ''
+
+        return `${this.displayName} · ${comparator} ${amount}${unit}${per}`
     }
 
     override update(data: VisualizationDataPoint[]): void {
@@ -141,9 +166,11 @@ export class ProgressVisualization extends BaseVisualization {
         svg.setAttribute('role', 'img')
         svg.setAttribute(
             'aria-label',
-            `${this.displayName}: ${formatAmount(current?.actual ?? 0)} of ${formatAmount(
-                data.target.value
-            )}`
+            status === 'no-data'
+                ? `${this.displayName}: nothing recorded this ${periodLabel(data.target.period, 1)}`
+                : `${this.displayName}: ${formatAmount(current?.actual ?? 0)} of ${formatAmount(
+                      data.target.value
+                  )}`
         )
         svg.classList.add('lt-progress-ring-svg')
 
@@ -170,7 +197,9 @@ export class ProgressVisualization extends BaseVisualization {
         const centerEl = ringEl.createDiv({ cls: 'lt-progress-ring-center' })
         centerEl.createDiv({
             cls: 'lt-progress-value',
-            text: formatAmount(current?.actual ?? 0)
+            // An em dash, not a 0: nothing was recorded, which is not the same
+            // as having recorded a zero (issue #6)
+            text: status === 'no-data' ? '—' : formatAmount(current?.actual ?? 0)
         })
         centerEl.createDiv({
             cls: 'lt-progress-goal',
@@ -206,10 +235,31 @@ export class ProgressVisualization extends BaseVisualization {
     }
 
     private renderHitRate(container: HTMLElement, data: ProgressData): void {
-        const label = periodLabel(data.target.period, data.periodCount)
+        const measured = data.periods.filter((period) => period.status !== 'no-data').length
+        const label = periodLabel(data.target.period, measured)
         container.createDiv({
             cls: 'lt-progress-hit-rate',
-            text: `${data.metCount} of ${data.periodCount} ${label} met`
+            text: `${data.metCount} of ${measured} ${label} met`
+        })
+    }
+
+    /**
+     * Streaks of periods that met the target (issue #100), the same row the
+     * heatmap shows. A goal is mostly about not breaking the chain, so the
+     * current and best runs belong next to the hit rate.
+     */
+    private renderStreaks(container: HTMLElement, data: ProgressData): void {
+        const { currentStreak, longestStreak } = data.streaks
+        const unit = (count: number): string => `${count} ${periodLabel(data.target.period, count)}`
+
+        const streaksEl = container.createDiv({ cls: 'lt-progress-streaks' })
+        streaksEl.createSpan({
+            cls: 'lt-progress-streaks-item',
+            text: `Streak: ${unit(currentStreak)}`
+        })
+        streaksEl.createSpan({
+            cls: 'lt-progress-streaks-item',
+            text: `Best: ${unit(longestStreak)}`
         })
     }
 

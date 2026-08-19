@@ -11,6 +11,7 @@ import {
 } from '../types'
 import type { BasesPropertyId } from 'obsidian'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
+import { computeDatedStreaks } from './heatmap-streak.utils'
 
 /**
  * Progress toward a goal target (issues #6 and #126).
@@ -51,6 +52,21 @@ function foldPeriod(values: number[], metric: TargetConfig['metric']): number {
 }
 
 /**
+ * Metrics whose empty period means "unknown" rather than zero.
+ *
+ * Doing nothing all week really is a count of 0 and a sum of 0, but it is not
+ * an average of 0 and certainly not a weight of 0 kg.
+ */
+const UNKNOWN_WHEN_EMPTY: ReadonlySet<TargetConfig['metric']> = new Set(['average', 'latest'])
+
+/**
+ * Whether a period with no recorded values can still be measured
+ */
+export function isMeasurableWhenEmpty(metric: TargetConfig['metric']): boolean {
+    return !UNKNOWN_WHEN_EMPTY.has(metric)
+}
+
+/**
  * Whether a period's value meets the target
  */
 export function isTargetMet(actual: number, target: TargetConfig): boolean {
@@ -79,7 +95,15 @@ export function progressRatio(actual: number, target: TargetConfig): number {
  * still running and most of the way there. An at-most target that is not met
  * has already been blown past — there is nothing "close" about it.
  */
-export function progressStatus(actual: number, target: TargetConfig): ProgressStatus {
+export function progressStatus(
+    actual: number,
+    target: TargetConfig,
+    hasData = true
+): ProgressStatus {
+    if (!hasData && !isMeasurableWhenEmpty(target.metric)) {
+        return 'no-data'
+    }
+
     if (isTargetMet(actual, target)) {
         return 'met'
     }
@@ -131,17 +155,7 @@ export function aggregateForProgress(
     }
 
     const periods: ProgressPeriod[] = [...buckets.values()]
-        .map(({ date, values, filePaths }) => {
-            const actual = foldPeriod(values, target.metric)
-            return {
-                date,
-                actual,
-                met: isTargetMet(actual, target),
-                status: progressStatus(actual, target),
-                ratio: progressRatio(actual, target),
-                filePaths
-            }
-        })
+        .map(({ date, values, filePaths }) => buildPeriod(date, values, target, filePaths))
         .sort((a, b) => compareAsc(a.date, b.date))
 
     const current = pickCurrentPeriod(periods, target, viewDateRange)
@@ -153,7 +167,13 @@ export function aggregateForProgress(
         periods,
         current,
         metCount: periods.filter((period) => period.met).length,
-        periodCount: periods.length
+        periodCount: periods.length,
+        // A streak counts periods that *met* the target, not periods with any
+        // data: two squats in a week is not a week of the habit (issue #100)
+        streaks: computeDatedStreaks(
+            periods.filter((period) => period.met).map((period) => period.date),
+            target.period
+        )
     }
 }
 
@@ -179,14 +199,30 @@ function pickCurrentPeriod(
         return match
     }
 
-    const actual = foldPeriod([], target.metric)
+    return buildPeriod(normalizeDate(viewDateRange.maxDate, target.period), [], target, [])
+}
+
+/**
+ * Measure one period's values against the target
+ */
+function buildPeriod(
+    date: Date,
+    values: number[],
+    target: TargetConfig,
+    filePaths: string[]
+): ProgressPeriod {
+    const hasData = values.length > 0
+    const actual = foldPeriod(values, target.metric)
+    const status = progressStatus(actual, target, hasData)
+
     return {
-        date: normalizeDate(viewDateRange.maxDate, target.period),
+        date,
         actual,
-        met: isTargetMet(actual, target),
-        status: progressStatus(actual, target),
-        ratio: progressRatio(actual, target),
-        filePaths: []
+        hasData,
+        met: status !== 'no-data' && isTargetMet(actual, target),
+        status,
+        ratio: status === 'no-data' ? 0 : progressRatio(actual, target),
+        filePaths
     }
 }
 

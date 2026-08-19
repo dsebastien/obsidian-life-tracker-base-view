@@ -4034,6 +4034,11 @@
         --lt-progress-color: var(--color-red);
     }
 
+    /* Nothing recorded: neutral, so an empty period never reads as a verdict */
+    .lt-progress-ring--no-data {
+        --lt-progress-color: var(--text-muted);
+    }
+
     .lt-progress-ring-svg {
         @apply w-full h-full;
         /* Start the arc at 12 o'clock instead of 3 */
@@ -4083,15 +4088,25 @@
         color: var(--text-normal);
     }
 
-    /* One bar per recent period: the trend behind the hit rate */
+    .lt-progress-streaks {
+        @apply flex items-center justify-center gap-3 text-xs;
+        color: var(--text-muted);
+    }
+
+    .lt-progress-streaks-item {
+        @apply whitespace-nowrap;
+    }
+
+    /* One bar per recent period: the trend behind the hit rate. Bars stretch to
+       fill the card so the history reads as a chart, not as a row of ticks. */
     .lt-progress-strip {
-        @apply flex items-end justify-center gap-1 w-full mt-auto;
-        height: 24px;
+        @apply flex items-end gap-0.5 w-full mt-auto;
+        height: 28px;
     }
 
     .lt-progress-strip-bar {
-        @apply rounded-sm;
-        width: 6px;
+        @apply rounded-sm flex-1;
+        min-width: 2px;
         min-height: 2px;
         background-color: var(--background-modifier-border);
     }
@@ -4106,6 +4121,37 @@
 
     .lt-progress-strip-bar--behind {
         background-color: var(--color-red);
+    }
+
+    .lt-progress-strip-bar--no-data {
+        background-color: var(--background-modifier-border);
+    }
+
+    /* Maximized: the ring is the whole point of the card, so let it take the
+       space instead of floating as a small badge in an empty pane. */
+    .lt-card--maximized .lt-progress {
+        @apply gap-4;
+    }
+
+    .lt-card--maximized .lt-progress-ring {
+        width: min(40vh, 320px);
+        height: min(40vh, 320px);
+    }
+
+    .lt-card--maximized .lt-progress-goal,
+    .lt-card--maximized .lt-progress-target,
+    .lt-card--maximized .lt-progress-hit-rate,
+    .lt-card--maximized .lt-progress-streaks {
+        @apply text-base;
+    }
+
+    .lt-card--maximized .lt-progress-value {
+        font-size: clamp(2rem, 6vh, 3.5rem);
+    }
+
+    .lt-card--maximized .lt-progress-strip {
+        @apply gap-1 mt-6;
+        height: 120px;
     }
 
     .lt-progress-empty {
@@ -4198,6 +4244,7 @@
     }
 
     .lt-high-contrast .lt-progress-target,
+    .lt-high-contrast .lt-progress-streaks,
     .lt-high-contrast .lt-progress-goal {
         color: var(--text-normal);
     }

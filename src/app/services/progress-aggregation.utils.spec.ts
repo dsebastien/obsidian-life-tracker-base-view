@@ -209,6 +209,124 @@ describe('aggregateForProgress', () => {
     })
 })
 
+describe('metrics that cannot be measured from nothing (issue #6)', () => {
+    test('a weight target reads as no-data, not as met, when nothing was logged', () => {
+        const points = [point('2024-03-04', 82)]
+
+        const result = aggregateForProgress(
+            points,
+            PROP_ID,
+            'Weight',
+            target({ metric: 'latest', value: 80, direction: 'at-most' }),
+            { minDate: new Date('2024-03-01'), maxDate: new Date('2024-03-20') }
+        )
+
+        expect(result.current?.status).toBe('no-data')
+        expect(result.current?.met).toBe(false)
+        expect(result.current?.hasData).toBe(false)
+        expect(result.current?.ratio).toBe(0)
+    })
+
+    test('an average target behaves the same way', () => {
+        const result = aggregateForProgress(
+            [point('2024-03-04', 8)],
+            PROP_ID,
+            'Mood',
+            target({ metric: 'average', value: 7 }),
+            { minDate: new Date('2024-03-01'), maxDate: new Date('2024-03-20') }
+        )
+
+        expect(result.current?.status).toBe('no-data')
+    })
+
+    test('a count target still reads an empty period as a real zero', () => {
+        const result = aggregateForProgress(
+            [point('2024-03-04', 1)],
+            PROP_ID,
+            'Push ups',
+            target({ metric: 'count', value: 3 }),
+            { minDate: new Date('2024-03-01'), maxDate: new Date('2024-03-20') }
+        )
+
+        expect(result.current?.status).toBe('behind')
+        expect(result.current?.actual).toBe(0)
+    })
+
+    test('a sum target likewise: doing nothing really is zero reps', () => {
+        const result = aggregateForProgress(
+            [point('2024-03-04', 50)],
+            PROP_ID,
+            'Squats',
+            target({ metric: 'sum', value: 150 }),
+            { minDate: new Date('2024-03-01'), maxDate: new Date('2024-03-20') }
+        )
+
+        expect(result.current?.status).toBe('behind')
+        expect(result.current?.actual).toBe(0)
+    })
+
+    test('periods that do record a value are measured normally', () => {
+        const result = aggregateForProgress(
+            [point('2024-03-04', 79)],
+            PROP_ID,
+            'Weight',
+            target({ metric: 'latest', value: 80, direction: 'at-most' })
+        )
+
+        expect(result.current?.status).toBe('met')
+        expect(result.current?.hasData).toBe(true)
+    })
+})
+
+describe('streaks (issue #100)', () => {
+    test('counts consecutive periods that met the target, not periods with data', () => {
+        const points = [
+            // Week 1: met (3 days)
+            point('2024-03-04', 1),
+            point('2024-03-05', 1),
+            point('2024-03-06', 1),
+            // Week 2: missed (1 day)
+            point('2024-03-11', 1),
+            // Week 3: met
+            point('2024-03-18', 1),
+            point('2024-03-19', 1),
+            point('2024-03-20', 1)
+        ]
+
+        const result = aggregateForProgress(points, PROP_ID, 'Push ups', target({ value: 3 }))
+
+        expect(result.streaks.activeCount).toBe(2)
+        expect(result.streaks.longestStreak).toBe(1)
+    })
+
+    test('consecutive met periods build a run', () => {
+        const points = [
+            point('2024-03-04', 1),
+            point('2024-03-05', 1),
+            point('2024-03-11', 1),
+            point('2024-03-12', 1),
+            point('2024-03-18', 1),
+            point('2024-03-19', 1)
+        ]
+
+        const result = aggregateForProgress(points, PROP_ID, 'Push ups', target({ value: 2 }))
+
+        expect(result.streaks.longestStreak).toBe(3)
+        expect(result.streaks.activeCount).toBe(3)
+    })
+
+    test('no met period means no streak', () => {
+        const result = aggregateForProgress(
+            [point('2024-03-04', 1)],
+            PROP_ID,
+            'Push ups',
+            target({ value: 5 })
+        )
+
+        expect(result.streaks).toEqual({ currentStreak: 0, longestStreak: 0, activeCount: 0 })
+    })
+})
+
 describe('periodLabel', () => {
     test('is singular for one and plural otherwise', () => {
         expect(periodLabel(TimeGranularity.Weekly, 1)).toBe('week')

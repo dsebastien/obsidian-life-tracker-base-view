@@ -155,9 +155,14 @@ Pick **Progress ring** as the visualization type to see a goal as a circle:
 - The ring is the period you are **currently in** — this week, not an average of
   the whole range. It is the only number you can still act on.
 - Green means met, yellow means most of the way there, red means behind.
-- Underneath: how many periods met the target across the selected range, and a
-  strip of bars showing the last twelve periods.
+- Underneath: how many periods met the target across the selected range, your
+  current and best streak, and a strip of bars for the last 26 periods.
+- Streaks count periods that **met** the goal — two squat sessions in a
+  three-a-week goal does not extend the chain.
 - A week where nothing was logged shows as zero, not as the last week with data.
+- Except for "average" and "most recent value" goals: there, a period with
+  nothing recorded shows a grey ring and a dash. A week you forgot to weigh
+  yourself is unknown, not a week you weighed 0 kg.
 
 ## Maximize Mode
 

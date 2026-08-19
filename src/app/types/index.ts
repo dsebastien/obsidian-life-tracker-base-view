@@ -27,7 +27,7 @@ export type {
     HeatmapData,
     VisualizationDateRange,
     HeatmapCell,
-    HeatmapStreakStats,
+    StreakStats,
     ChartData,
     ChartDataset,
     PieChartData,

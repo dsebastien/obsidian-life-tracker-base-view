@@ -70,14 +70,14 @@ export interface HeatmapData {
     maxDate: Date
     minValue: number
     maxValue: number
-    streaks: HeatmapStreakStats
+    streaks: StreakStats
 }
 
 /**
- * Streak statistics for a heatmap (issue #100).
- * Periods follow the heatmap granularity (days, weeks, ...).
+ * Streak statistics over a run of periods (issue #100).
+ * Periods follow the visualization's granularity (days, weeks, ...).
  */
-export interface HeatmapStreakStats {
+export interface StreakStats {
     /** Consecutive active periods reaching the present (0 if the run is broken) */
     currentStreak: number
     /** Longest run of consecutive active periods */
@@ -194,9 +194,14 @@ export interface TagCloudItem {
 }
 
 /**
- * How a period compares to its target (issue #126)
+ * How a period compares to its target (issue #126).
+ *
+ * `no-data` is distinct from `behind`: for an average or a latest reading, a
+ * period with nothing recorded is unknown, not zero. Treating it as zero would
+ * make an at-most target ("at most 80 kg") read as met in every week you
+ * forgot to weigh yourself.
  */
-export type ProgressStatus = 'met' | 'close' | 'behind'
+export type ProgressStatus = 'met' | 'close' | 'behind' | 'no-data'
 
 /**
  * One period measured against a target
@@ -208,6 +213,8 @@ export interface ProgressPeriod {
     actual: number
     /** Whether the target was met */
     met: boolean
+    /** Whether the period recorded any value at all */
+    hasData: boolean
     status: ProgressStatus
     /** `actual` as a fraction of the target, clamped to 0-1 */
     ratio: number
@@ -230,6 +237,8 @@ export interface ProgressData {
     metCount: number
     /** How many periods the range covers */
     periodCount: number
+    /** Streaks of periods that met the target */
+    streaks: StreakStats
 }
 
 /**

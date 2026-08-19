@@ -138,6 +138,20 @@ Best for: Event sequences
 - Good for sparse events
 - Good for: milestones, achievements, events
 
+### Progress Ring
+
+Best for: Goals you either hit or miss
+
+- Circular progress toward a target for the period you are **currently in**
+- Green when met, yellow when most of the way there, red when behind
+- The hit rate and your current/best streak sit below the ring, with a strip of
+  bars for the last 26 periods
+- Good for: "3 days a week", "150 reps a week", "10 000 steps a day", "at most
+  80 kg"
+
+A progress ring needs a target — see [Goals and Targets](#goals-and-targets)
+below. Until one is set, the card shows a prompt instead of a chart.
+
 ## List Property Support
 
 For properties containing arrays/lists (like tags):
@@ -198,6 +212,43 @@ Example uses:
 - Weight goal line
 - Minimum sleep target
 - Exercise duration target
+
+## Goals and Targets
+
+Set a goal on any card through the right-click menu → **Configure target**. A
+target reads as one sentence:
+
+> _\<measure\>_ per _\<period\>_ must be _\<at least / at most\>_ _\<value\>_
+
+| Measure               | Meaning                  | Example goal                 |
+| --------------------- | ------------------------ | ---------------------------- |
+| Entries with a value  | Days you actually did it | "Push-ups on 3 days a week"  |
+| Total of the values   | Volume added up          | "150 squats a week"          |
+| Average of the values | Mean over the period     | "Average mood of at least 7" |
+| Most recent value     | The last reading         | "At most 80 kg"              |
+
+Days logged as `0` do not count toward "entries with a value" — writing
+`push_ups: 0` records that you did **not** do it, so a "3 days a week" goal is
+not satisfied by logging zeros every day.
+
+Targets belong to a visualization, not to a property, so one property can carry
+two goals side by side: a consistency ring (days a week) and a volume ring (reps
+a week). The goal appears in the card title so the two stay distinguishable.
+
+Supported by the progress ring and by Line, Bar and Area charts, which draw the
+target as a horizontal reference line. An explicitly configured reference line
+takes precedence over the target's.
+
+### Periods with nothing recorded
+
+For "entries with a value" and "total of the values", an empty period is a real
+zero: doing nothing all week genuinely is 0 days and 0 reps, and the ring turns
+red.
+
+For "average" and "most recent value" it is _unknown_ instead. A week you forgot
+to weigh yourself shows a grey ring and a dash — not a weight of 0 kg, which
+would otherwise satisfy an "at most 80 kg" goal every time you skipped the
+scale. Those periods are left out of the hit rate as well.
 
 ## Moving Average
 
