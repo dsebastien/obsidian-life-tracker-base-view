@@ -99,6 +99,11 @@ export default tseslint.config(
                         'Node.js',
                         // The follow CTA links to x.com
                         'X',
+                        // Obsidian's feature name for `.base` files and the
+                        // views they host — no UI copy uses it lowercase, so
+                        // the both-ways enforcement is safe.
+                        'Base',
+                        'Bases',
                         // This plugin's own name, spelled exactly as the
                         // manifest does — used across settings and notices.
                         'Life Tracker',
@@ -130,7 +135,7 @@ export default tseslint.config(
                         // Author credit — proper noun + handle
                         '^Sébastien Dubois \\(@dSebastien\\)$',
                         // Fleet-wide template copy, kept byte-identical
-                        'Personal Knowledge Management'
+                        '^Obsidian, Personal Knowledge Management and note-taking, straight to your inbox and feed\\.$'
                     ]
                 }
             ]
