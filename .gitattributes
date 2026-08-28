@@ -39,12 +39,20 @@
 *.txt text eol=lf
 *.xml text eol=lf
 
-# Don't include in releases
+# Don't include in releases.
+#
+# CHANGELOG.md and eslint.config.ts are deliberately NOT listed. The Obsidian
+# community catalog reviewer builds the *git archive*, not your working tree:
+#   - src/app/whats-new.ts does `import changelog from '../../CHANGELOG.md'`,
+#     so export-ignoring it fails the reviewer's build while passing locally.
+#   - export-ignoring eslint.config.ts makes the reviewer fall back to its own
+#     ruleset instead of this repo's.
+# Verify before submitting:
+#   git archive --format=tar HEAD | tar -x -C /tmp/a && cd /tmp/a \
+#     && bun install && bun run build
 .github/ export-ignore
 .husky/ export-ignore
-CHANGELOG.md export-ignore
 prettier.config.cjs export-ignore
-eslint.config.ts export-ignore
 commitlint.config.ts export-ignore
 .cz-config.cjs export-ignore
 .editorconfig export-ignore

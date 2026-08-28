@@ -35,7 +35,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         this.starterKitSection = new StarterKitSection(plugin, () => this.display())
     }
 
-    display(): void {
+    override display(): void {
         const { containerEl } = this
         containerEl.empty()
         containerEl.addClass('lt-settings')

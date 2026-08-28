@@ -29,7 +29,7 @@
         "npm": ">=10.1.0"
     },
     "main": "main.js",
-    "packageManager": "bun@1.3.14",
+    "packageManager": "bun@1.4.0",
     "config": {
         "commitizen": {
             "path": "node_modules/cz-customizable"
@@ -49,7 +49,8 @@
         "lint:fix": "eslint . --fix",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "test": "bun test",
+        "test": "bun test --isolate",
+        "test:watch": "bun test --isolate --watch",
         "commit": "cz",
         "cm": "cz",
         "commit:lint": "commitlint --edit",
@@ -64,17 +65,18 @@
         "@commitlint/config-conventional": "^20.1.0",
         "@eslint/js": "^9.36.0",
         "@tailwindcss/cli": "4.1.17",
-        "@types/bun": "latest",
+        "@types/bun": "1.4.0",
         "@types/canvas-confetti": "1.9.0",
+        "@types/node": "24.10.1",
         "commitizen": "^4.3.1",
         "conventional-changelog-cli": "5.0.0",
         "conventional-changelog-conventionalcommits": "9.1.0",
         "cz-customizable": "^7.5.1",
         "eslint": "^9.36.0",
         "eslint-config-prettier": "^10.1.5",
-        "eslint-plugin-obsidianmd": "0.1.9",
-        "globals": "16.5.0",
-        "obsidian": "1.12.0",
+        "eslint-plugin-obsidianmd": "0.4.1",
+        "globals": "17.0.0",
+        "obsidian": "1.13.1",
         "prettier": "^3.6.2",
         "tailwindcss": "4.1.17",
         "typescript": "^5.9.3",
@@ -88,6 +90,6 @@
         "immer": "11.0.1"
     },
     "overrides": {
-        "tmp": "^0.2.4"
+        "tmp": "0.2.7"
     }
 }

@@ -1,10 +1,31 @@
 import type { Plugin } from 'obsidian'
-// Bundled at build time; the release workflow regenerates CHANGELOG.md before
-// building, so the view always carries the notes of the version it ships in.
-import changelog from '../../CHANGELOG.md' with { type: 'text' }
+
+/**
+ * Substituted by the bundler at build time (`scripts/build.ts`).
+ *
+ * Declared here rather than in a `.d.ts` so ESLint's scope analysis sees the
+ * binding too — `no-undef` does not read ambient declaration files, and the
+ * rule stays on.
+ */
+declare const __PLUGIN_CHANGELOG__: string | undefined
 import { compareSemver, extractReleaseNotes } from './utils/release-notes'
 import { createWhatsNewViewCreator, getWhatsNewViewType } from './ui/whats-new-view'
 import type { WhatsNewEntry } from './ui/whats-new-view'
+
+/**
+ * CHANGELOG.md, inlined by the bundler (see `scripts/build.ts`). The release
+ * workflow regenerates it before building, so the view always carries the notes
+ * of the version it ships in.
+ *
+ * This used to be `import changelog from '../../CHANGELOG.md' with { type: 'text' }`.
+ * Import attributes for markdown are not resolvable on every Bun version —
+ * Obsidian's plugin review builds with an older one, where the import failed
+ * outright and build verification with it. A define is understood everywhere.
+ *
+ * `typeof` guards the test and dev runtimes, where nothing performs the
+ * substitution.
+ */
+const changelog: string = typeof __PLUGIN_CHANGELOG__ === 'string' ? __PLUGIN_CHANGELOG__ : ''
 
 const STORAGE_KEY_SUFFIX = ':whats-new-last-seen-version'
 

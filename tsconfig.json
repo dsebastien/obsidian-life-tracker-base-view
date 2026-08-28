@@ -2,6 +2,13 @@
     "compilerOptions": {
         "baseUrl": ".",
         "lib": ["DOM", "ESNext"],
+        // Pin the ambient type roots. Without this, TypeScript auto-scans
+        // top-level node_modules/@types only; @types/node arrives transitively
+        // (via @types/bun -> bun-types) and can end up NESTED, at which point
+        // every node:* import silently types as `error` and the catalog
+        // reviewer sees ~80 no-unsafe-* warnings that never reproduce locally.
+        // With this line, a missing package is instead a hard TS2688 at build.
+        "types": ["bun", "node"],
         "target": "ESNext",
         "module": "ESNext",
         "moduleDetection": "force",

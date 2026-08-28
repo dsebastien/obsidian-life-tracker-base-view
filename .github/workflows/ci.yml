@@ -22,6 +22,15 @@ jobs:
             - name: Install dependencies
               run: bun install --frozen-lockfile
 
+            # Supply-chain gate. Gated at `high` on purpose: advisories come from
+            # upstream, not from this repo, and a zero-tolerance gate means any new
+            # low-severity advisory anywhere in the dev tree breaks unrelated PRs.
+            # Note that `bun audit fix` cannot rewrite a pin declared in the
+            # `overrides` block of package.json — if a fix is blocked there, correct
+            # the override by hand.
+            - name: Audit dependencies
+              run: bun audit --audit-level=high
+
             - name: Type check
               run: bun run tsc
 
@@ -29,7 +38,7 @@ jobs:
               run: bun run lint
 
             - name: Test
-              run: bun test
+              run: bun run test
 
             - name: Format check
               run: bun run format:check

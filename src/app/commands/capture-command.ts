@@ -38,7 +38,7 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
             const context = detectContext(plugin)
 
             if (!context) {
-                new Notice('Please open a markdown file or a life tracker view first')
+                new Notice('Please open a Markdown file or a Life Tracker view first')
                 return
             }
 

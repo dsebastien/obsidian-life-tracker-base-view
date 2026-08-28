@@ -27,6 +27,73 @@ print_step() {
     echo -e "${BLUE}$1${NC}"
 }
 
+# --- Arguments -------------------------------------------------------------
+#
+# Interactive by default. The flags below make the whole thing runnable
+# unattended, which is what an agent needs: every `read` in this script is
+# skipped when the corresponding answer has already been supplied.
+#
+#   --version <x.y.z>  Use this version instead of prompting.
+#                      Omit it with --yes to accept the calculated one.
+#   --yes, -y          Assume yes for every confirmation. Implies non-interactive.
+#   --dry-run          Do everything except push and dispatch the workflow.
+#   --help, -h         Show this.
+#
+# Agent-friendly invocation:
+#   bun run release -- --yes                       # accept the calculated version
+#   bun run release -- --version 2.0.0 --yes       # pin the version
+#   bun run release -- --version 2.0.0 --dry-run   # preview only
+#
+VERSION=""
+ASSUME_YES=false
+DRY_RUN=false
+
+usage() {
+    # Print the comment block above, stopping at the first non-comment line.
+    sed -n '/^# --- Arguments/,/^[^#]/p' "$0" | sed '$d' | sed 's/^#\{1,\} \{0,1\}//'
+    exit 0
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --version)
+            if [ -z "${2:-}" ]; then
+                print_error "Error: --version needs a value (e.g. --version 2.0.0)"
+                exit 1
+            fi
+            VERSION="$2"
+            shift 2
+            ;;
+        --version=*)
+            VERSION="${1#*=}"
+            # An empty value must fail loudly, exactly like `--version ""`:
+            # in CI, an unset variable expanding to --version= would otherwise
+            # silently fall back to the calculated version.
+            if [ -z "$VERSION" ]; then
+                print_error "Error: --version needs a value (e.g. --version=2.0.0)"
+                exit 1
+            fi
+            shift
+            ;;
+        --yes|-y)
+            ASSUME_YES=true
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        --help|-h)
+            usage
+            ;;
+        *)
+            print_error "Error: unknown argument '$1'"
+            print_info "Run with --help for usage."
+            exit 1
+            ;;
+    esac
+done
+
 # Check if gh CLI is installed
 if ! command -v gh &> /dev/null; then
     print_error "Error: GitHub CLI (gh) is not installed."
@@ -45,10 +112,14 @@ fi
 CURRENT_BRANCH=$(git branch --show-current)
 if [ "$CURRENT_BRANCH" != "main" ]; then
     print_warning "Warning: You are not on the main branch (current: $CURRENT_BRANCH)"
-    read -p "Continue anyway? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
+    if [ "$ASSUME_YES" = true ]; then
+        print_warning "--yes given, releasing from '$CURRENT_BRANCH' anyway."
+    else
+        read -p "Continue anyway? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
     fi
 fi
 
@@ -58,15 +129,21 @@ if [ -n "$(git status --porcelain)" ]; then
     exit 1
 fi
 
-# Pull latest changes
-print_step "Pulling latest changes from origin..."
-git pull origin "$CURRENT_BRANCH"
+# Pull latest changes. Skipped under --dry-run: a documented preview must not
+# mutate the checkout (a pull can fast-forward or merge the branch). The
+# calculated version may therefore be stale in a dry run if origin is ahead.
+if [ "$DRY_RUN" = true ]; then
+    print_warning "--dry-run: skipping git pull (preview must not mutate the checkout)."
+else
+    print_step "Pulling latest changes from origin..."
+    git pull origin "$CURRENT_BRANCH"
 
-# Check if git working directory is still clean after pull
-if [ -n "$(git status --porcelain)" ]; then
-    print_error "Error: Git working directory is not clean after pulling. Please resolve conflicts or issues first."
-    git status
-    exit 1
+    # Check if git working directory is still clean after pull
+    if [ -n "$(git status --porcelain)" ]; then
+        print_error "Error: Git working directory is not clean after pulling. Please resolve conflicts or issues first."
+        git status
+        exit 1
+    fi
 fi
 
 # Calculate suggested next version based on conventional commits
@@ -85,15 +162,23 @@ bun scripts/calculate-next-version.ts --verbose 2>/dev/null | while IFS= read -r
     echo "  $line"
 done
 
-# Prompt for version with suggested version
-echo ""
-print_step "Enter the release version (press Enter to accept suggested):"
-print_warning "(Obsidian plugins use SemVer without 'v' prefix, e.g., 1.0.0)"
-read -p "Version [$SUGGESTED_VERSION]: " VERSION
-
-# Use suggested version if user pressed Enter
-if [ -z "$VERSION" ]; then
+# Resolve the version: --version wins, then --yes accepts the calculated one,
+# otherwise prompt.
+if [ -n "$VERSION" ]; then
+    print_info "Using version from --version: $VERSION"
+elif [ "$ASSUME_YES" = true ]; then
     VERSION="$SUGGESTED_VERSION"
+    print_info "--yes given, accepting the calculated version: $VERSION"
+else
+    echo ""
+    print_step "Enter the release version (press Enter to accept suggested):"
+    print_warning "(Obsidian plugins use SemVer without 'v' prefix, e.g., 1.0.0)"
+    read -p "Version [$SUGGESTED_VERSION]: " VERSION
+
+    # Use suggested version if user pressed Enter
+    if [ -z "$VERSION" ]; then
+        VERSION="$SUGGESTED_VERSION"
+    fi
 fi
 
 # Strip 'v' prefix if user accidentally includes it
@@ -125,12 +210,20 @@ print_warning "  3. Re-dispatch itself at the tag to build and attest at that ex
 print_warning "  4. Create GitHub release with artifacts (main.js, manifest.json, styles.css)"
 echo ""
 
+if [ "$DRY_RUN" = true ]; then
+    print_warning "--dry-run: stopping here. Nothing pushed, no workflow dispatched."
+    print_info "Would have run: gh workflow run release.yml -f version=$VERSION"
+    exit 0
+fi
+
 # Confirm before triggering
-read -p "Trigger release workflow on GitHub? (Y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Nn]$ ]]; then
-    print_warning "Release cancelled"
-    exit 1
+if [ "$ASSUME_YES" != true ]; then
+    read -p "Trigger release workflow on GitHub? (Y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        print_warning "Release cancelled"
+        exit 1
+    fi
 fi
 
 # Push any local commits to ensure remote is up to date
@@ -139,7 +232,10 @@ git push origin "$CURRENT_BRANCH"
 
 # Trigger GitHub workflow
 print_step "Triggering release workflow on GitHub..."
-gh workflow run release.yml -f version="$VERSION"
+# Dispatch at the branch we just pushed: without --ref, gh runs the workflow
+# from the remote default branch, which can release different code than the
+# branch this script validated and pushed.
+gh workflow run release.yml --ref "$CURRENT_BRANCH" -f version="$VERSION"
 
 echo ""
 print_info "✓ Release workflow triggered successfully!"
