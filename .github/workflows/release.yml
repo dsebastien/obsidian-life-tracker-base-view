@@ -119,6 +119,7 @@ jobs:
               run: |
                   bun run build
                   bun run test
+                  bun run rules:check
 
             - name: Commit release changes
               if: steps.version.outputs.prepared != 'true'

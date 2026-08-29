@@ -37,6 +37,14 @@ jobs:
             - name: Lint
               run: bun run lint
 
+            # The rule floor. A pre-commit hook is advisory — `--no-verify`, a
+            # commit from another machine, or any tool that writes commits
+            # directly all walk past it. This step is where the floor is
+            # actually enforced: it fails if the RESOLVED eslint/tsc config is
+            # weaker than rules-baseline.json.
+            - name: Rule floor
+              run: bun run rules:check
+
             - name: Test
               run: bun run test
 

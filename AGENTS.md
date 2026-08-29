@@ -505,10 +505,34 @@ strictness switch turned off, or `compilerOptions.types` losing a pin. The
 baseline records the _minimum_ severity each rule resolves to across every
 source file, so a file-scoped exemption counts as a weakening too.
 
+### The gate is mandatory. Do not route around it.
+
+Never do any of the following, for any reason, however well argued:
+
+- `git commit --no-verify` (or `-n`), or any other way of skipping the hook
+- editing, renaming, or unregistering `scripts/git-hooks/check-rule-integrity.sh`,
+  or removing its entry from `.gitconfig`
+- removing `rules:check` from `validate`, from `ci.yml`, or from the release gate
+- running `bun run rules:baseline` to make a failing commit pass
+
+That last one is the tempting one, so be explicit about it: regenerating the
+baseline is how an _intended, human-approved_ loosening gets recorded. It is not
+a way to clear a red check. If the gate fires and you were not already asked to
+change the rules, the gate is right and the code is wrong.
+
+A blocked commit is not a problem to solve. It is the answer: fix the finding.
+If you believe the rule genuinely does not apply, stop and say so — the decision
+to loosen a rule belongs to Sébastien, not to the agent that hit it.
+
 There is no bypass flag, deliberately. If a rule genuinely does not apply to a
 file, add a scoped override in `eslint.config.ts` with a written reason, then
 run `bun run rules:baseline` in its own commit — the loosening then appears in a
 diff a human reads, rather than inside a config nobody re-opens.
+
+The hook is the fast local copy, not the enforcement. `rules:check` runs in
+`validate`, in `ci.yml`, and in the release gate, because a pre-commit hook is
+advisory the moment someone commits from another machine or a tool writes a
+commit directly.
 
 Two lessons paid for this gate:
 
