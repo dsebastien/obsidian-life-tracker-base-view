@@ -58,7 +58,9 @@
         "release:version-bump": "bun scripts/version-bump.ts",
         "release:changelog": "bun scripts/generate-changelog.ts",
         "release": "./scripts/release.sh",
-        "validate": "bun run --parallel tsc test lint"
+        "validate": "bun run --parallel tsc test lint rules:check",
+        "rules:check": "bun scripts/rules-baseline.ts",
+        "rules:baseline": "bun scripts/rules-baseline.ts --write"
     },
     "devDependencies": {
         "@commitlint/cli": "^20.1.0",

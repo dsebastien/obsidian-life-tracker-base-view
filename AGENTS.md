@@ -486,6 +486,44 @@ const button = container.createEl('button', {
 }
 ```
 
+## The rule floor is not yours to lower
+
+A commit that loosens a rule instead of fixing the finding is refused. This is
+enforced, not advisory: a `pre-commit` hook (`scripts/git-hooks/check-rule-integrity.sh`)
+and `bun run rules:check`, which is part of `bun run validate` and therefore runs
+in CI too.
+
+Refused outright, in any staged line under `src/` or `scripts/`:
+
+- `eslint-disable`, `eslint-disable-next-line`, `eslint-disable-line`
+- `@ts-ignore`, `@ts-nocheck`, `@ts-expect-error`
+- `: any`, `as any`, `as unknown as`
+
+Refused when the RESOLVED configuration gets weaker than `rules-baseline.json`:
+a rule downgraded or dropped, `--max-warnings` raised above 0, a TypeScript
+strictness switch turned off, or `compilerOptions.types` losing a pin. The
+baseline records the _minimum_ severity each rule resolves to across every
+source file, so a file-scoped exemption counts as a weakening too.
+
+There is no bypass flag, deliberately. If a rule genuinely does not apply to a
+file, add a scoped override in `eslint.config.ts` with a written reason, then
+run `bun run rules:baseline` in its own commit — the loosening then appears in a
+diff a human reads, rather than inside a config nobody re-opens.
+
+Two lessons paid for this gate:
+
+- **A local disable buys nothing.** Five `obsidianmd` rules were once switched
+  off with careful rationales; the community catalog reviewer runs its own
+  ruleset against the archive and reported every one of them at submission. The
+  disable only hid the finding until it was expensive. An _inline_ disable of an
+  `obsidianmd` rule is a hard failure there, not a warning.
+- **A codemod cannot read.** A `setTimeout` → `setNodeTimer` rewrite made to
+  satisfy `prefer-window-timers` swept through template literals holding source
+  for a spawned child process, where that alias does not exist — a lint rule
+  cannot see inside a string, so nothing flagged it and the suite went red. After
+  any mechanical rewrite, check what it changed inside strings and template
+  literals, and get the full suite green before committing.
+
 ## Community catalog review — preventative rules
 
 The community-plugin reviewer runs a fixed set of lint rules against every submitted release. Most warnings repeat across plugins and have known idiomatic fixes. **Apply these patterns from day one** — fixing them retroactively is much more expensive than getting them right the first time.

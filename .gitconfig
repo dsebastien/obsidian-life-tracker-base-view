@@ -12,6 +12,10 @@
     event = pre-commit
     command = scripts/git-hooks/format-staged.sh
 
+[hook "rule-integrity"]
+    event = pre-commit
+    command = scripts/git-hooks/check-rule-integrity.sh
+
 [hook "commitlint"]
     event = commit-msg
     # Git appends the commit-msg file path as the trailing arg, which becomes the value of --edit.
