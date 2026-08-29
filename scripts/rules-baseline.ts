@@ -111,6 +111,48 @@ const currentCompilerOptions = async (): Promise<{
     return { compilerOptions, types }
 }
 
+/**
+ * The gate must still be wired in. Removing the CI step or unregistering the
+ * hook is the cheapest way to make a red check disappear, so the check that
+ * would have caught the regression also checks that it is still plugged in.
+ *
+ * This does not stop someone who edits every wiring point at once — nothing
+ * running inside the repo can. It stops the single-file removal, and because
+ * `rules:check` runs on `pre-commit`, the commit that unwires it is refused
+ * before it exists.
+ */
+const wiringFaults = async (): Promise<string[]> => {
+    const faults: string[] = []
+
+    const hook = 'scripts/git-hooks/check-rule-integrity.sh'
+    if (!(await file(hook).exists())) {
+        faults.push(`${hook} is missing`)
+    }
+
+    const gitconfig = await file('.gitconfig')
+        .text()
+        .catch(() => '')
+    if (!gitconfig.includes('check-rule-integrity.sh')) {
+        faults.push('.gitconfig no longer registers the pre-commit hook')
+    }
+
+    const pkg = (await file('package.json').json()) as { scripts?: Record<string, string> }
+    if (!(pkg.scripts?.['validate'] ?? '').includes('rules:check')) {
+        faults.push('package.json: validate no longer runs rules:check')
+    }
+
+    const ci = await file('.github/workflows/ci.yml')
+        .text()
+        .catch(() => '')
+    if (ci === '') {
+        faults.push('.github/workflows/ci.yml is missing')
+    } else if (!ci.includes('rules:check')) {
+        faults.push('ci.yml no longer runs rules:check — the floor would be local-only')
+    }
+
+    return faults
+}
+
 const collect = async (): Promise<Baseline> => {
     const files = await sourceFiles()
     if (files.length === 0) {
@@ -175,19 +217,38 @@ if (import.meta.main) {
     }
 
     const baseline = (await file(BASELINE).json()) as Baseline
-    const found = regressions(baseline, current)
+    const wiring = await wiringFaults()
+    const weakened = regressions(baseline, current)
 
-    if (found.length > 0) {
-        console.error('The resolved configuration is weaker than the baseline:\n')
-        for (const line of found) {
+    if (wiring.length > 0) {
+        console.error('The gate is no longer wired in:\n')
+        for (const line of wiring) {
             console.error(`  - ${line}`)
         }
         console.error(
-            '\nFix the finding rather than the rule. If the change is intended,' +
-                '\nrun `bun run rules:baseline` in its own commit so it is reviewable.'
+            '\nPut it back. Unwiring the gate is not a way to get a commit through,' +
+                '\nand regenerating the baseline will not silence this.'
         )
+    }
+
+    if (weakened.length > 0) {
+        console.error(
+            `${wiring.length > 0 ? '\n' : ''}The resolved configuration is weaker than the baseline:\n`
+        )
+        for (const line of weakened) {
+            console.error(`  - ${line}`)
+        }
+        console.error(
+            '\nFix the finding rather than the rule. If the loosening is intended and' +
+                '\napproved, run `bun run rules:baseline` in its own commit so it is reviewable.'
+        )
+    }
+
+    if (wiring.length > 0 || weakened.length > 0) {
         process.exit(1)
     }
 
-    console.log(`Rule floor intact: ${Object.keys(baseline.rules).length} rules checked.`)
+    console.log(
+        `Rule floor intact: ${Object.keys(baseline.rules).length} rules checked, gate still wired in.`
+    )
 }
