@@ -1,5 +1,12 @@
 # Release Notes
 
+## 2.23.1 (2026-08-29)
+
+### Bug Fixes
+
+- **build:** align with the catalog reviewer's archive, ruleset and audit
+- **build:** harden the sentence-case exemptions after adversarial review
+
 ## 2.23.0 (2026-08-19)
 
 ### Features
