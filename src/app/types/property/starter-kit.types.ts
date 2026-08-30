@@ -50,6 +50,22 @@ export interface StarterKitNoteType {
     icon: string | null
     mappings: Mapping[]
     properties: StarterKitProperty[]
+    /**
+     * Default folder for notes of this type. May carry the same `{{token}}`
+     * placeholders Life Tracker compiles for filename patterns (issue #139),
+     * e.g. `40 Journal/41 Daily Notes/{{year}}/{{week}}`.
+     *
+     * Optional, like the three below: `listNoteTypes()` has always returned
+     * them, but a Starter Kit old enough to predate one must degrade rather
+     * than fail validation and cost the user every note type (issue #160).
+     */
+    associatedFolder?: string | null
+    /** Templater template applied to new notes of this type */
+    templatePath?: string | null
+    noteNamePrefix?: string | null
+    noteNameSuffix?: string | null
+    /** Tags Starter Kit adds to every note of this type */
+    tags?: string[]
 }
 
 /**

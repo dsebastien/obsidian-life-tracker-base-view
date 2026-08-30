@@ -42,6 +42,15 @@ function isValidProperty(value: unknown): value is StarterKitProperty {
     return typeof candidate.name === 'string' && typeof candidate.type === 'string'
 }
 
+/**
+ * A string field that Starter Kit may omit, may send as null, or — a version
+ * ahead of this one — may send as something else entirely. Anything that is not
+ * a non-empty string becomes null, so callers only ever branch on presence.
+ */
+function optionalString(value: unknown): string | null {
+    return typeof value === 'string' && value.length > 0 ? value : null
+}
+
 function isValidNoteType(value: unknown): value is StarterKitNoteType {
     if (!value || typeof value !== 'object') return false
     const candidate = value as Partial<StarterKitNoteType>
@@ -141,7 +150,18 @@ export class StarterKitService {
             mappings: noteType.mappings.filter(
                 (mapping): mapping is StarterKitNoteType['mappings'][number] =>
                     !!mapping && typeof mapping === 'object'
-            )
+            ),
+            // `isValidNoteType` narrows these without checking them — they are
+            // optional, so their absence must not reject a note type. Normalize
+            // here instead: a non-string folder or template would otherwise be
+            // trusted straight into a vault path (issue #160).
+            associatedFolder: optionalString(noteType.associatedFolder),
+            templatePath: optionalString(noteType.templatePath),
+            noteNamePrefix: optionalString(noteType.noteNamePrefix),
+            noteNameSuffix: optionalString(noteType.noteNameSuffix),
+            tags: Array.isArray(noteType.tags)
+                ? noteType.tags.filter((tag): tag is string => typeof tag === 'string')
+                : []
         }))
     }
 
