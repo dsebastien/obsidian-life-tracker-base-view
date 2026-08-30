@@ -135,14 +135,21 @@ Use the "Life Tracker: Capture today" command to jump straight to today's daily 
 
 ### Creating Missing Notes
 
-If you skipped a day, there is no note to capture into. Turn on **Create missing notes when capturing** in **Settings → Life Tracker → Dates** and "Capture today" will offer to create the note first, then open capture on it.
+Skip a day and there's no note to capture into. Turn on **Create missing notes
+when capturing** in **Settings → Life Tracker → Dates**, and "Capture today"
+offers to create the note first, then opens capture on it.
 
-The plugin never invents a location. It takes the folder, template and naming from a plugin you have already configured:
+The plugin never invents a location. It reads the folder, template and naming
+from a plugin you've already configured:
 
-1. **Obsidian Starter Kit** — pick which note type describes your daily notes and its folder, template, name affixes and tags are all used.
-2. **Periodic Notes** — its daily folder, date format and template.
+1. **Obsidian Starter Kit**: pick the note type that describes your daily notes,
+   and its folder, template, name affixes and tags are all used.
+2. **Periodic Notes**: its daily folder, date format and template.
 
-If neither is available, nothing is created and the plugin says so. Templates are applied through Templater, exactly once: if Templater is already set to template new files itself, the plugin steps aside and lets it.
+If you have neither, nothing is created and the plugin tells you why. You're
+always asked before anything is written, existing notes are never overwritten,
+and templates go through Templater exactly once. If Templater already templates
+new files on its own, the plugin steps back and lets it.
 
 ### Filename Date Patterns
 

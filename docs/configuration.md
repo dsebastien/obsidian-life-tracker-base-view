@@ -83,6 +83,62 @@ Good to know:
   what's wrong with it, right below the input.
 - "Capture today" also uses your patterns to find today's note.
 
+### Creating Missing Notes
+
+In the **Dates** tab.
+
+You skip a day. Life happens. The next time you run "Capture today", there's no
+note to capture into, and the plugin just tells you so. Annoying, because the
+one thing you wanted to do was record something for that day.
+
+Turn on **Create missing notes when capturing** and the plugin offers to create
+the note first, then opens capture on it.
+
+It never invents a location for that note. That matters: a plugin that guesses
+where your daily notes go will eventually guess wrong, and you'll find files
+scattered in folders you never chose. Instead it reads the folder, the template
+and the naming from a plugin you've already set up:
+
+1. **Obsidian Starter Kit**. Pick which note type describes your daily notes in
+   the dropdown that appears. The plugin then uses its folder, its template, its
+   name prefix and suffix, and its mandatory tags. You get a proper note of that
+   type, not an empty file in roughly the right place.
+2. **Periodic Notes**. Its daily folder, date format and template.
+
+If you have neither, nothing is created and the plugin says why.
+
+A few things worth knowing:
+
+- **It's off by default.** A plugin shouldn't start writing new files into your
+  vault because you updated it.
+- **You're always asked first**, and the confirmation shows you the exact path.
+- **Nothing is ever overwritten.** If a note is already there, it's reused.
+- **Templates go through Templater, exactly once.** If Templater is already set
+  up to template new files itself, the plugin steps back and lets it. Applying a
+  second template on top would duplicate the whole note.
+- **No Templater? The note is still created**, and it still gets your captured
+  values. Recording the data is the point.
+- If the resulting filename is one the plugin can't read a date from, you're
+  warned before anything is created. Such a note won't show up in your views.
+  Adding a matching [filename date pattern](#filename-date-patterns) fixes it.
+
+#### If your daily notes live in week folders
+
+This one bites people, so it's worth spelling out.
+
+Pair the **ISO week-numbering year** with the week number. In the Starter Kit
+that's `{{isoyear}}/{{week}}`. In a Periodic Notes format it's `GGGG/WW`.
+
+Use the calendar year instead (`{{year}}`, or `YYYY`) and a single week gets
+split across two folders every New Year. 2024-12-30 is a Monday, and it belongs
+to week 01 of **2025**. With the calendar year it lands in `2024/01`, far away
+from the rest of its own week, and sorted before `2024/52` for good measure.
+
+Same story for weekly note names. Use the ISO tokens `GGGG-[W]WW`, not the
+locale ones `gggg-[W]ww`. Locale weeks start on Sunday, so every Sunday resolves
+to the following week. That's not an edge case once a year. That's 52 times a
+year.
+
 ### Animation Duration
 
 In the **Visualizations** tab.

@@ -98,7 +98,9 @@ Use the command **Life Tracker: Capture properties** to open the capture modal.
 
 ### Capture Today
 
-Use the command **Life Tracker: Capture today** to capture data for today without opening the note first. The command looks for a markdown note named after today's date (`YYYY-MM-DD`, e.g. a daily note) and opens the capture modal on it. If several notes match, the most recently modified one is used. If no note matches, a notice is shown.
+Use the command **Life Tracker: Capture today** to capture data for today without opening the note first. The command looks for a markdown note named after today's date (`YYYY-MM-DD`, e.g. a daily note) and opens the capture modal on it. If several notes match, the most recently modified one is used.
+
+If no note matches, you get a notice telling you so. Unless you've turned on **Create missing notes when capturing**, in which case the plugin offers to create the note for you and then opens capture on it. See [Creating missing notes](configuration.md#creating-missing-notes).
 
 ### Single Note Mode
 

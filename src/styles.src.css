@@ -1661,6 +1661,29 @@
         @apply gap-2;
     }
 
+    /* These header rows carry no name or description, so Obsidian's info block
+       is empty and collapses. Hiding it outright keeps every row's controls
+       starting at the same edge. */
+    .lt-property-header .setting-item-info {
+        @apply hidden;
+    }
+
+    /* Once any definition is Starter Kit linked, every row reserves an
+       identical badge slot instead. Showing it only on linked rows made those
+       rows wider on the left, which pushed their drag handle and every control
+       after it out of line with the rest of the list. */
+    .lt-property-definitions-container--linked .lt-property-header .setting-item-info {
+        @apply flex items-center mr-2;
+        flex: 0 0 auto;
+    }
+
+    .lt-starter-kit-badge-slot {
+        @apply inline-flex items-center;
+        /* Wide enough for the badge, so filled and empty slots measure the
+           same. Fixed rather than min-width: the badge text is a constant. */
+        width: 5.5rem;
+    }
+
     /* Drag handle / chevron live inside .setting-item-control, whose default
        button styles (specificity 0,1,1) we need to beat. Doubled class
        gives 0,2,0 which wins. */
@@ -1898,7 +1921,9 @@
 
     /* Origin badge on a property definition whose structure Starter Kit owns */
     .lt-starter-kit-badge {
-        @apply ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide;
+        /* No left margin: the badge sits at the start of its own fixed slot,
+           and an offset here would eat into the width reserved for it. */
+        @apply px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide;
         background-color: var(--background-modifier-border);
         color: var(--text-muted);
     }

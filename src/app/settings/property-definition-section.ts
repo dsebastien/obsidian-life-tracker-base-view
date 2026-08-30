@@ -72,6 +72,15 @@ export class PropertyDefinitionSection {
         // Sort by order
         const sortedDefinitions = [...definitions].sort((a, b) => a.order - b.order)
 
+        // Every header row reserves the same badge slot, so the drag handle and
+        // everything after it line up whether or not a row is Starter Kit
+        // linked. The slot is only reserved when at least one row needs it, so
+        // a vault without the Starter Kit loses no width to it.
+        container.toggleClass(
+            'lt-property-definitions-container--linked',
+            sortedDefinitions.some((definition) => definition.starterKitLink)
+        )
+
         for (const definition of sortedDefinitions) {
             this.renderPropertyDefinitionItem(container, definition)
         }
@@ -178,11 +187,18 @@ export class PropertyDefinitionSection {
 
         // Starter Kit origin badge: a linked definition's structure is owned
         // elsewhere, so where it comes from must be visible right here rather
-        // than only on the Starter Kit tab
+        // than only on the Starter Kit tab.
+        //
+        // The slot is created for every row, empty or not. It lives in the
+        // setting's info element, which sits before the controls, so a row that
+        // rendered it only when linked was wider on the left than its
+        // neighbours and pushed its drag handle — and every control after it —
+        // out of line.
+        const badgeSlot = mainSetting.nameEl.createSpan({ cls: 'lt-starter-kit-badge-slot' })
         if (definition.starterKitLink) {
             const link = definition.starterKitLink
             const origin = link.noteTypeName || 'Global properties'
-            mainSetting.nameEl.createSpan({
+            badgeSlot.createSpan({
                 cls: 'lt-starter-kit-badge',
                 text: 'Starter Kit',
                 attr: { 'aria-label': `Linked to ${origin} → ${link.propertyName}` }
