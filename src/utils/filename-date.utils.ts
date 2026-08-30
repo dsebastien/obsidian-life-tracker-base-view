@@ -292,6 +292,38 @@ export function renderFilenameDatePatternExample(pattern: string, date: Date): s
 }
 
 /**
+ * Render a `{{token}}` template for a real date, for use as an actual vault
+ * path — not as the settings preview `renderFilenameDatePatternExample`
+ * produces.
+ *
+ * The Starter Kit stores a note type's folder with the same token vocabulary
+ * Life Tracker compiles for filename patterns (issue #139), e.g.
+ * `40 Journal/41 Daily Notes/{{year}}/{{week}}`. Rendering it here rather than
+ * teaching Life Tracker a second date syntax keeps one token table.
+ *
+ * Returns null when the template cannot be rendered to a concrete path:
+ * a wildcard matches arbitrary text, so it can be parsed but never generated,
+ * and an unknown token would otherwise be emitted verbatim into a filename.
+ */
+export function renderDateTokens(template: string, date: Date): string | null {
+    const trimmed = template.trim()
+    if (trimmed.includes(WILDCARD)) return null
+
+    let unknownToken = false
+    TOKEN_REGEX.lastIndex = 0
+    const rendered = trimmed.replace(TOKEN_REGEX, (whole: string, rawName: string): string => {
+        const definition = TOKEN_DEFINITIONS_BY_NAME.get(rawName.toLowerCase())
+        if (!definition) {
+            unknownToken = true
+            return whole
+        }
+        return definition.render(date)
+    })
+
+    return unknownToken ? null : rendered
+}
+
+/**
  * Fields a matched pattern can provide
  */
 interface MatchedDateFields {

@@ -101,8 +101,23 @@ export {
     parseDateFromPath,
     setCustomFilenameDatePatterns,
     getCustomFilenameDatePatterns,
-    getDateFromISOWeek
+    getDateFromISOWeek,
+    renderDateTokens
 } from './filename-date.utils'
+
+// Periodic note path resolution (issue #160)
+export {
+    DEFAULT_BASENAME_FORMAT,
+    resolveStarterKitTarget,
+    resolvePeriodicNotesTarget,
+    folderAncestry
+} from './periodic-note-path.utils'
+export type {
+    ResolvedNoteTarget,
+    MomentFormatter,
+    StarterKitNoteTarget,
+    PeriodicNotesNoteTarget
+} from './periodic-note-path.utils'
 export type {
     FilenameDateTokenName,
     FilenameDateTokenDefinition,
