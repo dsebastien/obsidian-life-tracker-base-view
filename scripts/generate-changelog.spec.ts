@@ -1,7 +1,19 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { unlinkSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
-const TEST_CHANGELOG = 'CHANGELOG.test.md'
+/**
+ * Written outside the repo, under a name unique to this process.
+ *
+ * It used to be `CHANGELOG.test.md` in the repo root. Two problems with that:
+ * a run that dies before `afterAll` leaves an untracked file behind, and every
+ * commit path here uses `git add -A`, so the stray file gets swept into the
+ * next commit — a release commit, if the timing is unlucky. And two runs
+ * sharing one checkout (a watcher alongside a manual run, or two agents) race
+ * on the same path, so one deletes the file the other is still reading.
+ */
+const TEST_CHANGELOG = join(tmpdir(), `changelog-spec-${process.pid}-${Date.now()}.md`)
 
 describe('getLatestChangelogEntry', () => {
     beforeAll(() => {
