@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.23.1...2.24.0) (2026-08-30)
+
+### Features
+
+* **build:** fail the build on a lockfile the catalog review cannot parse ([fe8eb22](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/fe8eb221a8f844985d88015db73b191654715c96))
+* **build:** make the rule floor check that it is still wired in ([787eec7](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/787eec76db0d04d96bfc06943f07ad015e524209))
+* **build:** refuse commits that loosen the rules instead of fixing the finding ([f65a514](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/f65a514cbde691dde1ac2bfc9390756554262e41))
+* **plugin:** offer to create today's note when there is none ([967b8d3](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/967b8d384d17e857779f0962d2b5b726eebac1eb)), closes [#160](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/160) [#160](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/160)
+* **plugin:** resolve and create the note a capture is missing ([27c850a](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/27c850ae764ab96bcf2afd614644b885cc3abc9b)), closes [#160](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/160)
+* **plugin:** resolve where a periodic note for a date should live ([ded12bd](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/ded12bd7ec156b390e867bf248a463eadec2ab29))
+
+### Bug Fixes
+
+* **plugin:** line up the property definition rows ([7f7d927](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/7f7d9278ecc26513cae08ec8f4ea864b3cb30e51)), closes [#160](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/160)
+
 ## [2.23.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.23.0...2.23.1) (2026-08-29)
 
 ### Bug Fixes
@@ -460,6 +475,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

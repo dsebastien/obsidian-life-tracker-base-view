@@ -1,5 +1,20 @@
 # Release Notes
 
+## 2.24.0 (2026-08-30)
+
+### Features
+
+- **build:** fail the build on a lockfile the catalog review cannot parse
+- **build:** make the rule floor check that it is still wired in
+- **build:** refuse commits that loosen the rules instead of fixing the finding
+- **plugin:** offer to create today's note when there is none [#160](https://github.com/dsebastien/obsidian-life-tracker-base-view/issues/160)
+- **plugin:** resolve and create the note a capture is missing
+- **plugin:** resolve where a periodic note for a date should live
+
+### Bug Fixes
+
+- **plugin:** line up the property definition rows
+
 ## 2.23.1 (2026-08-29)
 
 ### Bug Fixes
