@@ -505,6 +505,26 @@ strictness switch turned off, or `compilerOptions.types` losing a pin. The
 baseline records the _minimum_ severity each rule resolves to across every
 source file, so a file-scoped exemption counts as a weakening too.
 
+### Regenerate `bun.lock` with bun 1.3.x, not 1.4.x
+
+The community catalog's automated review runs a bun older than 1.4.0 and cannot
+parse `lockfileVersion: 2`. It reports "Unknown lockfile version", ignores the
+lockfile, then fails the frozen install — which surfaces on the review page as
+two errors ("The bun lockfile is out of date" and "Build verification dependency
+installation failed") plus a flood of `no-unsafe-*` warnings, because nothing
+installed so no types resolved.
+
+bun 1.4.0 PRESERVES an existing v1 lockfile but writes v2 whenever it generates
+one from scratch. So a repo is one `rm bun.lock`, or one dependency change that
+forces a regeneration, away from shipping a release the catalog cannot review.
+Graph Explorer Base View failed two reviews this way before the cause was found.
+
+    ~/.local/share/mise/installs/bun/1.3.14/bin/bun install
+
+Both 1.3.x and 1.4.x read a v1 lockfile, so v1 is strictly the safer format.
+`bun run rules:check` fails on anything above v1; raise `MAX_LOCKFILE_VERSION`
+in `scripts/rules-baseline.ts` once the catalog can read it.
+
 ### The gate is mandatory. Do not route around it.
 
 Never do any of the following, for any reason, however well argued:

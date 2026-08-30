@@ -153,6 +153,48 @@ const wiringFaults = async (): Promise<string[]> => {
     return faults
 }
 
+/**
+ * The Obsidian community catalog's automated review runs a bun older than
+ * 1.4.0 and cannot parse `lockfileVersion: 2` — it reports "Unknown lockfile
+ * version", ignores the lockfile, and then fails the frozen install. On the
+ * review page that surfaces as TWO errors, "The bun lockfile is out of date"
+ * and "Build verification dependency installation failed", plus a flood of
+ * @typescript-eslint/no-unsafe-* warnings, because nothing installed so no
+ * types resolved.
+ *
+ * bun 1.4.0 PRESERVES an existing v1 lockfile but writes v2 whenever it
+ * generates one from scratch, so any repo is one `rm bun.lock` — or one
+ * dependency change that forces a regeneration — away from silently shipping
+ * a release the catalog cannot review. Graph Explorer Base View hit this and
+ * failed two reviews before it was found.
+ *
+ * Regenerate with an older bun until the catalog catches up:
+ *   ~/.local/share/mise/installs/bun/1.3.14/bin/bun install
+ * Both 1.3.x and 1.4.x read a v1 lockfile, so v1 is strictly the safer format.
+ */
+const MAX_LOCKFILE_VERSION = 1
+
+const lockfileFaults = async (): Promise<string[]> => {
+    const raw = await file('bun.lock')
+        .text()
+        .catch(() => '')
+    if (raw === '') {
+        return ['bun.lock is missing']
+    }
+    const match = /"lockfileVersion"\s*:\s*(\d+)/.exec(raw)
+    if (match?.[1] === undefined) {
+        return ['bun.lock has no lockfileVersion']
+    }
+    const version = Number(match[1])
+    if (version > MAX_LOCKFILE_VERSION) {
+        return [
+            `bun.lock is lockfileVersion ${version}; the catalog review cannot parse above ` +
+                `${MAX_LOCKFILE_VERSION} and will fail the release`
+        ]
+    }
+    return []
+}
+
 const collect = async (): Promise<Baseline> => {
     const files = await sourceFiles()
     if (files.length === 0) {
@@ -217,7 +259,7 @@ if (import.meta.main) {
     }
 
     const baseline = (await file(BASELINE).json()) as Baseline
-    const wiring = await wiringFaults()
+    const wiring = [...(await wiringFaults()), ...(await lockfileFaults())]
     const weakened = regressions(baseline, current)
 
     if (wiring.length > 0) {
@@ -227,7 +269,9 @@ if (import.meta.main) {
         }
         console.error(
             '\nPut it back. Unwiring the gate is not a way to get a commit through,' +
-                '\nand regenerating the baseline will not silence this.'
+                '\nand regenerating the baseline will not silence this. If the failure is' +
+                '\nthe lockfile version, regenerate bun.lock with bun 1.3.x — see the' +
+                '\ncomment on MAX_LOCKFILE_VERSION in this file.'
         )
     }
 
