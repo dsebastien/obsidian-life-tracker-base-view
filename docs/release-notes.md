@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.24.1 (2026-08-30)
+
+### Bug Fixes
+
+- **plugin:** survive a Templater settings migration
+
 ## 2.24.0 (2026-08-30)
 
 ### Features
