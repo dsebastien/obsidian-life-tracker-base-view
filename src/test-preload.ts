@@ -1,4 +1,5 @@
 import { mock } from 'bun:test'
+import { createRequire } from 'node:module'
 
 /**
  * Test preload (registered via bunfig.toml `[test] preload`).
@@ -10,9 +11,24 @@ import { mock } from 'bun:test'
  * preload that runs before the test modules are imported.
  *
  * Only runtime values actually used by tested code need stubs. Today that is
- * `parseFrontMatterTags` (PropertyRecognitionService); add more as needed.
+ * `parseFrontMatterTags` (PropertyRecognitionService) and `moment`; add more as
+ * needed.
  */
+
+/**
+ * Obsidian re-exports the `moment` package at runtime, and `moment` is a direct
+ * dependency of the `obsidian` package, so it is present wherever the types are.
+ *
+ * Loaded with `createRequire` rather than an `import`: plugin code must take
+ * moment from 'obsidian' so no build bundles a second copy, and the lint rules
+ * enforcing that are deliberately left on. A test bootstrap wiring module mocks
+ * is the one place that legitimately needs the module itself.
+ */
+const moment = createRequire(import.meta.url)('moment')
+
 void mock.module('obsidian', () => ({
+    moment,
+
     /**
      * Minimal stand-in for Obsidian's `parseFrontMatterTags`: reads the `tags`
      * (or `tag`) frontmatter field and returns `#`-prefixed tag strings, or null

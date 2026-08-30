@@ -61,11 +61,14 @@ describe('parsePeriodicNotesSettings', () => {
         expect(parsed?.[TimeGranularity.Monthly]).toBeUndefined()
     })
 
-    test('fills the fields Periodic Notes may omit', () => {
+    test('fills the fields Periodic Notes may omit, leaving it disabled', () => {
+        // Periodic Notes reads `enabled` as a plain boolean, so an absent flag
+        // is off. Defaulting it on would create notes for a granularity the
+        // user never enabled.
         const parsed = parsePeriodicNotesSettings({ daily: { format: 'YYYY-MM-DD' } })
 
         expect(parsed?.[TimeGranularity.Daily]).toEqual({
-            enabled: true,
+            enabled: false,
             folder: '',
             format: 'YYYY-MM-DD',
             template: ''
@@ -74,7 +77,7 @@ describe('parsePeriodicNotesSettings', () => {
 
     test('skips one malformed granularity without losing the others', () => {
         const parsed = parsePeriodicNotesSettings({
-            daily: { format: 'YYYY-MM-DD', folder: 'D' },
+            daily: { format: 'YYYY-MM-DD', folder: 'D', enabled: true },
             weekly: { format: 42 }
         })
 

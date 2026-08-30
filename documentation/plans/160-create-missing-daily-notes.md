@@ -1,6 +1,6 @@
 # Create missing periodic notes when capturing (issue #160)
 
-Status: in progress — path resolution landed, services and wiring pending.
+Status: implemented; needs manual verification in a live vault.
 
 ## Problem
 
@@ -208,3 +208,40 @@ settings work, not new machinery.
 - The created day appears in a Bases grid after Bases re-queries.
 - Templater disabled: the note is still created and still receives its
   properties.
+
+## Adversarial review (gpt-5.6-sol, xhigh)
+
+Ran against the first two commits. Findings acted on:
+
+- **Path safety** — unvalidated `..`, reserved characters and trailing dot/space
+  segments could be written. Now refused. A leading `/` is normalized instead of
+  refused, matching Obsidian's `normalizePath`.
+- **Templater semantics** — the runtime gate in 2.25 is
+  `trigger_on_file_creation && trigger_on_file_creation_mode === 'folder'`, plus
+  `ignore_folders_on_creation`. The `enable_*` booleans only drive settings-pane
+  visibility, so a stale `true` with mode `none` would have skipped templating
+  and produced an empty note. Verified against the shipped bundle, which also
+  confirms Templater skips files it created itself, so explicit creation cannot
+  double-fire.
+- **Affix date expressions** — the Starter Kit evaluates tokens inside name
+  prefixes and suffixes and preserves their surrounding spaces. Both now handled.
+- **`{{isoyear}}`** — added in Starter Kit 1.8.0 for week folders. Rendered here
+  so a note type using it resolves instead of being discarded.
+- **Listener ordering** — the settle listener is now attached before the file is
+  created; attaching it afterwards would have missed the event and cost the full
+  timeout on every creation. The explicit-Templater path no longer waits at all,
+  since `create_new_note_from_template` has already written when it resolves.
+- **`enabled` defaulting** — an absent Periodic Notes flag now counts as
+  disabled, matching that plugin and failing closed on a write.
+- **Whitespace-only Starter Kit fields** — trimmed before the presence test, so
+  a blank folder falls through instead of creating at the vault root.
+- **Discoverability** — a resolved filename this plugin cannot parse back is now
+  detected and warned about at the confirmation step.
+
+Findings deliberately not acted on:
+
+- The reviewer read `enable_folder_templates` as removed in 2.25. It still
+  exists; it is the _gate_ that moved. Kept as the fallback for a Templater
+  predating the mode key.
+- Refusing to create an undiscoverable note. The configuration belongs to the
+  user and the note is still worth having, so this warns instead.

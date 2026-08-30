@@ -1,4 +1,13 @@
-import { format, getISOWeek, getQuarter, isValid, parse, setISOWeek, startOfWeek } from 'date-fns'
+import {
+    format,
+    getISOWeek,
+    getISOWeekYear,
+    getQuarter,
+    isValid,
+    parse,
+    setISOWeek,
+    startOfWeek
+} from 'date-fns'
 import { TimeGranularity, type DatePattern } from '../app/types'
 import { log } from './log.utils'
 
@@ -305,14 +314,32 @@ export function renderFilenameDatePatternExample(pattern: string, date: Date): s
  * a wildcard matches arbitrary text, so it can be parsed but never generated,
  * and an unknown token would otherwise be emitted verbatim into a filename.
  */
-export function renderDateTokens(template: string, date: Date): string | null {
-    const trimmed = template.trim()
+export function renderDateTokens(
+    template: string,
+    date: Date,
+    options: { preserveWhitespace?: boolean } = {}
+): string | null {
+    // A note name prefix or suffix keeps its leading and trailing spaces — the
+    // Starter Kit preserves them deliberately, and trimming would turn a
+    // suffix of ' (Daily)' into '(Daily)', silently renaming every note.
+    const trimmed = options.preserveWhitespace ? template : template.trim()
     if (trimmed.includes(WILDCARD)) return null
 
     let unknownToken = false
     TOKEN_REGEX.lastIndex = 0
     const rendered = trimmed.replace(TOKEN_REGEX, (whole: string, rawName: string): string => {
-        const definition = TOKEN_DEFINITIONS_BY_NAME.get(rawName.toLowerCase())
+        const name = rawName.toLowerCase()
+
+        // The Starter Kit also offers `{{isoyear}}`, which exists precisely for
+        // week folders: in the days around New Year the ISO week year differs
+        // from the calendar year, so `{{year}}/{{week}}` would file 2024-12-30
+        // under 2024/01 instead of 2025/01. It is rendered but deliberately not
+        // added to FILENAME_DATE_TOKENS: that table also drives pattern parsing
+        // and granularity inference, and a token only ever used in folders has
+        // no business widening the filename pattern vocabulary.
+        if (name === 'isoyear') return renderIsoWeekYear(date)
+
+        const definition = TOKEN_DEFINITIONS_BY_NAME.get(name)
         if (!definition) {
             unknownToken = true
             return whole
@@ -321,6 +348,11 @@ export function renderDateTokens(template: string, date: Date): string | null {
     })
 
     return unknownToken ? null : rendered
+}
+
+/** The ISO week-numbering year, which around New Year differs from the calendar year */
+function renderIsoWeekYear(date: Date): string {
+    return String(getISOWeekYear(date))
 }
 
 /**

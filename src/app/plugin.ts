@@ -234,6 +234,14 @@ export class LifeTrackerPlugin extends Plugin {
                 draft.highContrast = loadedSettings.highContrast
             }
 
+            // Load note creation settings (issue #160)
+            if (typeof loadedSettings.createMissingNotes === 'boolean') {
+                draft.createMissingNotes = loadedSettings.createMissingNotes
+            }
+            if (typeof loadedSettings.dailyNoteTypeId === 'string') {
+                draft.dailyNoteTypeId = loadedSettings.dailyNoteTypeId
+            }
+
             // Load custom filename date patterns (issue #139). Entries can be
             // hand-edited in data.json, so keep anything with a usable pattern
             // and backfill missing ids (the settings UI keys on them).

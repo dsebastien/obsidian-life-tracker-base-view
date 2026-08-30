@@ -1,6 +1,7 @@
 import { Setting } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import type { FilenameDatePattern } from '../types'
+import { StarterKitService } from '../services/starter-kit.service'
 import {
     FILENAME_DATE_TOKENS,
     compileFilenameDatePattern,
@@ -47,6 +48,8 @@ export class DateSettingsSection {
         const patternsContainer = containerEl.createDiv({ cls: 'lt-filename-patterns-container' })
         this.renderPatternsList(patternsContainer)
 
+        this.renderNoteCreationSettings(containerEl)
+
         new Setting(containerEl).addButton((button) => {
             button
                 .setButtonText('Add pattern')
@@ -56,6 +59,75 @@ export class DateSettingsSection {
                     this.requestRerender()
                 })
         })
+    }
+
+    /**
+     * Creating a note for a date that has none (issue #160).
+     *
+     * Off by default, and the location always comes from a plugin the user has
+     * already configured — the Starter Kit note type chosen here, or failing
+     * that the Periodic Notes plugin. Life Tracker never invents a folder.
+     */
+    private renderNoteCreationSettings(containerEl: HTMLElement): void {
+        new Setting(containerEl).setName('Creating missing notes').setHeading()
+
+        new Setting(containerEl)
+            .setName('Create missing notes when capturing')
+            .setDesc(
+                'When capturing for a date with no note, offer to create it. The folder and template come from the Starter Kit note type below, or from the periodic notes plugin.'
+            )
+            .addToggle((toggle) => {
+                toggle.setValue(this.plugin.settings.createMissingNotes).onChange(async (value) => {
+                    await this.plugin.updateSettings((draft) => {
+                        draft.createMissingNotes = value
+                    })
+                    this.requestRerender()
+                })
+            })
+
+        if (!this.plugin.settings.createMissingNotes) return
+
+        const starterKit = new StarterKitService(this.plugin.app)
+        if (!starterKit.isAvailable()) {
+            new Setting(containerEl).setDesc(
+                'The Obsidian Starter Kit is not available, so new notes follow the periodic notes plugin.'
+            )
+            return
+        }
+
+        const noteTypes = starterKit.listNoteTypes().filter((noteType) => noteType.associatedFolder)
+        if (noteTypes.length === 0) {
+            new Setting(containerEl).setDesc(
+                'No Starter Kit note type has a folder configured, so new notes follow the periodic notes plugin.'
+            )
+            return
+        }
+
+        const options: Record<string, string> = { '': 'Use the periodic notes plugin' }
+        for (const noteType of noteTypes) {
+            options[noteType.id] = noteType.name
+        }
+
+        new Setting(containerEl)
+            .setName('Starter Kit note type for daily notes')
+            .setDesc(
+                'Which note type describes a daily note. Its folder, template, name affixes and tags are used when creating one.'
+            )
+            .addDropdown((dropdown) => {
+                dropdown
+                    .addOptions(options)
+                    // A note type that no longer exists must not look selected
+                    .setValue(
+                        options[this.plugin.settings.dailyNoteTypeId] !== undefined
+                            ? this.plugin.settings.dailyNoteTypeId
+                            : ''
+                    )
+                    .onChange(async (value) => {
+                        await this.plugin.updateSettings((draft) => {
+                            draft.dailyNoteTypeId = value
+                        })
+                    })
+            })
     }
 
     /**

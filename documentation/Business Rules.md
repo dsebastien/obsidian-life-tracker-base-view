@@ -330,6 +330,23 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Resolves today's note by matching the note path against any daily-granularity filename pattern — built-in (YYYY-MM-DD) or custom (issue #139)
 - Notes matched by a custom pattern beat notes matched only by a built-in pattern: a configured (possibly folder-scoped) pattern states where the user's daily notes live (issue #152)
 - Within the same group, the most recently modified note wins
+- When no note exists, the command offers to create one (issue #160). Opt-in (`createMissingNotes`, off by default) and always confirmed: this writes a new file, and the location comes from another plugin's configuration
+
+## Creating Missing Notes
+
+- Location is **read, never invented**, in a fixed order: the Starter Kit note type mapped to the granularity, then the Periodic Notes plugin, then no creation at all. Starter Kit ranks first because it also supplies the note type's mandatory tags, so a created note is correct rather than merely present. Core Daily Notes is deliberately unsupported — Periodic Notes supersedes it
+- The Starter Kit is only ever **read**, preserving the rule above. Life Tracker performs its own vault writes; the Starter Kit exposes no creation method on its public API in any case
+- The folder to create is the **dirname of the resolved path**, not the configured folder: a `{{token}}` folder and a moment format can both contribute subdirectories, and `vault.create` throws on a missing parent
+- `{{year}}` is the calendar year and `{{isoyear}}` the ISO week-numbering year, matching the Starter Kit exactly (its 1.8.0 rule: week layouts want `{{isoyear}}/{{week}}`, since `{{year}}/{{week}}` splits a week across two folders at New Year). Agreeing with the Starter Kit matters more than being right in isolation — a folder that disagrees puts the note where nothing looks
+- Starter Kit name affixes may contain date expressions and keep their leading/trailing spaces, both matching Starter Kit behaviour
+- The default basename per granularity is the inverse of Life Tracker's own built-in parse formats, and the weekly one uses **ISO** week tokens (`GGGG-[W]WW`). Locale tokens (`gggg-[W]ww`) name a different week than they mean: an en locale makes Sunday 2026-08-30 week 36 while ISO makes it week 35
+- A resolved path is refused if it is unsafe: a `..` segment, a control or reserved character (`\ : * ? " < > |`), or a segment ending in a dot or space. A leading `/` is normalized away instead, matching Obsidian's own `normalizePath`
+- Only Periodic Notes' flat 0.x settings shape is understood. A 1.x `calendarSets` layout parses to nothing and degrades to "not available" rather than being misread. An absent `enabled` counts as **disabled**, matching Periodic Notes and failing closed on an operation that writes files
+- A note is never overwritten: an existing file at the target path is reused
+- **A template is applied exactly once.** When Templater is configured to template new files itself (`trigger_on_file_creation` with `trigger_on_file_creation_mode: 'folder'` and a covering folder template, outside `ignore_folders_on_creation`), the note is created plainly and Templater does the work — applying the configured template on top would duplicate the whole note. Otherwise Templater is driven explicitly, and Templater skips files it created itself, so that path cannot double-fire either. The legacy `enable_folder_templates` / `enable_file_templates` booleans are consulted only when the mode key is absent; in Templater 2.25 they merely drive settings-pane visibility
+- Frontmatter is written only after templating has settled. Templater's creation hook sleeps before writing, so a capture that wrote immediately would race it and lose data
+- With no Templater, or a template that fails or is missing, the note is still created and still receives its properties: capture is the point of the operation
+- Creation warns, but does not refuse, when the resolved filename is one Life Tracker cannot parse back (a name prefix, a format like `DD-MM-YYYY`, locale week tokens). Such a note is invisible in every view — issue #160 reintroduced — but the configuration is the user's, and a matching filename date pattern (issue #139) fixes it
 
 ## High Contrast Mode
 

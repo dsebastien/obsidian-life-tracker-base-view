@@ -1,5 +1,6 @@
 import { TimeGranularity } from '../app/types/visualization/time-granularity.intf'
-import { renderDateTokens } from './filename-date.utils'
+import { getISOWeek, getISOWeekYear } from 'date-fns'
+import { parseDateFromPath, renderDateTokens } from './filename-date.utils'
 
 /**
  * Where a periodic note for a date should live.
@@ -49,22 +50,78 @@ export const DEFAULT_BASENAME_FORMAT: Readonly<Record<TimeGranularity, string>> 
 }
 
 /**
+ * Characters no filesystem this plugin runs on accepts in a name. `/` is
+ * excluded on purpose: it is the path separator and is checked structurally.
+ */
+const ILLEGAL_NAME_CHARS = /[\\:*?"<>|]/
+
+/**
+ * Control characters, checked by code point rather than by regex.
+ *
+ * A `\u0000-\u001f` character class is exactly what `no-control-regex` exists
+ * to flag, and suppressing that rule to write one would be the escape hatch this
+ * repo refuses. The loop says the same thing and needs no exemption.
+ */
+function hasControlCharacter(value: string): boolean {
+    for (let index = 0; index < value.length; index++) {
+        const code = value.charCodeAt(index)
+        if (code <= 0x1f || code === 0x7f) return true
+    }
+    return false
+}
+
+/**
+ * Whether a resolved path is safe to create in the vault.
+ *
+ * The folder and format come from another plugin's settings, which a user can
+ * hand-edit and which this plugin is about to turn into a filesystem write. A
+ * `..` segment escapes the vault and the reserved characters produce files that
+ * cannot be created on Windows; neither should ever be repaired silently — a
+ * path that is not obviously right is not a path to write to.
+ *
+ * A leading `/` is not rejected. Obsidian's own `normalizePath` strips it, so
+ * `/Journal` is simply the vault-relative `Journal` and refusing it would break
+ * a configuration Obsidian itself accepts. A drive letter is caught by the
+ * illegal-character test, since `:` cannot appear in a vault path.
+ */
+function isSafeVaultPath(path: string): boolean {
+    if (path.length === 0) return false
+    if (ILLEGAL_NAME_CHARS.test(path)) return false
+    if (hasControlCharacter(path)) return false
+
+    const segments = path.split('/')
+    return segments.every((segment) => {
+        if (segment.length === 0) return false
+        if (segment === '.' || segment === '..') return false
+        // A trailing dot or space is stripped by Windows, so the file the vault
+        // believes it created is not the file on disk.
+        return !/[. ]$/.test(segment)
+    })
+}
+
+/**
  * Join a folder and a basename into a vault path.
  *
  * An empty folder yields a root-relative path with no leading slash: Obsidian
  * treats `/Note.md` and `Note.md` as different paths, and only the latter
  * exists.
+ *
+ * Null when the result is not a safe vault path.
  */
-function toVaultPath(folder: string, basename: string): string {
+function toVaultPath(folder: string, basename: string): string | null {
     const cleanFolder = folder.replace(/^\/+|\/+$/g, '')
     const cleanBase = basename.replace(/^\/+|\/+$/g, '')
-    return cleanFolder ? `${cleanFolder}/${cleanBase}.md` : `${cleanBase}.md`
+    if (cleanBase.length === 0) return null
+
+    const path = cleanFolder ? `${cleanFolder}/${cleanBase}.md` : `${cleanBase}.md`
+    return isSafeVaultPath(path) ? path : null
 }
 
 /**
  * Split a full path back into the folder that must exist and the path itself.
  */
-function toTarget(path: string): ResolvedNoteTarget {
+function toTarget(path: string | null): ResolvedNoteTarget | null {
+    if (path === null) return null
     const lastSlash = path.lastIndexOf('/')
     return { path, folder: lastSlash === -1 ? '' : path.slice(0, lastSlash) }
 }
@@ -105,8 +162,13 @@ export function resolveStarterKitTarget(
     const stem = formatMoment(date, DEFAULT_BASENAME_FORMAT[granularity])
     if (!stem) return null
 
-    const basename = `${target.noteNamePrefix ?? ''}${stem}${target.noteNameSuffix ?? ''}`
-    return toTarget(toVaultPath(folder, basename))
+    // The Starter Kit evaluates date expressions inside the affixes too, so a
+    // prefix of `{{date}} - ` must become a date, not the literal token.
+    const prefix = renderDateTokens(target.noteNamePrefix ?? '', date, { preserveWhitespace: true })
+    const suffix = renderDateTokens(target.noteNameSuffix ?? '', date, { preserveWhitespace: true })
+    if (prefix === null || suffix === null) return null
+
+    return toTarget(toVaultPath(folder, `${prefix}${stem}${suffix}`))
 }
 
 /**
@@ -143,4 +205,53 @@ export function folderAncestry(folder: string): string[] {
         ancestry.push(current)
     }
     return ancestry
+}
+
+/**
+ * Whether Life Tracker will recognise the note it is about to create.
+ *
+ * Notes are discovered by parsing their path, so a name this plugin creates but
+ * cannot parse back is invisible in every view and unreachable by `Capture
+ * today` — issue #160 reintroduced by the fix for it. That happens legitimately:
+ * a Starter Kit note type with a name prefix, a Periodic Notes format like
+ * `DD-MM-YYYY`, or locale week tokens that name a different week than they mean.
+ *
+ * The answer is not used to refuse creation. The configuration belongs to the
+ * user and the note is still worth having; it is used to warn them, and the fix
+ * is a matching filename date pattern (issue #139).
+ */
+export function isTargetDiscoverable(
+    target: ResolvedNoteTarget,
+    date: Date,
+    granularity: TimeGranularity
+): boolean {
+    const parsed = parseDateFromPath(target.path)
+    if (!parsed || parsed.granularity !== granularity) return false
+
+    // Same period, not the same instant: a weekly note resolves to its Monday.
+    const expected = resolvePeriodStart(date, granularity)
+    const actual = resolvePeriodStart(parsed.date, granularity)
+    return expected === actual
+}
+
+/** A comparable key for the period a date falls in, at a given granularity */
+function resolvePeriodStart(date: Date, granularity: TimeGranularity): string {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    switch (granularity) {
+        case TimeGranularity.Yearly:
+            return `${year}`
+        case TimeGranularity.Quarterly:
+            return `${year}-Q${Math.floor(month / 3) + 1}`
+        case TimeGranularity.Monthly:
+            return `${year}-${month}`
+        case TimeGranularity.Weekly:
+            // A weekly note parses back to its Monday, so comparing days would
+            // call every other day of the week a mismatch. The ISO week year is
+            // the right partner for the week number: around New Year the
+            // calendar year belongs to a different week entirely.
+            return `${getISOWeekYear(date)}-W${getISOWeek(date)}`
+        default:
+            return `${year}-${month}-${date.getDate()}`
+    }
 }

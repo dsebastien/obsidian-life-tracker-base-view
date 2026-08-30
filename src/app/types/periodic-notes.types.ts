@@ -64,10 +64,15 @@ export function isPeriodicNoteConfig(value: unknown): value is PeriodicNoteConfi
 
 /**
  * Normalize a validated config, filling the fields Periodic Notes may omit.
+ *
+ * An absent `enabled` is treated as **disabled**, matching Periodic Notes,
+ * which reads the flag as a plain boolean so a missing one is falsy. Defaulting
+ * the other way would let Life Tracker create notes for a granularity the user
+ * never switched on — failing open on an operation that writes files.
  */
 export function toPeriodicNoteConfig(value: PeriodicNoteConfig): PeriodicNoteConfig {
     return {
-        enabled: value.enabled ?? true,
+        enabled: value.enabled ?? false,
         folder: value.folder ?? '',
         format: value.format,
         template: value.template ?? ''

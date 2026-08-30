@@ -82,6 +82,26 @@ export interface PluginSettings {
      * elements. For users who need high visibility (issue #137).
      */
     highContrast: boolean
+
+    /**
+     * Offer to create the note when capturing for a date that has none
+     * (issue #160).
+     *
+     * Off by default. Writing new files into someone's vault is not something
+     * a plugin should start doing on upgrade without being asked.
+     */
+    createMissingNotes: boolean
+
+    /**
+     * Id of the Obsidian Starter Kit note type that describes daily notes,
+     * or an empty string when none is chosen (issue #160).
+     *
+     * A setting rather than a guess: matching a note type by name is fragile
+     * across vault languages and renames, and picking the wrong one would
+     * create notes in the wrong folder. Empty means the Starter Kit is skipped
+     * and Periodic Notes is used instead.
+     */
+    dailyNoteTypeId: string
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -91,5 +111,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     showConfettiOnCapture: true,
     weekStartsOn: 1,
     filenameDatePatterns: [],
-    highContrast: false
+    highContrast: false,
+    createMissingNotes: false,
+    dailyNoteTypeId: ''
 }

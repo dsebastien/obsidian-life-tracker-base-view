@@ -48,7 +48,13 @@ function isValidProperty(value: unknown): value is StarterKitProperty {
  * a non-empty string becomes null, so callers only ever branch on presence.
  */
 function optionalString(value: unknown): string | null {
-    return typeof value === 'string' && value.length > 0 ? value : null
+    if (typeof value !== 'string') return null
+    // Trimmed before the emptiness test: a whitespace-only folder would
+    // otherwise pass as present and then resolve to the vault root, silently
+    // creating notes at the top of the vault instead of falling through to the
+    // next configuration source.
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : null
 }
 
 function isValidNoteType(value: unknown): value is StarterKitNoteType {

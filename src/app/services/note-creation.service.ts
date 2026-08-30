@@ -8,15 +8,17 @@ import {
 import type { NoteTargetResolution } from './note-target.service'
 
 /**
- * How long to wait for Templater to finish writing a freshly created note.
+ * How long to wait for Templater's own creation hook to template a new note.
  *
- * Templater templates asynchronously and returns before the file has settled.
- * Writing frontmatter into it meanwhile races that write and loses data, so
- * creation waits for the file's first modification. The timeout only bounds the
- * wait for a template that produces no change (an empty template, or a
- * Templater that declined the file); it is not the expected path.
+ * That hook sleeps 300ms before it even reads the file, then writes. Frontmatter
+ * written meanwhile races it and loses, so creation waits for the file's first
+ * modification. The timeout bounds the wait when no modification ever comes —
+ * an ignored folder, a template that renders nothing, a trigger that did not
+ * fire after all. It is the abnormal path, not the expected one.
+ *
+ * Generous because a template may open a suggester and sit waiting for the user.
  */
-const TEMPLATE_SETTLE_TIMEOUT_MS = 3000
+const TEMPLATE_SETTLE_TIMEOUT_MS = 15000
 
 /** The bits of the Templater plugin instance this service uses */
 interface TemplaterPluginInstance {
@@ -124,11 +126,14 @@ export class NoteCreationService {
     }
 
     /**
-     * Resolve when the file is next modified, or when the wait times out.
+     * Start listening for the modification that means a template has been
+     * applied to `path`, and return a promise that settles on it or on timeout.
      *
-     * Used to let Templater finish before frontmatter is written into the note.
+     * Called **before** the file is created. Templater's hook fires on its own
+     * schedule, and a listener registered after the write would miss an event
+     * that had already happened, turning every creation into a full timeout.
      */
-    private waitForTemplateToSettle(file: VaultPath): Promise<void> {
+    private watchForTemplate(path: string): Promise<void> {
         return new Promise<void>((resolve) => {
             let settled = false
             const finish = (): void => {
@@ -140,7 +145,7 @@ export class NoteCreationService {
             }
 
             const eventRef = this.app.vault.on('modify', (modified) => {
-                if (modified.path === file.path) finish()
+                if (modified.path === path) finish()
             })
             const timer = window.setTimeout(finish, this.settleTimeoutMs)
         })
@@ -181,17 +186,35 @@ export class NoteCreationService {
             })
         }
 
-        const created = templateFile
-            ? await this.createFromTemplate(templateFile, resolution.target.path, folder)
-            : await this.createEmpty(path)
-
-        if (!created) return null
-
-        // Templater writes after returning, whether it was driven explicitly or
-        // fired on its own. Settle before the caller writes frontmatter.
-        if (templateFile || autoApplies) {
-            await this.waitForTemplateToSettle(created)
+        if (templateFile) {
+            // Templater's own creation hook skips files it is creating itself,
+            // and `create_new_note_from_template` has written the template
+            // before it resolves. Nothing to wait for.
+            const created = await this.createFromTemplate(templateFile, path, folder)
+            if (!created) return null
+            if (created.path !== path) {
+                // Templater picks an available path, so a file appearing between
+                // the check above and here yields a numbered sibling rather than
+                // the note that was asked for.
+                log('Templater created a different path than the one resolved', 'warn', {
+                    expected: path,
+                    actual: created.path
+                })
+            }
+            return { path: created.path, created: true }
         }
+
+        // Start watching before creating: Templater's hook may fire the moment
+        // the file exists, and a listener attached afterwards would miss it.
+        const settled = autoApplies ? this.watchForTemplate(path) : null
+
+        const created = await this.createEmpty(path)
+        if (!created) {
+            void settled
+            return null
+        }
+
+        if (settled) await settled
 
         return { path: created.path, created: true }
     }

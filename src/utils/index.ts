@@ -110,7 +110,8 @@ export {
     DEFAULT_BASENAME_FORMAT,
     resolveStarterKitTarget,
     resolvePeriodicNotesTarget,
-    folderAncestry
+    folderAncestry,
+    isTargetDiscoverable
 } from './periodic-note-path.utils'
 export type {
     ResolvedNoteTarget,

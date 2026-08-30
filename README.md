@@ -133,6 +133,17 @@ Invoked in a Life Tracking Base view:
 
 Use the "Life Tracker: Capture today" command to jump straight to today's daily note (named `YYYY-MM-DD`, or matching one of your filename date patterns) and start capturing — no need to open the note first.
 
+### Creating Missing Notes
+
+If you skipped a day, there is no note to capture into. Turn on **Create missing notes when capturing** in **Settings → Life Tracker → Dates** and "Capture today" will offer to create the note first, then open capture on it.
+
+The plugin never invents a location. It takes the folder, template and naming from a plugin you have already configured:
+
+1. **Obsidian Starter Kit** — pick which note type describes your daily notes and its folder, template, name affixes and tags are all used.
+2. **Periodic Notes** — its daily folder, date format and template.
+
+If neither is available, nothing is created and the plugin says so. Templates are applied through Templater, exactly once: if Templater is already set to template new files itself, the plugin steps aside and lets it.
+
 ### Filename Date Patterns
 
 The plugin reads dates from filenames such as `2026-07-30`, `2026-W31`, `2026-07`, `2026-Q3` and `2026` out of the box. If your notes are named differently, add your own patterns in **Settings → Life Tracker → Dates** using placeholders:

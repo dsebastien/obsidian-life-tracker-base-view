@@ -1,8 +1,13 @@
 import { Notice, type TFile } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
-import { TimeGranularity, type BatchFilterMode } from '../types'
+import { TimeGranularity, type BatchFilterMode, type StarterKitNoteType } from '../types'
 import { PropertyCaptureModal } from '../components/modals/property-capture-modal'
-import { isSameDay, parseDateFromPath } from '../../utils'
+import { ConfirmModal } from '../components/modals/confirm-modal'
+import { NoteCreationService } from '../services/note-creation.service'
+import { NoteTargetService } from '../services/note-target.service'
+import { StarterKitService } from '../services/starter-kit.service'
+import { isSameDay, isTargetDiscoverable, parseDateFromPath } from '../../utils'
+import { formatMomentPattern } from '../../utils/moment.utils'
 
 /**
  * Context for the property capture dialog
@@ -60,16 +65,104 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
 
             const file = findTodayNote(plugin)
 
-            if (!file) {
-                new Notice(
-                    "No note for today found. Expected a note named after today's date (YYYY-MM-DD), or matching one of your filename date patterns."
-                )
+            if (file) {
+                new PropertyCaptureModal(plugin, { mode: 'single-note', file }).open()
                 return
             }
 
-            new PropertyCaptureModal(plugin, { mode: 'single-note', file }).open()
+            void offerToCreateTodayNote(plugin)
         }
     })
+}
+
+/**
+ * Offer to create today's note when the vault has none (issue #160).
+ *
+ * Creation is opt-in and confirmed: this writes a new file into the user's
+ * vault, and the path comes from another plugin's configuration, so the user
+ * sees exactly where it will go before agreeing.
+ */
+async function offerToCreateTodayNote(plugin: LifeTrackerPlugin): Promise<void> {
+    const missingNoteMessage =
+        "No note for today found. Expected a note named after today's date (YYYY-MM-DD), or matching one of your filename date patterns."
+
+    if (!plugin.settings.createMissingNotes) {
+        new Notice(missingNoteMessage)
+        return
+    }
+
+    const today = new Date()
+    const targetService = new NoteTargetService(plugin.app, formatMomentPattern)
+    const noteType = findDailyNoteType(plugin)
+    const resolution = targetService.resolve(today, TimeGranularity.Daily, noteType)
+
+    if (!resolution) {
+        new Notice(
+            `${missingNoteMessage} Life Tracker could not work out where to create one — configure the Periodic Notes plugin, or pick a Starter Kit note type in settings > Life Tracker > dates.`
+        )
+        return
+    }
+
+    // A note whose filename this plugin cannot parse back is invisible in every
+    // view and unreachable by this command — the very problem being fixed. The
+    // configuration is the user's, so this warns rather than refuses.
+    const discoverable = isTargetDiscoverable(resolution.target, today, TimeGranularity.Daily)
+    const warning = discoverable
+        ? ''
+        : `\n\nHeads up: Life Tracker will not recognise this filename as today's date, so the note will not appear in your views. Add a matching filename date pattern in settings > Life Tracker > dates.`
+
+    new ConfirmModal(
+        plugin.app,
+        `No note exists for today. Create it at ${resolution.target.path}?${warning}`,
+        () => {
+            void createAndCapture(plugin, resolution.target.path, async () => {
+                const outcome = await new NoteCreationService(plugin.app).ensureNote(resolution)
+                return outcome?.path ?? null
+            })
+        },
+        { title: "Create today's note", confirmText: 'Create' }
+    ).open()
+}
+
+/**
+ * Run a creation and open capture on whatever note it produced.
+ *
+ * The file is resolved from the vault after creation rather than carried out of
+ * it: a template may have been applied in between, and the vault is the
+ * freshest source.
+ */
+async function createAndCapture(
+    plugin: LifeTrackerPlugin,
+    expectedPath: string,
+    create: () => Promise<string | null>
+): Promise<void> {
+    const path = await create()
+    if (!path) {
+        new Notice(`Could not create ${expectedPath}`)
+        return
+    }
+
+    const file = plugin.app.vault.getFileByPath(path)
+    if (!file) {
+        new Notice(`Created ${path}, but it could not be opened for capture`)
+        return
+    }
+
+    new PropertyCaptureModal(plugin, { mode: 'single-note', file }).open()
+}
+
+/**
+ * The Starter Kit note type the user mapped to daily notes, or null.
+ *
+ * Null whenever the Starter Kit is unavailable or nothing is mapped, which
+ * simply lets the resolver fall through to Periodic Notes.
+ */
+function findDailyNoteType(plugin: LifeTrackerPlugin): StarterKitNoteType | null {
+    const noteTypeId = plugin.settings.dailyNoteTypeId
+    if (!noteTypeId) return null
+
+    const noteTypes = new StarterKitService(plugin.app).listNoteTypes()
+    return noteTypes.find((candidate) => candidate.id === noteTypeId) ?? null
 }
 
 /**

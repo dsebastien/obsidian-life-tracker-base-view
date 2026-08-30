@@ -4,6 +4,7 @@ import { TimeGranularity } from '../app/types/visualization/time-granularity.int
 import {
     DEFAULT_BASENAME_FORMAT,
     folderAncestry,
+    isTargetDiscoverable,
     resolvePeriodicNotesTarget,
     resolveStarterKitTarget
 } from './periodic-note-path.utils'
@@ -282,5 +283,307 @@ describe('folderAncestry', () => {
 
     test('ignores empty segments from stray slashes', () => {
         expect(folderAncestry('a//b/')).toEqual(['a', 'a/b'])
+    })
+})
+
+describe('path safety', () => {
+    // The folder and format come from another plugin's settings, which the user
+    // can hand-edit, and this turns them into a filesystem write.
+    test('a folder escaping the vault is refused', () => {
+        expect(
+            resolvePeriodicNotesTarget(
+                SUNDAY,
+                { folder: '../../outside', format: 'YYYY-MM-DD' },
+                formatMoment
+            )
+        ).toBeNull()
+    })
+
+    test('a .. segment anywhere is refused', () => {
+        expect(
+            resolvePeriodicNotesTarget(
+                SUNDAY,
+                { folder: 'Journal/../../etc', format: 'YYYY-MM-DD' },
+                formatMoment
+            )
+        ).toBeNull()
+    })
+
+    test('a leading slash is normalized away, staying inside the vault', () => {
+        // Obsidian's own normalizePath strips it, so '/Journal' is the
+        // vault-relative 'Journal'. Refusing it would reject a configuration
+        // Obsidian itself accepts.
+        const target = resolvePeriodicNotesTarget(
+            SUNDAY,
+            { folder: '/Journal', format: 'YYYY-MM-DD' },
+            formatMoment
+        )
+
+        expect(target?.path).toBe('Journal/2026-08-30.md')
+    })
+
+    test('a Windows drive path is refused', () => {
+        expect(
+            resolvePeriodicNotesTarget(
+                SUNDAY,
+                { folder: 'C:/Windows', format: 'YYYY-MM-DD' },
+                formatMoment
+            )
+        ).toBeNull()
+    })
+
+    test('characters illegal in a filename are refused', () => {
+        for (const folder of ['Jour:nal', 'Jour*nal', 'Jour?nal', 'Jour"nal', 'Jour|nal']) {
+            expect(
+                resolvePeriodicNotesTarget(SUNDAY, { folder, format: 'YYYY-MM-DD' }, formatMoment)
+            ).toBeNull()
+        }
+    })
+
+    test('a backslash is refused rather than treated as a separator', () => {
+        expect(
+            resolvePeriodicNotesTarget(
+                SUNDAY,
+                { folder: 'Journal\\2026', format: 'YYYY-MM-DD' },
+                formatMoment
+            )
+        ).toBeNull()
+    })
+
+    test('a segment ending in a dot or space is refused', () => {
+        // Windows silently strips these, so the vault and the disk disagree
+        // about the file's name.
+        expect(
+            resolvePeriodicNotesTarget(
+                SUNDAY,
+                { folder: 'Journal.', format: 'YYYY-MM-DD' },
+                formatMoment
+            )
+        ).toBeNull()
+    })
+
+    test('an empty format produces no note rather than a file called ".md"', () => {
+        expect(
+            resolvePeriodicNotesTarget(SUNDAY, { folder: 'Journal', format: '' }, formatMoment)
+        ).toBeNull()
+    })
+
+    test('a legitimate folder with dots and spaces still resolves', () => {
+        const target = resolvePeriodicNotesTarget(
+            SUNDAY,
+            { folder: '40 Journal/41 Daily Notes', format: 'YYYY-MM-DD' },
+            formatMoment
+        )
+
+        expect(target?.path).toBe('40 Journal/41 Daily Notes/2026-08-30.md')
+    })
+})
+
+describe('Starter Kit affixes carry date expressions', () => {
+    test('tokens in a prefix and suffix are rendered, not concatenated literally', () => {
+        // The Starter Kit evaluates expressions in affixes, so leaving them
+        // literal would create a file actually named "{{date}} - ...".
+        const target = resolveStarterKitTarget(
+            SUNDAY,
+            TimeGranularity.Daily,
+            {
+                associatedFolder: 'Journal',
+                noteNamePrefix: '{{year}} ',
+                noteNameSuffix: ' {{quarter}}'
+            },
+            formatMoment
+        )
+
+        expect(target?.path).toBe('Journal/2026 2026-08-30 Q3.md')
+    })
+
+    test('an unrenderable affix refuses the target rather than emitting a token', () => {
+        expect(
+            resolveStarterKitTarget(
+                SUNDAY,
+                TimeGranularity.Daily,
+                {
+                    associatedFolder: 'Journal',
+                    noteNamePrefix: '{{nonsense}} ',
+                    noteNameSuffix: null
+                },
+                formatMoment
+            )
+        ).toBeNull()
+    })
+})
+
+describe('year tokens at the ISO boundary', () => {
+    // 2024-12-30 is the Monday of ISO week 01 of 2025. The Starter Kit added
+    // {{isoyear}} (1.8.0) precisely because {{year}}/{{week}} strands these days
+    // in the previous January's week folder. Life Tracker must reproduce the
+    // Starter Kit's semantics exactly for both tokens — including the wrong-
+    // looking one, because matching the configured folder is what lets the note
+    // be found again.
+    const MONDAY_OF_ISO_WEEK_1_2025 = new Date(2024, 11, 30)
+    const NEW_YEARS_DAY_2022 = new Date(2022, 0, 1)
+
+    function folderFor(template: string, date: Date): string | undefined {
+        return resolveStarterKitTarget(
+            date,
+            TimeGranularity.Daily,
+            { associatedFolder: template, noteNamePrefix: null, noteNameSuffix: null },
+            formatMoment
+        )?.folder
+    }
+
+    test('{{isoyear}}/{{week}} keeps a week together across New Year', () => {
+        expect(folderFor('Daily/{{isoyear}}/{{week}}', MONDAY_OF_ISO_WEEK_1_2025)).toBe(
+            'Daily/2025/01'
+        )
+    })
+
+    test('{{year}}/{{week}} stays the calendar year, matching the Starter Kit', () => {
+        // Not a bug here: the Starter Kit resolves it this way too, and a folder
+        // that disagreed with it would put the note somewhere nothing looks.
+        expect(folderFor('Daily/{{year}}/{{week}}', MONDAY_OF_ISO_WEEK_1_2025)).toBe(
+            'Daily/2024/01'
+        )
+    })
+
+    test('{{isoyear}} rolls back in early January', () => {
+        expect(folderFor('Daily/{{isoyear}}/{{week}}', NEW_YEARS_DAY_2022)).toBe('Daily/2021/52')
+    })
+
+    test('the basename is unaffected by which year token the folder uses', () => {
+        const target = resolveStarterKitTarget(
+            MONDAY_OF_ISO_WEEK_1_2025,
+            TimeGranularity.Daily,
+            {
+                associatedFolder: 'Daily/{{year}}/{{week}}',
+                noteNamePrefix: null,
+                noteNameSuffix: null
+            },
+            formatMoment
+        )
+
+        expect(target?.path).toBe('Daily/2024/01/2024-12-30.md')
+        expect(parseDateFromFilename('2024-12-30')?.granularity).toBe(TimeGranularity.Daily)
+    })
+
+    test('the weekly basename uses the ISO week year, not the calendar year', () => {
+        // GGGG, not YYYY: on 2024-12-30 the calendar year is 2024 but the week
+        // belongs to 2025, and '2024-W01' would be a different week entirely.
+        const target = resolveStarterKitTarget(
+            MONDAY_OF_ISO_WEEK_1_2025,
+            TimeGranularity.Weekly,
+            { associatedFolder: 'Weekly', noteNamePrefix: null, noteNameSuffix: null },
+            formatMoment
+        )
+
+        expect(target?.path).toBe('Weekly/2025-W01.md')
+    })
+})
+
+describe('what gets created but cannot be found again', () => {
+    // Life Tracker finds notes by parsing their filename. A created note whose
+    // name its own parser does not resolve is invisible in the grid and
+    // unreachable by Capture today — issue #160 all over again. These cases are
+    // real and currently unguarded; the resolver returns a target regardless.
+    test('a Starter Kit prefix makes the basename unparseable', () => {
+        const target = resolveStarterKitTarget(
+            SUNDAY,
+            TimeGranularity.Daily,
+            { associatedFolder: 'Journal', noteNamePrefix: 'D ', noteNameSuffix: null },
+            formatMoment
+        )
+
+        expect(target?.path).toBe('Journal/D 2026-08-30.md')
+        expect(parseDateFromFilename('D 2026-08-30')).toBeNull()
+    })
+
+    test('a non-ISO Periodic Notes format makes the basename unparseable', () => {
+        const target = resolvePeriodicNotesTarget(
+            SUNDAY,
+            { folder: 'Journal', format: 'DD-MM-YYYY' },
+            formatMoment
+        )
+
+        expect(target?.path).toBe('Journal/30-08-2026.md')
+        expect(parseDateFromFilename('30-08-2026')).toBeNull()
+    })
+
+    test('a locale-week format resolves to a different week than it names', () => {
+        const target = resolvePeriodicNotesTarget(
+            SUNDAY,
+            { folder: 'Weekly', format: 'gggg-[W]ww' },
+            formatMoment
+        )
+
+        expect(target?.path).toBe('Weekly/2026-W36.md')
+        // Parsed as ISO week 36, which starts the day after this Sunday
+        expect(parseDateFromFilename('2026-W36')?.date.getDate()).toBe(31)
+    })
+})
+
+describe('isTargetDiscoverable', () => {
+    function starterKitTarget(prefix: string | null, granularity: TimeGranularity) {
+        return resolveStarterKitTarget(
+            SUNDAY,
+            granularity,
+            { associatedFolder: 'Journal', noteNamePrefix: prefix, noteNameSuffix: null },
+            formatMoment
+        )
+    }
+
+    test('a default basename is discoverable at every granularity', () => {
+        for (const granularity of Object.values(TimeGranularity)) {
+            const target = starterKitTarget(null, granularity)
+            expect(target).not.toBeNull()
+            expect(target && isTargetDiscoverable(target, SUNDAY, granularity)).toBe(true)
+        }
+    })
+
+    test('a prefixed basename is not discoverable', () => {
+        const target = starterKitTarget('D ', TimeGranularity.Daily)
+
+        expect(target && isTargetDiscoverable(target, SUNDAY, TimeGranularity.Daily)).toBe(false)
+    })
+
+    test('a non-ISO Periodic Notes format is not discoverable', () => {
+        const target = resolvePeriodicNotesTarget(
+            SUNDAY,
+            { folder: 'Journal', format: 'DD-MM-YYYY' },
+            formatMoment
+        )
+
+        expect(target && isTargetDiscoverable(target, SUNDAY, TimeGranularity.Daily)).toBe(false)
+    })
+
+    test('a locale-week format names a week other than the date it was built for', () => {
+        const target = resolvePeriodicNotesTarget(
+            SUNDAY,
+            { folder: 'Weekly', format: 'gggg-[W]ww' },
+            formatMoment
+        )
+
+        expect(target && isTargetDiscoverable(target, SUNDAY, TimeGranularity.Weekly)).toBe(false)
+    })
+
+    test('the ISO weekly default is discoverable for a Sunday', () => {
+        // The end of a week: the note resolves to its Monday, which is the same
+        // week and must count as discoverable.
+        const target = resolvePeriodicNotesTarget(
+            SUNDAY,
+            { folder: 'Weekly', format: 'GGGG-[W]WW' },
+            formatMoment
+        )
+
+        expect(target && isTargetDiscoverable(target, SUNDAY, TimeGranularity.Weekly)).toBe(true)
+    })
+
+    test('a daily note at a folder-scoped path stays discoverable', () => {
+        const target = resolvePeriodicNotesTarget(
+            SUNDAY,
+            { folder: '40 Journal/41 Daily Notes', format: 'YYYY/WW/YYYY-MM-DD' },
+            formatMoment
+        )
+
+        expect(target && isTargetDiscoverable(target, SUNDAY, TimeGranularity.Daily)).toBe(true)
     })
 })

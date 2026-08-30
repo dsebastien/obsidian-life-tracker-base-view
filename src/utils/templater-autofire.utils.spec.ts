@@ -122,3 +122,74 @@ describe('templaterWillAutoApply', () => {
         expect(templaterWillAutoApply(DISPATCHER_VAULT, '2026-08-30.md')).toBe(true)
     })
 })
+
+describe('Templater 2.25 runtime semantics', () => {
+    // The runtime gate is `trigger_on_file_creation && mode === 'folder'`.
+    // `enable_folder_templates` survives in 2.25 only to show/hide the settings
+    // pane, so trusting it alone misreads a real vault.
+    const REAL_2_25 = {
+        trigger_on_file_creation: true,
+        trigger_on_file_creation_mode: 'folder',
+        enable_folder_templates: true,
+        folder_templates: [{ folder: '/', template: 'T.md' }],
+        enable_file_templates: false,
+        file_templates: [],
+        ignore_folders_on_creation: [{ folder: '.claude' }]
+    }
+
+    test('mode "folder" with a covering template fires', () => {
+        expect(templaterWillAutoApply(REAL_2_25, TARGET)).toBe(true)
+    })
+
+    test('mode "none" does not fire even with folder templates enabled', () => {
+        // The stale-boolean case: believing enable_folder_templates here would
+        // skip templating and leave the note empty.
+        expect(
+            templaterWillAutoApply({ ...REAL_2_25, trigger_on_file_creation_mode: 'none' }, TARGET)
+        ).toBe(false)
+    })
+
+    test('mode "regex" does not consult folder templates', () => {
+        expect(
+            templaterWillAutoApply({ ...REAL_2_25, trigger_on_file_creation_mode: 'regex' }, TARGET)
+        ).toBe(false)
+    })
+
+    test('mode "regex" consults file templates', () => {
+        expect(
+            templaterWillAutoApply(
+                {
+                    ...REAL_2_25,
+                    trigger_on_file_creation_mode: 'regex',
+                    file_templates: [{ regex: 'Daily Notes', template: 'T.md' }]
+                },
+                TARGET
+            )
+        ).toBe(true)
+    })
+
+    test('an ignored folder is never auto-templated', () => {
+        expect(templaterWillAutoApply(REAL_2_25, '.claude/notes/2026-08-30.md')).toBe(false)
+    })
+
+    test('an empty ignore entry ignores nothing', () => {
+        // Templater skips the empty string explicitly; treating it as a prefix
+        // would match every path and disable templating everywhere.
+        expect(
+            templaterWillAutoApply(
+                { ...REAL_2_25, ignore_folders_on_creation: [{ folder: '' }] },
+                TARGET
+            )
+        ).toBe(true)
+    })
+
+    test('a Templater with no mode key falls back to the legacy booleans', () => {
+        const legacy = {
+            trigger_on_file_creation: true,
+            enable_folder_templates: true,
+            folder_templates: [{ folder: '/', template: 'T.md' }]
+        }
+
+        expect(templaterWillAutoApply(legacy, TARGET)).toBe(true)
+    })
+})
