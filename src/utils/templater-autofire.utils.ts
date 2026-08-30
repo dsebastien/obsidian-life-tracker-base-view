@@ -50,6 +50,25 @@ function folderTemplateCovers(templateFolder: string, folder: string): boolean {
 }
 
 /**
+ * Whether Templater templates new files at all.
+ *
+ * `trigger_on_file_creation` is the switch in the settings Templater ships
+ * today. It is read as the authority when present, and when it is absent a mode
+ * of anything but `none` is taken to mean the trigger is on — that is what the
+ * mode selector means, and Templater migrates its own settings shape (the vault
+ * this was written against moved to `data_version: 2` mid-development). Erring
+ * the other way would have Life Tracker apply a template to a file Templater
+ * had already templated, duplicating the whole note.
+ */
+function isTriggerOn(settings: TemplaterAutoFireSettings): boolean {
+    if (typeof settings.trigger_on_file_creation === 'boolean') {
+        return settings.trigger_on_file_creation
+    }
+    const mode = settings.trigger_on_file_creation_mode
+    return mode === 'folder' || mode === 'regex'
+}
+
+/**
  * Which trigger mode is in effect.
  *
  * Falls back to the legacy booleans only when the mode key is absent, which is
@@ -109,7 +128,8 @@ export function templaterWillAutoApply(
     settings: TemplaterAutoFireSettings | null,
     path: string
 ): boolean {
-    if (!settings || !isEnabled(settings.trigger_on_file_creation)) return false
+    if (!settings) return false
+    if (!isTriggerOn(settings)) return false
     if (isIgnored(settings, path)) return false
 
     const mode = resolveMode(settings)

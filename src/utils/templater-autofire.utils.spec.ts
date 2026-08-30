@@ -193,3 +193,29 @@ describe('Templater 2.25 runtime semantics', () => {
         expect(templaterWillAutoApply(legacy, TARGET)).toBe(true)
     })
 })
+
+describe('a settings shape that drops the trigger boolean', () => {
+    // Templater migrates its own settings (this vault moved to data_version 2
+    // mid-development). If a future migration removes the boolean, the mode is
+    // the switch — and guessing "off" would double-template the note.
+    const NO_BOOLEAN = {
+        trigger_on_file_creation_mode: 'folder',
+        folder_templates: [{ folder: '/', template: 'T.md' }]
+    }
+
+    test('a folder mode alone still counts as the trigger being on', () => {
+        expect(templaterWillAutoApply(NO_BOOLEAN, TARGET)).toBe(true)
+    })
+
+    test('mode none with no boolean is off', () => {
+        expect(
+            templaterWillAutoApply({ ...NO_BOOLEAN, trigger_on_file_creation_mode: 'none' }, TARGET)
+        ).toBe(false)
+    })
+
+    test('an explicit false boolean still wins over the mode', () => {
+        expect(
+            templaterWillAutoApply({ ...NO_BOOLEAN, trigger_on_file_creation: false }, TARGET)
+        ).toBe(false)
+    })
+})
