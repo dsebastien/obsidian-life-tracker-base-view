@@ -19,7 +19,7 @@ export interface NumberRangeUpdate {
  * - neither -> `null` (no constraint)
  *
  * An existing `step` is preserved. Pure function so it can be unit-tested apart
- * from the settings UI / immer plumbing.
+ * from the settings UI / settings plumbing.
  */
 export function computeNumberRange(
     changed: 'min' | 'max',

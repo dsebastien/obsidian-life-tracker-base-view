@@ -16,8 +16,6 @@ import {
     setHighContrastMode,
     setWeekStartDay
 } from '../utils'
-import { produce } from 'immer'
-import type { Draft } from 'immer'
 import { LifeTrackerView, LIFE_TRACKER_VIEW_TYPE } from './view/life-tracker-view'
 import { getLifeTrackerViewOptions } from './view/view-options'
 import { GridView, GRID_VIEW_TYPE } from './view/grid-view/grid-view'
@@ -28,9 +26,13 @@ import { syncLinkedDefinitions } from './services/starter-kit.utils'
 
 export class LifeTrackerPlugin extends Plugin {
     /**
-     * The plugin settings are immutable
+     * The plugin settings.
+     *
+     * Replaced wholesale rather than mutated in place: `updateSettings` clones,
+     * applies the update to the clone and swaps it in, so anything holding the
+     * previous object keeps seeing a consistent snapshot.
      */
-    override settings: PluginSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS)
+    override settings: PluginSettings = structuredClone(DEFAULT_SETTINGS)
 
     /**
      * Reads note types and properties from the Obsidian Starter Kit plugin,
@@ -198,63 +200,63 @@ export class LifeTrackerPlugin extends Plugin {
 
         if (!loadedSettings) {
             log('Using default settings', 'debug')
-            this.settings = produce(DEFAULT_SETTINGS, (draft) => draft)
+            this.settings = structuredClone(DEFAULT_SETTINGS)
             this.applyRuntimeSettings()
             return
         }
 
-        this.settings = produce(DEFAULT_SETTINGS, (draft: Draft<PluginSettings>) => {
-            // Load visualization presets
-            if (Array.isArray(loadedSettings.visualizationPresets)) {
-                draft.visualizationPresets = loadedSettings.visualizationPresets
-            }
+        const draft = structuredClone(DEFAULT_SETTINGS)
+        // Load visualization presets
+        if (Array.isArray(loadedSettings.visualizationPresets)) {
+            draft.visualizationPresets = loadedSettings.visualizationPresets
+        }
 
-            // Load animation duration
-            if (typeof loadedSettings.animationDuration === 'number') {
-                draft.animationDuration = loadedSettings.animationDuration
-            }
+        // Load animation duration
+        if (typeof loadedSettings.animationDuration === 'number') {
+            draft.animationDuration = loadedSettings.animationDuration
+        }
 
-            // Load property definitions
-            if (Array.isArray(loadedSettings.propertyDefinitions)) {
-                draft.propertyDefinitions = loadedSettings.propertyDefinitions
-            }
+        // Load property definitions
+        if (Array.isArray(loadedSettings.propertyDefinitions)) {
+            draft.propertyDefinitions = loadedSettings.propertyDefinitions
+        }
 
-            // Load confetti setting
-            if (typeof loadedSettings.showConfettiOnCapture === 'boolean') {
-                draft.showConfettiOnCapture = loadedSettings.showConfettiOnCapture
-            }
+        // Load confetti setting
+        if (typeof loadedSettings.showConfettiOnCapture === 'boolean') {
+            draft.showConfettiOnCapture = loadedSettings.showConfettiOnCapture
+        }
 
-            // Load week start (0 = Sunday, 1 = Monday)
-            if (loadedSettings.weekStartsOn === 0 || loadedSettings.weekStartsOn === 1) {
-                draft.weekStartsOn = loadedSettings.weekStartsOn
-            }
+        // Load week start (0 = Sunday, 1 = Monday)
+        if (loadedSettings.weekStartsOn === 0 || loadedSettings.weekStartsOn === 1) {
+            draft.weekStartsOn = loadedSettings.weekStartsOn
+        }
 
-            // Load high contrast mode (issue #137)
-            if (typeof loadedSettings.highContrast === 'boolean') {
-                draft.highContrast = loadedSettings.highContrast
-            }
+        // Load high contrast mode (issue #137)
+        if (typeof loadedSettings.highContrast === 'boolean') {
+            draft.highContrast = loadedSettings.highContrast
+        }
 
-            // Load note creation settings (issue #160)
-            if (typeof loadedSettings.createMissingNotes === 'boolean') {
-                draft.createMissingNotes = loadedSettings.createMissingNotes
-            }
-            if (typeof loadedSettings.dailyNoteTypeId === 'string') {
-                draft.dailyNoteTypeId = loadedSettings.dailyNoteTypeId
-            }
+        // Load note creation settings (issue #160)
+        if (typeof loadedSettings.createMissingNotes === 'boolean') {
+            draft.createMissingNotes = loadedSettings.createMissingNotes
+        }
+        if (typeof loadedSettings.dailyNoteTypeId === 'string') {
+            draft.dailyNoteTypeId = loadedSettings.dailyNoteTypeId
+        }
 
-            // Load custom filename date patterns (issue #139). Entries can be
-            // hand-edited in data.json, so keep anything with a usable pattern
-            // and backfill missing ids (the settings UI keys on them).
-            if (Array.isArray(loadedSettings.filenameDatePatterns)) {
-                draft.filenameDatePatterns = loadedSettings.filenameDatePatterns
-                    .filter((entry) => typeof entry?.pattern === 'string')
-                    .map((entry) => ({
-                        id: entry.id ? entry.id : crypto.randomUUID(),
-                        pattern: entry.pattern
-                    }))
-            }
-        })
+        // Load custom filename date patterns (issue #139). Entries can be
+        // hand-edited in data.json, so keep anything with a usable pattern
+        // and backfill missing ids (the settings UI keys on them).
+        if (Array.isArray(loadedSettings.filenameDatePatterns)) {
+            draft.filenameDatePatterns = loadedSettings.filenameDatePatterns
+                .filter((entry) => typeof entry?.pattern === 'string')
+                .map((entry) => ({
+                    id: entry.id ? entry.id : crypto.randomUUID(),
+                    pattern: entry.pattern
+                }))
+        }
 
+        this.settings = draft
         this.applyRuntimeSettings()
         log(`Settings loaded`, 'debug', loadedSettings)
     }
@@ -299,15 +301,23 @@ export class LifeTrackerPlugin extends Plugin {
     }
 
     /**
-     * Update settings immutably using immer
+     * Update settings by mutating a private copy, then swapping it in.
+     *
+     * The updater is handed a deep clone, never the live object, so a partial
+     * update cannot leave `this.settings` half-written and readers of the
+     * previous object keep a consistent snapshot. Settings are plain data
+     * (they round-trip through `data.json`), so `structuredClone` covers them.
+     *
      * @param updater Function that receives a draft and can mutate it
      * @param changeInfo Information about what changed (for targeted updates)
      */
     async updateSettings(
-        updater: (draft: Draft<PluginSettings>) => void,
+        updater: (draft: PluginSettings) => void,
         changeInfo: SettingsChangeInfo = { type: 'full' }
     ): Promise<void> {
-        this.settings = produce(this.settings, updater)
+        const draft = structuredClone(this.settings)
+        updater(draft)
+        this.settings = draft
         this.applyRuntimeSettings()
         await this.saveSettings()
         this.notifySettingsChanged(changeInfo)
@@ -319,7 +329,7 @@ export class LifeTrackerPlugin extends Plugin {
      */
     async updatePreset(
         presetId: string,
-        updater: (preset: Draft<PluginSettings['visualizationPresets'][number]>) => void
+        updater: (preset: PluginSettings['visualizationPresets'][number]) => void
     ): Promise<void> {
         await this.updateSettings(
             (draft) => {
