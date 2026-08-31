@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.24.2 (2026-08-31)
+
+### Bug Fixes
+
+- **plugin:** show a completion rate instead of a record for checkboxes
+
 ## 2.24.1 (2026-08-30)
 
 ### Bug Fixes
