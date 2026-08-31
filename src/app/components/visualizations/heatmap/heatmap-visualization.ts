@@ -1,7 +1,7 @@
 import type { App, BasesPropertyId } from 'obsidian'
 import { Notice } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
-import { TimeGranularity } from '../../../types'
+import { GRANULARITY_UNIT, TimeGranularity } from '../../../types'
 import type {
     ExportTable,
     HeatmapConfig,
@@ -20,6 +20,7 @@ import {
     isRecordImprovement,
     shouldAnnounceRecord
 } from '../../../services/record.utils'
+import { isBooleanSeries } from '../../../services/completion.utils'
 import {
     log,
     CSS_SELECTOR,
@@ -32,17 +33,6 @@ import {
 
 /** Shown instead of the tooltip subtitle when a cell is armed for opening */
 const TAP_AGAIN_HINT = 'Tap again to open'
-
-/**
- * Streak unit label per granularity (singular form)
- */
-const GRANULARITY_UNIT: Record<TimeGranularity, string> = {
-    [TimeGranularity.Daily]: 'day',
-    [TimeGranularity.Weekly]: 'week',
-    [TimeGranularity.Monthly]: 'month',
-    [TimeGranularity.Quarterly]: 'quarter',
-    [TimeGranularity.Yearly]: 'year'
-}
 
 /**
  * GitHub-contribution-style heatmap visualization
@@ -480,11 +470,29 @@ export class HeatmapVisualization extends BaseVisualization {
      * properties with a polarity — the plugin cannot call a value a "best"
      * without knowing which direction is good. Independent of the streak
      * toggle: the row element always exists.
+     *
+     * Checkbox properties get a completion chip instead (issue #161): a record
+     * over booleans is always `true` and says nothing, while "42/90 (47%)"
+     * describes the habit.
      */
     private renderRecordInfo(data: VisualizationDataPoint[], mayAnnounce: boolean): void {
         if (!this.streaksEl) return
 
         this.streaksEl.querySelector('.lt-record-item')?.remove()
+        this.streaksEl.querySelector('.lt-completion-item')?.remove()
+
+        // Read the values, not the property definition: the definition is
+        // optional and can be stale (issue #161)
+        if (isBooleanSeries(data) && this.heatmapData) {
+            this.lastRecordValue = null
+            this.renderCompletionInfo(
+                this.heatmapData.cells.map((cell) => cell.value),
+                GRANULARITY_UNIT[this.heatmapData.granularity],
+                this.streaksEl,
+                'lt-heatmap-streaks-item'
+            )
+            return
+        }
 
         const polarity = this.heatmapConfig.polarity
         const record = computeRecord(data, polarity)

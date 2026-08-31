@@ -28,6 +28,17 @@ function point(
     }
 }
 
+function boolPoint(filePath: string, booleanValue: boolean): VisualizationDataPoint {
+    return {
+        filePath,
+        dateAnchor: null,
+        numericValue: booleanValue ? 1 : 0,
+        booleanValue,
+        displayLabel: null,
+        listValues: []
+    }
+}
+
 describe('computeRecord (issue #56)', () => {
     const points = [
         point('a.md', 10, '2025-01-01'),
@@ -62,6 +73,19 @@ describe('computeRecord (issue #56)', () => {
     test('no numeric values yields no record', () => {
         expect(computeRecord([point('a.md', null)], 'higher-is-better')).toBeNull()
         expect(computeRecord([], 'higher-is-better')).toBeNull()
+    })
+
+    test('a boolean series never gets a record (issue #161)', () => {
+        const checks = [boolPoint('a.md', true), boolPoint('b.md', false)]
+        expect(computeRecord(checks, 'higher-is-better')).toBeNull()
+        expect(computeRecord(checks, 'lower-is-better')).toBeNull()
+    })
+
+    test('a numeric series holding only 0 and 1 keeps its record (issue #161)', () => {
+        // Detection reads `booleanValue`, not the values themselves: a real
+        // number property that happens to be 0/1 still has a meaningful best.
+        const numeric = [point('a.md', 1, '2025-01-01'), point('b.md', 0, '2025-01-02')]
+        expect(computeRecord(numeric, 'higher-is-better')?.value).toBe(1)
     })
 
     test('an entry without a date anchor can still hold the record', () => {

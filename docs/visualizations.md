@@ -319,6 +319,21 @@ charts, and in the heatmap's streak row.
 - When new data beats the record displayed earlier in the session, a
   "🏆 New record!" notice celebrates it.
 
+### Checkbox properties: completion instead
+
+A record over a checkbox would always be "true", so checkbox properties get a
+completion chip in the same spot instead:
+
+    ✅ Checked: 42/90 days (47%)
+
+That is how many of the periods **on screen** were ticked — 42 of the 90 days
+the visualization covers — not how many days you remembered to write the
+property down. A day with no entry counts as a day it was not done, which is
+what makes the number honest for a habit you only log when you do it.
+
+The unit follows the granularity, so a weekly chart counts weeks. Completion
+needs no polarity: it counts periods rather than calling any of them best.
+
 ## Moving Average
 
 For line and area charts, enable a moving average from the card's right-click menu (7, 14, or 30 periods). It renders as a thin dashed line in the chart's color, smoothing noisy daily metrics like mood, weight, or steps. Each point is the mean of the recorded values in the trailing window — missing periods are skipped, not counted as 0.

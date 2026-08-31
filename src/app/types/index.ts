@@ -11,7 +11,12 @@ export type {
 } from './chart'
 
 // Visualization types
-export { VisualizationType, TimeGranularity, TIME_GRANULARITY_OPTIONS } from './visualization'
+export {
+    VisualizationType,
+    TimeGranularity,
+    TIME_GRANULARITY_OPTIONS,
+    GRANULARITY_UNIT
+} from './visualization'
 export {
     CHART_LEGEND_POSITIONS,
     CONFIG_CARD_VISUALIZATION_OPTIONS,

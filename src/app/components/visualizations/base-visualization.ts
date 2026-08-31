@@ -1,4 +1,9 @@
 import { setIcon, type App, type BasesPropertyId } from 'obsidian'
+import {
+    computeCompletionStats,
+    describeCompletionStats,
+    formatCompletionStats
+} from '../../services/completion.utils'
 import type {
     ExportTable,
     VisualizationConfig,
@@ -390,5 +395,37 @@ export abstract class BaseVisualization {
         if (first) {
             this.openFileByPath(first)
         }
+    }
+
+    /**
+     * Render the completion chip for a checkbox property (issue #161), in the
+     * slot the personal record occupies for every other type: a record over
+     * booleans is always `true` and says nothing, while "42/90 (47%)"
+     * describes the habit.
+     *
+     * Carries no judgement, so unlike a record it needs no polarity — it counts
+     * entries rather than calling any of them best.
+     *
+     * Takes the period values the visualization renders — heatmap cells, or a
+     * chart dataset — so the denominator is the periods on screen rather than
+     * the days the property happened to be written down.
+     *
+     * Renders nothing when there are no periods at all: "0/0 (0%)" is noise,
+     * not information.
+     */
+    protected renderCompletionInfo(
+        periodValues: readonly (number | null)[],
+        unit: string,
+        rowEl: HTMLElement,
+        itemCls: string
+    ): void {
+        const stats = computeCompletionStats(periodValues)
+        if (stats.tracked === 0) return
+
+        rowEl.createSpan({
+            cls: `${itemCls} lt-completion-item`,
+            text: formatCompletionStats(stats, unit),
+            attr: { 'aria-label': describeCompletionStats(stats, unit) }
+        })
     }
 }

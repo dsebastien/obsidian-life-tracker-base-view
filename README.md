@@ -60,7 +60,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Empty states**: helpful messages when data is missing or misconfigured
 - **Confetti celebration**: optional animation when completing property capture
 - **Goals and targets**: set a goal per visualization — "3 days a week", "150 reps a week", "at most 80 kg" — and see progress against it; with a running total the target line accumulates alongside the data
-- **Personal records**: properties with a polarity show their personal best (🏆) on charts and heatmaps, and beating it pops a "New record!" notice
+- **Personal records**: properties with a polarity show their personal best (🏆) on charts and heatmaps, and beating it pops a "New record!" notice — checkbox properties show a completion rate (✅ 42/90 days) instead, since their best is always "true"
 - **Progress ring**: circular progress toward a target for the period you're in, color-coded, with the hit rate and recent trend underneath
 - **High contrast mode**: maximum-contrast rendering (thick borders, strong colors, nothing dimmed) for users who need high visibility
 - **Mobile support**: responsive grid (becomes cards view on smaller screens), mobile-friendly data entry modal, tap a chart point or heatmap cell to inspect it and tap again to open the note

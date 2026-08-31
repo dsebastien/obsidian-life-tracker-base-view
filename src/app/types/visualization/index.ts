@@ -1,5 +1,9 @@
 export { VisualizationType } from './visualization-type.intf'
-export { TimeGranularity, TIME_GRANULARITY_OPTIONS } from './time-granularity.intf'
+export {
+    TimeGranularity,
+    TIME_GRANULARITY_OPTIONS,
+    GRANULARITY_UNIT
+} from './time-granularity.intf'
 export type { AnimationState } from './animation-state.intf'
 export type {
     VisualizationDataPoint,

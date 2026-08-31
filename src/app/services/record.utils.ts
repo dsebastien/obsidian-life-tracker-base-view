@@ -1,5 +1,6 @@
 import type { ValuePolarity } from '../types'
 import type { VisualizationDataPoint } from '../types'
+import { isBooleanSeries } from './completion.utils'
 
 /**
  * A personal record: the best raw entry value ever recorded for a property
@@ -23,12 +24,20 @@ export interface PersonalRecord {
  * daily average.
  *
  * Ties keep the earliest entry: a record is set by whoever reached it first.
+ *
+ * Boolean series never get a record (issue #161): the best possible value is
+ * always `true`, so every ticked entry ties for "best" and the chip would say
+ * nothing. Callers render a completion chip in its place.
+ *
+ * That is decided from the values rather than from the property definition,
+ * which is optional and can be stale.
  */
 export function computeRecord(
     dataPoints: VisualizationDataPoint[],
     polarity: ValuePolarity | undefined
 ): PersonalRecord | null {
     if (polarity !== 'higher-is-better' && polarity !== 'lower-is-better') return null
+    if (isBooleanSeries(dataPoints)) return null
 
     let best: PersonalRecord | null = null
 

@@ -12,6 +12,7 @@ import type {
     ScatterChartData,
     VisualizationDataPoint
 } from '../../../types'
+import { GRANULARITY_UNIT } from '../../../types'
 import { sharedAggregationService } from '../../../services/data-aggregation.service'
 import { ChartLoaderService } from '../../../services/chart-loader.service'
 import {
@@ -45,6 +46,7 @@ import {
     isRecordImprovement,
     shouldAnnounceRecord
 } from '../../../services/record.utils'
+import { isBooleanSeries } from '../../../services/completion.utils'
 import { formatHoursAsTime } from '../../../services/range-aggregation.utils'
 import { Notice } from 'obsidian'
 import { format as formatDate } from 'date-fns'
@@ -845,14 +847,32 @@ export class ChartVisualization extends BaseVisualization {
      * single-dataset cartesian charts for properties with a polarity — the
      * plugin cannot call a value a "best" without knowing which direction is
      * good.
+     *
+     * Checkbox properties get a completion chip instead (issue #161): a record
+     * over booleans is always `true` and says nothing, while "42/90 (47%)"
+     * describes the habit.
      */
     private renderRecordInfo(data: VisualizationDataPoint[], mayAnnounce: boolean): void {
         if (!this.trendStatsEl || !this.isCartesianType()) return
 
         this.trendStatsEl.querySelector('.lt-record-item')?.remove()
+        this.trendStatsEl.querySelector('.lt-completion-item')?.remove()
 
         const sources = (this.chartData?.datasets ?? []).filter((d) => !d.isMovingAverage)
         if (sources.length !== 1) return
+
+        // Read the values, not the property definition: the definition is
+        // optional and can be stale (issue #161)
+        if (isBooleanSeries(data)) {
+            this.lastRecordValue = null
+            this.renderCompletionInfo(
+                sources[0]!.data,
+                GRANULARITY_UNIT[this.chartConfig.granularity],
+                this.trendStatsEl,
+                'lt-chart-trend-item'
+            )
+            return
+        }
 
         const polarity = this.chartConfig.polarity
         const record = computeRecord(data, polarity)

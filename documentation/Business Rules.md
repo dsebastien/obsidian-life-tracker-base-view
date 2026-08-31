@@ -316,6 +316,11 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - A personal record (issue #56) is the best **raw entry value** ever recorded for a property — never a period aggregate: "longest meditation: 30 min" is a single session, not a daily average
 - Polarity is the opt-in and decides the direction: `higher-is-better` records the maximum, `lower-is-better` the minimum, and `neutral` (or no definition) shows nothing, per the no-judgement rule
 - Ties keep the earliest entry: a record is set by whoever reached it first
+- Boolean series never get a record (issue #161): the best possible value is always `true`, so every ticked entry ties for "best" and the chip carries no information
+- Whether a series is boolean is read from the **values**, never from the property definition: the definition is optional, can be stale, and its name match ignores the `note.` / `formula.` namespace, so a checkbox definition can land on a numeric property. A series is boolean when at least one entry carries a boolean reading and no entry carries a non-boolean number — a numeric property that happens to hold only 0 and 1 keeps its record
+- Boolean series get a "✅ Checked: 42/90 days (47%)" completion chip in the record's slot, on both charts and heatmaps
+- Completion counts the **periods the visualization renders** — heatmap cells, or the chart's dataset — not the raw entries. Raw entries would make the denominator "periods you wrote the property down", so a habit logged only on the days it was done would read a meaningless "42/42 (100%)". A period counts as ticked when it holds a value other than 0, matching heatmap rendering and streaks
+- Completion carries no judgement, so unlike a record it needs no polarity. It is hidden only when there are no periods at all: "0/0 (0%)" is noise
 - Shown as a "🏆 Record: value (date)" chip on single-dataset cartesian charts (in the trend row, independent of the trend toggle) and on heatmaps (in the streak row, independent of the streak toggle)
 - A "🏆 New record!" notice fires when a data update strictly beats the record displayed earlier in the session. The first render never announces — reopening a view must stay silent — and one property + value announces at most once across all visualizations showing it
 
