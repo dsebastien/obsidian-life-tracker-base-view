@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import type { EventRef } from 'obsidian'
-import { NoteCreationService, type NoteCreationHost, type VaultPath } from './note-creation.service'
+import {
+    NoteCreationService,
+    type IndexedMetadata,
+    type NoteCreationHost,
+    type VaultPath
+} from './note-creation.service'
 import type { NoteTargetResolution } from './note-target.service'
 
 const TARGET_PATH = '40 Journal/41 Daily Notes/2026/35/2026-08-30.md'
@@ -30,6 +35,8 @@ interface VaultState {
     createCalls: string[]
     templaterCalls: unknown[][]
     emitModify: (path: string) => void
+    /** Index a path in the metadata cache and fire the cache's `changed` event */
+    emitIndexed: (path: string, metadata?: IndexedMetadata) => void
 }
 
 function createApp(
@@ -42,6 +49,8 @@ function createApp(
         templaterCreate?: (path: string) => VaultPath | undefined | Promise<VaultPath | undefined>
         createThrows?: boolean
         createFolderThrows?: boolean
+        /** Paths the metadata cache has already indexed, with frontmatter */
+        indexedFiles?: string[]
     } = {}
 ): { app: NoteCreationHost; state: VaultState } {
     const {
@@ -51,7 +60,8 @@ function createApp(
         templaterSettings,
         templaterCreate,
         createThrows = false,
-        createFolderThrows = false
+        createFolderThrows = false,
+        indexedFiles = []
     } = options
 
     const makeFile = (path: string): VaultPath => ({ path })
@@ -62,6 +72,10 @@ function createApp(
     const createCalls: string[] = []
     const templaterCalls: unknown[][] = []
     let modifyHandler: ((file: VaultPath) => void) | null = null
+    let changedHandler: ((file: VaultPath) => void) | null = null
+    const indexed = new Map<string, IndexedMetadata>(
+        indexedFiles.map((p) => [p, { frontmatter: { tags: ['type/periodic_note/daily'] } }])
+    )
 
     const templaterInstance = {
         settings: templaterSettings,
@@ -105,6 +119,15 @@ function createApp(
                 return {}
             },
             offref: (): void => undefined
+        },
+        metadataCache: {
+            getFileCache: (file: VaultPath): IndexedMetadata | null =>
+                indexed.get(file.path) ?? null,
+            on: (_event: 'changed', handler: (file: VaultPath) => void): EventRef => {
+                changedHandler = handler
+                return {}
+            },
+            offref: (): void => undefined
         }
     }
 
@@ -116,7 +139,11 @@ function createApp(
             createdFolders,
             createCalls,
             templaterCalls,
-            emitModify: (path: string) => modifyHandler?.({ path })
+            emitModify: (path: string) => modifyHandler?.({ path }),
+            emitIndexed: (path: string, metadata = { frontmatter: {} }) => {
+                indexed.set(path, metadata)
+                changedHandler?.({ path })
+            }
         }
     }
 }
@@ -217,9 +244,10 @@ describe('templating', () => {
             templaterSettings: DISPATCHER_SETTINGS
         })
 
-        const service = new NoteCreationService(app, 5)
+        const service = new NoteCreationService(app, 5, 5)
         const pending = service.ensureNote(resolution())
         state.emitModify(TARGET_PATH)
+        state.emitIndexed(TARGET_PATH)
         const outcome = await pending
 
         expect(state.templaterCalls).toEqual([])
@@ -289,6 +317,118 @@ describe('templating', () => {
         const outcome = await new NoteCreationService(app, 5).ensureNote(
             resolution({ templatePath: null })
         )
+
+        expect(outcome?.created).toBe(true)
+        expect(state.createCalls).toEqual([TARGET_PATH])
+    })
+})
+
+describe('metadata cache', () => {
+    /** Let queued microtasks run so a pending promise can settle */
+    const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
+    test('a templated note is not returned before the cache has indexed it', async () => {
+        // The vault reports Templater's write before the cache has parsed it. A
+        // capture opened in between sees no tags, so every tag-mapped property
+        // fails to apply and the modal reports "No matching properties".
+        const { app, state } = createApp({
+            templaterEnabled: true,
+            templaterSettings: DISPATCHER_SETTINGS
+        })
+
+        let resolved = false
+        const pending = new NoteCreationService(app, 5, 1000)
+            .ensureNote(resolution())
+            .then((outcome) => {
+                resolved = true
+                return outcome
+            })
+
+        state.emitModify(TARGET_PATH)
+        await tick()
+        expect(resolved).toBe(false)
+
+        state.emitIndexed(TARGET_PATH)
+        const outcome = await pending
+        expect(outcome?.created).toBe(true)
+    })
+
+    test('an explicitly templated note waits for the cache too', async () => {
+        const { app, state } = createApp({
+            templaterEnabled: true,
+            templaterSettings: { trigger_on_file_creation: false }
+        })
+
+        let resolved = false
+        const pending = new NoteCreationService(app, 5, 1000)
+            .ensureNote(resolution())
+            .then((outcome) => {
+                resolved = true
+                return outcome
+            })
+
+        await tick()
+        expect(resolved).toBe(false)
+
+        state.emitIndexed(TARGET_PATH)
+        const outcome = await pending
+        expect(outcome?.created).toBe(true)
+    })
+
+    test('an index of another path does not count', async () => {
+        const { app, state } = createApp({
+            templaterEnabled: true,
+            templaterSettings: { trigger_on_file_creation: false }
+        })
+
+        let resolved = false
+        const pending = new NoteCreationService(app, 5, 1000)
+            .ensureNote(resolution())
+            .then((outcome) => {
+                resolved = true
+                return outcome
+            })
+
+        state.emitIndexed('40 Journal/41 Daily Notes/2026/35/2026-08-29.md')
+        await tick()
+        expect(resolved).toBe(false)
+
+        state.emitIndexed(TARGET_PATH)
+        await pending
+    })
+
+    test('returns at once when the cache already holds the frontmatter', async () => {
+        const { app, state } = createApp({
+            templaterEnabled: true,
+            templaterSettings: { trigger_on_file_creation: false },
+            templaterCreate: (path) => {
+                const file = { path }
+                state.files.set(path, file)
+                state.emitIndexed(path)
+                return file
+            }
+        })
+
+        const outcome = await new NoteCreationService(app, 5, 1000).ensureNote(resolution())
+
+        expect(outcome?.created).toBe(true)
+    })
+
+    test('gives up waiting when the template wrote no frontmatter', async () => {
+        const { app } = createApp({
+            templaterEnabled: true,
+            templaterSettings: { trigger_on_file_creation: false }
+        })
+
+        const outcome = await new NoteCreationService(app, 5, 5).ensureNote(resolution())
+
+        expect(outcome?.created).toBe(true)
+    })
+
+    test('an untemplated note does not wait for the cache', async () => {
+        const { app, state } = createApp({ templaterEnabled: false })
+
+        const outcome = await new NoteCreationService(app, 5, 60000).ensureNote(resolution())
 
         expect(outcome?.created).toBe(true)
         expect(state.createCalls).toEqual([TARGET_PATH])

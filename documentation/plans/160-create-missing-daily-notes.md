@@ -162,6 +162,9 @@ properties are still written, because capture is the point of the operation.
   trigger already covers the path.
 - Captured properties are written after template application settles, never
   concurrently with it.
+- Creation also waits for the metadata cache to index the templated note:
+  recognition and the capture modal read the cache, which lags the file. Without
+  the wait the modal opened on "No matching properties" for a complete note.
 - Every integration is feature-detected and degrades to "not available"; a
   missing, disabled, or reshaped source is never an error.
 - Creation is opt-in. A plugin that writes new files into a vault must be asked

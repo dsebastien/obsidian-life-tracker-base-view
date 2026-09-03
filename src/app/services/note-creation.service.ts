@@ -20,6 +20,17 @@ import type { NoteTargetResolution } from './note-target.service'
  */
 const TEMPLATE_SETTLE_TIMEOUT_MS = 15000
 
+/**
+ * How long to wait for the metadata cache to index a note a template just wrote.
+ *
+ * The vault reports the write before the cache has parsed it. A capture opened
+ * in that gap sees a note with no frontmatter and no tags, so every tag-mapped
+ * property definition fails to apply and the modal reports "No matching
+ * properties" on a note that is, on disk, complete. Indexing takes milliseconds;
+ * the bound only covers a template that writes no frontmatter at all.
+ */
+const METADATA_SETTLE_TIMEOUT_MS = 3000
+
 /** The bits of the Templater plugin instance this service uses */
 interface TemplaterPluginInstance {
     templater?: {
@@ -51,7 +62,17 @@ export interface NoteCreationHost {
         on(name: 'modify', callback: (file: VaultPath) => void): EventRef
         offref(ref: EventRef): void
     }
+    metadataCache: {
+        getFileCache(file: VaultPath): IndexedMetadata | null
+        on(name: 'changed', callback: (file: VaultPath) => void): EventRef
+        offref(ref: EventRef): void
+    }
     plugins?: App['plugins']
+}
+
+/** The one thing this service reads from a cached metadata entry */
+export interface IndexedMetadata {
+    frontmatter?: unknown
 }
 
 /**
@@ -93,7 +114,8 @@ export class NoteCreationService {
      */
     constructor(
         private readonly app: NoteCreationHost,
-        private readonly settleTimeoutMs: number = TEMPLATE_SETTLE_TIMEOUT_MS
+        private readonly settleTimeoutMs: number = TEMPLATE_SETTLE_TIMEOUT_MS,
+        private readonly metadataTimeoutMs: number = METADATA_SETTLE_TIMEOUT_MS
     ) {}
 
     /** The Templater plugin instance, or null when absent or disabled */
@@ -152,6 +174,36 @@ export class NoteCreationService {
     }
 
     /**
+     * Wait until the metadata cache has indexed a templated note.
+     *
+     * Everything downstream of creation — the capture modal, property
+     * recognition, the frontmatter reader — works from the cache, not the file.
+     * The cache parses a write asynchronously, so "Templater has written" does
+     * not yet mean "the note's tags and properties are visible". Resolves at
+     * once when frontmatter is already indexed, otherwise on the next index of
+     * this path, bounded by a timeout for templates that carry no frontmatter.
+     */
+    private awaitMetadata(file: VaultPath): Promise<void> {
+        if (this.app.metadataCache.getFileCache(file)?.frontmatter) return Promise.resolve()
+
+        return new Promise<void>((resolve) => {
+            let settled = false
+            const finish = (): void => {
+                if (settled) return
+                settled = true
+                this.app.metadataCache.offref(eventRef)
+                window.clearTimeout(timer)
+                resolve()
+            }
+
+            const eventRef = this.app.metadataCache.on('changed', (changed) => {
+                if (changed.path === file.path) finish()
+            })
+            const timer = window.setTimeout(finish, this.metadataTimeoutMs)
+        })
+    }
+
+    /**
      * Get or create the note at a resolved target.
      *
      * Templating follows one rule: the template is applied exactly once. When
@@ -190,8 +242,9 @@ export class NoteCreationService {
             // Templater's own creation hook skips files it is creating itself,
             // and `create_new_note_from_template` has written the template
             // before it resolves. Nothing to wait for.
-            const created = await this.createFromTemplate(templateFile, path, folder)
-            if (!created) return null
+            const result = await this.createFromTemplate(templateFile, path, folder)
+            if (!result) return null
+            const { file: created, templated } = result
             if (created.path !== path) {
                 // Templater picks an available path, so a file appearing between
                 // the check above and here yields a numbered sibling rather than
@@ -201,6 +254,8 @@ export class NoteCreationService {
                     actual: created.path
                 })
             }
+            // A note that fell back to empty has nothing for the cache to index
+            if (templated) await this.awaitMetadata(created)
             return { path: created.path, created: true }
         }
 
@@ -214,20 +269,28 @@ export class NoteCreationService {
             return null
         }
 
-        if (settled) await settled
+        if (settled) {
+            await settled
+            await this.awaitMetadata(created)
+        }
 
         return { path: created.path, created: true }
     }
 
-    /** Create through Templater so `<% %>` commands are executed, not copied */
+    /**
+     * Create through Templater so `<% %>` commands are executed, not copied.
+     *
+     * `templated` is false when the note fell back to an empty file, which
+     * carries nothing worth waiting for the metadata cache to index.
+     */
     private async createFromTemplate(
         templateFile: VaultPath,
         path: string,
         folder: string
-    ): Promise<VaultPath | null> {
+    ): Promise<{ file: VaultPath; templated: boolean } | null> {
         const templater = this.getTemplater()
         const create = templater?.templater?.create_new_note_from_template
-        if (!templater?.templater || !create) return this.createEmpty(path)
+        if (!templater?.templater || !create) return this.untemplated(await this.createEmpty(path))
 
         // Templater appends the extension itself
         const basename = path.slice(folder.length > 0 ? folder.length + 1 : 0).replace(/\.md$/, '')
@@ -240,14 +303,20 @@ export class NoteCreationService {
                 basename,
                 false
             )
-            if (file) return file
+            if (file) return { file, templated: true }
             log('Templater created no file; falling back to an untemplated note', 'warn')
         } catch (error: unknown) {
             log('Templater failed; falling back to an untemplated note', 'warn', error)
         }
 
         // Templater may have created the file before failing partway through.
-        return this.app.vault.getFileByPath(path) ?? (await this.createEmpty(path))
+        return this.untemplated(
+            this.app.vault.getFileByPath(path) ?? (await this.createEmpty(path))
+        )
+    }
+
+    private untemplated(file: VaultPath | null): { file: VaultPath; templated: false } | null {
+        return file ? { file, templated: false } : null
     }
 
     /** Create a plain empty note */
