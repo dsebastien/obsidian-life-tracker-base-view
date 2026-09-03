@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.24.3 (2026-09-03)
+
+### Bug Fixes
+
+- capture properties of a freshly created note instead of reporting none
+
 ## 2.24.2 (2026-08-31)
 
 ### Bug Fixes
