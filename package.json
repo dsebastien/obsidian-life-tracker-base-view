@@ -74,7 +74,7 @@
         "conventional-changelog-cli": "5.0.0",
         "conventional-changelog-conventionalcommits": "9.1.0",
         "cz-customizable": "^7.5.1",
-        "eslint": "^9.36.0",
+        "eslint": "^10.10.0",
         "eslint-config-prettier": "^10.1.5",
         "eslint-plugin-obsidianmd": "0.4.1",
         "globals": "17.0.0",
