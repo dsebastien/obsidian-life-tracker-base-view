@@ -81,7 +81,7 @@
         "obsidian": "1.13.1",
         "prettier": "^3.6.2",
         "tailwindcss": "4.1.17",
-        "typescript": "^5.9.3",
+        "typescript": "^7.0.2",
         "typescript-eslint": "8.49.0"
     },
     "dependencies": {
