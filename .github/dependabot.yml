@@ -1,0 +1,66 @@
+# Dependency updates.
+#
+# Without this file Dependabot guesses the ecosystem, and for a Bun repo it
+# guesses wrong: it opens security PRs against a package-lock.json that does
+# not exist here. Declaring `bun` explicitly is what stops that.
+version: 2
+
+updates:
+    - package-ecosystem: bun
+      directory: /
+      schedule:
+          interval: weekly
+          day: monday
+      open-pull-requests-limit: 5
+      # Mirrors `minimumReleaseAge = 259200` in bunfig.toml. Without it,
+      # Dependabot proposes day-0 releases that `bun install` then refuses to
+      # resolve, which reads as a confusing CI failure rather than the
+      # quarantine working as intended.
+      cooldown:
+          default-days: 3
+      commit-message:
+          # Yields `chore(deps): ...`, which satisfies the scope-enum in
+          # commitlint.config.ts.
+          prefix: chore
+          include: scope
+      # Grouped so a tree of exact pins (see `exact = true` in bunfig.toml)
+      # does not turn into one pull request per patch bump. Security updates
+      # are deliberately left ungrouped: they arrive as their own PR so they
+      # stay legible and can be merged on their own.
+      groups:
+          production-minor-and-patch:
+              dependency-type: production
+              update-types:
+                  - minor
+                  - patch
+          development-minor-and-patch:
+              dependency-type: development
+              update-types:
+                  - minor
+                  - patch
+      ignore:
+          # commitlint majors are held deliberately. commitlint.config.ts
+          # imports @commitlint/types, which is not a direct dependency, so a
+          # major bump silently swaps the hoisted copy under tsc with nothing
+          # declaring the expectation. Upgrade by hand, after declaring
+          # @commitlint/types.
+          - dependency-name: '@commitlint/*'
+            update-types:
+                - version-update:semver-major
+
+    # Keeps the action pins in .github/workflows current. Nothing else watches
+    # these: they are outside every package manifest in the repo.
+    - package-ecosystem: github-actions
+      directory: /
+      schedule:
+          interval: weekly
+          day: monday
+      cooldown:
+          default-days: 3
+      commit-message:
+          prefix: chore
+          include: scope
+      groups:
+          github-actions:
+              patterns:
+                  - '*'
