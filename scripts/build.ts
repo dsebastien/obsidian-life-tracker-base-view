@@ -81,10 +81,20 @@ async function buildStyles(): Promise<void> {
  * Missing file yields an empty string so a checkout without a changelog still
  * builds.
  */
-export async function readChangelogDefine(): Promise<Record<string, string>> {
-    const file = Bun.file('CHANGELOG.md')
+export async function readChangelogDefine(path = 'CHANGELOG.md'): Promise<Record<string, string>> {
+    const file = Bun.file(path)
     const text = (await file.exists()) ? await file.text() : ''
     return { __PLUGIN_CHANGELOG__: JSON.stringify(text) }
+}
+
+/**
+ * 'none' instead of `false`: the catalog reviewer builds with an older Bun
+ * that only accepts the string form — `false` fails its archive build before
+ * main.js exists, while 'none' works everywhere. A local build on a current
+ * Bun cannot catch a regression, so the spec pins the value.
+ */
+export function sourcemapFor(prod: boolean): 'none' | 'inline' {
+    return prod ? 'none' : 'inline'
 }
 
 async function buildJs(): Promise<void> {
@@ -98,7 +108,7 @@ async function buildJs(): Promise<void> {
         target: 'node',
         define: await readChangelogDefine(),
         minify: isProd,
-        sourcemap: isProd ? false : 'inline',
+        sourcemap: sourcemapFor(isProd),
         throw: isProd
     })
     if (success) {

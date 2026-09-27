@@ -1,4 +1,7 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
+import { rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import {
     ASSETS_SRC,
     BANNER,
@@ -7,7 +10,9 @@ import {
     PLUGIN_ID,
     SRC,
     STYLES_OUT,
-    STYLES_SRC
+    STYLES_SRC,
+    readChangelogDefine,
+    sourcemapFor
 } from './build'
 
 describe('build constants', () => {
@@ -65,5 +70,46 @@ describe('EXTERNAL_MODULES', () => {
 
     test('has expected number of external modules', () => {
         expect(EXTERNAL_MODULES.length).toBe(13)
+    })
+})
+
+describe('readChangelogDefine', () => {
+    // Unique per process so parallel runs never share a file.
+    const path = join(tmpdir(), `build-spec-changelog-${process.pid}-${Date.now()}.md`)
+
+    afterEach(async () => {
+        await rm(path, { force: true })
+    })
+
+    test('a missing changelog defines an empty string, not a build failure', async () => {
+        const define = await readChangelogDefine(path)
+        expect(define).toEqual({ __PLUGIN_CHANGELOG__: '""' })
+    })
+
+    test('the define is a JS string literal that round-trips the file exactly', async () => {
+        const text = [
+            '## [1.2.3] - 2026-09-23',
+            '',
+            '- quotes "double" and \'single\', a `backtick` and a ${template}',
+            '- backslash \\ and a tab\there',
+            '- </script> and unicode: é ✓'
+        ].join('\n')
+        await Bun.write(path, text)
+
+        const literal = (await readChangelogDefine(path))['__PLUGIN_CHANGELOG__'] ?? ''
+        // What the bundler substitutes must evaluate back to the file content.
+        expect(JSON.parse(literal)).toBe(text)
+        expect(new Function(`return ${literal}`)()).toBe(text)
+    })
+})
+
+describe('sourcemapFor', () => {
+    test('production uses the string form the older Bun of the catalog reviewer accepts', () => {
+        // Not `false`: that fails the reviewer's archive build (see build.ts).
+        expect(sourcemapFor(true)).toBe('none')
+    })
+
+    test('development keeps inline source maps', () => {
+        expect(sourcemapFor(false)).toBe('inline')
     })
 })

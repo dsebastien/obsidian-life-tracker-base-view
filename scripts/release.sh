@@ -212,7 +212,7 @@ echo ""
 
 if [ "$DRY_RUN" = true ]; then
     print_warning "--dry-run: stopping here. Nothing pushed, no workflow dispatched."
-    print_info "Would have run: gh workflow run release.yml -f version=$VERSION"
+    print_info "Would have run: gh workflow run release.yml --ref $CURRENT_BRANCH -f version=$VERSION"
     exit 0
 fi
 
