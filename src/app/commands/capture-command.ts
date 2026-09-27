@@ -70,7 +70,7 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
                 return
             }
 
-            void offerToCreateTodayNote(plugin)
+            offerToCreateTodayNote(plugin)
         }
     })
 }
@@ -82,7 +82,7 @@ export function registerCaptureCommand(plugin: LifeTrackerPlugin): void {
  * vault, and the path comes from another plugin's configuration, so the user
  * sees exactly where it will go before agreeing.
  */
-async function offerToCreateTodayNote(plugin: LifeTrackerPlugin): Promise<void> {
+function offerToCreateTodayNote(plugin: LifeTrackerPlugin): void {
     const missingNoteMessage =
         "No note for today found. Expected a note named after today's date (YYYY-MM-DD), or matching one of your filename date patterns."
 

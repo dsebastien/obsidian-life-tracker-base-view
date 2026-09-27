@@ -86,7 +86,7 @@ export class PropertyCaptureModal extends Modal {
         this.recognitionService = new PropertyRecognitionService(plugin.app)
     }
 
-    override async onOpen(): Promise<void> {
+    override onOpen(): void {
         const { contentEl } = this
         contentEl.empty()
         contentEl.addClass('lt-carousel-modal')

@@ -676,7 +676,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         this.viewDateRange = this.computeViewDateRange(filteredEntries, dateAnchors)
 
         // Use async batched rendering to prevent UI freezing
-        void this.renderCardsAsync(effectiveOrder, filteredEntries, dateAnchors, renderCycle)
+        this.renderCardsInBatches(effectiveOrder, filteredEntries, dateAnchors, renderCycle)
     }
 
     /**
@@ -990,12 +990,12 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      * skeleton is swapped for its real card as the batches progress, instead of
      * the whole grid appearing at once at the end.
      */
-    private async renderCardsAsync(
+    private renderCardsInBatches(
         orderedCards: OrderedCardItem[],
         entries: BasesEntry[],
         dateAnchors: Map<BasesEntry, ResolvedDateAnchor | null>,
         renderCycle: number
-    ): Promise<void> {
+    ): void {
         const gridEl = this.gridEl
         if (!gridEl) return
 
@@ -1119,7 +1119,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     /**
      * Render a single property card (one or more configured visualizations,
      * or the unconfigured-property config card). Extracted from the render
-     * loop so it can be called from `renderCardsAsync` for both property
+     * loop so it can be called from `renderCardsInBatches` for both property
      * and overlay items.
      */
     private renderPropertyCard(
