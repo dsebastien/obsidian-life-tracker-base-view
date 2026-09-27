@@ -56,7 +56,7 @@ export function renderSupportSection(
     new Setting(containerEl)
         .setName('Stay in touch')
         .setDesc(
-            'Obsidian, Personal Knowledge Management and note-taking, straight to your inbox and feed.'
+            'Obsidian, personal knowledge management and note-taking, straight to your inbox and feed.'
         )
         .addButton((button) => {
             button.setButtonText('Newsletter').onClick(() => {
