@@ -9,12 +9,18 @@ nav_order: 3
 
 Access via **Settings → Life Tracker**.
 
-Settings are grouped into tabs: **Property definitions**, **Visualizations**,
-**Dates** and **About**.
+Settings are grouped into sections: **Capture**, **Visualizations**, **Dates**,
+**Creating missing notes** and **About**. The larger editors open as their own
+pages: **Property definitions**, **Visualization presets** (under
+Visualizations), **Filename date patterns** (under Dates) and **Obsidian
+Starter Kit** (shown only when that plugin is installed and enabled). The
+settings search finds every setting in the sections and each page by its
+name; the entries on the pages (property definitions, presets, patterns and
+Starter Kit properties) are not searchable. Requires Obsidian 1.13 or later.
 
 ### High Contrast
 
-In the **Visualizations** tab, under **Accessibility**. Off by default.
+In the **Visualizations** section. Off by default.
 
 Turn it on for maximum-visibility rendering: thick card and cell borders, strong
 saturated chart and heatmap colors, nothing dimmed, and unmistakable focus
@@ -26,14 +32,14 @@ your own encoding of what each value means, so they are left untouched.
 
 ### First Day of the Week
 
-In the **Dates** tab. Choose whether weeks start on **Monday** (default) or
+In the **Dates** section. Choose whether weeks start on **Monday** (default) or
 **Sunday**. Affects weekly grouping, heatmap week columns, and the "this week" /
 "last week" time frames. ISO week labels (`YYYY-Www` filenames, week numbers)
 stay Monday-based.
 
 ### Filename Date Patterns
 
-In the **Dates** tab. Out of the box, the plugin reads dates from filenames such
+On the **Filename date patterns** page, under **Dates**. Out of the box, the plugin reads dates from filenames such
 as `2026-07-30`, `2026-W31`, `2026-07`, `2026-Q3` and `2026`. If your notes are
 named differently — `Journal 2026-07-30`, `20260730`, `30.07.2026` — add a
 pattern so those notes still land on the right date.
@@ -74,8 +80,9 @@ Good to know:
 - The time period is derived from the placeholders you use: a day (or
   `{{date}}`) means daily notes, `{{week}}` weekly, `{{quarter}}` quarterly,
   a month monthly, a year alone yearly.
-- Patterns are tried top to bottom, before the built-in formats. The built-in
-  formats always keep working, so nothing breaks if you add none.
+- Patterns are tried top to bottom, before the built-in formats; drag a pattern
+  by its handle to change its priority. The built-in formats always keep
+  working, so nothing breaks if you add none.
 - "Capture today" prefers a note matched by one of your own patterns over a
   note that only matched a built-in format, so a folder-scoped pattern reliably
   wins over an identically named note elsewhere.
@@ -85,7 +92,7 @@ Good to know:
 
 ### Creating Missing Notes
 
-In the **Dates** tab.
+In the **Creating missing notes** section.
 
 You skip a day. Life happens. The next time you run "Capture today", there's no
 note to capture into, and the plugin just tells you so. Annoying, because the
@@ -141,17 +148,16 @@ year.
 
 ### Animation Duration
 
-In the **Visualizations** tab.
+In the **Visualizations** section.
 
-Control how long chart animations play (in milliseconds).
+Control how long chart animations play, in seconds.
 
-- **Default**: 3000ms
-- **Range**: 0-10000ms
-- **Tip**: Set to 0 to disable animations
+- **Default**: 3 seconds
+- **Range**: 1 to 10 seconds, in half-second steps
 
 ### Visualization Presets
 
-Auto-apply visualization settings based on property names.
+On the **Visualization presets** page, under **Visualizations**. Auto-apply visualization settings based on property names.
 
 | Field       | Description                                               |
 | ----------- | --------------------------------------------------------- |
@@ -167,7 +173,7 @@ Auto-apply visualization settings based on property names.
 
 ### Property Definitions
 
-Configure trackable properties for the capture command. See [Property Capture](property-capture.md) for details.
+On the **Property definitions** page. Configure trackable properties for the capture command. See [Property Capture](property-capture.md) for details.
 
 ## Life Tracker View Options
 

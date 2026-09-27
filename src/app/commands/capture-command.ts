@@ -98,7 +98,7 @@ function offerToCreateTodayNote(plugin: LifeTrackerPlugin): void {
 
     if (!resolution) {
         new Notice(
-            `${missingNoteMessage} Life Tracker could not work out where to create one — configure the Periodic Notes plugin, or pick a Starter Kit note type in settings > Life Tracker > dates.`
+            `${missingNoteMessage} Life Tracker could not work out where to create one — configure the Periodic Notes plugin, or pick a Starter Kit note type in settings > Life Tracker > creating missing notes.`
         )
         return
     }
@@ -109,7 +109,7 @@ function offerToCreateTodayNote(plugin: LifeTrackerPlugin): void {
     const discoverable = isTargetDiscoverable(resolution.target, today, TimeGranularity.Daily)
     const warning = discoverable
         ? ''
-        : `\n\nHeads up: Life Tracker will not recognise this filename as today's date, so the note will not appear in your views. Add a matching filename date pattern in settings > Life Tracker > dates.`
+        : `\n\nHeads up: Life Tracker will not recognise this filename as today's date, so the note will not appear in your views. Add a matching pattern in settings > Life Tracker > filename date patterns.`
 
     new ConfirmModal(
         plugin.app,

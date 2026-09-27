@@ -46,10 +46,9 @@ const HEATMAP_SCHEME_OPTIONS: Record<string, string> = {
 }
 
 /**
- * Renders and manages the "Visualizations" settings tab: global animation
- * settings and the visualization preset list. Extracted from the settings tab
- * to keep each module focused (issue #112). Date-related settings live in the
- * "Dates" tab (see `DateSettingsSection`).
+ * Renders and manages the visualization preset list, drawn on its own settings
+ * page. Extracted from the settings tab to keep each module focused (issue
+ * #112).
  */
 export class VisualizationPresetSection {
     constructor(
@@ -57,47 +56,11 @@ export class VisualizationPresetSection {
         private readonly requestRerender: () => void
     ) {}
 
+    /**
+     * Draws the preset list into a sub-page, whose title names it. High
+     * contrast and animation duration are declared in the settings tab.
+     */
     render(containerEl: HTMLElement): void {
-        // Accessibility
-        new Setting(containerEl).setName('Accessibility').setHeading()
-
-        new Setting(containerEl)
-            .setName('High contrast')
-            .setDesc(
-                'Maximum contrast rendering: thick borders, strong colors, no dimmed elements. Overrides the chosen color schemes.'
-            )
-            .addToggle((toggle) => {
-                toggle.setValue(this.plugin.settings.highContrast).onChange(async (value) => {
-                    await this.plugin.updateSettings(
-                        (draft) => {
-                            draft.highContrast = value
-                        },
-                        { type: 'high-contrast-changed' }
-                    )
-                })
-            })
-
-        // Animation settings
-        new Setting(containerEl).setName('Animation').setHeading()
-
-        new Setting(containerEl)
-            .setName('Animation duration')
-            .setDesc('Duration of visualization animations in seconds')
-            .addSlider((slider) => {
-                slider
-                    .setLimits(1, 10, 0.5)
-                    .setValue(this.plugin.settings.animationDuration / 1000)
-                    .setDynamicTooltip()
-                    .onChange(async (value) => {
-                        await this.plugin.updateSettings((draft) => {
-                            draft.animationDuration = value * 1000
-                        })
-                    })
-            })
-
-        // Visualization presets
-        new Setting(containerEl).setName('Visualization presets').setHeading()
-
         const desc = new DocumentFragment()
         desc.createDiv({
             text: 'Configure default visualizations for property names. These are applied automatically when a property matches.'
@@ -113,6 +76,8 @@ export class VisualizationPresetSection {
             button
                 .setButtonText('Add preset')
                 .setIcon('plus')
+                // setIcon replaces the text, so the tooltip is the only label
+                .setTooltip('Add preset')
                 .onClick(async () => {
                     await this.addNewPreset()
                     this.requestRerender()

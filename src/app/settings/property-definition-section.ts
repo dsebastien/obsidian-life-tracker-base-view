@@ -34,10 +34,8 @@ export class PropertyDefinitionSection {
         private readonly expandedDefinitions: Set<string>
     ) {}
 
+    /** Draws the editor into a sub-page, whose title names it */
     render(containerEl: HTMLElement): void {
-        // Property definitions header
-        new Setting(containerEl).setName('Property definitions').setHeading()
-
         // List existing definitions
         const definitionsContainer = containerEl.createDiv({
             cls: 'lt-property-definitions-container'
@@ -49,6 +47,8 @@ export class PropertyDefinitionSection {
             button
                 .setButtonText('Add property definition')
                 .setIcon('plus')
+                // setIcon replaces the text, so the tooltip is the only label
+                .setTooltip('Add property definition')
                 .onClick(async () => {
                     await this.addNewPropertyDefinition()
                     this.requestRerender()

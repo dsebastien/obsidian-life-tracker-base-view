@@ -20,8 +20,8 @@ const ACTION_LABELS: Record<ImportAction, string> = {
 }
 
 /**
- * Renders the "Starter Kit" settings tab: detection status, the import list, and
- * the state of existing links.
+ * Renders the "Obsidian Starter Kit" settings page: detection status, the
+ * import list, and the state of existing links.
  *
  * See `documentation/plans/starter-kit-integration.md`. Starter Kit owns the
  * *structure* of a linked property; Life Tracker keeps value direction, emojis,
@@ -53,8 +53,6 @@ export class StarterKitSection {
     render(containerEl: HTMLElement): void {
         // A fresh render rebuilds every row, so the old button is gone
         this.importButtonEl = null
-
-        containerEl.createEl('h3', { text: 'Obsidian Starter Kit' })
 
         if (!this.plugin.starterKit.isAvailable()) {
             this.renderUnavailable(containerEl)

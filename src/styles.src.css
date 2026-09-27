@@ -108,35 +108,10 @@
     }
 
     /* ========================================
-   SETTINGS - TABS
+   SETTINGS - PAGES
    ======================================== */
 
     .lt-settings {
-        @apply flex flex-col;
-    }
-
-    .lt-settings-nav {
-        @apply flex gap-1 mb-4 pb-2;
-        border-bottom: 1px solid var(--background-modifier-border);
-    }
-
-    .lt-settings-nav-tab {
-        @apply px-4 py-2 rounded-t cursor-pointer transition duration-150;
-        color: var(--text-muted);
-    }
-
-    .lt-settings-nav-tab:hover {
-        color: var(--text-normal);
-        background-color: var(--background-modifier-hover);
-    }
-
-    .lt-settings-nav-tab--active {
-        @apply font-medium;
-        color: var(--text-normal);
-        background-color: var(--background-secondary);
-    }
-
-    .lt-settings-content {
         @apply flex flex-col;
     }
 
@@ -4311,6 +4286,19 @@
         border-width: 2px;
     }
 } /* End @layer lt-components */
+
+/* ============================================================
+   Settings rows drawn as a stack
+   Intentionally unlayered. A settings `render:` hook draws into
+   `.setting-item`, which is a flex ROW; blocks made of full-width rows (the
+   support section, the filename token reference) need block flow, or their
+   parts sit side by side. Obsidian's `.setting-item { display: flex }` is
+   unlayered, and unlayered CSS beats every layered rule whatever the
+   specificity.
+   ============================================================ */
+.lt-settings-stack {
+    display: block;
+}
 
 /* ============================================================
    Visibility

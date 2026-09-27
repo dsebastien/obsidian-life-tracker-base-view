@@ -319,8 +319,10 @@ export class LifeTrackerPlugin extends Plugin {
         updater(draft)
         this.settings = draft
         this.applyRuntimeSettings()
-        await this.saveSettings()
+        // Views follow memory, which is what the plugin runs on: notified
+        // before the save, they stay in step even when the save fails
         this.notifySettingsChanged(changeInfo)
+        await this.saveSettings()
     }
 
     /**
