@@ -142,7 +142,10 @@ Both commands are **MANDATORY** after code changes. Fix any lint errors before p
 
 ## Bun Runtime
 
-Default to using Bun instead of Node.js.
+Default to using Bun instead of Node.js, with one exception: ESLint runs under Node.
+
+- `bunfig.toml` sets `[run] bun = false`, so scripts with a `node` shebang (eslint, tsc, prettier, commitlint) run under Node, as the community catalog reviewer's lint does. Under Bun, `node:module` `isBuiltin('bun:test')` is true and `obsidianmd/no-nodejs-modules` misreads every spec's `bun:test` import.
+- Node must be on PATH (version in `.nvmrc`). Without it, `bun run lint` stops with a message instead of reporting findings the reviewer never raises. CI sets Node up from `.nvmrc`. A desktop-only plugin (`isDesktopOnly: true`) is exempt from the check: the preset turns the Node-module rules off for it, so Bun lints it the same way.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
 - Use `bun test` instead of `jest` or `vitest`
@@ -295,7 +298,7 @@ this.plugin.settings.animationDuration = 5000
 
 ## Versioning & releases
 
-- Bump `version` in `manifest.json` (SemVer) and update `versions.json` to map plugin version → minimum app version.
+- Do not bump `version` in `manifest.json` or edit `versions.json` by hand: `bun run release` does both. `versions.json` gets a new line ONLY when a release raises `minAppVersion`, and that line names the LAST release on the old floor (`"<last release>": "<its minAppVersion>"`), so users left behind by the raise get the newest release that still runs for them. Obsidian reads the file only when the latest manifest's floor is above the user's app, and installs the highest listed release whose floor the app meets. `scripts/version-bump.ts` finds that release as the highest `x.y.z` tag below the new version and fails the release rather than skip the line if it cannot. Every key must be a real published release in `x.y.z` form.
 - Create a GitHub release whose tag exactly matches `manifest.json`'s `version`. Do not use a leading `v`.
 - Attach `manifest.json`, `main.js`, and `styles.css` (if present) to the release as individual assets.
 - After the initial release, follow the process to add/update your plugin in the community catalog as required.

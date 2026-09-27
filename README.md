@@ -308,7 +308,7 @@ Everything I build is documented in [my newsletter](https://dsebastien.net/newsl
 
 ## News & support
 
-To stay up to date about this plugin, Obsidian in general, Personal Knowledge Management and note-taking:
+To stay up to date about this plugin, Obsidian in general, personal knowledge management and note-taking:
 
 - Subscribe to [my newsletter](https://dsebastien.net/newsletter)
 - Subscribe to [my YouTube channel](https://youtube.com/@dsebastien)

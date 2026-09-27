@@ -43,10 +43,13 @@
 #
 # CHANGELOG.md and eslint.config.ts are deliberately NOT listed. The Obsidian
 # community catalog reviewer builds the *git archive*, not your working tree:
-#   - src/app/whats-new.ts does `import changelog from '../../CHANGELOG.md'`,
-#     so export-ignoring it fails the reviewer's build while passing locally.
-#   - export-ignoring eslint.config.ts makes the reviewer fall back to its own
-#     ruleset instead of this repo's.
+#   - scripts/build.ts injects CHANGELOG.md as __PLUGIN_CHANGELOG__ for the
+#     What's new view. Export-ignoring it does not fail the build, and users
+#     still get the notes (release.yml builds from the checkout, where
+#     export-ignore has no effect). But the reviewer's archive build would
+#     embed empty notes, so its main.js would not match the released one.
+#   - export-ignoring eslint.config.ts would take this repo's lint config
+#     away from the reviewer's archive.
 # Verify before submitting:
 #   git archive --format=tar HEAD | tar -x -C /tmp/a && cd /tmp/a \
 #     && bun install && bun run build
