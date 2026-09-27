@@ -58,6 +58,15 @@ jobs:
               with:
                   bun-version-file: package.json
 
+            # ESLint must run under Node, as the community catalog reviewer's
+            # does: bunfig sets [run] bun = false, and without a Node on the
+            # runner bun run would fall back to Bun, where no-nodejs-modules
+            # misreads every spec's bun:test import as a Node builtin.
+            - name: Setup Node
+              uses: actions/setup-node@v6
+              with:
+                  node-version-file: .nvmrc
+
             - name: Setup Git
               run: |
                   git config user.name "github-actions[bot]"
@@ -118,6 +127,7 @@ jobs:
             - name: Build (release gate — do not tag a commit that cannot build)
               run: |
                   bun run build
+                  bun run lint
                   bun run test
                   bun run rules:check
 

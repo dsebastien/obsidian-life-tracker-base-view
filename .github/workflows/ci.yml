@@ -19,6 +19,15 @@ jobs:
               with:
                   bun-version-file: package.json
 
+            # ESLint must run under Node, as the community catalog reviewer's
+            # does: bunfig sets [run] bun = false, and without a Node on the
+            # runner bun run would fall back to Bun, where no-nodejs-modules
+            # misreads every spec's bun:test import as a Node builtin.
+            - name: Setup Node
+              uses: actions/setup-node@v6
+              with:
+                  node-version-file: .nvmrc
+
             - name: Install dependencies
               run: bun install --frozen-lockfile
 

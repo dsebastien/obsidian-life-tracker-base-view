@@ -127,8 +127,9 @@ export function createWhatsNewViewCreator(
                 })
         }
 
-        protected override async onClose(): Promise<void> {
+        protected override onClose(): Promise<void> {
             this.contentEl.empty()
+            return Promise.resolve()
         }
     }
 

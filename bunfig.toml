@@ -22,8 +22,13 @@ minimumReleaseAge = 259200
 minimumReleaseAgeExcludes = ["@types/bun", "bun-types", "typescript"]
 
 [run]
-# equivalent to `bun --bun` for all `bun run` commands
-bun = true
+# Scripts with a node shebang (eslint, tsc, prettier, commitlint) run under
+# Node, not Bun. `bun = true` swaps node for Bun, and under Bun
+# node:module isBuiltin('bun:test') is true, so obsidianmd/no-nodejs-modules
+# flags every spec's `bun:test` import. The community catalog reviewer lints
+# under Node, where it does not. Linting under Node keeps local findings equal
+# to the reviewer's without switching the rule off for tests.
+bun = false
 
 [test]
 coverage = false
