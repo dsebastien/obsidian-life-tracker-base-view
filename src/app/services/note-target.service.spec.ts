@@ -1,12 +1,11 @@
 import { describe, expect, test } from 'bun:test'
-import { createRequire } from 'node:module'
 import { TimeGranularity } from '../types/visualization/time-granularity.intf'
 import type { StarterKitNoteType } from '../types/property/starter-kit.types'
 import { NoteTargetService, type NoteTargetHost } from './note-target.service'
 
 // See periodic-note-path.utils.spec.ts for why moment is loaded this way.
 type MomentLike = (date: Date) => { format: (pattern: string) => string }
-const momentFn: MomentLike = createRequire(import.meta.url)('moment')
+const momentFn = import.meta.require('moment') as MomentLike
 const formatMoment = (date: Date, format: string): string => momentFn(date).format(format)
 
 const SUNDAY = new Date(2026, 7, 30)

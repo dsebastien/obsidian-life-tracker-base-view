@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { createRequire } from 'node:module'
 import { formatMomentPattern } from './moment.utils'
 
 // See periodic-note-path.utils.spec.ts for why moment is loaded this way.
 type MomentLike = (date: Date) => { format: (pattern: string) => string }
-const momentFn: MomentLike = createRequire(import.meta.url)('moment')
+const momentFn = import.meta.require('moment') as MomentLike
 
 const PATTERNS = [
     'YYYY-MM-DD',

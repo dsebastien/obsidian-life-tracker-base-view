@@ -1,5 +1,5 @@
 import { mock } from 'bun:test'
-import { createRequire } from 'node:module'
+import type { moment as ObsidianMoment } from 'obsidian'
 
 /**
  * Test preload (registered via bunfig.toml `[test] preload`).
@@ -19,12 +19,22 @@ import { createRequire } from 'node:module'
  * Obsidian re-exports the `moment` package at runtime, and `moment` is a direct
  * dependency of the `obsidian` package, so it is present wherever the types are.
  *
- * Loaded with `createRequire` rather than an `import`: plugin code must take
- * moment from 'obsidian' so no build bundles a second copy, and the lint rules
- * enforcing that are deliberately left on. A test bootstrap wiring module mocks
- * is the one place that legitimately needs the module itself.
+ * Loaded with Bun's `import.meta.require` rather than an `import`: plugin code
+ * must take moment from 'obsidian' so no build bundles a second copy, and the
+ * lint rules enforcing that are deliberately left on. A test bootstrap wiring
+ * module mocks is the one place that legitimately needs the module itself.
+ * `require` is untyped, so the value is given the type Obsidian declares for it.
  */
-const moment = createRequire(import.meta.url)('moment')
+const moment = import.meta.require('moment') as typeof ObsidianMoment
+
+/**
+ * Plugin code calls `window.setTimeout` and friends for popout-window
+ * compatibility, and Bun's test runner has no `window`. Point it at the global
+ * object, reached through `self` (Bun defines it, like browsers and workers
+ * do): obsidianmd/no-global-this bans the `global` and `globalThis` names.
+ */
+const root = self as unknown as { window?: unknown }
+root.window ??= root
 
 void mock.module('obsidian', () => ({
     moment,

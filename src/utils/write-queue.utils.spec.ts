@@ -3,7 +3,7 @@ import { createCoalescingWriter } from './write-queue.utils'
 
 /** Resolve after `ms`, using a real timer so ordering is genuinely exercised */
 function delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+    return new Promise((resolve) => window.setTimeout(resolve, ms))
 }
 
 describe('createCoalescingWriter', () => {

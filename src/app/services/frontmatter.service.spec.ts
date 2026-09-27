@@ -32,11 +32,12 @@ function makeApp(initialFrontmatter: Record<string, unknown> = {}): {
             getFileCache: () => ({ frontmatter: fm })
         },
         fileManager: {
-            processFrontMatter: async (
+            processFrontMatter: (
                 _file: TFile,
                 callback: (fm: Record<string, unknown>) => void
-            ) => {
+            ): Promise<void> => {
                 callback(fm)
+                return Promise.resolve()
             }
         }
     } as unknown as App

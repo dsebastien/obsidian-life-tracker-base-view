@@ -126,15 +126,15 @@ describe('MaximizeStateService', () => {
     let originalActiveDocument: unknown
 
     beforeEach(() => {
-        originalActiveDocument = (globalThis as Record<string, unknown>)['activeDocument']
-        ;(globalThis as Record<string, unknown>)['activeDocument'] = {
+        originalActiveDocument = (self as unknown as Record<string, unknown>)['activeDocument']
+        ;(self as unknown as Record<string, unknown>)['activeDocument'] = {
             addEventListener: (): void => {},
             removeEventListener: (): void => {}
         }
     })
 
     afterEach(() => {
-        ;(globalThis as Record<string, unknown>)['activeDocument'] = originalActiveDocument
+        ;(self as unknown as Record<string, unknown>)['activeDocument'] = originalActiveDocument
     })
 
     it('maximizes only the visualization whose button was clicked (issue #151)', () => {

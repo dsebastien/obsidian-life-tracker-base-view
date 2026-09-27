@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from 'bun:test'
+import { describe, expect, mock, test } from 'bun:test'
 import type { EventRef } from 'obsidian'
 import {
     NoteCreationService,
@@ -101,18 +101,18 @@ function createApp(
             getFileByPath: (path: string): VaultPath | null => files.get(path) ?? null,
             getFolderByPath: (path: string): VaultPath | null =>
                 folders.has(path) ? { path } : null,
-            createFolder: async (path: string): Promise<VaultPath> => {
-                if (createFolderThrows) throw new Error('permission denied')
+            createFolder: (path: string): Promise<VaultPath> => {
+                if (createFolderThrows) return Promise.reject(new Error('permission denied'))
                 createdFolders.push(path)
                 folders.add(path)
-                return { path }
+                return Promise.resolve({ path })
             },
-            create: async (path: string, _content: string): Promise<VaultPath> => {
+            create: (path: string, _content: string): Promise<VaultPath> => {
                 createCalls.push(path)
-                if (createThrows) throw new Error('cannot create')
+                if (createThrows) return Promise.reject(new Error('cannot create'))
                 const file = makeFile(path)
                 files.set(path, file)
-                return file
+                return Promise.resolve(file)
             },
             on: (_event: 'modify', handler: (file: VaultPath) => void): EventRef => {
                 modifyHandler = handler
@@ -147,12 +147,6 @@ function createApp(
         }
     }
 }
-
-beforeEach(() => {
-    // The service uses window timers per the repo's catalog conventions
-    const scope: { window?: unknown } = globalThis
-    scope.window ??= globalThis
-})
 
 describe('reusing what already exists', () => {
     test('an existing note is reused and never overwritten', async () => {
@@ -325,7 +319,7 @@ describe('templating', () => {
 
 describe('metadata cache', () => {
     /** Let queued microtasks run so a pending promise can settle */
-    const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+    const tick = (): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, 0))
 
     test('a templated note is not returned before the cache has indexed it', async () => {
         // The vault reports Templater's write before the cache has parsed it. A

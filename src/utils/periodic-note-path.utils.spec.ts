@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test'
-import { createRequire } from 'node:module'
 import { TimeGranularity } from '../app/types/visualization/time-granularity.intf'
 import {
     DEFAULT_BASENAME_FORMAT,
@@ -15,14 +14,14 @@ import { parseDateFromFilename } from './filename-date.utils'
  * Periodic Notes' stored formats were written against. A hand-rolled fake would
  * only prove the code calls a function.
  *
- * Loaded through `createRequire` rather than imported: plugin code must take
- * `moment` from 'obsidian' so a build never bundles a second copy, and the lint
- * rules enforcing that stay switched on. A spec is never bundled, and
- * `createRequire` returns an untyped value that lands directly in the precise
- * local type below, so nothing is cast or suppressed to get here.
+ * Loaded through Bun's `import.meta.require` rather than imported: plugin code
+ * must take `moment` from 'obsidian' so a build never bundles a second copy,
+ * and the lint rules enforcing that stay switched on. A spec is never bundled.
+ * `require` returns an untyped value, so it is asserted to the narrow local
+ * type below, the only surface the specs call.
  */
 type MomentLike = (date: Date) => { format: (pattern: string) => string }
-const momentFn: MomentLike = createRequire(import.meta.url)('moment')
+const momentFn = import.meta.require('moment') as MomentLike
 
 const formatMoment = (date: Date, format: string): string => momentFn(date).format(format)
 
