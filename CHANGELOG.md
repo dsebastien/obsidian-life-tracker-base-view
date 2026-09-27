@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.24.4...3.0.0) (2026-09-27)
+
+### ⚠ BREAKING CHANGES
+
+* **plugin:** requires Obsidian 1.13.0 (minAppVersion 1.12.0 -> 1.13.0).
+Users on Obsidian 1.12 keep 2.24.4 through versions.json.
+
+Claude-Session: https://claude.ai/code/session_01LM4hi11kohPVqgZNLpjRgh
+
+### Features
+
+* **plugin:** declare the settings for Obsidian 1.13's settings API ([2bbfebc](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/2bbfebcc1f7d40193192010b2b02d99bc8bef477))
+
+### Bug Fixes
+
+* **build:** exclude bun-types alongside @types/bun from the release-age gate ([942ab35](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/942ab35d88db1cac24ec34e612628addaf02f977))
+* **build:** harden the release path from the template ([54bf1f6](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/54bf1f6e2089399b50e62edcdb257de2f8448901))
+* **build:** rebuild versions.json from the published releases ([2244dcd](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/2244dcd5d56037f0d43096d4c9128739bdd65423))
+* **plugin:** lowercase the newsletter line ([0325c8d](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/0325c8db9a74a36be1041da0668c001a166a4983))
+
 ## [2.24.4](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.24.3...2.24.4) (2026-09-03)
 
 ## [2.24.3](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/2.24.2...2.24.3) (2026-09-03)
@@ -495,6 +515,7 @@ All notable changes to this project will be documented in this file.
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

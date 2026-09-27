@@ -1,5 +1,25 @@
 # Release Notes
 
+## 3.0.0 (2026-09-27)
+
+### ⚠ BREAKING CHANGES
+
+- **plugin:** requires Obsidian 1.13.0 (minAppVersion 1.12.0 -> 1.13.0).
+  Users on Obsidian 1.12 keep 2.24.4 through versions.json.
+
+Claude-Session: https://claude.ai/code/session_01LM4hi11kohPVqgZNLpjRgh
+
+### Features
+
+- **plugin:** declare the settings for Obsidian 1.13's settings API
+
+### Bug Fixes
+
+- **build:** exclude bun-types alongside @types/bun from the release-age gate
+- **build:** harden the release path from the template
+- **build:** rebuild versions.json from the published releases
+- **plugin:** lowercase the newsletter line
+
 ## 2.24.4 (2026-09-03)
 
 ## 2.24.3 (2026-09-03)
