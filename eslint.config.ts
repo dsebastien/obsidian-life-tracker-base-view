@@ -48,21 +48,32 @@ const presetEntry = (rule: string): unknown => {
     return entry
 }
 
+/** Severity names, which are never meaningful as a rule's options. */
+const SEVERITY_NAMES: readonly unknown[] = ['off', 'warn', 'error']
+
 /**
  * The preset's rules raised to error with their options intact. A rule the
  * preset stops configuring is skipped rather than thrown on: this config also
  * loads in the community catalog reviewer's environment, where a throw fails
  * the whole review. rules:check reports the vanished rule instead.
+ *
+ * Severity strings are dropped from the options: the 0.4.x preset lists a
+ * stray 'warn' among no-restricted-globals' entries, which copied as-is
+ * restricts a global named `warn`.
  */
 const keptAtError = Object.fromEntries(
-    PRESET_WARNINGS_KEPT_AT_ERROR.flatMap((rule) => {
+    PRESET_WARNINGS_KEPT_AT_ERROR.flatMap((rule): [string, unknown][] => {
         const entry = presetEntry(rule)
         if (entry === undefined) {
             return []
         }
-        return [
-            [rule, Array.isArray(entry) ? ['error', ...(entry.slice(1) as unknown[])] : 'error']
-        ]
+        if (!Array.isArray(entry)) {
+            return [[rule, 'error']]
+        }
+        const options = (entry.slice(1) as unknown[]).filter(
+            (option) => !SEVERITY_NAMES.includes(option)
+        )
+        return [[rule, ['error', ...options]]]
     })
 )
 
