@@ -98,7 +98,9 @@ const coreRestrictedImports = (): unknown[] => {
     const entry = presetEntry('@typescript-eslint/no-restricted-imports')
     const paths: unknown[] = Array.isArray(entry) ? (entry.slice(1) as unknown[]) : []
     return paths.filter(
-        (path) => !(typeof path === 'object' && path !== null && 'allowTypeImports' in path)
+        (path) =>
+            !SEVERITY_NAMES.includes(path) &&
+            !(typeof path === 'object' && path !== null && 'allowTypeImports' in path)
     )
 }
 
