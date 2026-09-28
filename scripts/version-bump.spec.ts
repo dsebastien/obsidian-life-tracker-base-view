@@ -197,6 +197,8 @@ describe('bumpVersion', () => {
 
     const versionsText = () => Bun.file(join(root, 'versions.json')).text()
 
+    // Hooks do not inherit a test's timeout: `git init` alone passed the 5 s
+    // default in one repo's CI (cli-rest, 2026-09-28).
     beforeEach(async () => {
         root = await mkdtemp(join(tmpdir(), 'version-bump-spec-'))
         await git('init', '-q')
@@ -204,11 +206,11 @@ describe('bumpVersion', () => {
             join(root, 'versions.json'),
             JSON.stringify({ '0.2.4': '1.10.0' }, null, 4) + '\n'
         )
-    })
+    }, GIT_TEST_TIMEOUT_MS)
 
     afterEach(async () => {
         await rm(root, { recursive: true, force: true })
-    })
+    }, GIT_TEST_TIMEOUT_MS)
 
     test(
         'a raised floor records the last release before it, read from its tag',

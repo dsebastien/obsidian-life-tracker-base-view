@@ -81,6 +81,15 @@ describe('readChangelogDefine', () => {
         await rm(path, { force: true })
     })
 
+    test('by default it reads the repository CHANGELOG.md, the one the release writes', async () => {
+        // The build calls it with no argument; the What's new tab shows this.
+        const changelog = await Bun.file('CHANGELOG.md').text()
+        expect(changelog).not.toBe('')
+        expect(await readChangelogDefine()).toEqual({
+            __PLUGIN_CHANGELOG__: JSON.stringify(changelog)
+        })
+    })
+
     test('a missing changelog defines an empty string, not a build failure', async () => {
         const define = await readChangelogDefine(path)
         expect(define).toEqual({ __PLUGIN_CHANGELOG__: '""' })
