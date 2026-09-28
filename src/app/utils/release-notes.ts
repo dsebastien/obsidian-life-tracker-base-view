@@ -15,7 +15,7 @@ export interface ChangelogSection {
  * Matches a conventional-changelog version heading line (h1 for major
  * releases, h2 for minor, h3 for patch).
  */
-const VERSION_HEADING_REGEX = /^#{1,3} \[?(\d+\.\d+\.\d+)\]?/
+export const VERSION_HEADING_REGEX = /^#{1,3} \[?(\d+\.\d+\.\d+)\]?/
 
 /**
  * Compare two SemVer versions (numeric core only, which is all Obsidian

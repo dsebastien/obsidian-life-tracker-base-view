@@ -299,6 +299,22 @@ this.plugin.settings.animationDuration = 5000
 ## Versioning & releases
 
 - Do not bump `version` in `manifest.json` or edit `versions.json` by hand: `bun run release` does both. `versions.json` gets a new line ONLY when a release raises `minAppVersion`, and that line names the LAST release on the old floor (`"<last release>": "<its minAppVersion>"`), so users left behind by the raise get the newest release that still runs for them. Obsidian reads the file only when the latest manifest's floor is above the user's app, and installs the highest listed release whose floor the app meets. `scripts/version-bump.ts` finds that release as the highest `x.y.z` tag below the new version and fails the release rather than skip the line if it cannot. Every key must be a real published release in `x.y.z` form.
+- **Release notes are written, not generated, whenever users will read them.** The in-app
+  "What's new" tab and the GitHub release body both show the release's `CHANGELOG.md`
+  section, which by default is the conventional-changelog list of commit subjects
+  ("fix(build): align with the catalog reviewer's archive") — written for maintainers, not
+  users. For any release a user should understand (a feature, a visible fix, a major that
+  bundles earlier minors), write `NEXT_RELEASE.md` at the repo root and commit it before
+  releasing: what changed for the user, in plain language, with `###` or deeper headings.
+  A line that reads as a version heading (`### 1.2.0 ...`, even inside a code fence) would
+  split the section for both readers, and `#`/`##` would outrank the release's own heading:
+  both are refused. Remember the two surfaces render differently: GitHub autolinks `@user`
+  (and notifies them) and `#123`, Obsidian renders `[[links]]`. The release uses it as the
+  section's body under the generated version header, then deletes it in the release commit.
+  Without it, the generated list is used. `release.sh` validates the file and says which
+  source the release will use before dispatching. Never hand-edit a GitHub release body
+  afterwards: that is how the two surfaces came to disagree.
+  The curated notes (`NEXT_RELEASE.md`) reach the tab through the same path: `scripts/generate-changelog.ts` writes them into the new CHANGELOG.md section (`applyCuratedNotes`), and the release body is cut from CHANGELOG.md by the tab's own parser (`--release-body`, written to a file for `body_path`, never through a heredoc step output), so the tab and the GitHub release body always carry the same text.
 - Create a GitHub release whose tag exactly matches `manifest.json`'s `version`. Do not use a leading `v`.
 - Attach `manifest.json`, `main.js`, and `styles.css` (if present) to the release as individual assets.
 - After the initial release, follow the process to add/update your plugin in the community catalog as required.

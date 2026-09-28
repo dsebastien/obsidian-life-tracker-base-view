@@ -93,6 +93,12 @@ jobs:
                   if [ "$(git log -1 --format=%s)" = "chore(release): $VERSION" ]; then
                     echo "HEAD is already the release commit for $VERSION; skipping bump steps."
                     echo "prepared=true" >> $GITHUB_OUTPUT
+                  elif [ -n "$(git log --format=%s -200 | grep -Fx "chore(release): $VERSION")" ]; then
+                    # The release commit exists but the branch moved on. A new
+                    # bump would write a second section for this version, from
+                    # the generated list (the curated notes were consumed).
+                    echo "chore(release): $VERSION is already on this branch but is not HEAD. Tag that commit and dispatch publish at the tag instead of re-running prepare." >&2
+                    exit 1
                   else
                     echo "prepared=false" >> $GITHUB_OUTPUT
                   fi
@@ -135,6 +141,11 @@ jobs:
               if: steps.version.outputs.prepared != 'true'
               run: |
                   git add package.json versions.json manifest.json CHANGELOG.md docs/release-notes.md
+                  # The changelog step consumed the curated notes, if any: record
+                  # the removal so the next release does not reuse them.
+                  if git ls-files --error-unmatch NEXT_RELEASE.md >/dev/null 2>&1; then
+                    git add -u -- NEXT_RELEASE.md
+                  fi
                   git commit -m "chore(release): ${{ steps.version.outputs.version }}"
                   git push origin HEAD:${{ github.ref_name }}
 
@@ -201,14 +212,14 @@ jobs:
             - name: Extract changelog for release notes
               id: changelog
               run: |
-                  # Extract the latest version section from CHANGELOG.md
-                  NOTES=$(awk '/^## \[?[0-9]/{if(p) exit; p=1} p' CHANGELOG.md)
-                  # Handle multi-line output
-                  echo "notes<<EOF" >> $GITHUB_OUTPUT
-                  echo "$NOTES" >> $GITHUB_OUTPUT
-                  printf '\n---\n\n' >> $GITHUB_OUTPUT
-                  cat .github/release-footer.md >> $GITHUB_OUTPUT
-                  echo "EOF" >> $GITHUB_OUTPUT
+                  # The newest CHANGELOG.md section, cut by the parser the What's
+                  # new tab uses, so both show the same text. Written to a file
+                  # (body_path) rather than a step output: curated notes are free
+                  # prose, and a heredoc delimiter line inside them would end
+                  # the output early.
+                  bun scripts/generate-changelog.ts --release-body "${{ steps.version.outputs.version }}" > release-body.md
+                  printf '\n---\n\n' >> release-body.md
+                  cat .github/release-footer.md >> release-body.md
 
             - name: Generate artifact attestations
               uses: actions/attest-build-provenance@v3
@@ -223,7 +234,7 @@ jobs:
               with:
                   tag_name: ${{ steps.version.outputs.version }}
                   name: ${{ steps.version.outputs.version }}
-                  body: ${{ steps.changelog.outputs.notes }}
+                  body_path: release-body.md
                   files: |
                       dist/main.js
                       dist/manifest.json
