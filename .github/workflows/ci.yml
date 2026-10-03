@@ -37,8 +37,11 @@ jobs:
             # Note that `bun audit fix` cannot rewrite a pin declared in the
             # `overrides` block of package.json — if a fix is blocked there, correct
             # the override by hand.
+            # GHSA-vfj7-8cjw-p6xm (braces <=3.0.3): no patched release exists. Only reached via
+            # commitizen > find-node-modules > findup-sync > micromatch at commit time, with
+            # patterns from this repo, never untrusted input. Drop the ignore once braces ships a fix.
             - name: Audit dependencies
-              run: bun audit --audit-level=high
+              run: bun audit --audit-level=high --ignore GHSA-vfj7-8cjw-p6xm
 
             - name: Type check
               run: bun run tsc
