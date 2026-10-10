@@ -23,6 +23,7 @@ Before capturing data, define which properties to track:
 | Default     | Pre-filled value for new entries                                                                                       |
 | Constraints | Min/max/step for numbers, allowed values for text                                                                      |
 | Note filter | Folder, tag, or regex pattern to limit scope                                                                           |
+| Description | Help text shown in the capture dialog; line breaks are kept, e.g. one line per value                                   |
 
 For **number** properties you can set a **min**, **max**, and optional **step**. The step controls the slider granularity (e.g. `1` for whole-number scores, `0.5` for half points); leave it empty to allow fine decimal values. If you fill in only one bound, the other is inferred automatically (min → `max = min + 100`, max → `min = 0`) and the inferred value is shown so there's no silent guessing.
 
