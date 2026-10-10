@@ -66,6 +66,12 @@ export interface PluginSettings {
     showConfettiOnCapture: boolean
 
     /**
+     * Move to the next property in the capture modal right after a value is
+     * picked from a dropdown, emoji button or checkbox. Off by default.
+     */
+    autoAdvanceOnPick: boolean
+
+    /**
      * First day of the week for week grouping and heatmap columns.
      * 0 = Sunday, 1 = Monday. Defaults to Monday (issue #99).
      */
@@ -109,6 +115,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     animationDuration: 3000,
     propertyDefinitions: [],
     showConfettiOnCapture: true,
+    autoAdvanceOnPick: false,
     weekStartsOn: 1,
     filenameDatePatterns: [],
     highContrast: false,

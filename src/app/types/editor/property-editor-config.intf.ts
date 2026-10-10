@@ -14,6 +14,11 @@ export interface PropertyEditorConfig {
     onCommit?: () => void
     /** Called when Enter key is pressed - for navigation */
     onEnterKey?: () => void
+    /**
+     * Called when a value is picked from a closed set (dropdown option, emoji
+     * button, checkbox), as opposed to typed - drives capture auto-advance
+     */
+    onPick?: () => void
     /** Compact mode for table cells */
     compact?: boolean
 }

@@ -42,6 +42,7 @@ export class BooleanEditor extends BasePropertyEditor {
             this.updateToggleState()
             this.notifyChange(this.currentValue)
             this.notifyCommit()
+            this.notifyPick()
         })
 
         this.toggleEl.addEventListener('keydown', (e) => {
@@ -57,6 +58,7 @@ export class BooleanEditor extends BasePropertyEditor {
                 this.updateToggleState()
                 this.notifyChange(this.currentValue)
                 this.notifyCommit()
+                this.notifyPick()
             }
         })
 
@@ -79,6 +81,7 @@ export class BooleanEditor extends BasePropertyEditor {
             this.currentValue = this.checkboxEl?.checked ?? false
             this.notifyChange(this.currentValue)
             this.notifyCommit()
+            this.notifyPick()
         })
     }
 

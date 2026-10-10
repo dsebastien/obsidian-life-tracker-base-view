@@ -73,6 +73,7 @@ export class TextEditor extends BasePropertyEditor {
         // Event handlers
         this.selectEl.addEventListener('change', () => {
             this.notifyChange(this.selectEl?.value ?? '')
+            this.notifyPick()
         })
 
         this.selectEl.addEventListener('blur', () => {

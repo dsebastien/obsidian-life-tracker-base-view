@@ -59,6 +59,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Persistent settings**: grid layout and card configurations saved per view
 - **Empty states**: helpful messages when data is missing or misconfigured
 - **Confetti celebration**: optional animation when completing property capture
+- **Auto-advance**: optionally jump to the next property as soon as you pick a value from a dropdown, emoji button, or checkbox
 - **Goals and targets**: set a goal per visualization — "3 days a week", "150 reps a week", "at most 80 kg" — and see progress against it; with a running total the target line accumulates alongside the data
 - **Personal records**: properties with a polarity show their personal best (🏆) on charts and heatmaps, and beating it pops a "New record!" notice — checkbox properties show a completion rate (✅ 42/90 days) instead, since their best is always "true"
 - **Progress ring**: circular progress toward a target for the period you're in, color-coded, with the hit rate and recent trend underneath

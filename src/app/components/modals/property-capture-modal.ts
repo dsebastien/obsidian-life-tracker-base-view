@@ -15,6 +15,7 @@ import { isNoteComplete, findFirstUnfilledIndex } from '../../services/note-comp
 import { createPropertyEditor } from '../editing/property-editor'
 import { AUTO_SAVE_DEBOUNCE_MS } from '../editing/editing.constants'
 import { detectSwipeDirection } from './swipe.utils'
+import { AUTO_ADVANCE_DELAY_MS, shouldAutoAdvance } from './auto-advance.utils'
 import {
     formatFileTitleWithWeekday,
     getEventElement,
@@ -58,6 +59,9 @@ export class PropertyCaptureModal extends Modal {
 
     // Debounce timer for auto-save
     private saveDebounceTimer: number | null = null
+
+    // Pending auto-advance after a picked value; cancelled with the editor
+    private autoAdvanceTimer: number | null = null
 
     // Direction of the last navigation, used to replay the card slide-in
     // animation toward the right side (issue #111). Null until the user
@@ -530,6 +534,9 @@ export class PropertyCaptureModal extends Modal {
             onEnterKey: () => {
                 // Validate and navigate to next field (like pressing Next button)
                 this.validateAndNavigateNext()
+            },
+            onPick: () => {
+                this.scheduleAutoAdvance()
             }
         })
 
@@ -895,6 +902,32 @@ export class PropertyCaptureModal extends Modal {
     }
 
     /**
+     * Move on after a value was picked, when the setting allows it. The short
+     * delay lets the picked value show before the card slides away.
+     */
+    private scheduleAutoAdvance(): void {
+        const advance = shouldAutoAdvance({
+            enabled: this.plugin.settings.autoAdvanceOnPick,
+            value: this.currentValue,
+            isLastProperty: this.isLastProperty()
+        })
+        if (!advance) return
+
+        this.clearAutoAdvance()
+        this.autoAdvanceTimer = window.setTimeout(() => {
+            this.autoAdvanceTimer = null
+            this.validateAndNavigateNext()
+        }, AUTO_ADVANCE_DELAY_MS)
+    }
+
+    private clearAutoAdvance(): void {
+        if (this.autoAdvanceTimer !== null) {
+            window.clearTimeout(this.autoAdvanceTimer)
+            this.autoAdvanceTimer = null
+        }
+    }
+
+    /**
      * Validate the current field and navigate to next if valid.
      * Called when user presses Enter in an editor.
      */
@@ -1156,6 +1189,8 @@ export class PropertyCaptureModal extends Modal {
     }
 
     private destroyEditor(): void {
+        // A pending auto-advance belongs to this editor's card
+        this.clearAutoAdvance()
         if (this.currentEditor) {
             this.currentEditor.destroy()
             this.currentEditor = null

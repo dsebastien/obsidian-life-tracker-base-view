@@ -138,6 +138,15 @@ slider or an input are ignored so you can still drag a slider or select text,
 and mostly-vertical gestures scroll as usual. The navigation buttons also grow
 to full-size touch targets on small screens.
 
+### Auto-advance
+
+Turn on **Auto-advance after picking a value** (Settings → Capture) to move to
+the next property as soon as you pick a value from a dropdown, tap an emoji
+button, or toggle a checkbox. Values you type, and slider drags, still need
+Enter or the Next arrow, so you are never moved on mid-entry. Auto-advance stops
+at the last property: finishing the note or going to the next note stays a
+button press.
+
 ### Editors
 
 Each property type has a specialized editor:

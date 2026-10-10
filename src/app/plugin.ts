@@ -226,6 +226,11 @@ export class LifeTrackerPlugin extends Plugin {
             draft.showConfettiOnCapture = loadedSettings.showConfettiOnCapture
         }
 
+        // Load capture auto-advance
+        if (typeof loadedSettings.autoAdvanceOnPick === 'boolean') {
+            draft.autoAdvanceOnPick = loadedSettings.autoAdvanceOnPick
+        }
+
         // Load week start (0 = Sunday, 1 = Monday)
         if (loadedSettings.weekStartsOn === 0 || loadedSettings.weekStartsOn === 1) {
             draft.weekStartsOn = loadedSettings.weekStartsOn

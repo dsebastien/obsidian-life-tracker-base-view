@@ -284,6 +284,13 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Mouse input never swipes: a horizontal mouse drag in a modal means text selection
 - Swipes never trigger the boundary actions ("Done" / "Next file"); those stay button-only
 
+## Capture Modal Auto-Advance
+
+- Opt-in setting `autoAdvanceOnPick`, off by default. When on, picking a value from a closed set (text dropdown, number emoji button, checkbox/toggle) moves to the next property after `AUTO_ADVANCE_DELAY_MS`, through the same validate-and-save path as Enter
+- Typing and slider drags never auto-advance: there is no point at which a typed value is "done"
+- Picking the empty dropdown option never advances, and the last property never advances: "Done" / "Next file" stay explicit
+- Any navigation or close cancels a pending auto-advance, so it can never fire on a different card
+
 ## Data Entry Safety
 
 - Pending debounced edits MUST be flushed to disk before any editor teardown (re-render, unload) — typed values are never silently discarded (issue #90)

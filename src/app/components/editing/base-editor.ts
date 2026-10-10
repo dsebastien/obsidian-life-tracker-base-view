@@ -32,6 +32,10 @@ export abstract class BasePropertyEditor implements PropertyEditor {
         this.config.onEnterKey?.()
     }
 
+    protected notifyPick(): void {
+        this.config.onPick?.()
+    }
+
     protected getDisplayLabel(): string {
         return this.config.definition.displayName || this.config.definition.name
     }
