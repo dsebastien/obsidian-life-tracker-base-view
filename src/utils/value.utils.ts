@@ -140,6 +140,15 @@ export function extractNumber(value: unknown): number | null {
  * extractNumberWithMapping("⭐⭐", mapping) // returns 2
  * extractNumberWithMapping("MORNING", { "Morning": 1 }) // returns 1 (case-insensitive)
  */
+/**
+ * Whether a property value is absent: null, empty, or Bases' NullValue,
+ * which stringifies to "null" (the same string `extractList` filters out).
+ */
+export function isBlankValue(value: unknown): boolean {
+    const str = safeToString(value)?.trim()
+    return !str || str === 'null'
+}
+
 export function extractNumberWithMapping(
     value: unknown,
     mapping: Record<string, number>

@@ -21,7 +21,8 @@ import {
     extractBoolean,
     extractDisplayLabel,
     extractList,
-    extractNumberWithMapping
+    extractNumberWithMapping,
+    isBlankValue
 } from '../../utils'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
 import { computeHeatmapStreaks } from './heatmap-streak.utils'
@@ -84,8 +85,9 @@ export class DataAggregationService {
                 )
                 if (mappedValue !== null) {
                     numericValue = mappedValue
-                } else {
-                    // Unmapped value - treat as 0 per user requirement
+                } else if (!isBlankValue(rawValue)) {
+                    // Unmapped value - treat as 0 per user requirement. A
+                    // missing value stays null: a day with no entry is not 0
                     numericValue = 0
                 }
             } else {

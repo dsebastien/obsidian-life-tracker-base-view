@@ -119,6 +119,22 @@ describe('DataAggregationService.createDataPoints', () => {
         expect(points[0]!.numericValue).toBe(0)
     })
 
+    test('missing value stays null when valueMapping is configured', () => {
+        // Bases hands a missing property over as a NullValue, which stringifies to "null"
+        const nullValue = { toString: () => 'null' }
+        const entries = [
+            makeEntry('a.md', null),
+            makeEntry('b.md', ''),
+            makeEntry('c.md', nullValue)
+        ]
+        const anchors = new Map<BasesEntry, ResolvedDateAnchor | null>()
+        for (const entry of entries) anchors.set(entry, null)
+
+        const def = makeDef({ valueMapping: { low: 1, high: 5 } })
+        const points = service.createDataPoints(entries, PROP_ID, 'Level', def, anchors)
+        expect(points.map((p) => p.numericValue)).toEqual([null, null, null])
+    })
+
     test('showEmptyValues=true keeps entries with null values', () => {
         const entries = [makeEntry('a.md', null), makeEntry('b.md', 5)]
         const anchors = new Map<BasesEntry, ResolvedDateAnchor | null>()
