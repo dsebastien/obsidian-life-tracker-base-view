@@ -167,6 +167,7 @@ export {
 export {
     extractNumber,
     extractNumberWithMapping,
+    isBlankValue,
     extractBoolean,
     extractDate,
     extractDisplayLabel,

@@ -112,6 +112,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - A range chart (issue #81) is an overlay-only type drawing one floating bar per period from a **start** property's value to an **end** property's value (e.g. "To Bed" → "Wake Up"). It requires exactly 2 properties; start and end are positional — the first selected property is the start
 - Overlay-only types never appear in single-property type pickers or the preset dropdown: a single property cannot render them
 - Value parsing per entry: a bare time of day ("23:30"), the time part of an ISO datetime, then the plain numeric value. The raw string is read before the numeric value because a text property with a value mapping coerces unmapped strings to 0
+- A missing or empty value is never coerced: it stays null (no data) even when a value mapping is configured. Only non-empty text that matches no mapping key becomes 0
 - If any value is a time of day, the whole chart runs in time mode: y-axis ticks and tooltips read as HH:mm, wrapping past midnight
 - Midnight handling in time mode: an end earlier than its start crosses midnight and is pushed into the next day (+24h). When the starts themselves spread over more than half a day, the small-hours starts are pushed into the next day too, so all bars cluster on one continuous band
 - A period missing either side yields no bar, never a made-up value; a period with several entries uses the first parseable value per side
