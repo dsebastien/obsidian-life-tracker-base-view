@@ -238,6 +238,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Settings writes are serialized through a queue (`createSerialQueue`): editors call `updateSettings` on every keystroke, and two overlapping `saveData` calls can otherwise land out of order, persisting the _older_ snapshot — a corruption that only surfaces after a restart
 - Each queued write persists the settings as they are when it runs, not when it was queued, so the last write always reflects the newest state
 - A failed write rejects for its own caller but does not wedge the queue
+- An external change to `data.json` (Sync, git, hand edit) is reloaded via `onExternalSettingsChange` and views get a `full` refresh. The reload never saves: writing back would turn a reload into an overwrite
 
 ## Editable Map Keys
 

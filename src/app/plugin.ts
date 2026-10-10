@@ -192,6 +192,19 @@ export class LifeTrackerPlugin extends Plugin {
     override onunload() {}
 
     /**
+     * Called by Obsidian when `data.json` changes on disk outside the app
+     * (Obsidian Sync, git, a hand edit). Without this, the in-memory settings
+     * stay stale and the next save writes them back over the external change.
+     *
+     * Reloads only; nothing is saved, so the external file is kept as written.
+     */
+    override async onExternalSettingsChange(): Promise<void> {
+        log('Settings changed on disk, reloading', 'debug')
+        await this.loadSettings()
+        this.notifySettingsChanged({ type: 'full' })
+    }
+
+    /**
      * Load the plugin settings
      */
     async loadSettings() {

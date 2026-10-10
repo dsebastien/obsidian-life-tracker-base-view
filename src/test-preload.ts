@@ -10,9 +10,9 @@ import type { moment as ObsidianMoment } from 'obsidian'
  * above any in-file `mock.module(...)` call, so the mock must be registered in a
  * preload that runs before the test modules are imported.
  *
- * Only runtime values actually used by tested code need stubs. Today that is
- * `parseFrontMatterTags` (PropertyRecognitionService) and `moment`; add more as
- * needed.
+ * Only runtime values actually used by tested code need behavior:
+ * `parseFrontMatterTags` (PropertyRecognitionService), `moment`, and `Plugin`
+ * (plugin.spec). The rest are empty stubs so `plugin.ts` can load.
  */
 
 /**
@@ -36,8 +36,51 @@ const moment = import.meta.require('moment') as typeof ObsidianMoment
 const root = self as unknown as { window?: unknown }
 root.window ??= root
 
+/**
+ * Empty stand-in for the Obsidian classes and helpers that `plugin.ts`'s
+ * import graph (views, modals, settings tab) needs to exist at load time.
+ * Lets a spec import the plugin class; none of them is exercised.
+ */
+class Stub {}
+
+/**
+ * Minimal `Plugin`: keeps `app` and `manifest` like the real constructor.
+ * Specs replace `loadData` / `saveData` on the instance to fake `data.json`.
+ */
+class Plugin {
+    constructor(
+        public app: unknown,
+        public manifest: unknown
+    ) {}
+    loadData(): Promise<unknown> {
+        return Promise.resolve(null)
+    }
+    saveData(_data: unknown): Promise<void> {
+        return Promise.resolve()
+    }
+}
+
 void mock.module('obsidian', () => ({
     moment,
+    Plugin,
+    AbstractInputSuggest: Stub,
+    App: Stub,
+    BasesView: Stub,
+    BooleanValue: Stub,
+    ItemView: Stub,
+    ListValue: Stub,
+    MarkdownRenderer: Stub,
+    Modal: Stub,
+    Notice: Stub,
+    NullValue: Stub,
+    NumberValue: Stub,
+    PluginSettingTab: Stub,
+    Setting: Stub,
+    SettingPage: Stub,
+    TFolder: Stub,
+    Value: Stub,
+    base64ToArrayBuffer: () => new ArrayBuffer(0),
+    setIcon: () => undefined,
 
     /**
      * Minimal stand-in for Obsidian's `parseFrontMatterTags`: reads the `tags`
