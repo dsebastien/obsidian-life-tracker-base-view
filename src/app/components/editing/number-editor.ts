@@ -97,6 +97,7 @@ export class NumberEditor extends BasePropertyEditor {
 
         this.notifyChange(clamped)
         this.notifyCommit()
+        this.notifyPick()
         this.updateStepperState()
     }
 

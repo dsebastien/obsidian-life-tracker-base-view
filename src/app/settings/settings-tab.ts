@@ -98,6 +98,11 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                         name: 'Confetti celebration',
                         desc: 'Show confetti animation when completing property capture',
                         control: { type: 'toggle', key: 'showConfettiOnCapture' }
+                    },
+                    {
+                        name: 'Auto-advance after picking a value',
+                        desc: 'Move to the next property as soon as a value is picked from a dropdown, emoji button or checkbox. Typed values still need Enter or Next.',
+                        control: { type: 'toggle', key: 'autoAdvanceOnPick' }
                     }
                 ]
             },
@@ -310,6 +315,8 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         switch (key) {
             case 'showConfettiOnCapture':
                 return settings.showConfettiOnCapture
+            case 'autoAdvanceOnPick':
+                return settings.autoAdvanceOnPick
             case 'highContrast':
                 return settings.highContrast
             case 'animationDuration':
@@ -367,6 +374,14 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                 return {
                     apply: (draft) => {
                         draft.showConfettiOnCapture = enabled
+                    }
+                }
+            }
+            case 'autoAdvanceOnPick': {
+                const enabled = expectBoolean(key, value)
+                return {
+                    apply: (draft) => {
+                        draft.autoAdvanceOnPick = enabled
                     }
                 }
             }
