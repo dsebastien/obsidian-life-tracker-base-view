@@ -2869,10 +2869,11 @@
         border-color: var(--background-modifier-border);
     }
 
-    /* Description */
+    /* Description: keep the line breaks typed in the settings textarea */
     .lt-carousel-description {
         @apply text-sm mb-5 leading-relaxed;
         color: var(--text-muted);
+        white-space: pre-line;
     }
 
     /* Editor container */
