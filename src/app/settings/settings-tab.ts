@@ -110,6 +110,11 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                         control: { type: 'toggle', key: 'autoAdvanceOnPick' }
                     },
                     {
+                        name: 'Descriptions in quick add',
+                        desc: "Show each property's description under its name in the quick-add panel.",
+                        control: { type: 'toggle', key: 'showQuickAddDescriptions' }
+                    },
+                    {
                         type: 'page',
                         name: 'Capture targets',
                         desc: 'Send properties to a note other than the daily note, such as the session note of the day.',
@@ -335,6 +340,8 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                 return settings.showConfettiOnCapture
             case 'autoAdvanceOnPick':
                 return settings.autoAdvanceOnPick
+            case 'showQuickAddDescriptions':
+                return settings.showQuickAddDescriptions
             case 'highContrast':
                 return settings.highContrast
             case 'animationDuration':
@@ -400,6 +407,14 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                 return {
                     apply: (draft) => {
                         draft.autoAdvanceOnPick = enabled
+                    }
+                }
+            }
+            case 'showQuickAddDescriptions': {
+                const enabled = expectBoolean(key, value)
+                return {
+                    apply: (draft) => {
+                        draft.showQuickAddDescriptions = enabled
                     }
                 }
             }

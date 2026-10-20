@@ -270,10 +270,14 @@ export class QuickAddModal extends Modal {
         value: unknown
     ): void {
         const row = container.createDiv({ cls: 'lt-quick-add-row' })
-        row.createDiv({
+        const textEl = row.createDiv({ cls: 'lt-quick-add-text' })
+        textEl.createDiv({
             cls: 'lt-quick-add-label',
             text: definition.displayName || definition.name
         })
+        if (this.plugin.settings.showQuickAddDescriptions && definition.description) {
+            textEl.createDiv({ cls: 'lt-quick-add-description', text: definition.description })
+        }
         const editorEl = row.createDiv({ cls: 'lt-quick-add-editor' })
 
         const key = valueKey(file, definition)

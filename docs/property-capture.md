@@ -153,6 +153,8 @@ looks like before.
 - ‹ and › move one day; **Today** jumps back.
 - If the day has no note, you can create it from the panel when **Create missing
   notes when capturing** is on.
+- With **Descriptions in quick add** on (Settings → Capture, off by default),
+  each property's description shows under its name.
 - Without groups, **Open full capture** switches to the capture dialog for the
   same note.
 

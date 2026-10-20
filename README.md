@@ -144,7 +144,7 @@ Use the "Life Tracker: Capture today" command to jump straight to today's daily 
 
 ### Quick Add
 
-For logging one value fast (a glass of water, a pushup set, a checkbox), use **Life Tracker: Quick add** or the ribbon icon. It opens a small panel listing the properties you marked **Show in quick add**, each with its −/+ buttons, toggle or emoji buttons. Each tap saves immediately. With a daily note open, it edits that day; otherwise today. Use ‹ › to switch days. When some properties go to a [capture target](#capture-targets), the panel groups them by note.
+For logging one value fast (a glass of water, a pushup set, a checkbox), use **Life Tracker: Quick add** or the ribbon icon. It opens a small panel listing the properties you marked **Show in quick add**, each with its −/+ buttons, toggle or emoji buttons. Each tap saves immediately. Turn on **Descriptions in quick add** (Settings → Capture) to see each property's description under its name. With a daily note open, it edits that day; otherwise today. Use ‹ › to switch days. When some properties go to a [capture target](#capture-targets), the panel groups them by note.
 
 For true one-tap logging, use a link:
 

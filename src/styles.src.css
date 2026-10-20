@@ -3193,6 +3193,13 @@
         color: var(--text-normal);
     }
 
+    /* Description: keep the line breaks typed in the settings textarea */
+    .lt-quick-add-description {
+        @apply text-xs mt-0.5;
+        color: var(--text-muted);
+        white-space: pre-line;
+    }
+
     .lt-quick-add-editor {
         @apply flex justify-end;
     }
