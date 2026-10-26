@@ -13,6 +13,7 @@ import {
     isValidNumberKeystroke,
     clampToRange,
     sanitizeNumberPaste,
+    setupNumberInputBlocking,
     isInAllowedValues,
     isTagAllowed
 } from './validation.utils'
@@ -226,6 +227,27 @@ describe('validation.utils', () => {
 
         test('allows decimal numbers', () => {
             expect(sanitizeNumberPaste('3.14', '', 0, 0, null)).toBe('3.14')
+        })
+    })
+
+    describe('setupNumberInputBlocking', () => {
+        test('does not clamp a partial value below min while typing', () => {
+            const listeners: Record<string, (event: unknown) => void> = {}
+            const input = {
+                value: '',
+                addEventListener: (type: string, fn: (event: unknown) => void) => {
+                    listeners[type] = fn
+                },
+                removeEventListener: () => {}
+            } as unknown as HTMLInputElement
+            setupNumberInputBlocking(input, { min: 40, max: 120 })
+
+            // Typing "65": the intermediate "6" is below min and must survive
+            for (const value of ['6', '65']) {
+                input.value = value
+                listeners['input']?.({})
+                expect(input.value).toBe(value)
+            }
         })
     })
 
