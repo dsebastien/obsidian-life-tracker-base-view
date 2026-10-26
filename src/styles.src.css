@@ -4367,6 +4367,17 @@
 } /* End @layer lt-components */
 
 /* ============================================================
+   Note property suggestions under capture modals
+   Intentionally unlayered. A property-value suggestion opened in the note
+   before a capture modal stays open and Obsidian draws it above modals.
+   Obsidian's `.suggestion-container` display rule is unlayered, so a layered
+   rule would lose.
+   ============================================================ */
+body:has(.lt-carousel-modal, .lt-quick-add-modal) .suggestion-container.mod-property-value {
+    display: none;
+}
+
+/* ============================================================
    Settings rows drawn as a stack
    Intentionally unlayered. A settings `render:` hook draws into
    `.setting-item`, which is a flex ROW; blocks made of full-width rows (the
