@@ -142,6 +142,34 @@ export function normalizeValueFormat(raw: unknown): ValueFormat | undefined {
 }
 
 /**
+ * How a cartesian chart's auto-scaled y-axis treats outliers (3.4.0).
+ * - 'fit': the axis fits the bulk of the data; values beyond Tukey's far-out
+ *   fences are drawn at the axis edge with a marker (default)
+ * - 'show-all': the axis covers every value, as before 3.4.0
+ * An explicit scale always wins over both.
+ */
+export type OutlierMode = 'fit' | 'show-all'
+
+/** Every valid outlier mode, for runtime validation of stored config */
+export const OUTLIER_MODES: readonly OutlierMode[] = ['fit', 'show-all']
+
+/** Default outlier mode when none is configured */
+export const DEFAULT_OUTLIER_MODE: OutlierMode = 'fit'
+
+/** UI labels for the outlier modes, in menu order */
+export const OUTLIER_MODE_OPTIONS: ReadonlyArray<{ value: OutlierMode; label: string }> = [
+    { value: 'fit', label: 'Fit the scale to the bulk' },
+    { value: 'show-all', label: 'Show all values' }
+]
+
+/**
+ * Read an outlier mode from view config; anything unknown reads as the default
+ */
+export function normalizeOutlierMode(raw: unknown): OutlierMode | undefined {
+    return OUTLIER_MODES.includes(raw as OutlierMode) ? (raw as OutlierMode) : undefined
+}
+
+/**
  * How multiple data points in the same time period are combined into a single value.
  * - 'average': arithmetic mean (default — preserves previous behavior)
  * - 'sum': add the values together (e.g., total workout calories across multiple sessions per day)
@@ -191,6 +219,8 @@ export interface ColumnVisualizationConfig {
     xAxisSource?: XAxisSource
     /** How values are displayed: plain numbers (default) or durations */
     valueFormat?: ValueFormat
+    /** Whether outliers may set the auto-scaled y-axis (default: they don't) */
+    outliers?: OutlierMode
 }
 
 /**
@@ -412,6 +442,23 @@ export function supportsValueFormat(vizType: VisualizationType): boolean {
 }
 
 /**
+ * Visualization types whose auto-scaled y-axis can ignore outliers: the
+ * cartesian trio, the only types with a value axis fitted to the data.
+ */
+export const OUTLIER_MODE_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.LineChart,
+    VisualizationType.BarChart,
+    VisualizationType.AreaChart
+]
+
+/**
+ * Check if a visualization type supports the outlier setting
+ */
+export function supportsOutlierMode(vizType: VisualizationType): boolean {
+    return OUTLIER_MODE_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
  * Window sizes offered for the moving average in the UI
  */
 export const MOVING_AVERAGE_PERIOD_OPTIONS = [7, 14, 30]
@@ -483,6 +530,8 @@ export interface OverlayVisualizationConfig {
     aggregationMethod?: AggregationMethod
     /** How values are displayed: plain numbers (default) or durations */
     valueFormat?: ValueFormat
+    /** Whether outliers may set the auto-scaled y-axis (default: they don't) */
+    outliers?: OutlierMode
 }
 
 /**

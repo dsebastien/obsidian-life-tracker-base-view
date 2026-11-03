@@ -11,6 +11,7 @@ import {
     type ProgressConfig,
     normalizeTargetConfig,
     normalizeValueFormat,
+    normalizeOutlierMode,
     X_AXIS_SOURCES,
     type VisualizationConfig,
     type ConfigGetter,
@@ -72,6 +73,7 @@ export function getVisualizationConfig(
         columnConfig.xAxisSource && X_AXIS_SOURCES.includes(columnConfig.xAxisSource)
             ? columnConfig.xAxisSource
             : undefined
+    const outliers = normalizeOutlierMode(columnConfig.outliers)
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
@@ -137,6 +139,7 @@ export function getVisualizationConfig(
                 runningTotal,
                 target,
                 xAxisSource,
+                outliers,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -156,6 +159,7 @@ export function getVisualizationConfig(
                 runningTotal,
                 target,
                 xAxisSource,
+                outliers,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -172,6 +176,7 @@ export function getVisualizationConfig(
                 aggregationMethod,
                 target,
                 xAxisSource,
+                outliers,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 

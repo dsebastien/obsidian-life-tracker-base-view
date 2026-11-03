@@ -1,5 +1,6 @@
-import type { ChartJsType, ScaleConfig, ValueFormat } from '../../../types'
+import type { ChartJsType, OutlierMode, ScaleConfig, ValueFormat } from '../../../types'
 import { axisStep, isDurationFormat } from '../../../../utils'
+import { computeOutlierFences, type OutlierFences } from '../../../services/outlier.utils'
 
 /**
  * Y-axis planning for cartesian charts (3.4.0): which range and tick step the
@@ -17,6 +18,12 @@ export interface YAxisSeries {
      * not: it averages the other series, so it never needs room of its own.
      */
     includeInRange?: boolean
+    /**
+     * Whether outliers of this series may be left out of the range and drawn
+     * at the axis edge. Off for derived series (moving average, running
+     * total) and 0/1 presence data.
+     */
+    fitToBulk?: boolean
 }
 
 export interface YAxisPlanInput {
@@ -28,6 +35,17 @@ export interface YAxisPlanInput {
     /** Whether the axis must include 0 */
     beginAtZero: boolean
     valueFormat?: ValueFormat
+    /** Absent reads as 'fit' */
+    outlierMode?: OutlierMode
+}
+
+/** A value plotted at the axis edge because it lies beyond it */
+export interface ClampedPoint {
+    index: number
+    /** The real value, for the tooltip */
+    value: number
+    /** Which edge it was drawn at */
+    side: 'above' | 'below'
 }
 
 export interface YAxisPlan {
@@ -36,8 +54,10 @@ export interface YAxisPlan {
     max?: number
     /** Fixed tick step, when the plan sets one (duration axes) */
     stepSize?: number
-    /** What each series plots, in input order */
+    /** What each series plots, in input order (outliers clamped to the edge) */
     data: (number | null)[][]
+    /** Per series, the points drawn at the axis edge */
+    clamped: ClampedPoint[][]
 }
 
 /** Finite numbers of a series */
@@ -61,27 +81,99 @@ export function yAxisBeginsAtZero(
     return !scale?.min
 }
 
+/** Snap a bound to a whole number of steps, without float noise (0.30000000000000004) */
+function roundToStep(value: number, step: number): number {
+    return Number((Math.round(value / step) * step).toPrecision(12))
+}
+
 /**
- * Plan the y-axis. With the number format and no outliers, the plan sets
- * nothing and Chart.js keeps its own auto-fit (unchanged behavior). A
- * duration format gets a fixed tick step from the duration ladder, so ticks
- * land on 5:00, 5:30, 6:00.
+ * Plan the y-axis.
+ *
+ * Outliers (3.4.0): with no explicit scale and the outlier mode on `fit`, each
+ * fitted series is checked against Tukey's far-out fences. When any series
+ * has values beyond them, the axis covers only the bulk (plus reference
+ * values and 0 when the axis starts at zero), rounded out to a nice step, and
+ * values beyond the axis are drawn at its edge and reported in `clamped`.
+ *
+ * Otherwise the number format sets nothing and Chart.js keeps its own
+ * auto-fit (unchanged behavior), while a duration format gets a fixed tick
+ * step from the duration ladder, so ticks land on 5:00, 5:30, 6:00.
  */
 export function planYAxis(input: YAxisPlanInput): YAxisPlan {
     const { series, referenceValues, scale, beginAtZero, valueFormat } = input
     const data = series.map((s) => s.data)
+    const clamped: ClampedPoint[][] = series.map(() => [])
 
-    if (!isDurationFormat(valueFormat)) return { data }
+    const explicitScale = scale?.min != null || scale?.max != null
+    if (!explicitScale && input.outlierMode !== 'show-all') {
+        const fitted = fitToBulk(input)
+        if (fitted) return fitted
+    }
+
+    if (!isDurationFormat(valueFormat)) return { data, clamped }
 
     const rangeValues = series
         .filter((s) => s.includeInRange !== false)
         .flatMap((s) => finiteValues(s.data))
     const candidates = [...rangeValues, ...referenceValues]
     if (beginAtZero) candidates.push(0)
-    if (candidates.length === 0) return { data }
+    if (candidates.length === 0) return { data, clamped }
 
     const lo = scale?.min ?? Math.min(...candidates)
     const hi = scale?.max ?? Math.max(...candidates)
 
-    return { data, stepSize: axisStep(hi - lo, valueFormat) }
+    return { data, clamped, stepSize: axisStep(hi - lo, valueFormat) }
+}
+
+/**
+ * The bulk-fitted plan, or null when no series has an outlier to leave out
+ */
+function fitToBulk(input: YAxisPlanInput): YAxisPlan | null {
+    const { series, referenceValues, beginAtZero, valueFormat } = input
+
+    const fences: (OutlierFences | null)[] = series.map((s) =>
+        s.fitToBulk ? computeOutlierFences(s.data) : null
+    )
+    if (fences.every((f) => f === null)) return null
+
+    // The range: in-fence values of every series that counts toward it
+    const candidates: number[] = []
+    series.forEach((s, i) => {
+        if (s.includeInRange === false) return
+        const f = fences[i]
+        for (const value of finiteValues(s.data)) {
+            if (!f || (value >= f.lower && value <= f.upper)) candidates.push(value)
+        }
+    })
+    candidates.push(...referenceValues)
+    if (beginAtZero) candidates.push(0)
+    if (candidates.length === 0) return null
+
+    const lo = Math.min(...candidates)
+    const hi = Math.max(...candidates)
+    const step = axisStep(hi - lo, valueFormat)
+    const min = roundToStep(Math.floor(lo / step) * step, step)
+    let max = roundToStep(Math.ceil(hi / step) * step, step)
+    if (max <= min) max = roundToStep(min + step, step)
+
+    // Clamp what lies beyond the axis, for fitted series only: a moving
+    // average stays real and is clipped by the chart area instead
+    const clamped: ClampedPoint[][] = series.map(() => [])
+    const data = series.map((s, i) => {
+        if (!s.fitToBulk) return s.data
+        return s.data.map((value, index) => {
+            if (value === null || !Number.isFinite(value)) return value
+            if (value > max) {
+                clamped[i]!.push({ index, value, side: 'above' })
+                return max
+            }
+            if (value < min) {
+                clamped[i]!.push({ index, value, side: 'below' })
+                return min
+            }
+            return value
+        })
+    })
+
+    return { min, max, stepSize: step, data, clamped }
 }

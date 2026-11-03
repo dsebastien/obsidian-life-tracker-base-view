@@ -26,4 +26,23 @@ export interface ChartDatasetConfig {
      * (`pointRadius: 0`), which would otherwise make tooltips unreachable.
      */
     pointHitRadius?: number
+    /** Per-dataset chart type in a mixed chart (outlier markers on bar charts) */
+    type?: 'line'
+    /** Draw the line between points (off for outlier markers) */
+    showLine?: boolean
+    /** Point marker shape (outlier markers are triangles) */
+    pointStyle?: 'circle' | 'triangle'
+    /** Point rotation in degrees, per point (a down triangle is 180) */
+    pointRotation?: number | number[]
+    pointBackgroundColor?: string
+    pointBorderColor?: string
+    /** Clipping against the chart area; false lets edge markers show whole */
+    clip?: false
+    /** Drawing, legend and tooltip order: lower draws on top and lists first */
+    order?: number
+    /**
+     * Index of the dataset whose clamped outliers this marker dataset shows
+     * (3.4.0). Absent on every other dataset.
+     */
+    ltOutlierMarkerFor?: number
 }

@@ -6,6 +6,9 @@ import {
     DEFAULT_AGGREGATION_METHOD,
     DEFAULT_VALUE_FORMAT,
     VALUE_FORMAT_OPTIONS,
+    DEFAULT_OUTLIER_MODE,
+    OUTLIER_MODE_OPTIONS,
+    type OutlierMode,
     type AggregationMethod,
     type ValueFormat,
     type OverlayVisualizationConfig,
@@ -33,6 +36,8 @@ export interface OverlayEditResult {
     aggregationMethod: AggregationMethod | undefined
     /** How values read: numbers (undefined) or durations (3.4.0) */
     valueFormat: ValueFormat | undefined
+    /** Fit the auto scale to the bulk (undefined) or show all values (3.4.0) */
+    outliers: OutlierMode | undefined
 }
 
 /**
@@ -70,6 +75,7 @@ export class OverlayEditModal extends Modal {
     private hideIndividualVisualizations: boolean
     private aggregationMethod: AggregationMethod
     private valueFormat: ValueFormat
+    private outliers: OutlierMode
 
     // DOM elements
     private nameInputEl: HTMLInputElement | null = null
@@ -96,6 +102,7 @@ export class OverlayEditModal extends Modal {
         this.hideIndividualVisualizations = overlayConfig.hideIndividualVisualizations ?? false
         this.aggregationMethod = overlayConfig.aggregationMethod ?? DEFAULT_AGGREGATION_METHOD
         this.valueFormat = overlayConfig.valueFormat ?? DEFAULT_VALUE_FORMAT
+        this.outliers = overlayConfig.outliers ?? DEFAULT_OUTLIER_MODE
 
         // Initialize reference lines from config
         this.referenceLines = new Map()
@@ -159,6 +166,9 @@ export class OverlayEditModal extends Modal {
 
         // Value format section (3.4.0)
         this.renderValueFormatSection(content)
+
+        // Outlier section (3.4.0)
+        this.renderOutlierSection(content)
 
         // Reference lines section
         this.renderReferenceLinesSection(content)
@@ -435,6 +445,31 @@ export class OverlayEditModal extends Modal {
         })
     }
 
+    private renderOutlierSection(container: HTMLElement): void {
+        const section = container.createDiv({ cls: 'lt-overlay-edit-section' })
+
+        section.createEl('label', {
+            cls: 'lt-overlay-edit-label',
+            text: 'Outliers'
+        })
+        section.createDiv({
+            cls: 'lt-overlay-edit-toggle-description',
+            text: 'Without a fixed scale, far-off values are drawn at the edge of the axis so they do not flatten the rest. Line, bar and area charts only.'
+        })
+
+        const select = section.createEl('select', { cls: 'lt-overlay-edit-input' })
+        for (const option of OUTLIER_MODE_OPTIONS) {
+            const opt = select.createEl('option', { value: option.value, text: option.label })
+            if (option.value === this.outliers) {
+                opt.selected = true
+            }
+        }
+
+        select.addEventListener('change', () => {
+            this.outliers = select.value as OutlierMode
+        })
+    }
+
     private renderFooter(container: HTMLElement): void {
         const footer = container.createDiv({ cls: 'lt-overlay-edit-footer' })
 
@@ -603,7 +638,8 @@ export class OverlayEditModal extends Modal {
                 this.aggregationMethod === DEFAULT_AGGREGATION_METHOD
                     ? undefined
                     : this.aggregationMethod,
-            valueFormat: this.valueFormat === DEFAULT_VALUE_FORMAT ? undefined : this.valueFormat
+            valueFormat: this.valueFormat === DEFAULT_VALUE_FORMAT ? undefined : this.valueFormat,
+            outliers: this.outliers === DEFAULT_OUTLIER_MODE ? undefined : this.outliers
         }
 
         this.callbacks.onSave(result)

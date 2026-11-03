@@ -6,6 +6,7 @@ import type {
     AggregationMethod,
     StoredColorScheme,
     TargetConfig,
+    OutlierMode,
     ValueFormat,
     XAxisSource
 } from '../column/column-config.types'
@@ -25,6 +26,8 @@ export type CardMenuAction =
     | { type: 'configureXAxisSource'; xAxisSource: XAxisSource | undefined }
     /** Show values as numbers or durations (3.4.0) */
     | { type: 'configureValueFormat'; valueFormat: ValueFormat | undefined }
+    /** Fit the auto scale to the bulk of the data, or show every value (3.4.0) */
+    | { type: 'configureOutliers'; outliers: OutlierMode | undefined }
     /** Set or clear the goal target for this visualization (issue #6) */
     | { type: 'configureTarget'; target: TargetConfig }
     | { type: 'configureHeatmapCellSize'; cellSize: number | undefined }

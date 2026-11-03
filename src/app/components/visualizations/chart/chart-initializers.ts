@@ -30,7 +30,11 @@ import { referenceLineEndValue, type ReferenceLineSpec } from './reference-lines
 import { format } from 'date-fns'
 import { areAllValuesIntegers, formatMetricValue } from './chart-format.utils'
 import { formatHoursAsTime } from '../../../services/range-aggregation.utils'
-import { DENSE_SERIES_POINT_THRESHOLD, type CartesianModel } from './cartesian-datasets.utils'
+import {
+    DENSE_SERIES_POINT_THRESHOLD,
+    isOutlierMarkerDataset,
+    type CartesianModel
+} from './cartesian-datasets.utils'
 import { planYAxis, yAxisBeginsAtZero } from './y-axis-plan.utils'
 
 /** Format an epoch-ms x value as a compact date for scatter axis ticks / tooltips. */
@@ -365,6 +369,11 @@ export function initCartesianChart(
     Chart: ChartClass,
     ctx: CanvasRenderingContext2D,
     chartData: ChartData,
+    /**
+     * The chart data currently shown, real values included: incremental
+     * updates replace it, and tooltips must read the latest
+     */
+    getChartData: () => ChartData | null,
     model: CartesianModel,
     chartConfig: ChartConfig,
     onClick: (elements: ChartClickElement[]) => void,
@@ -409,17 +418,31 @@ export function initCartesianChart(
             },
             plugins: {
                 legend: {
-                    // Always show legend when there are multiple datasets (list data, overlays)
-                    display: chartConfig.showLegend || datasets.length > 1
+                    // Always show legend when there are multiple datasets (list
+                    // data, overlays). Outlier markers are not series of their own
+                    display: chartConfig.showLegend || chartData.datasets.length > 1,
+                    labels: {
+                        filter: (item, data): boolean =>
+                            !isOutlierMarkerDataset(data.datasets[item.datasetIndex ?? -1])
+                    }
                 },
                 tooltip: {
                     enabled: true,
+                    // The marker repeats the series' own point: one row is enough
+                    filter: (item): boolean => !isOutlierMarkerDataset(item.dataset),
                     callbacks: {
                         label: (context: CartesianTooltipContext) => {
                             const label = context.dataset.label ?? ''
-                            const value = context.parsed.y
+                            const plotted = context.parsed.y
                             // Return empty string for null/undefined values (not "null")
-                            if (value === null || value === undefined) return ''
+                            if (plotted === null || plotted === undefined) return ''
+                            // A value drawn at the axis edge reads as itself (3.4.0)
+                            const real =
+                                getChartData()?.datasets[context.datasetIndex]?.data[
+                                    context.dataIndex
+                                ] ?? null
+                            const value = real ?? plotted
+                            const outside = real !== null && real !== plotted
                             // Emoji summary when the property defines one (#22)
                             return `${label}: ${formatValueWithEmoji(
                                 value,
@@ -427,7 +450,7 @@ export function initCartesianChart(
                                 formatValue(value, valueFormat, (v) =>
                                     formatMetricValue(v, integersOnly)
                                 )
-                            )}`
+                            )}${outside ? ' (outside the scale)' : ''}`
                         }
                     }
                 },

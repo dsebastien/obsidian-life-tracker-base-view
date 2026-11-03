@@ -33,7 +33,13 @@ export {
     VALUE_FORMAT_OPTIONS,
     VALUE_FORMAT_SUPPORTED_TYPES,
     supportsValueFormat,
-    normalizeValueFormat
+    normalizeValueFormat,
+    OUTLIER_MODES,
+    DEFAULT_OUTLIER_MODE,
+    OUTLIER_MODE_OPTIONS,
+    OUTLIER_MODE_SUPPORTED_TYPES,
+    supportsOutlierMode,
+    normalizeOutlierMode
 } from './column-config.types'
 export type {
     ScaleConfig,
@@ -49,7 +55,8 @@ export type {
     TargetMetric,
     TargetDirection,
     XAxisSource,
-    ValueFormat
+    ValueFormat,
+    OutlierMode
 } from './column-config.types'
 export type { ColumnConfigResult } from './column-config-result.intf'
 export type { ColumnConfigCallback } from './column-config-callback.intf'

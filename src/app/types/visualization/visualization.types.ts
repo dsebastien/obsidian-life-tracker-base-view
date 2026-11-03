@@ -6,6 +6,7 @@ import type {
     ReferenceLineConfig,
     AggregationMethod,
     TargetConfig,
+    OutlierMode,
     ValueFormat,
     XAxisSource
 } from '../column/column-config.types'
@@ -402,6 +403,8 @@ export interface ChartConfig extends VisualizationConfig {
     legendPosition?: ChartLegendPosition
     /** Goal target, drawn as a reference line on cartesian charts (issue #6) */
     target?: TargetConfig
+    /** Whether outliers may set the auto-scaled y-axis (3.4.0; absent = fit) */
+    outliers?: OutlierMode
 }
 
 /**

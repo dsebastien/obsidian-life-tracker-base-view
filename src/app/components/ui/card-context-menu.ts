@@ -21,6 +21,9 @@ import {
     supportsValueFormat,
     DEFAULT_VALUE_FORMAT,
     VALUE_FORMAT_OPTIONS,
+    supportsOutlierMode,
+    DEFAULT_OUTLIER_MODE,
+    OUTLIER_MODE_OPTIONS,
     type ScaleConfig,
     type ReferenceLineConfig,
     type AggregationMethod,
@@ -30,6 +33,7 @@ import {
     type TargetConfig,
     type TargetDirection,
     type TargetMetric,
+    type OutlierMode,
     type ValueFormat,
     type ValuePolarity,
     type XAxisSource
@@ -120,6 +124,8 @@ export function showCardContextMenu(
     currentTarget: TargetConfig | undefined,
     /** How the card shows its values: numbers or durations (3.4.0) */
     currentValueFormat: ValueFormat | undefined,
+    /** Whether outliers may set the auto scale (3.4.0) */
+    currentOutlierMode: OutlierMode | undefined,
     /** Polarity of the visualized property, used to default a new target's
      *  direction and to flag a contradictory one (issue #21) */
     currentPolarity: ValuePolarity | undefined,
@@ -295,6 +301,7 @@ export function showCardContextMenu(
         const hasXAxisSource = supportsXAxisSource(vizType) && !hasListValues
         const hasTarget = supportsTarget(vizType)
         const hasValueFormat = supportsValueFormat(vizType)
+        const hasOutlierMode = supportsOutlierMode(vizType)
 
         const hasHeatmapConfig = vizType === VisualizationType.Heatmap
 
@@ -308,6 +315,7 @@ export function showCardContextMenu(
             !hasXAxisSource &&
             !hasTarget &&
             !hasValueFormat &&
+            !hasOutlierMode &&
             !hasHeatmapConfig
         ) {
             optionsContent.createDiv({
@@ -398,6 +406,34 @@ export function showCardContextMenu(
                 onAction({
                     type: 'configureValueFormat',
                     valueFormat: value === DEFAULT_VALUE_FORMAT ? undefined : value
+                })
+            })
+        }
+
+        // Outlier dropdown (3.4.0): fit the auto scale to the bulk of the
+        // data, or let every value set it. An explicit scale wins over both
+        if (hasOutlierMode) {
+            const outlierGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            outlierGroup.createEl('label', { text: 'Outliers' })
+
+            const outlierSelect = outlierGroup.createEl('select', { cls: 'lt-card-popover-select' })
+            const effectiveMode = currentOutlierMode ?? DEFAULT_OUTLIER_MODE
+            for (const option of OUTLIER_MODE_OPTIONS) {
+                const opt = outlierSelect.createEl('option', {
+                    value: option.value,
+                    text: option.label
+                })
+                if (option.value === effectiveMode) {
+                    opt.selected = true
+                }
+            }
+
+            outlierSelect.addEventListener('change', () => {
+                const value = outlierSelect.value as OutlierMode
+                close()
+                onAction({
+                    type: 'configureOutliers',
+                    outliers: value === DEFAULT_OUTLIER_MODE ? undefined : value
                 })
             })
         }

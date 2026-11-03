@@ -1298,7 +1298,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             scale: overlayConfig.scale,
             colorScheme: overlayConfig.colorScheme,
             aggregationMethod: overlayConfig.aggregationMethod,
-            valueFormat: overlayConfig.valueFormat
+            valueFormat: overlayConfig.valueFormat,
+            outliers: overlayConfig.outliers
         }
 
         // Get chart config using the standard helper
@@ -1751,7 +1752,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     referenceLines: result.referenceLines,
                     hideIndividualVisualizations: result.hideIndividualVisualizations,
                     aggregationMethod: result.aggregationMethod,
-                    valueFormat: result.valueFormat
+                    valueFormat: result.valueFormat,
+                    outliers: result.outliers
                 })
                 this.onDataUpdated()
             },
@@ -1936,6 +1938,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.xAxisSource,
             vizConfig.target,
             vizConfig.valueFormat,
+            vizConfig.outliers,
             this.findPropertyDefinition(propertyId)?.polarity,
             hasListValues,
             isFromPreset,
@@ -2209,6 +2212,32 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         propertyId,
                         visualizationId,
                         { valueFormat: action.valueFormat }
+                    )
+                }
+                this.applyConfigChange(propertyId, visualizationId, displayName)
+                break
+
+            case 'configureOutliers':
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        const newId = this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme,
+                            preset.referenceLine
+                        )
+                        this.columnConfigService.updateVisualizationConfig(propertyId, newId, {
+                            outliers: action.outliers
+                        })
+                    }
+                } else {
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { outliers: action.outliers }
                     )
                 }
                 this.applyConfigChange(propertyId, visualizationId, displayName)

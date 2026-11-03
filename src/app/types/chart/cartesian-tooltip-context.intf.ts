@@ -4,6 +4,8 @@
 export interface CartesianTooltipContext {
     dataset: { label?: string }
     parsed: { y: number | null }
+    datasetIndex: number
+    dataIndex: number
 }
 
 /**

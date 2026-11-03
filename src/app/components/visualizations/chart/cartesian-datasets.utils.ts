@@ -37,9 +37,30 @@ export function densePointStyle(pointCount: number): {
     return { pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 8 }
 }
 
+/** Marker radius of a value drawn at the axis edge: always visible */
+export const OUTLIER_MARKER_RADIUS = 6
+
+/** Options that depend on how the data was aggregated, not on the card config */
+export interface CartesianModelOptions {
+    /** 0/1 presence datasets from a list property: never outlier-fitted */
+    listData?: boolean
+}
+
+/** Whether a Chart.js dataset is an outlier marker dataset */
+export function isOutlierMarkerDataset(dataset: unknown): boolean {
+    return (
+        typeof dataset === 'object' &&
+        dataset !== null &&
+        typeof (dataset as { ltOutlierMarkerFor?: unknown }).ltOutlierMarkerFor === 'number'
+    )
+}
+
 /** Everything the cartesian chart needs to draw one state of its data */
 export interface CartesianModel {
-    /** Chart.js datasets, in the same order as `chartData.datasets` */
+    /**
+     * Chart.js datasets: `chartData.datasets` in order, then one outlier
+     * marker dataset per series with values drawn at the axis edge
+     */
     datasets: ChartDatasetConfig[]
     /** Range, step and plotted values of the y-axis */
     yPlan: YAxisPlan
@@ -53,7 +74,8 @@ export interface CartesianModel {
 export function buildCartesianModel(
     chartData: ChartData,
     chartConfig: ChartConfig,
-    referenceLines: ReferenceLineSpec[] | undefined
+    referenceLines: ReferenceLineSpec[] | undefined,
+    options: CartesianModelOptions = {}
 ): CartesianModel {
     const colors = getChartColorScheme(chartConfig.colorScheme)
     // Use fill property from config (area charts have fill: true, line charts have fill: false)
@@ -69,12 +91,16 @@ export function buildCartesianModel(
     const yPlan = planYAxis({
         series: chartData.datasets.map((dataset) => ({
             data: dataset.data,
-            includeInRange: !dataset.isMovingAverage
+            includeInRange: !dataset.isMovingAverage,
+            // A cumulative series carries one jump into every later point, and
+            // 0/1 presence has nothing to fit: only real values are fitted
+            fitToBulk: !dataset.isMovingAverage && !chartConfig.runningTotal && !options.listData
         })),
         referenceValues: referenceLineValues(referenceLines, chartData.labels.length),
         scale: chartConfig.scale,
         beginAtZero,
-        valueFormat: chartConfig.valueFormat
+        valueFormat: chartConfig.valueFormat,
+        outlierMode: chartConfig.outliers
     })
 
     const datasets: ChartDatasetConfig[] = chartData.datasets.map((dataset, index) => {
@@ -110,6 +136,44 @@ export function buildCartesianModel(
             // Bars have no point markers to hide (issue #104)
             ...(isBar ? {} : densePointStyle(data.length))
         }
+    })
+
+    // Values drawn at the axis edge get a triangle marker pointing the way
+    // the real value lies (3.4.0). A separate line dataset without a line, so
+    // it works on bar charts too and never alters the series' own styling
+    yPlan.clamped.forEach((points, index) => {
+        if (points.length === 0) return
+        const color = colors[index % colors.length]!
+        const source = datasets[index]
+        const length = source?.data.length ?? 0
+        const markerData: (number | null)[] = new Array<number | null>(length).fill(null)
+        const rotation: number[] = new Array<number>(length).fill(0)
+        for (const point of points) {
+            markerData[point.index] = yPlan.data[index]?.[point.index] ?? null
+            rotation[point.index] = point.side === 'above' ? 0 : 180
+        }
+        datasets.push({
+            type: 'line',
+            label: `${source?.label ?? ''} (outside the scale)`,
+            data: markerData,
+            showLine: false,
+            fill: false,
+            backgroundColor: color,
+            borderColor: color,
+            borderWidth: 1,
+            pointStyle: 'triangle',
+            pointRotation: rotation,
+            pointRadius: OUTLIER_MARKER_RADIUS,
+            pointHoverRadius: OUTLIER_MARKER_RADIUS + 2,
+            pointHitRadius: OUTLIER_MARKER_RADIUS,
+            pointBackgroundColor: color,
+            pointBorderColor: color,
+            // Drawn on top of every series, and whole: a marker centered on
+            // the axis edge would otherwise lose its outer half to clipping
+            order: -1,
+            clip: false,
+            ltOutlierMarkerFor: index
+        })
     })
 
     return { datasets, yPlan, beginAtZero }

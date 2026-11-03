@@ -35,7 +35,11 @@ import {
     initRangeChart,
     initScatterChart
 } from './chart-initializers'
-import { buildCartesianModel, type CartesianModel } from './cartesian-datasets.utils'
+import {
+    buildCartesianModel,
+    isOutlierMarkerDataset,
+    type CartesianModel
+} from './cartesian-datasets.utils'
 import {
     computeMovingAverage,
     computeRunningTotal,
@@ -590,7 +594,10 @@ export class ChartVisualization extends BaseVisualization {
                     Chart,
                     ctx,
                     this.chartData,
-                    buildCartesianModel(this.chartData, this.chartConfig, referenceLines),
+                    () => this.chartData,
+                    buildCartesianModel(this.chartData, this.chartConfig, referenceLines, {
+                        listData: this.renderedListAggregation
+                    }),
                     this.chartConfig,
                     (elements) => this.handleChartClick(elements),
                     referenceLines
@@ -802,8 +809,11 @@ export class ChartVisualization extends BaseVisualization {
             return
         }
 
-        // Check if structure changed (different number of datasets) - need full re-render
-        const currentDatasetCount = this.chart!.data.datasets.length
+        // Check if structure changed (different number of datasets) - need full
+        // re-render. Outlier marker datasets are not series: compared below
+        const currentDatasetCount = this.chart!.data.datasets.filter(
+            (d) => !isOutlierMarkerDataset(d)
+        ).length
         const newDatasetCount = newChartData.datasets.length
         if (currentDatasetCount !== newDatasetCount) {
             this.destroy()
@@ -820,8 +830,20 @@ export class ChartVisualization extends BaseVisualization {
                 this.overlayReferenceLines,
                 newChartData.datasets
             )
-            model = buildCartesianModel(newChartData, this.chartConfig, referenceLines)
-            if (model.datasets.length !== this.chart!.data.datasets.length) {
+            model = buildCartesianModel(newChartData, this.chartConfig, referenceLines, {
+                listData: this.renderedListAggregation
+            })
+            // Outlier markers come and go with the data: a different set of
+            // marker datasets is a different chart structure
+            const markerLayout = (datasets: unknown[]): string =>
+                datasets
+                    .map((d) =>
+                        isOutlierMarkerDataset(d)
+                            ? String((d as { ltOutlierMarkerFor?: number }).ltOutlierMarkerFor)
+                            : '-'
+                    )
+                    .join(',')
+            if (markerLayout(model.datasets) !== markerLayout(this.chart!.data.datasets)) {
                 this.destroy()
                 this.render(data)
                 return
@@ -1190,13 +1212,15 @@ export class ChartVisualization extends BaseVisualization {
     private handleChartClick(elements: ChartClickElement[]): void {
         if (!this.chartData || elements.length === 0) return
 
-        const element = elements[0]
+        // The first element that has notes behind it: drawing order puts the
+        // moving average and outlier markers (no notes of their own) first
+        const chartData = this.chartData
+        const element = elements.find(
+            (e) => (chartData.datasets[e.datasetIndex]?.filePaths[e.index]?.length ?? 0) > 0
+        )
         if (!element) return
 
-        const dataset = this.chartData.datasets[element.datasetIndex]
-        if (!dataset) return
-
-        const filePaths = dataset.filePaths[element.index]
+        const filePaths = chartData.datasets[element.datasetIndex]?.filePaths[element.index]
         if (filePaths && filePaths.length > 0) {
             // On touch, the first tap only reveals the tooltip (issue #154)
             if (!this.touchNavigation.shouldNavigate(`${element.datasetIndex}:${element.index}`)) {
