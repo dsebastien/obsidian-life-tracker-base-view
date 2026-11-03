@@ -16,11 +16,15 @@ export interface MetadataChangeSource {
  * capture to read a note without its tags. So `isReady` is checked at once and
  * on every `changed` of the path, and only a true result ends the wait.
  *
+ * The note is followed, not its path at the start: `subject.path` is read on
+ * every event, and Obsidian updates a `TFile`'s path when a template renames
+ * or moves the note.
+ *
  * @returns whether the cache was ready; false when the timeout ran out first
  */
 export function waitForCache(
     cache: MetadataChangeSource,
-    path: string,
+    subject: { readonly path: string },
     isReady: () => boolean,
     timeoutMs: number
 ): Promise<boolean> {
@@ -36,7 +40,7 @@ export function waitForCache(
             resolve(ready)
         }
         const eventRef = cache.on('changed', (file) => {
-            if (file.path === path && isReady()) finish(true)
+            if ((file === subject || file.path === subject.path) && isReady()) finish(true)
         })
         const timer = window.setTimeout(() => finish(isReady()), timeoutMs)
     })

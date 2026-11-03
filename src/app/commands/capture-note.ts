@@ -4,7 +4,7 @@ import type { CaptureTarget } from '../types'
 import { ConfirmModal } from '../components/modals/confirm-modal'
 import { CaptureTargetService, type TargetCreationPlan } from '../services/capture-target.service'
 import { NoteCreationService } from '../services/note-creation.service'
-import { InFlight } from '../services/in-flight.utils'
+import { InFlight, settleOrNull } from '../services/in-flight.utils'
 import { waitForCache } from '../services/metadata-wait.utils'
 import { findDailyNote, offerToCreateDailyNote } from './daily-note'
 import { formatDateISO, isSameDay, log } from '../../utils'
@@ -132,7 +132,15 @@ export function offerToCreateCaptureNote(
                     plugin.app,
                     `No "${name}" note exists for ${day}. Create it at ${plan.resolution.target.path}?${warning}`,
                     () => {
-                        void createTargetNote(plugin, service, target, date, plan).then(resolve)
+                        // Always settle, or the pending key would block this
+                        // target and day until Obsidian restarts
+                        void settleOrNull(
+                            createTargetNote(plugin, service, target, date, plan),
+                            (error) => {
+                                log('Creating the capture target note failed', 'error', error)
+                                new Notice(`Could not create ${plan.resolution.target.path}`)
+                            }
+                        ).then(resolve)
                     },
                     {
                         title:
@@ -194,14 +202,18 @@ async function createTargetNote(
 
     // Wait for the cache to show the written values, not just for the next
     // index of the path: that one can belong to an earlier write
+    // The file itself is followed: a template may have renamed or moved it
     const indexed = await waitForCache(
         plugin.app.metadataCache,
-        file.path,
+        file,
         () => service.isIndexedAsTargetNote(file, target, date),
         INDEX_TIMEOUT_MS
     )
     if (!indexed) {
-        log('The new target note was not indexed in time', 'debug', { path: file.path })
+        log('The new target note was not recognized in time', 'warn', { path: file.path })
+        new Notice(
+            `${file.path} was created, but Life Tracker does not recognize it as the "${destinationName(target)}" note. Check that its template keeps the note type's tags and does not move the note, or the next capture will not find it.`
+        )
     }
     return file
 }

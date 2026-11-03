@@ -25,3 +25,21 @@ export class InFlight<T> {
         return operation
     }
 }
+
+/**
+ * A promise that always settles: the operation's result, or null after
+ * `onError` when it rejects. A pending creation that rejected would otherwise
+ * never settle, and its key would block that target and day until reload.
+ */
+export function settleOrNull<T>(
+    operation: Promise<T | null>,
+    onError: (error: unknown) => void
+): Promise<T | null> {
+    return operation.then(
+        (value) => value,
+        (error: unknown) => {
+            onError(error)
+            return null
+        }
+    )
+}

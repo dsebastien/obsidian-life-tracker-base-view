@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { InFlight } from './in-flight.utils'
+import { InFlight, settleOrNull } from './in-flight.utils'
 
 describe('InFlight', () => {
     test('a second request for a pending key joins the first', async () => {
@@ -34,5 +34,24 @@ describe('InFlight', () => {
         const inFlight = new InFlight<number>()
         await inFlight.run('a', () => Promise.reject(new Error('x'))).catch(() => undefined)
         expect(inFlight.get('a')).toBeUndefined()
+    })
+})
+
+describe('settleOrNull (review #7)', () => {
+    test('a rejected creation settles to null and releases its key', async () => {
+        const inFlight = new InFlight<string | null>()
+        const errors: unknown[] = []
+        const failing = (): Promise<string | null> =>
+            settleOrNull(Promise.reject(new Error('Templater threw')), (error) =>
+                errors.push(error)
+            )
+
+        expect(await inFlight.run('t1|2030-01-02', failing)).toBeNull()
+        expect(errors).toHaveLength(1)
+        expect(inFlight.get('t1|2030-01-02')).toBeUndefined()
+    })
+
+    test('a result passes through', async () => {
+        expect(await settleOrNull(Promise.resolve('note'), () => undefined)).toBe('note')
     })
 })
