@@ -115,6 +115,20 @@
         @apply flex flex-col;
     }
 
+    /* Capture targets page: one bordered card per target */
+    .lt-capture-targets {
+        @apply flex flex-col gap-4 mb-2;
+    }
+
+    .lt-capture-target {
+        @apply flex flex-col rounded-lg px-3 py-1;
+        border: 1px solid var(--background-modifier-border);
+    }
+
+    .lt-capture-target-filter {
+        @apply pl-4;
+    }
+
     /* ========================================
    LIFE TRACKER VIEW
    ======================================== */

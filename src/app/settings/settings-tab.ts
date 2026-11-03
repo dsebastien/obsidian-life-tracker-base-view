@@ -8,11 +8,12 @@ import { PropertyDefinitionSection } from './property-definition-section'
 import { VisualizationPresetSection } from './visualization-preset-section'
 import { DateSettingsSection } from './date-settings-section'
 import { StarterKitSection } from './starter-kit-section'
+import { CaptureTargetSection } from './capture-target-section'
 import { SectionPage } from './section-page'
 import { isWeekStartDay, log } from '../../utils'
 
 /** The sub-pages drawn imperatively by a section editor */
-type SectionPageKey = 'properties' | 'presets' | 'starter-kit'
+type SectionPageKey = 'properties' | 'presets' | 'starter-kit' | 'capture-targets'
 
 /** Animation duration bounds, in seconds (stored in milliseconds) */
 const ANIMATION_SECONDS = { min: 1, max: 10, step: 0.5 } as const
@@ -59,6 +60,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
     private readonly presetSection: VisualizationPresetSection
     private readonly dateSection: DateSettingsSection
     private readonly starterKitSection: StarterKitSection
+    private readonly captureTargetSection: CaptureTargetSection
 
     /** The section pages currently open, so a section redraws only its own */
     private readonly openPages = new Map<SectionPageKey, SectionPage>()
@@ -77,6 +79,9 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
         )
         this.dateSection = new DateSettingsSection(plugin, () => this.update(), reportSaveFailure)
         this.starterKitSection = new StarterKitSection(plugin, () => this.redrawPage('starter-kit'))
+        this.captureTargetSection = new CaptureTargetSection(plugin, app, () =>
+            this.redrawPage('capture-targets')
+        )
     }
 
     override getSettingDefinitions(): SettingDefinitionItem[] {
@@ -103,6 +108,19 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
                         name: 'Auto-advance after picking a value',
                         desc: 'Move to the next property as soon as a value is picked from a dropdown, emoji button or checkbox. Typed values still need Enter or Next.',
                         control: { type: 'toggle', key: 'autoAdvanceOnPick' }
+                    },
+                    {
+                        type: 'page',
+                        name: 'Capture targets',
+                        desc: 'Send properties to a note other than the daily note, such as the session note of the day.',
+                        page: () =>
+                            this.openSectionPage(
+                                'capture-targets',
+                                'Capture targets',
+                                (containerEl) => {
+                                    this.captureTargetSection.render(containerEl)
+                                }
+                            )
                     }
                 ]
             },

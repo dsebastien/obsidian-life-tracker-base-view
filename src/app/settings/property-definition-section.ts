@@ -9,14 +9,20 @@ import {
     VALUE_POLARITY_LABELS,
     createDefaultPropertyDefinition,
     createDefaultMapping,
+    DAILY_NOTE_TARGET_ID,
     type PropertyDefinition,
     type ObsidianPropertyType,
     type MappingType,
     type ValuePolarity
 } from '../types'
 import { computeNumberRange } from './number-range.utils'
+import { resolveDefinitionTarget } from '../services/capture-target.utils'
+import { destinationName } from '../commands/capture-note'
 import { isShownInQuickAdd } from '../services/quick-add.utils'
 import { isValidEmojiKey, readPolarity } from '../../utils'
+
+/** "Capture into" dropdown value for the automatic destination */
+const AUTOMATIC_TARGET_OPTION = ''
 
 /**
  * Renders and manages the "Property definitions" section of the settings tab
@@ -382,8 +388,51 @@ export class PropertyDefinitionSection {
                 })
             })
 
+        // Capture destination (capture targets)
+        this.renderCaptureTarget(optionsContainer, definition)
+
         // Mappings (note filtering)
         this.renderMappings(optionsContainer, definition)
+    }
+
+    /**
+     * "Capture into" dropdown: automatic, the daily note, or a capture target.
+     * The automatic entry names what it resolves to, so the effect is visible.
+     */
+    private renderCaptureTarget(container: HTMLElement, definition: PropertyDefinition): void {
+        const targets = this.plugin.settings.captureTargets
+        const automatic = resolveDefinitionTarget({ ...definition, captureTargetId: '' }, targets)
+        const options: Record<string, string> = {
+            [AUTOMATIC_TARGET_OPTION]: `Automatic (${destinationName(automatic)})`,
+            [DAILY_NOTE_TARGET_ID]: 'Daily note'
+        }
+        for (const target of targets) {
+            options[target.id] = destinationName(target)
+        }
+        const stored = definition.captureTargetId ?? AUTOMATIC_TARGET_OPTION
+
+        new Setting(container)
+            .setName('Capture into')
+            .setDesc(
+                'The note that quick add and its links write this property into. Automatic uses the capture target of the Starter Kit note type of the property, otherwise the daily note.'
+            )
+            .addDropdown((dropdown) => {
+                dropdown
+                    .addOptions(options)
+                    .setValue(Object.hasOwn(options, stored) ? stored : AUTOMATIC_TARGET_OPTION)
+                    .onChange(async (value) => {
+                        if (!Object.hasOwn(options, value)) return
+                        await this.plugin.updateSettings((draft) => {
+                            const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
+                            if (!d) return
+                            if (value === AUTOMATIC_TARGET_OPTION) {
+                                delete d.captureTargetId
+                            } else {
+                                d.captureTargetId = value
+                            }
+                        })
+                    })
+            })
     }
 
     /**
@@ -1221,7 +1270,8 @@ export class PropertyDefinitionSection {
             valueMapping: source.valueMapping ? { ...source.valueMapping } : null, // Deep copy value mapping
             polarity: source.polarity, // issue #21
             valueEmojis: source.valueEmojis ? { ...source.valueEmojis } : null, // Deep copy, issue #22
-            showInQuickAdd: source.showInQuickAdd // issue #122
+            showInQuickAdd: source.showInQuickAdd, // issue #122
+            ...(source.captureTargetId ? { captureTargetId: source.captureTargetId } : {})
         }
 
         // Auto-expand the new definition
