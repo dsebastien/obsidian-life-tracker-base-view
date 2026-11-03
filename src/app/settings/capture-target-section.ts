@@ -31,7 +31,7 @@ export function fileNameFieldDescription(target: Pick<CaptureTarget, 'noteTypeId
     const formats = 'Date formats such as {{date:YYYY}} are not supported.'
     return target.noteTypeId
         ? `Optional. Name of a new note, without .md: the text around {{date}}. The note type adds its prefix and suffix. Empty: the note type's usual name. ${formats} When the name is taken, a number is added after the date.`
-        : `Name of a new note, without .md. Use {{date}} for the date; folders go in the folder field. ${formats} When the name is taken, a number is added after the date.`
+        : `Name of a new note, without .md. Use {{date}} for the date. ${formats} When the name is taken, a number is added after the date.`
 }
 
 /**

@@ -334,7 +334,8 @@ describe('describeTargetLayout', () => {
             head: '{{date}}',
             tail: ' (Strength Session)',
             templatePath: '50 Resources/54 Templates/Templater/TPL Strength Session.md',
-            tags: ['zone/journal', 'type/session/sport/strength']
+            tags: ['zone/journal', 'type/session/sport/strength'],
+            strictName: true
         })
     })
 
@@ -400,7 +401,8 @@ describe('describeTargetLayout', () => {
             head: 'Moves {{date}}',
             tail: ' (quick)',
             templatePath: null,
-            tags: ['workout']
+            tags: ['workout'],
+            strictName: false
         })
     })
 })
@@ -583,6 +585,16 @@ describe('file name patterns capture would refuse', () => {
     const standalone = (fileNamePattern: string): CaptureTarget =>
         throughTheDay({ noteTypeId: '', folder: 'Sessions', fileNamePattern })
 
+    /** The path a standalone target creates on Nov 3, or null when refused */
+    const standalonePath = (pattern: string): string | null => {
+        const layout = describeTargetLayout(standalone(pattern), null)
+        if (!isTargetLayout(layout)) throw new Error(layout)
+        return resolveFreeTargetPath(layout, NOV_3, () => false)?.path ?? null
+    }
+
+    const NOTE_TYPE_INVALID = `Capture target "Through the day" does not give a valid note path. Check the file name pattern (and the folder) for unknown {{tokens}}, characters such as : ? | # * " < > [ ] ^, or a trailing dot.`
+    const STANDALONE_INVALID = `Capture target "Through the day" does not give a valid note path. Check the file name pattern (and the folder) for unknown {{tokens}} or characters such as : ? | * " < > \\.`
+
     test.each([
         ['a colon', '{{date}} 10:00'],
         ['a question mark', '{{date}} Gym?'],
@@ -591,31 +603,41 @@ describe('file name patterns capture would refuse', () => {
         ['a star', '{{date}} Gym*'],
         ['a caret', '{{date}} Gym ^1'],
         ['brackets', '{{date}} [Gym]'],
+        ['a trailing dot', '{{date}}.'],
         ['an unknown token', '{{date}} {{time}}'],
         ['a date format', '{{date:YYYY}} {{date}}']
-    ])('%s is listed under Problems and refused at capture', (_label, pattern) => {
-        for (const target of [throughTheDay({ fileNamePattern: pattern }), standalone(pattern)]) {
-            const issues = describeTargetIssues(target, STRENGTH_TYPE, NOV_3)
-            expect(issues).toEqual([
-                `Capture target "Through the day" does not give a valid note path. Check the file name pattern (and the folder) for unknown {{tokens}}, characters such as : ? | # * " < > [ ] ^, or a trailing dot.`
-            ])
-            const layout = describeTargetLayout(target, STRENGTH_TYPE)
+    ])(
+        'with a note type, %s is listed under Problems and refused at capture',
+        (_label, pattern) => {
+            const target = throughTheDay({ fileNamePattern: pattern })
+            const noteType: StarterKitNoteType = { ...STRENGTH_TYPE, noteNameSuffix: null }
+            expect(describeTargetIssues(target, noteType, NOV_3)).toEqual([NOTE_TYPE_INVALID])
+            const layout = describeTargetLayout(target, noteType)
             if (!isTargetLayout(layout)) throw new Error(layout)
             expect(resolveFreeTargetPath(layout, NOV_3, () => false)).toBeNull()
         }
+    )
+
+    test.each([
+        ['a colon', '{{date}} 10:00'],
+        ['a question mark', '{{date}} Gym?'],
+        ['a pipe', '{{date}} Gym | AM'],
+        ['a star', '{{date}} Gym*'],
+        ['an unknown token', '{{date}} {{time}}'],
+        ['a date format', '{{date:YYYY}} {{date}}']
+    ])('standalone: %s is refused at capture as in 3.5.0, and listed', (_label, pattern) => {
+        expect(standalonePath(pattern)).toBeNull()
+        expect(describeTargetIssues(standalone(pattern), null, NOV_3)).toEqual([STANDALONE_INVALID])
     })
 
-    test('a trailing dot is refused for a standalone target', () => {
-        const target = standalone('{{date}} Gym.')
-        expect(describeTargetIssues(target, null, NOV_3)).toHaveLength(1)
-        // With a note type the suffix follows, so the name does not end with it
-        expect(
-            describeTargetIssues(
-                throughTheDay({ fileNamePattern: '{{date}} Gym.' }),
-                STRENGTH_TYPE,
-                NOV_3
-            )
-        ).toEqual([])
+    test.each([
+        ['a hash', '{{date}} Gym #1', 'Sessions/2026-11-03 Gym #1.md'],
+        ['a caret', '{{date}} Gym ^1', 'Sessions/2026-11-03 Gym ^1.md'],
+        ['brackets', '{{date}} [Gym]', 'Sessions/2026-11-03 [Gym].md'],
+        ['a trailing dot', '{{date}} Gym.', 'Sessions/2026-11-03 Gym..md']
+    ])('standalone: %s is still accepted, as in 3.5.0', (_label, pattern, path) => {
+        expect(standalonePath(pattern)).toBe(path)
+        expect(describeTargetIssues(standalone(pattern), null, NOV_3)).toEqual([])
     })
 
     test('a pattern capture accepts has no problem', () => {
@@ -630,12 +652,8 @@ describe('file name patterns capture would refuse', () => {
     })
 
     test.each(['{{year}}/{{date}}', '{{date}}/Gym', '{{date}}\\Gym'])(
-        'a folder separator in %s is its own problem',
+        'with a note type, a folder separator in %s is its own problem',
         (pattern) => {
-            expect(describeTargetLayout(standalone(pattern), null)).toBe('folder-in-file-name')
-            expect(describeTargetIssues(standalone(pattern), null, NOV_3)).toEqual([
-                'The file name pattern of capture target "Through the day" contains / or \\. A file name cannot hold folders: set them in the folder field.'
-            ])
             const typed = throughTheDay({ fileNamePattern: pattern })
             expect(describeTargetLayout(typed, STRENGTH_TYPE)).toBe('folder-in-file-name')
             expect(describeTargetIssues(typed, STRENGTH_TYPE, NOV_3)).toEqual([
@@ -643,6 +661,12 @@ describe('file name patterns capture would refuse', () => {
             ])
         }
     )
+
+    test('standalone: / still makes subfolders, as in 3.5.0', () => {
+        expect(standalonePath('{{year}}/{{date}}')).toBe('Sessions/2026/2026-11-03.md')
+        expect(standalonePath('{{date}}/Gym')).toBe('Sessions/2026-11-03/Gym.md')
+        expect(describeTargetIssues(standalone('{{year}}/{{date}}'), null, NOV_3)).toEqual([])
+    })
 })
 
 describe('resolveFreeTargetPath', () => {

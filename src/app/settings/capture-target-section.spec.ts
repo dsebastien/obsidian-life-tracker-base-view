@@ -19,10 +19,9 @@ describe('fileNameFieldDescription', () => {
         expect(desc).not.toContain('the date only')
     })
 
-    test('standalone keeps the {{date}} wording and points folders to the folder field', () => {
+    test('standalone keeps the {{date}} wording', () => {
         const desc = fileNameFieldDescription({ noteTypeId: '' })
-        expect(desc).toContain('Use {{date}} for the date')
-        expect(desc).toContain('folder field')
+        expect(desc).toContain('Use {{date}} for the date.')
         expect(desc).not.toContain('Empty:')
     })
 

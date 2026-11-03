@@ -248,6 +248,12 @@ export interface TargetLayout {
     templatePath: string | null
     /** Tags a created note must carry */
     tags: string[]
+    /**
+     * Whether the name also refuses link-breaking characters (`# ^ [ ]`) and
+     * a trailing dot. True for a Starter Kit target; false for a standalone
+     * one, which keeps the 3.5.0 rules (only what the path itself refuses)
+     */
+    strictName: boolean
 }
 
 /** Why a target cannot be used */
@@ -266,7 +272,7 @@ function lacksDateToken(pattern: string): boolean {
     return pattern.trim().length > 0 && !DATE_TOKEN.test(pattern)
 }
 
-/** A folder separator: a file name pattern names a file, never folders */
+/** A folder separator: a note type target's pattern names a file, never folders */
 const FOLDER_SEPARATOR = /[/\\]/
 
 /** A letter or digit: text continuing a word, so not a boundary */
@@ -374,7 +380,8 @@ export function describeTargetLayout(
             head: `${prefix}${own?.head ?? '{{date}}'}`,
             tail: `${own?.tail ?? ''}${suffix}`,
             templatePath: ownTemplate ?? noteType.templatePath ?? null,
-            tags: cleanTags(noteType.tags ?? [])
+            tags: cleanTags(noteType.tags ?? []),
+            strictName: true
         }
     }
 
@@ -382,7 +389,6 @@ export function describeTargetLayout(
     if (!folder) return 'missing-folder'
     const pattern = target.fileNamePattern
     if (!pattern.trim()) return 'missing-file-name'
-    if (FOLDER_SEPARATOR.test(pattern)) return 'folder-in-file-name'
 
     // The counter goes right after the date, as Starter Kit names do
     // (`<date> 2 (…)`); a name without the date could never be told apart
@@ -394,7 +400,10 @@ export function describeTargetLayout(
         head: pattern.slice(0, split),
         tail: pattern.slice(split),
         templatePath: ownTemplate,
-        tags: cleanTags(target.tags)
+        tags: cleanTags(target.tags),
+        // A standalone pattern may hold `/` (`{{year}}/{{date}}` makes
+        // subfolders) and any name the path accepts, as in 3.5.0
+        strictName: false
     }
 }
 
@@ -417,19 +426,21 @@ export function describeLayoutError(error: TargetLayoutError, target: CaptureTar
         case 'missing-date-token':
             return `The file name pattern of capture target "${target.name}" needs {{date}}.`
         case 'folder-in-file-name':
-            return target.noteTypeId
-                ? `The file name pattern of capture target "${target.name}" contains / or \\. A file name cannot hold folders: the note type gives the folder.`
-                : `The file name pattern of capture target "${target.name}" contains / or \\. A file name cannot hold folders: set them in the folder field.`
+            return `The file name pattern of capture target "${target.name}" contains / or \\. A file name cannot hold folders: the note type gives the folder.`
     }
 }
 
 /**
  * Why a usable layout still gives no valid path, for the settings page and
- * capture alike: an unknown `{{token}}` (`{{time}}`, `{{date:YYYY}}`), a
- * character a file name cannot hold, or a trailing dot
+ * capture alike: an unknown `{{token}}` (`{{time}}`, `{{date:YYYY}}`) or a
+ * character a file name cannot hold; with a note type, also a link-breaking
+ * character or a trailing dot (see `TargetLayout.strictName`)
  */
 export function describeInvalidPath(target: CaptureTarget): string {
-    return `Capture target "${target.name}" does not give a valid note path. Check the file name pattern (and the folder) for unknown {{tokens}}, characters such as : ? | # * " < > [ ] ^, or a trailing dot.`
+    const what = target.noteTypeId
+        ? 'unknown {{tokens}}, characters such as : ? | # * " < > [ ] ^, or a trailing dot'
+        : 'unknown {{tokens}} or characters such as : ? | * " < > \\'
+    return `Capture target "${target.name}" does not give a valid note path. Check the file name pattern (and the folder) for ${what}.`
 }
 
 /**
@@ -490,8 +501,8 @@ const MAX_NAME_ATTEMPTS = 100
  * session on the same day as the through-the-day session).
  *
  * Null when the layout cannot be rendered to a safe path (unknown token,
- * illegal or link-breaking character, a name ending in a dot), or no free name
- * is found.
+ * illegal character; with `strictName`, also a link-breaking character or a
+ * name ending in a dot), or no free name is found.
  */
 export function resolveFreeTargetPath(
     layout: TargetLayout,
@@ -504,10 +515,12 @@ export function resolveFreeTargetPath(
     const head = renderDateTokens(layout.head, date, { preserveWhitespace: true })
     const tail = renderDateTokens(layout.tail, date, { preserveWhitespace: true })
     if (head === null || tail === null) return null
-    if (LINK_BREAKING_CHARS.test(`${head}${tail}`)) return null
-    // `Gym..md` is a legal path, but a name ending in a dot is one Windows
-    // tools and sync clients mangle: refuse it as folder names already are
-    if (`${head}${tail}`.endsWith('.')) return null
+    if (layout.strictName) {
+        if (LINK_BREAKING_CHARS.test(`${head}${tail}`)) return null
+        // `Gym..md` is a legal path, but a name ending in a dot is one Windows
+        // tools and sync clients mangle: refuse it as folder names already are
+        if (`${head}${tail}`.endsWith('.')) return null
+    }
 
     for (let counter = 1; counter <= MAX_NAME_ATTEMPTS; counter++) {
         const basename = counter === 1 ? `${head}${tail}` : `${head} ${counter}${tail}`
