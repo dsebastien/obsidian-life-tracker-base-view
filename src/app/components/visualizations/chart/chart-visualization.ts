@@ -111,6 +111,11 @@ export class ChartVisualization extends BaseVisualization {
      * styling.
      */
     private renderedListAggregation = false
+    /**
+     * Whether the rendered values come from a checkbox property: exempt from
+     * outlier detection, even once averaged into fractions per period
+     */
+    private renderedBooleanSeries = false
     private originalData: (number | null)[][] = []
     private animationInterval: number | null = null
     private currentAnimationIndex: number = 0
@@ -229,6 +234,7 @@ export class ChartVisualization extends BaseVisualization {
             } else {
                 // Standard numeric aggregation: by time period, or one point
                 // per note when the x-axis plots note names (issue #69)
+                this.renderedBooleanSeries = isBooleanSeries(data)
                 this.chartData = this.aggregateNumericChartData(data)
 
                 // Gaps are found on the real values, before any running total
@@ -377,7 +383,7 @@ export class ChartVisualization extends BaseVisualization {
         // series has none by construction: one jump carries into every later
         // point, so it is averaged as is
         const values =
-            this.chartConfig.excludeOutliersFromAverage && !this.chartConfig.runningTotal
+            this.leavesOutliersOut() && !this.chartConfig.runningTotal
                 ? withoutOutliers(source.data)
                 : source.data
         chartData.datasets.push({
@@ -387,6 +393,14 @@ export class ChartVisualization extends BaseVisualization {
             filePaths: chartData.labels.map(() => []),
             isMovingAverage: true
         })
+    }
+
+    /**
+     * Whether the average and the trend leave outliers out (issue #186).
+     * Never for checkbox values, which have no outliers
+     */
+    private leavesOutliersOut(): boolean {
+        return this.chartConfig.excludeOutliersFromAverage === true && !this.renderedBooleanSeries
     }
 
     /**
@@ -424,7 +438,7 @@ export class ChartVisualization extends BaseVisualization {
         const trendValues = this.trendSourceData ?? source.data
         // Outliers can be left out of the trend too (issue #186)
         const trend = computeTrend(
-            this.chartConfig.excludeOutliersFromAverage ? withoutOutliers(trendValues) : trendValues
+            this.leavesOutliersOut() ? withoutOutliers(trendValues) : trendValues
         )
         if (!trend) return
         const comparedTo = trendWindowLabel(trend.periodCount, perNote)
@@ -652,7 +666,8 @@ export class ChartVisualization extends BaseVisualization {
                     this.chartData,
                     () => this.chartData,
                     buildCartesianModel(this.chartData, this.chartConfig, referenceLines, {
-                        listData: this.renderedListAggregation
+                        listData: this.renderedListAggregation,
+                        booleanData: this.renderedBooleanSeries
                     }),
                     this.chartConfig,
                     (elements) => this.handleChartClick(elements),
@@ -848,6 +863,7 @@ export class ChartVisualization extends BaseVisualization {
                 this.chartConfig.granularity
             )
         } else {
+            this.renderedBooleanSeries = isBooleanSeries(data)
             newChartData = this.aggregateNumericChartData(data)
             newChartData.gapBreaks = gapBreaksFor(newChartData, this.chartConfig)
 
@@ -889,7 +905,8 @@ export class ChartVisualization extends BaseVisualization {
                 timeAxisRange(newChartData)
             )
             model = buildCartesianModel(newChartData, this.chartConfig, referenceLines, {
-                listData: this.renderedListAggregation
+                listData: this.renderedListAggregation,
+                booleanData: this.renderedBooleanSeries
             })
             // Outlier markers come and go with the data: a different set of
             // marker datasets is a different chart structure

@@ -114,6 +114,20 @@ describe('buildCartesianModel - outliers (3.4.0)', () => {
         expect(list.datasets).toHaveLength(1)
     })
 
+    test('checkbox data is never fitted, even averaged into fractions', () => {
+        // A rarely done habit averaged per week, with one full week: as plain
+        // numbers the full week would be an outlier (above 10 × the median)
+        const weekly = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 1]
+        const asNumbers = buildCartesianModel(chartData(series(weekly)), lineConfig, undefined)
+        expect(asNumbers.yPlan.clamped[0]).toHaveLength(1)
+
+        const model = buildCartesianModel(chartData(series(weekly)), lineConfig, undefined, {
+            booleanData: true
+        })
+        expect(model.datasets).toHaveLength(1)
+        expect(model.yPlan.clamped[0]).toEqual([])
+    })
+
     test('bars get the marker too', () => {
         const model = buildCartesianModel(
             chartData(series(paces)),

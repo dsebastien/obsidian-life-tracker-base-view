@@ -16,6 +16,8 @@ line. For monthly data, a break of more than about three months does.
   line, set **Break line across gaps** to **Off** in the card's right-click
   menu (`breakLineAcrossGaps: false` in the `.base` file).
 - The **Note name** axis has no dates, so its line never breaks.
+- Overlay charts keep one continuous line for now, and the two new switches
+  are not in the overlay editor.
 
 ### Leave outliers out of the average
 
@@ -36,13 +38,12 @@ in the `.base` file).
 Outlier detection skipped a series when most of its values were the same. A
 meditation log of 10 minutes nearly every day, plus one typo of 1000, still got
 a 0 to 1000 axis. Now, when the middle half of the values has no spread, a value
-more than 10 times the usual value, or less than a tenth of it, counts as an
-outlier. It still needs at least 8 values.
+more than 10 times the usual value counts as an outlier. It still needs at
+least 8 values. Low values never count: a missed day or a short session is real
+data.
 
-A habit you log as 0 on most days is not affected: its 1s never count as
-outliers. On a habit you do most days (mostly 1s), a 0 now counts as an
-outlier. It still shows in place on an axis that starts at 0, but the new
-**Leave outliers out of the average** switch would leave it out.
+Checkbox properties, and any series with only 0s and 1s, never have outliers. A
+yes/no habit is drawn and averaged exactly as you logged it.
 
 ### Edits to the .base file are kept
 

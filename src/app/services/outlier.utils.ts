@@ -45,15 +45,16 @@ export const MAD_SCALE = 1.4826
 
 /**
  * Last resort when both the IQR and the MAD are 0 (issue #187): a value more
- * than 10 times the median, or less than a tenth of it, is an outlier. Only
- * applies with a positive median
+ * than 10 times the median is an outlier. High values only, and only with a
+ * positive median: a 0 in a series of mostly the same value is a real value
+ * (a missed day), not a typo
  */
 export const OUTLIER_RATIO_LIMIT = 10
 
 /**
  * Fences for a series whose quartiles are equal (IQR = 0), or null when none
- * apply. Median absolute deviation first; when it is 0 too, a ratio to the
- * median (median > 0 only).
+ * apply. Median absolute deviation first; when it is 0 too, an upper fence
+ * at 10 × the median (median > 0 only, no lower fence).
  *
  * Equal quartiles put more than half the values on the median, which makes
  * the MAD 0 as well: in practice the ratio rule decides. The MAD step is
@@ -69,22 +70,22 @@ export function zeroSpreadFences(sorted: readonly number[]): OutlierFences | nul
         return { lower: median - reach, upper: median + reach }
     }
     if (median > 0) {
-        return { lower: median / OUTLIER_RATIO_LIMIT, upper: median * OUTLIER_RATIO_LIMIT }
+        return { lower: Number.NEGATIVE_INFINITY, upper: median * OUTLIER_RATIO_LIMIT }
     }
     return null
 }
 
 /**
  * Outlier fences for a series, or null when they do not apply: fewer than 8
- * values, or nothing actually falls outside them. Nulls and non-finite values
- * are ignored.
+ * values, only 0s and 1s (a checkbox or yes/no habit has no outliers), or
+ * nothing actually falls outside them. Nulls and non-finite values are
+ * ignored.
  *
  * - Tukey's far-out fences, Q1 − 3·IQR and Q3 + 3·IQR, when the quartiles
  *   have a spread
  * - IQR = 0 (issue #187: meditation minutes 10, 10, 10 … and one typo of
- *   1000): median ± 3.5 · 1.4826 · MAD; when the MAD is 0 too, median / 10 to
- *   median · 10 if the median is positive; no fences otherwise. A habit
- *   series of mostly 0 (median 0) therefore never makes its 1s outliers
+ *   1000): median ± 3.5 · 1.4826 · MAD; when the MAD is 0 too, values above
+ *   10 × a positive median; no fences otherwise
  */
 export function computeOutlierFences(
     values: readonly (number | null)[],
@@ -93,6 +94,7 @@ export function computeOutlierFences(
 ): OutlierFences | null {
     const finite = values.filter((v): v is number => v !== null && Number.isFinite(v))
     if (finite.length < minPoints) return null
+    if (finite.every((v) => v === 0 || v === 1)) return null
 
     const sorted = [...finite].sort((a, b) => a - b)
     const q1 = quantile(sorted, 0.25)

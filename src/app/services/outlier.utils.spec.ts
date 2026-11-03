@@ -66,18 +66,19 @@ describe('computeOutlierFences with no spread between the quartiles (issue #187)
     /** Meditation minutes: 10 almost every day */
     const tens = [10, 10, 10, 10, 10, 10, 10, 10, 10]
 
-    test('a typo far from a constant series is caught by the ratio rule', () => {
+    test('meditation 10, 10, … plus a typo of 1000: 1000 is flagged', () => {
         const fences = computeOutlierFences([...tens, 1000])
-        expect(fences).toEqual({ lower: 1, upper: 100 })
+        expect(fences).toEqual({ lower: Number.NEGATIVE_INFINITY, upper: 100 })
+        expect(withoutOutliers([...tens, 1000])).toEqual([...tens, null])
     })
 
-    test('a value below a tenth of the median is caught too', () => {
-        const fences = computeOutlierFences([...tens, 0.5])
-        expect(fences).not.toBeNull()
-        expect(0.5).toBeLessThan(fences!.lower)
+    test('low values are never flagged by the ratio rule', () => {
+        // A missed day (0) or a short session among 10s is a real value
+        expect(computeOutlierFences([...tens, 0])).toBeNull()
+        expect(computeOutlierFences([...tens, 0.5, 0])).toBeNull()
     })
 
-    test('values within 10× of the median are kept', () => {
+    test('values up to 10× the median are kept', () => {
         expect(computeOutlierFences([...tens, 99, 2])).toBeNull()
     })
 
@@ -102,11 +103,26 @@ describe('computeOutlierFences with no spread between the quartiles (issue #187)
     })
 
     test('MAD 0 falls back to the ratio to the median', () => {
-        expect(zeroSpreadFences([4, 4, 4, 4, 4, 9])).toEqual({ lower: 0.4, upper: 40 })
+        expect(zeroSpreadFences([4, 4, 4, 4, 4, 9])).toEqual({
+            lower: Number.NEGATIVE_INFINITY,
+            upper: 40
+        })
     })
 
     test('MAD 0 and median 0: no fences', () => {
         expect(zeroSpreadFences([0, 0, 0, 0, 3])).toBeNull()
+    })
+})
+
+describe('series of only 0s and 1s are exempt (checkbox habits)', () => {
+    test('a habit of 1s with some 0s has no outliers', () => {
+        const habit = [1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1]
+        expect(computeOutlierFences(habit)).toBeNull()
+        expect(withoutOutliers(habit)).toEqual(habit)
+    })
+
+    test('a habit of 0s with some 1s has no outliers', () => {
+        expect(computeOutlierFences([0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1])).toBeNull()
     })
 })
 

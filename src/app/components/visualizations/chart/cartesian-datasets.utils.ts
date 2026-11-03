@@ -58,6 +58,8 @@ export const OUTLIER_MARKER_RADIUS = 6
 export interface CartesianModelOptions {
     /** 0/1 presence datasets from a list property: never outlier-fitted */
     listData?: boolean
+    /** Checkbox (boolean) values, averaged or summed per period: never outlier-fitted */
+    booleanData?: boolean
 }
 
 /** Whether a Chart.js dataset is an outlier marker dataset */
@@ -108,7 +110,11 @@ export function buildCartesianModel(
             includeInRange: !dataset.isMovingAverage,
             // A cumulative series carries one jump into every later point, and
             // 0/1 presence has nothing to fit: only real values are fitted
-            fitToBulk: !dataset.isMovingAverage && !chartConfig.runningTotal && !options.listData
+            fitToBulk:
+                !dataset.isMovingAverage &&
+                !chartConfig.runningTotal &&
+                !options.listData &&
+                !options.booleanData
         })),
         referenceValues: referenceLineValues(referenceLines, chartData.labels.length),
         scale: chartConfig.scale,

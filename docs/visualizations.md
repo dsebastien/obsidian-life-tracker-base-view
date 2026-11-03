@@ -250,12 +250,12 @@ series has at least 8 values. Ordinary highs and lows stay on the scale.
 
 When most values are the same (10 minutes of meditation nearly every day), the
 middle half has no spread, so a second rule takes over: a value more than 10
-times the usual value, or less than a tenth of it, counts as far off. One typo
-of 1000 among your 10s no longer sets a 0 to 1000 axis. This rule needs a
-usual value above 0, so a habit you log as 0 on most days never turns its 1s
-into outliers. On a habit you do most days (mostly 1s), a 0 counts as far off
-too: it still shows in place on an axis that starts at 0, but keep that in
-mind before you leave outliers out of the average.
+times the usual value counts as far off. One typo of 1000 among your 10s no
+longer sets a 0 to 1000 axis. Low values never count as far off under this
+rule: a missed day or a short session is real data.
+
+Checkbox properties, and any series with only 0s and 1s, never have outliers:
+a yes/no habit is drawn and averaged exactly as logged.
 
 - The trend, the moving average, records, and CSV export use the real values,
   unless you switch **Leave outliers out of the average** to **On** in the
