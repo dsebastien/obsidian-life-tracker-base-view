@@ -509,6 +509,140 @@ describe('file name pattern with a note type', () => {
             )
         ).toBe(named)
     })
+
+    test('{{DATE}} in upper case is the date token, like when rendering', () => {
+        expect(nameFor(throughTheDay({ fileNamePattern: '{{DATE}} Gym' }))).toBe(
+            '2026-11-03 Gym (Strength Session).md'
+        )
+        expect(nameFor(throughTheDay({ fileNamePattern: '{{ Date }} Gym' }))).toBe(
+            '2026-11-03 Gym (Strength Session).md'
+        )
+        expect(
+            describeTargetIssues(throughTheDay({ fileNamePattern: '{{DATE}} Gym' }), STRENGTH_TYPE)
+        ).toEqual([])
+        const standalone = throughTheDay({
+            noteTypeId: '',
+            folder: 'Sessions',
+            fileNamePattern: '{{DATE}} (Workout)'
+        })
+        expect(nameFor(standalone, STRENGTH_TYPE)).toBe('2026-11-03 (Workout).md')
+    })
+})
+
+describe('typed prefix and suffix', () => {
+    /** The basename on Nov 3 for a type with these affixes */
+    function nameWith(pattern: string, prefix: string | null, suffix: string | null): string {
+        const noteType: StarterKitNoteType = {
+            ...STRENGTH_TYPE,
+            noteNamePrefix: prefix,
+            noteNameSuffix: suffix
+        }
+        const layout = describeTargetLayout(throughTheDay({ fileNamePattern: pattern }), noteType)
+        if (!isTargetLayout(layout)) throw new Error(layout)
+        const path = resolveFreeTargetPath(layout, NOV_3, () => false)?.path ?? ''
+        return path.slice(path.lastIndexOf('/') + 1, -'.md'.length)
+    }
+
+    test('a suffix is dropped only at a word boundary', () => {
+        expect(nameWith('{{date}} Backlog', null, ' Log')).toBe('2026-11-03 Backlog Log')
+        expect(nameWith('{{date}} Gym log', null, ' Log')).toBe('2026-11-03 Gym Log')
+        expect(nameWith('{{date}} Gym-Log', null, ' Log')).toBe('2026-11-03 Gym- Log')
+        expect(nameWith('{{date}}Log', null, ' Log')).toBe('2026-11-03 Log')
+        expect(nameWith('{{date}} Gym(Strength Session)', null, ' (Strength Session)')).toBe(
+            '2026-11-03 Gym (Strength Session)'
+        )
+    })
+
+    test('spaces before a dropped suffix are trimmed only when the suffix starts with one', () => {
+        expect(nameWith('{{date}} Gym _S', null, '_S')).toBe('2026-11-03 Gym _S')
+        expect(nameWith('{{date}} Gym_S', null, '_S')).toBe('2026-11-03 Gym_S')
+        expect(nameWith('{{date}} Gym   (Strength Session)', null, ' (Strength Session)')).toBe(
+            '2026-11-03 Gym (Strength Session)'
+        )
+    })
+
+    test('a typed prefix is not added twice', () => {
+        expect(nameWith('S {{date}}', 'S ', null)).toBe('S 2026-11-03')
+        expect(nameWith('s Gym {{date}}', 'S ', null)).toBe('S Gym 2026-11-03')
+        expect(nameWith('S{{date}}', 'S ', null)).toBe('S 2026-11-03')
+        expect(nameWith('S - {{date}}', 'S - ', ' (S)')).toBe('S - 2026-11-03 (S)')
+    })
+
+    test('a prefix is dropped only at a word boundary', () => {
+        expect(nameWith('Sauna {{date}}', 'S ', null)).toBe('S Sauna 2026-11-03')
+        expect(nameWith('Gym {{date}}', 'S ', null)).toBe('S Gym 2026-11-03')
+    })
+
+    test('spaces after a dropped prefix are trimmed only when the prefix ends with one', () => {
+        expect(nameWith('S_ Gym {{date}}', 'S_', null)).toBe('S_ Gym 2026-11-03')
+        expect(nameWith('S    {{date}}', 'S ', null)).toBe('S 2026-11-03')
+    })
+})
+
+describe('file name patterns capture would refuse', () => {
+    const standalone = (fileNamePattern: string): CaptureTarget =>
+        throughTheDay({ noteTypeId: '', folder: 'Sessions', fileNamePattern })
+
+    test.each([
+        ['a colon', '{{date}} 10:00'],
+        ['a question mark', '{{date}} Gym?'],
+        ['a pipe', '{{date}} Gym | AM'],
+        ['a hash', '{{date}} Gym #1'],
+        ['a star', '{{date}} Gym*'],
+        ['a caret', '{{date}} Gym ^1'],
+        ['brackets', '{{date}} [Gym]'],
+        ['an unknown token', '{{date}} {{time}}'],
+        ['a date format', '{{date:YYYY}} {{date}}']
+    ])('%s is listed under Problems and refused at capture', (_label, pattern) => {
+        for (const target of [throughTheDay({ fileNamePattern: pattern }), standalone(pattern)]) {
+            const issues = describeTargetIssues(target, STRENGTH_TYPE, NOV_3)
+            expect(issues).toEqual([
+                `Capture target "Through the day" does not give a valid note path. Check the file name pattern (and the folder) for unknown {{tokens}}, characters such as : ? | # * " < > [ ] ^, or a trailing dot.`
+            ])
+            const layout = describeTargetLayout(target, STRENGTH_TYPE)
+            if (!isTargetLayout(layout)) throw new Error(layout)
+            expect(resolveFreeTargetPath(layout, NOV_3, () => false)).toBeNull()
+        }
+    })
+
+    test('a trailing dot is refused for a standalone target', () => {
+        const target = standalone('{{date}} Gym.')
+        expect(describeTargetIssues(target, null, NOV_3)).toHaveLength(1)
+        // With a note type the suffix follows, so the name does not end with it
+        expect(
+            describeTargetIssues(
+                throughTheDay({ fileNamePattern: '{{date}} Gym.' }),
+                STRENGTH_TYPE,
+                NOV_3
+            )
+        ).toEqual([])
+    })
+
+    test('a pattern capture accepts has no problem', () => {
+        expect(describeTargetIssues(standalone('{{date}} (Workout)'), null, NOV_3)).toEqual([])
+        expect(
+            describeTargetIssues(
+                throughTheDay({ fileNamePattern: '{{date}} AM' }),
+                STRENGTH_TYPE,
+                NOV_3
+            )
+        ).toEqual([])
+    })
+
+    test.each(['{{year}}/{{date}}', '{{date}}/Gym', '{{date}}\\Gym'])(
+        'a folder separator in %s is its own problem',
+        (pattern) => {
+            expect(describeTargetLayout(standalone(pattern), null)).toBe('folder-in-file-name')
+            expect(describeTargetIssues(standalone(pattern), null, NOV_3)).toEqual([
+                'The file name pattern of capture target "Through the day" contains / or \\. A file name cannot hold folders: set them in the folder field.'
+            ])
+            const typed = throughTheDay({ fileNamePattern: pattern })
+            expect(describeTargetLayout(typed, STRENGTH_TYPE)).toBe('folder-in-file-name')
+            expect(describeTargetIssues(typed, STRENGTH_TYPE, NOV_3)).toEqual([
+                'The file name pattern of capture target "Through the day" contains / or \\. A file name cannot hold folders: the note type gives the folder.'
+            ])
+        }
+    )
 })
 
 describe('resolveFreeTargetPath', () => {

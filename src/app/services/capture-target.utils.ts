@@ -252,7 +252,11 @@ export interface TargetLayout {
 
 /** Why a target cannot be used */
 export type TargetLayoutError =
-    'missing-note-type' | 'missing-folder' | 'missing-file-name' | 'missing-date-token'
+    | 'missing-note-type'
+    | 'missing-folder'
+    | 'missing-file-name'
+    | 'missing-date-token'
+    | 'folder-in-file-name'
 
 /** The `{{date}}` token of a file name pattern (case-insensitive, like rendering) */
 const DATE_TOKEN = /\{\{\s*date\s*\}\}/i
@@ -262,28 +266,80 @@ function lacksDateToken(pattern: string): boolean {
     return pattern.trim().length > 0 && !DATE_TOKEN.test(pattern)
 }
 
+/** A folder separator: a file name pattern names a file, never folders */
+const FOLDER_SEPARATOR = /[/\\]/
+
+/** A letter or digit: text continuing a word, so not a boundary */
+const WORD_CHARACTER = /[\p{L}\p{N}]/u
+
+/** Whether a character is a word boundary: absent, or not a letter or digit */
+function isBoundary(character: string | undefined): boolean {
+    return character === undefined || !WORD_CHARACTER.test(character)
+}
+
+/**
+ * `tail` without a trailing copy of the type's suffix, typed by the user.
+ *
+ * Only a real copy is dropped (case-insensitive): the tail ends with the whole
+ * suffix, or with the trimmed suffix at a word boundary (preceded by nothing,
+ * a space or punctuation, or the suffix itself starts with punctuation). So
+ * suffix ` Log` drops ` log` from `Gym log` but leaves `Backlog` alone. The
+ * spaces left before the dropped copy are trimmed only when the suffix brings
+ * its own leading space: with suffix `_S`, `Gym _S` stays `Gym _S`.
+ */
+function dropTypedSuffix(tail: string, suffix: string): string {
+    const lowerTail = tail.toLowerCase()
+    const typed = suffix.trim()
+    let kept: string | null = null
+    if (suffix && lowerTail.endsWith(suffix.toLowerCase())) {
+        kept = tail.slice(0, tail.length - suffix.length)
+    } else if (typed && lowerTail.endsWith(typed.toLowerCase())) {
+        const before = tail.slice(0, tail.length - typed.length)
+        if (isBoundary(before.at(-1)) || isBoundary(typed[0])) kept = before
+    }
+    if (kept === null) return tail
+    return /^\s/.test(suffix) ? kept.trimEnd() : kept
+}
+
+/**
+ * `head` without a leading copy of the type's prefix, typed by the user: the
+ * mirror of `dropTypedSuffix`. Prefix `S ` drops the `S` of `S {{date}}` but
+ * leaves `Sauna {{date}}` alone.
+ */
+function dropTypedPrefix(head: string, prefix: string): string {
+    const lowerHead = head.toLowerCase()
+    const typed = prefix.trim()
+    let kept: string | null = null
+    if (prefix && lowerHead.startsWith(prefix.toLowerCase())) {
+        kept = head.slice(prefix.length)
+    } else if (typed && lowerHead.startsWith(typed.toLowerCase())) {
+        const after = head.slice(typed.length)
+        if (isBoundary(after[0]) || isBoundary(typed.at(-1))) kept = after
+    }
+    if (kept === null) return head
+    return /\s$/.test(prefix) ? kept.trimStart() : kept
+}
+
 /**
  * The text a Starter Kit target's own file name pattern puts around the date,
  * or null when the pattern is empty or has no `{{date}}` (the type's plain
  * `<prefix><date><suffix>` name is then used). The pattern is trimmed: the
- * type's affixes bring their own spacing. A trailing copy of the type's suffix
- * is dropped, so `{{date}} Gym (Strength Session)` does not end up with the
- * suffix twice.
+ * type's affixes bring their own spacing. A typed copy of the type's prefix
+ * or suffix is dropped, so it never appears twice.
  */
 function splitNoteTypePattern(
     pattern: string,
+    prefix: string,
     suffix: string
 ): { head: string; tail: string } | null {
     const trimmed = pattern.trim()
     const dateToken = DATE_TOKEN.exec(trimmed)
     if (!dateToken) return null
     const split = dateToken.index + dateToken[0].length
-    let tail = trimmed.slice(split)
-    const typedSuffix = suffix.trim()
-    if (typedSuffix && tail.toLowerCase().endsWith(typedSuffix.toLowerCase())) {
-        tail = tail.slice(0, tail.length - typedSuffix.length).trimEnd()
+    return {
+        head: dropTypedPrefix(trimmed.slice(0, split), prefix),
+        tail: dropTypedSuffix(trimmed.slice(split), suffix)
     }
-    return { head: trimmed.slice(0, split), tail }
 }
 
 /**
@@ -311,7 +367,8 @@ export function describeTargetLayout(
         if (!folder) return 'missing-folder'
         const prefix = noteType.noteNamePrefix ?? ''
         const suffix = noteType.noteNameSuffix ?? ''
-        const own = splitNoteTypePattern(target.fileNamePattern, suffix)
+        const own = splitNoteTypePattern(target.fileNamePattern, prefix, suffix)
+        if (own && FOLDER_SEPARATOR.test(target.fileNamePattern)) return 'folder-in-file-name'
         return {
             folder,
             head: `${prefix}${own?.head ?? '{{date}}'}`,
@@ -325,6 +382,7 @@ export function describeTargetLayout(
     if (!folder) return 'missing-folder'
     const pattern = target.fileNamePattern
     if (!pattern.trim()) return 'missing-file-name'
+    if (FOLDER_SEPARATOR.test(pattern)) return 'folder-in-file-name'
 
     // The counter goes right after the date, as Starter Kit names do
     // (`<date> 2 (…)`); a name without the date could never be told apart
@@ -358,22 +416,40 @@ export function describeLayoutError(error: TargetLayoutError, target: CaptureTar
             return `Capture target "${target.name}" has no file name pattern.`
         case 'missing-date-token':
             return `The file name pattern of capture target "${target.name}" needs {{date}}.`
+        case 'folder-in-file-name':
+            return target.noteTypeId
+                ? `The file name pattern of capture target "${target.name}" contains / or \\. A file name cannot hold folders: the note type gives the folder.`
+                : `The file name pattern of capture target "${target.name}" contains / or \\. A file name cannot hold folders: set them in the folder field.`
     }
 }
 
 /**
+ * Why a usable layout still gives no valid path, for the settings page and
+ * capture alike: an unknown `{{token}}` (`{{time}}`, `{{date:YYYY}}`), a
+ * character a file name cannot hold, or a trailing dot
+ */
+export function describeInvalidPath(target: CaptureTarget): string {
+    return `Capture target "${target.name}" does not give a valid note path. Check the file name pattern (and the folder) for unknown {{tokens}}, characters such as : ? | # * " < > [ ] ^, or a trailing dot.`
+}
+
+/**
  * What is wrong with a target, for the settings page: a setup that makes it
- * unusable, and match filter rows that are incomplete and therefore ignored.
- * Empty when the target is fine.
+ * unusable (including a name that capture would refuse for `date`), and match
+ * filter rows that are incomplete and therefore ignored. Empty when the target
+ * is fine.
  */
 export function describeTargetIssues(
     target: CaptureTarget,
-    noteType: StarterKitNoteType | null
+    noteType: StarterKitNoteType | null,
+    date: Date = new Date()
 ): string[] {
     const issues: string[] = []
     const layout = describeTargetLayout(target, noteType)
     if (!isTargetLayout(layout)) issues.push(describeLayoutError(layout, target))
-    else if (target.noteTypeId && lacksDateToken(target.fileNamePattern)) {
+    else if (resolveFreeTargetPath(layout, date, () => false) === null) {
+        // What capture would refuse: say so before the first capture does
+        issues.push(describeInvalidPath(target))
+    } else if (target.noteTypeId && lacksDateToken(target.fileNamePattern)) {
         // Usable, but the pattern is ignored: say so, as standalone mode does
         issues.push(
             `${describeLayoutError('missing-date-token', target)} Until then, the note type name is used.`
@@ -397,6 +473,13 @@ export function renderTargetFolder(layout: TargetLayout, date: Date): string | n
     return folder.replace(/^\/+|\/+$/g, '')
 }
 
+/**
+ * Characters that break a link to the note (`[[a#b]]` names a heading of `a`).
+ * Refused in a target note's name: the note would be created but could not be
+ * linked, and Obsidian refuses to rename a note to such a name.
+ */
+const LINK_BREAKING_CHARS = /[#^[\]|]/
+
 /** Largest counter tried before giving up on a free name */
 const MAX_NAME_ATTEMPTS = 100
 
@@ -406,8 +489,9 @@ const MAX_NAME_ATTEMPTS = 100
  * never reused: it may be a different note of the same type (a Garmin gym
  * session on the same day as the through-the-day session).
  *
- * Null when the layout cannot be rendered to a safe path, or no free name is
- * found.
+ * Null when the layout cannot be rendered to a safe path (unknown token,
+ * illegal or link-breaking character, a name ending in a dot), or no free name
+ * is found.
  */
 export function resolveFreeTargetPath(
     layout: TargetLayout,
@@ -420,6 +504,10 @@ export function resolveFreeTargetPath(
     const head = renderDateTokens(layout.head, date, { preserveWhitespace: true })
     const tail = renderDateTokens(layout.tail, date, { preserveWhitespace: true })
     if (head === null || tail === null) return null
+    if (LINK_BREAKING_CHARS.test(`${head}${tail}`)) return null
+    // `Gym..md` is a legal path, but a name ending in a dot is one Windows
+    // tools and sync clients mangle: refuse it as folder names already are
+    if (`${head}${tail}`.endsWith('.')) return null
 
     for (let counter = 1; counter <= MAX_NAME_ATTEMPTS; counter++) {
         const basename = counter === 1 ? `${head}${tail}` : `${head} ${counter}${tail}`

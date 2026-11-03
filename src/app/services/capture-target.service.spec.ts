@@ -5,6 +5,7 @@ import {
     type CaptureTargetHost,
     type TargetFileLike
 } from './capture-target.service'
+import { describeTargetIssues } from './capture-target.utils'
 
 const TYPE_ID = 'nt-strength'
 const FOLDER = 'Sessions/Strength/2026'
@@ -217,6 +218,23 @@ describe('planCreation', () => {
             templatePath: null,
             mandatoryTags: [],
             source: 'capture-target'
+        })
+    })
+
+    test('refuses a name the settings page lists as a problem, with the same message', () => {
+        const target = { ...TARGET, fileNamePattern: '{{date}} {{time}}' }
+        const result = service([]).service.planCreation(target, NOV_3)
+        const [problem] = describeTargetIssues(target, STRENGTH_TYPE, NOV_3)
+        expect(problem).toContain('does not give a valid note path')
+        expect(result).toEqual({ ok: false, error: problem ?? '' })
+    })
+
+    test('refuses a folder in the file name, with the Problems message', () => {
+        const target = { ...TARGET, fileNamePattern: '{{year}}/{{date}}' }
+        const result = service([]).service.planCreation(target, NOV_3)
+        expect(result).toEqual({
+            ok: false,
+            error: describeTargetIssues(target, STRENGTH_TYPE, NOV_3)[0] ?? ''
         })
     })
 })

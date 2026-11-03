@@ -26,6 +26,14 @@ export function parseTagField(text: string): string[] {
         .filter((tag) => tag.length > 0)
 }
 
+/** Description of the File name field, for a target with or without a note type */
+export function fileNameFieldDescription(target: Pick<CaptureTarget, 'noteTypeId'>): string {
+    const formats = 'Date formats such as {{date:YYYY}} are not supported.'
+    return target.noteTypeId
+        ? `Optional. Name of a new note, without .md: the text around {{date}}. The note type adds its prefix and suffix. Empty: the note type's usual name. ${formats} When the name is taken, a number is added after the date.`
+        : `Name of a new note, without .md. Use {{date}} for the date; folders go in the folder field. ${formats} When the name is taken, a number is added after the date.`
+}
+
 /**
  * The "Capture targets" settings page: named destinations other than the
  * daily note (see `documentation/plans/capture-targets.md`).
@@ -125,10 +133,15 @@ export class CaptureTargetSection {
 
         this.renderNoteType(card, target)
 
+        // Problems are drawn last; the file name field re-checks them on blur
+        const problems = { refresh: (): void => undefined }
+        const refreshProblems = (): void => {
+            problems.refresh()
+        }
         if (target.noteTypeId) {
-            this.renderFileNameField(card, target)
+            this.renderFileNameField(card, target, refreshProblems)
         } else {
-            this.renderStandaloneFields(card, target)
+            this.renderStandaloneFields(card, target, refreshProblems)
         }
 
         new Setting(card)
@@ -165,8 +178,18 @@ export class CaptureTargetSection {
             })
 
         this.renderFilters(card, target)
-        this.renderIssues(card, target)
-        this.renderUsage(card, target)
+        let issuesEl = this.renderIssues(card, target)
+        const usageEl = this.renderUsage(card, target)
+        problems.refresh = (): void => {
+            const latest = this.plugin.settings.captureTargets.find(
+                (candidate) => candidate.id === target.id
+            )
+            if (!latest) return
+            const next = this.renderIssues(card, latest)
+            if (next) usageEl.before(next)
+            issuesEl?.remove()
+            issuesEl = next
+        }
     }
 
     private renderNoteType(container: HTMLElement, target: CaptureTarget): void {
@@ -206,7 +229,11 @@ export class CaptureTargetSection {
             })
     }
 
-    private renderStandaloneFields(container: HTMLElement, target: CaptureTarget): void {
+    private renderStandaloneFields(
+        container: HTMLElement,
+        target: CaptureTarget,
+        onFileNameCommitted: () => void
+    ): void {
         new Setting(container)
             .setName('Folder')
             .setDesc(
@@ -220,10 +247,12 @@ export class CaptureTargetSection {
                             t.folder = value.trim()
                         })
                     })
+                // The folder is part of the path Problems checks
+                text.inputEl.addEventListener('blur', onFileNameCommitted)
                 new FolderSuggest(text.inputEl, this.app)
             })
 
-        this.renderFileNameField(container, target)
+        this.renderFileNameField(container, target, onFileNameCommitted)
 
         new Setting(container)
             .setName('Tags')
@@ -243,16 +272,18 @@ export class CaptureTargetSection {
 
     /**
      * The file name pattern. With a note type it only sets the text around
-     * the date: the type adds its prefix and suffix
+     * the date: the type adds its prefix and suffix. Problems are re-checked
+     * when the field loses focus, not per keystroke, and only they are
+     * redrawn: a page redraw would steal the focus from the next field
      */
-    private renderFileNameField(container: HTMLElement, target: CaptureTarget): void {
+    private renderFileNameField(
+        container: HTMLElement,
+        target: CaptureTarget,
+        onCommitted: () => void
+    ): void {
         new Setting(container)
             .setName('File name')
-            .setDesc(
-                target.noteTypeId
-                    ? 'Optional. Name of a new note, without .md: the text around {{date}}. The note type adds its prefix and suffix. Empty: the date only. When the name is taken, a number is added after the date.'
-                    : 'Name of a new note, without .md. Use {{date}} for the date. When the name is taken, a number is added after the date.'
-            )
+            .setDesc(fileNameFieldDescription(target))
             .addText((text) => {
                 text.setPlaceholder(
                     target.noteTypeId ? '{{date}} Through the day' : '{{date}} (Workout)'
@@ -263,6 +294,7 @@ export class CaptureTargetSection {
                             t.fileNamePattern = value
                         })
                     })
+                text.inputEl.addEventListener('blur', onCommitted)
             })
     }
 
@@ -322,35 +354,37 @@ export class CaptureTargetSection {
     }
 
     /**
-     * Problems with the target (unusable setup, incomplete filter rows),
-     * checked when the page is drawn
+     * Problems with the target (unusable setup, a name capture would refuse,
+     * incomplete filter rows), checked when the page is drawn and when the
+     * file name or folder field loses focus. Returns the element, if any
      */
-    private renderIssues(container: HTMLElement, target: CaptureTarget): void {
+    private renderIssues(container: HTMLElement, target: CaptureTarget): HTMLElement | null {
         const noteType = target.noteTypeId
             ? (this.plugin.starterKit
                   .listNoteTypes()
                   .find((candidate) => candidate.id === target.noteTypeId) ?? null)
             : null
         const issues = describeTargetIssues(target, noteType)
-        if (issues.length === 0) return
+        if (issues.length === 0) return null
 
         const desc = new DocumentFragment()
         for (const issue of issues) desc.createDiv({ text: issue })
         const setting = new Setting(container).setName('Problems').setDesc(desc)
         setting.settingEl.addClass('lt-capture-target-issues')
+        return setting.settingEl
     }
 
     /** Which properties go to this target, so the setup can be checked here */
-    private renderUsage(container: HTMLElement, target: CaptureTarget): void {
+    private renderUsage(container: HTMLElement, target: CaptureTarget): HTMLElement {
         const { propertyDefinitions, captureTargets } = this.plugin.settings
         const using = definitionsForDestination(propertyDefinitions, captureTargets, target)
         const names = using.map((definition) => definition.displayName || definition.name)
-        new Setting(container)
+        return new Setting(container)
             .setName('Properties')
             .setDesc(
                 names.length > 0
                     ? names.join(', ')
                     : 'No property uses this target yet. Pick it in a property\'s "Capture into" setting.'
-            )
+            ).settingEl
     }
 }

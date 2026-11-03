@@ -5,6 +5,7 @@ import {
     buildCreationFrontmatter,
     isOfTargetType,
     readFrontmatterTags,
+    describeInvalidPath,
     describeLayoutError,
     describeTargetLayout,
     isTargetLayout,
@@ -230,9 +231,14 @@ export class CaptureTargetService<F extends TargetFileLike> {
             (path) => this.app.vault.getFileByPath(path) !== null
         )
         if (!resolved) {
+            // Invalid whatever the vault holds (the settings page lists the same
+            // problem), or every counter is taken
+            const invalid = resolveFreeTargetPath(layout, date, () => false) === null
             return {
                 ok: false,
-                error: `Could not work out a valid, free file name for capture target "${target.name}".`
+                error: invalid
+                    ? describeInvalidPath(target)
+                    : `Could not find a free file name for capture target "${target.name}".`
             }
         }
 
