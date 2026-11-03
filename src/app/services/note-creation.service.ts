@@ -1,4 +1,4 @@
-import type { App, EventRef } from 'obsidian'
+import type { App, EventRef, Events } from 'obsidian'
 import { folderAncestry, log } from '../../utils'
 import {
     TEMPLATER_PLUGIN_ID,
@@ -31,6 +31,27 @@ const TEMPLATE_SETTLE_TIMEOUT_MS = 15000
  */
 const METADATA_SETTLE_TIMEOUT_MS = 3000
 
+/**
+ * How long Templater's creation hook is kept away from a note created through
+ * `create_new_note_from_template`, counted from the call.
+ *
+ * Templater 2.26 marks the file as its own (`files_with_pending_templates`)
+ * only while the template runs, but its creation hook waits 300 ms after the
+ * vault's create event before checking that mark. A template that finishes
+ * sooner leaves the file unmarked at the check, and the hook then templates it
+ * a second time (a folder template on an empty body) or re-parses and
+ * rewrites it, losing a frontmatter write made in between. Keeping the mark
+ * well past the check makes the hook return.
+ */
+const TEMPLATER_HOOK_HOLD_MS = 700
+
+/**
+ * Without access to Templater's pending set, wait for its hook instead: past
+ * its 300 ms delay, then for its "all templates executed" event, bounded.
+ */
+const TEMPLATER_HOOK_DELAY_MS = 350
+const TEMPLATER_HOOK_FALLBACK_TIMEOUT_MS = 2000
+
 /** The bits of the Templater plugin instance this service uses */
 interface TemplaterPluginInstance {
     templater?: {
@@ -40,6 +61,8 @@ interface TemplaterPluginInstance {
             filename?: string,
             openNewNote?: boolean
         ) => Promise<VaultPath | undefined>
+        /** Paths Templater is templating itself; its creation hook skips them */
+        files_with_pending_templates?: Set<string>
     }
     settings?: TemplaterAutoFireSettings
 }
@@ -68,6 +91,8 @@ export interface NoteCreationHost {
         offref(ref: EventRef): void
     }
     plugins?: App['plugins']
+    /** For Templater's custom events; only the fallback wait listens to it */
+    workspace?: Events
 }
 
 /** The one thing this service reads from a cached metadata entry */
@@ -125,7 +150,16 @@ export class NoteCreationService {
     constructor(
         private readonly app: NoteCreationHost,
         private readonly settleTimeoutMs: number = TEMPLATE_SETTLE_TIMEOUT_MS,
-        private readonly metadataTimeoutMs: number = METADATA_SETTLE_TIMEOUT_MS
+        private readonly metadataTimeoutMs: number = METADATA_SETTLE_TIMEOUT_MS,
+        private readonly hookTiming: {
+            holdMs: number
+            delayMs: number
+            fallbackTimeoutMs: number
+        } = {
+            holdMs: TEMPLATER_HOOK_HOLD_MS,
+            delayMs: TEMPLATER_HOOK_DELAY_MS,
+            fallbackTimeoutMs: TEMPLATER_HOOK_FALLBACK_TIMEOUT_MS
+        }
     ) {}
 
     /** The Templater plugin instance, or null when absent or disabled */
@@ -261,12 +295,14 @@ export class NoteCreationService {
         }
 
         if (templateFile) {
-            // Templater's own creation hook skips files it is creating itself,
-            // and `create_new_note_from_template` has written the template
-            // before it resolves. Nothing to wait for.
+            // `create_new_note_from_template` has written the template before
+            // it resolves, but Templater's own creation hook may still be
+            // waiting to check the file: keep it away (see the hold constant)
+            const startedAt = Date.now()
             const result = await this.createFromTemplate(templateFile, path, folder)
             if (!result) return null
             const { file: created, templated } = result
+            if (templated) await this.keepTemplaterHookAway(created.path, startedAt)
             if (created.path !== path) {
                 // Templater picks an available path, so a file appearing between
                 // the check above and here yields a numbered sibling rather than
@@ -297,6 +333,45 @@ export class NoteCreationService {
         }
 
         return { path: created.path, created: true }
+    }
+
+    /**
+     * Stop Templater's creation hook from processing a note Templater has just
+     * created for us. Preferred: mark the path as pending until well past the
+     * hook's check, so the hook returns. Fallback, when that set is not
+     * reachable: wait until the hook has run and Templater reports idle.
+     */
+    private async keepTemplaterHookAway(path: string, startedAt: number): Promise<void> {
+        const pending = this.getTemplater()?.templater?.files_with_pending_templates
+        if (pending instanceof Set) {
+            if (pending.has(path)) return // Templater still owns it
+            pending.add(path)
+            const remaining = Math.max(0, startedAt + this.hookTiming.holdMs - Date.now())
+            window.setTimeout(() => pending.delete(path), remaining)
+            return
+        }
+
+        const delay = Math.max(0, startedAt + this.hookTiming.delayMs - Date.now())
+        await new Promise<void>((resolve) => window.setTimeout(resolve, delay))
+        await this.waitForTemplaterIdle()
+    }
+
+    /** Resolve on Templater's "all templates executed" event, or after a bound */
+    private waitForTemplaterIdle(): Promise<void> {
+        const workspace = this.app.workspace
+        if (!workspace) return Promise.resolve()
+        return new Promise<void>((resolve) => {
+            let settled = false
+            const finish = (): void => {
+                if (settled) return
+                settled = true
+                workspace.offref(eventRef)
+                window.clearTimeout(timer)
+                resolve()
+            }
+            const eventRef = workspace.on('templater:all-templates-executed', finish)
+            const timer = window.setTimeout(finish, this.hookTiming.fallbackTimeoutMs)
+        })
     }
 
     /**

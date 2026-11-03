@@ -51,6 +51,8 @@ function createApp(
         createFolderThrows?: boolean
         /** Paths the metadata cache has already indexed, with frontmatter */
         indexedFiles?: string[]
+        /** Templater's set of files it is templating itself; absent = not reachable */
+        pendingTemplates?: Set<string>
     } = {}
 ): { app: NoteCreationHost; state: VaultState } {
     const {
@@ -61,7 +63,8 @@ function createApp(
         templaterCreate,
         createThrows = false,
         createFolderThrows = false,
-        indexedFiles = []
+        indexedFiles = [],
+        pendingTemplates
     } = options
 
     const makeFile = (path: string): VaultPath => ({ path })
@@ -80,6 +83,7 @@ function createApp(
     const templaterInstance = {
         settings: templaterSettings,
         templater: {
+            files_with_pending_templates: pendingTemplates,
             create_new_note_from_template: mock(async (...args: unknown[]) => {
                 templaterCalls.push(args)
                 if (!templaterCreate) {
@@ -477,5 +481,55 @@ describe('failures', () => {
         )
 
         expect(outcome).toBeNull()
+    })
+})
+
+describe("Templater's creation hook after a fast template (review #1)", () => {
+    // Templater checks its pending set 300 ms after the create event; a
+    // template that finished sooner has already left the set
+    const HOOK = { holdMs: 40, delayMs: 10, fallbackTimeoutMs: 15 }
+
+    test('the new note stays marked as pending past the hook check, then is released', async () => {
+        const pending = new Set<string>()
+        const { app, state } = createApp({
+            templaterEnabled: true,
+            templaterSettings: { trigger_on_file_creation: false },
+            pendingTemplates: pending,
+            indexedFiles: [TARGET_PATH]
+        })
+
+        const outcome = await new NoteCreationService(app, 5, 5, HOOK).ensureNote(resolution())
+
+        expect(outcome?.created).toBe(true)
+        expect(state.templaterCalls).toHaveLength(1)
+        expect(pending.has(TARGET_PATH)).toBe(true)
+        await new Promise((resolve) => window.setTimeout(resolve, 60))
+        expect(pending.has(TARGET_PATH)).toBe(false)
+    })
+
+    test('a path Templater itself still holds is left to Templater', async () => {
+        const pending = new Set<string>([TARGET_PATH])
+        const { app } = createApp({
+            templaterEnabled: true,
+            templaterSettings: { trigger_on_file_creation: false },
+            pendingTemplates: pending,
+            indexedFiles: [TARGET_PATH]
+        })
+
+        await new NoteCreationService(app, 5, 5, HOOK).ensureNote(resolution())
+        await new Promise((resolve) => window.setTimeout(resolve, 60))
+        expect(pending.has(TARGET_PATH)).toBe(true)
+    })
+
+    test('without the pending set, creation waits past the hook delay', async () => {
+        const { app } = createApp({
+            templaterEnabled: true,
+            templaterSettings: { trigger_on_file_creation: false },
+            indexedFiles: [TARGET_PATH]
+        })
+
+        const startedAt = Date.now()
+        await new NoteCreationService(app, 5, 5, HOOK).ensureNote(resolution())
+        expect(Date.now() - startedAt).toBeGreaterThanOrEqual(HOOK.delayMs)
     })
 })
