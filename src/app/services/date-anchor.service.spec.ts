@@ -211,6 +211,19 @@ describe('DateAnchorService', () => {
             expect(result!.source.type).toBe('property')
         })
 
+        test('the automatic chain dates a session note from its date property', () => {
+            const entry = makeEntry('2026-11-03 2 (Strength Session)', {
+                getValue: (id) => (id === 'note.date' ? '2026-11-03' : null),
+                ctime: new Date('2026-12-01').getTime()
+            })
+            const result = service.resolveAnchor(entry)
+            expect(result?.source).toEqual({
+                type: 'property',
+                propertyId: 'note.date' as BasesPropertyId
+            })
+            expect(result?.date.getDate()).toBe(3)
+        })
+
         test('lower-priority source is last resort fallback', () => {
             const CTIME = new Date('2023-07-04').getTime()
             const entry = makeEntry('my-note', { ctime: CTIME })
