@@ -188,10 +188,10 @@ The link writes into the property's note for that day: the daily note, or the
 note of its [capture target](#capture-targets). Your links don't change. Once
 push-ups go to the day's strength session, the same push-ups link writes there.
 
-`append` adds one entry at the end of a list (or tags) property, and is refused
-on any other type. The entries already in the list are kept as they are. Any
-non-empty value is added, `append=true` included. I use it for sets: one entry per set, written as
-`reps@weight`. One set of 12 reps at 60 kg on a list property `leg_press`:
+`append` adds one entry at the end of a list (or tags) property and leaves the
+entries already there as they are. It's refused on any other type. Any
+non-empty value is added, even `append=true`. I use it for sets: one entry per
+set, written as `reps@weight`. One set of 12 reps at 60 kg on a list property `leg_press`:
 
 ```
 obsidian://life-tracker-quick-add?property=leg_press&append=12@60
@@ -226,7 +226,7 @@ Set targets up in **Settings → Life Tracker → Capture targets**. Each target
 | Date property | The property that holds the date of the note (`date` by default)                                                                                                          |
 | Match filter  | `property = value` pairs a note must have, for example `workout_kind` = `Through the day`. All of them must match. A row without a property or without a value is ignored |
 
-Under the fields, **Problems** lists what is wrong with the target, if
+Under the fields, **Problems** tells you what's wrong with the target, if
 anything: a missing folder, a file name without `{{date}}`, or an incomplete
 match filter row. **Properties** lists the properties that go to the target
 right now. The **Name** row shows the target's command and its id, which you
@@ -260,8 +260,8 @@ its subfolders. A note is the target's note when:
    list property, one item is enough);
 3. its date property holds that day: `2026-11-03`, a date and time on that day
    (`2026-11-03T08:15`), or a link to that day's note (`[[2026-11-03]]`). When
-   the date property is empty or holds something else, the date in the file
-   name is used (a filename date pattern, or a name that starts with
+   the date property is empty or holds something else, the plugin uses the
+   date in the file name (a filename date pattern, or a name that starts with
    `YYYY-MM-DD`).
 
 If several notes match, the most recently modified one wins. A different note
@@ -269,12 +269,13 @@ of the same type on the same day is never used. The match filter keeps them
 apart: my Garmin gym sessions have no `workout_kind: Through the day`, so they
 never receive the push-ups.
 
-Before offering to create a note, the plugin also reads from disk the notes of
-that folder that could be the one: a name with that day's date, a note
-Obsidian has not indexed, or a note changed in the last 10 minutes. So a note
-Obsidian hasn't indexed yet is never created twice. And if you tap twice while
-the note is being created, both taps go into the same note, and both count:
-two `increment=10` taps make 20.
+Before offering to create a note, the plugin also checks the disk. It reads the
+notes of that folder that could be the one: a name with that day's date, a note
+Obsidian hasn't indexed, or a note changed in the last 10 minutes. That way, a
+note Obsidian hasn't indexed yet is never created twice.
+
+Tap twice while the note is being created? Both taps go into the same note, and
+both count: two `increment=10` taps make 20.
 
 Properties that go to a target are written into the target's note without
 checking their **Note filtering**: the target decides where they go.
@@ -291,9 +292,9 @@ confirmation.
   it can be another note of the same type. The next free name is taken, with a
   number right after the date (`2026-11-03 2 (Strength Session)`).
 - Before asking, the plugin checks that it would find the new note again. If
-  the note type's filters would not match it (for example a regex filter that
-  the number after the date breaks), or the note would have no date, it does
-  not create it and says why.
+  the note type's filters wouldn't match it (for example a regex filter that
+  the number after the date breaks), or the note would have no date, it
+  doesn't create it and tells you why.
 - The note is created in its final folder with its final name, then the
   template runs through Templater, so the template sees the date in the title.
   The template is the target's, else the note type's. Life Tracker applies it
@@ -301,12 +302,12 @@ confirmation.
   folder template does not run on this note.
 - Then the plugin writes the date property, every match filter value and the
   note type's (or target's) tags into the note. A date the template already
-  wrote for that day (`2026-11-03T08:15`, `[[2026-11-03]]`) is kept as it is.
-  Templater is kept from processing the note a second time, so these values
-  are not overwritten.
-- If the plugin still does not recognize the new note after that (for example
-  because its template moved it to another folder), a notice says so: the next
-  capture would not find it.
+  wrote for that day (`2026-11-03T08:15`, `[[2026-11-03]]`) stays as it is.
+  The plugin keeps Templater from processing the note a second time, so it
+  can't overwrite these values.
+- If the plugin still doesn't recognize the new note after that (for example
+  because its template moved it to another folder), a notice tells you: the
+  next capture wouldn't find it.
 - **Without Templater** (or when the template fails or is missing), the note is
   created empty and still gets the date property, the filter values and the
   tags. So it is found again, and it shows up in your views.
