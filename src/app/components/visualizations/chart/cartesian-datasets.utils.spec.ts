@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test'
-import type { BasesPropertyId } from 'obsidian'
 import {
     buildCartesianModel,
     datasetsToggledWith,
@@ -33,7 +32,7 @@ const paces = [372, 380, 385, 390, 377, 49997, 395, 388, 383, 379, 391]
 function chartData(...datasets: ChartDataset[]): ChartData {
     const length = datasets[0]?.data.length ?? 0
     return {
-        propertyId: 'note.pace' as BasesPropertyId,
+        propertyId: 'note.pace',
         displayName: 'Pace',
         labels: Array.from({ length }, (_, i) => `Day ${i + 1}`),
         datasets
