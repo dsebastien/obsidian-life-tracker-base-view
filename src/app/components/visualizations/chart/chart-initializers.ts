@@ -22,7 +22,9 @@ import {
     prefersReducedMotion,
     formatValueWithEmoji,
     formatValue,
-    isDurationFormat
+    isDurationFormat,
+    maxOf,
+    minOf
 } from '../../../../utils'
 import type { Chart as ChartJsChart, Plugin, ScaleOptions } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
@@ -259,11 +261,11 @@ export function referenceLineBounds(
     return {
         suggestedMin:
             startValues.length > 0 && chartConfig.scale?.min == null
-                ? Math.min(...startValues, ...endValues)
+                ? minOf([...startValues, ...endValues])
                 : undefined,
         suggestedMax:
             endValues.length > 0 && chartConfig.scale?.max == null
-                ? Math.max(...startValues, ...endValues)
+                ? maxOf([...startValues, ...endValues])
                 : undefined
     }
 }

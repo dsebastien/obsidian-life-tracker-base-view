@@ -1,5 +1,5 @@
 import type { ChartJsType, OutlierMode, ScaleConfig, ValueFormat } from '../../../types'
-import { axisStep, isDurationFormat } from '../../../../utils'
+import { axisStep, isDurationFormat, maxOf, minOf } from '../../../../utils'
 import { computeOutlierFences, type OutlierFences } from '../../../services/outlier.utils'
 
 /**
@@ -119,8 +119,9 @@ export function planYAxis(input: YAxisPlanInput): YAxisPlan {
     if (beginAtZero) candidates.push(0)
     if (candidates.length === 0) return { data, clamped }
 
-    const lo = scale?.min ?? Math.min(...candidates)
-    const hi = scale?.max ?? Math.max(...candidates)
+    // Folds, not spreads: a spread overflows the stack on long series
+    const lo = scale?.min ?? minOf(candidates) ?? 0
+    const hi = scale?.max ?? maxOf(candidates) ?? 0
 
     return { data, clamped, stepSize: axisStep(hi - lo, valueFormat) }
 }
@@ -149,8 +150,8 @@ function fitToBulk(input: YAxisPlanInput): YAxisPlan | null {
     if (beginAtZero) candidates.push(0)
     if (candidates.length === 0) return null
 
-    const lo = Math.min(...candidates)
-    const hi = Math.max(...candidates)
+    const lo = minOf(candidates) ?? 0
+    const hi = maxOf(candidates) ?? 0
     const step = axisStep(hi - lo, valueFormat)
     const min = roundToStep(Math.floor(lo / step) * step, step)
     let max = roundToStep(Math.ceil(hi / step) * step, step)

@@ -1,4 +1,12 @@
-import { addDays, addMonths, addYears, startOfDay, startOfMonth, startOfYear } from 'date-fns'
+import {
+    addDays,
+    addMonths,
+    addYears,
+    differenceInCalendarDays,
+    startOfDay,
+    startOfMonth,
+    startOfYear
+} from 'date-fns'
 import { startOfWeek } from '../../../../utils'
 
 /**
@@ -41,16 +49,43 @@ export interface DateTicks {
     format: string
 }
 
+/**
+ * Calendar origin multi-day and multi-week steps count from (local
+ * 1970-01-01): every chart puts its 2-day ticks on the same days
+ */
+const TICK_ORIGIN = new Date(1970, 0, 1)
+
+/** Modulo that stays positive for days before the origin */
+function positiveModulo(value: number, divisor: number): number {
+    return ((value % divisor) + divisor) % divisor
+}
+
 /** First tick of a unit at or after `min` */
 function firstTick(min: Date, unit: TickUnit): Date {
     switch (unit.kind) {
         case 'day': {
-            const day = startOfDay(min)
-            return day.getTime() < min.getTime() ? addDays(day, 1) : day
+            let day = startOfDay(min)
+            if (day.getTime() < min.getTime()) day = addDays(day, 1)
+            // Anchor multi-day steps to a fixed calendar origin, so ticks do
+            // not shift when an earlier note is added
+            while (positiveModulo(differenceInCalendarDays(day, TICK_ORIGIN), unit.step) !== 0) {
+                day = addDays(day, 1)
+            }
+            return day
         }
         case 'week': {
-            const week = startOfWeek(min)
-            return week.getTime() < min.getTime() ? addDays(week, 7) : week
+            let week = startOfWeek(min)
+            if (week.getTime() < min.getTime()) week = addDays(week, 7)
+            const originWeek = startOfWeek(TICK_ORIGIN)
+            while (
+                positiveModulo(
+                    Math.round(differenceInCalendarDays(week, originWeek) / 7),
+                    unit.step
+                ) !== 0
+            ) {
+                week = addDays(week, 7)
+            }
+            return week
         }
         case 'month': {
             let month = startOfMonth(min)

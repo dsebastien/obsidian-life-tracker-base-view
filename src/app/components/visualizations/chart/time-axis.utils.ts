@@ -1,4 +1,5 @@
 import type { ChartData } from '../../../types'
+import { maxOf, minOf } from '../../../../utils'
 
 /**
  * Geometry of the date-per-note x-axis (3.4.0): a linear scale over epoch-ms
@@ -15,16 +16,11 @@ export const TIME_AXIS_EDGE_PADDING = 0.02
 export const TIME_AXIS_MIN_BAR_THICKNESS = 3
 export const TIME_AXIS_MAX_BAR_THICKNESS = 16
 
-/** Smallest and largest value, with a loop: a spread would overflow the stack on long series */
+/** Smallest and largest value, folded: a spread would overflow the stack on long series */
 export function extent(values: readonly number[]): { min: number; max: number } | undefined {
-    if (values.length === 0) return undefined
-    let min = Number.POSITIVE_INFINITY
-    let max = Number.NEGATIVE_INFINITY
-    for (const value of values) {
-        if (value < min) min = value
-        if (value > max) max = value
-    }
-    return { min, max }
+    const min = minOf(values)
+    const max = maxOf(values)
+    return min === undefined || max === undefined ? undefined : { min, max }
 }
 
 /**

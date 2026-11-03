@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { format } from 'date-fns'
 import { buildDateTicks } from './date-ticks.utils'
+import { timeAxisBounds } from './time-axis.utils'
 
 /** Local-midnight epoch ms for a calendar day */
 function day(year: number, month: number, date: number): number {
@@ -73,9 +74,27 @@ describe('buildDateTicks (3.4.0)', () => {
         expect(ticks.values[0]).toBe(day(2025, 6, 21))
     })
 
-    test('a single day gets one tick', () => {
+    test('a single day, as the axis really pads it, gets one tick on that day', () => {
+        // Every note on one day: the axis spans that midnight ± half a day
+        const bounds = timeAxisBounds([day(2025, 6, 24)])
+        const ticks = buildDateTicks(bounds.min, bounds.max, 10)
+        expect(ticks.values).toEqual([day(2025, 6, 24)])
+        expect(ticks.format).toBe('MMM d')
+    })
+
+    test('a degenerate zero-width span still gets a tick', () => {
         const ticks = buildDateTicks(day(2025, 6, 24), day(2025, 6, 24), 10)
         expect(ticks.values).toEqual([day(2025, 6, 24)])
+    })
+
+    test('2-day ticks stay on the same days when an earlier note is added', () => {
+        const later = buildDateTicks(day(2025, 6, 11), day(2025, 6, 24), 7)
+        const earlier = buildDateTicks(day(2025, 6, 10), day(2025, 6, 24), 7)
+        const shared = later.values.filter((v) => v >= day(2025, 6, 11))
+        expect(earlier.values.filter((v) => v >= day(2025, 6, 11))).toEqual(shared)
+        expect(later.values.length).toBeGreaterThan(1)
+        const gap = (later.values[1]! - later.values[0]!) / 86_400_000
+        expect(Math.round(gap)).toBe(2)
     })
 
     test('a few hours inside one day still get a tick', () => {
