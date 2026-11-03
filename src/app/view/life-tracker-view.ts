@@ -69,6 +69,7 @@ import {
 
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
+import { resolveCardTitle } from './card-title.utils'
 import { getVisualizationConfig } from './visualization-config.helper'
 import { getBoolConfig, getEnumConfig, getNumberConfig, getStringConfig } from './config-accessors'
 import { overlayIdToPropertyId } from './overlay-id'
@@ -1388,8 +1389,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             canRemove
         )
 
-        // Create visualization
-        const visualization = this.createVisualization(cardEl, columnConfig, displayName)
+        // Create visualization, titled with the card's own name when it has
+        // one (3.4.0)
+        const visualization = this.createVisualization(
+            cardEl,
+            columnConfig,
+            resolveCardTitle(columnConfig.displayName, displayName, columnConfig.propertyId)
+        )
 
         // Wire up maximize callback (using visualization ID)
         visualization.setMaximizeCallback((maximize) => {
@@ -1534,7 +1540,11 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         this.setupCardEventHandlers(cardEl, newConfig.propertyId, newConfig.id, displayName, false)
 
-        const visualization = this.createVisualization(cardEl, newConfig, displayName)
+        const visualization = this.createVisualization(
+            cardEl,
+            newConfig,
+            resolveCardTitle(newConfig.displayName, displayName, newConfig.propertyId)
+        )
         visualization.setMaximizeCallback((maximize) => {
             this.maximizeService.handleMaximizeToggle(newConfig.id, maximize)
         })
@@ -2304,12 +2314,19 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             }
 
             case 'exportImage': {
-                void this.exportVisualizationImage(visualizationId, displayName)
+                // Exports are named after the card, as its title reads
+                void this.exportVisualizationImage(
+                    visualizationId,
+                    resolveCardTitle(currentConfig?.displayName, displayName, propertyId)
+                )
                 break
             }
 
             case 'exportCsv': {
-                void this.exportVisualizationCsv(visualizationId, displayName)
+                void this.exportVisualizationCsv(
+                    visualizationId,
+                    resolveCardTitle(currentConfig?.displayName, displayName, propertyId)
+                )
                 break
             }
 
