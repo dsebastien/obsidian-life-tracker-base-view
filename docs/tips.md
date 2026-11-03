@@ -30,6 +30,20 @@ For best date resolution, name files with dates:
 - Weekly notes: `2024-W03.md`
 - Monthly notes: `2024-01.md`
 
+Session notes often carry more than a date in their name
+(`2026-11-03 (Strength Session)`), so the plugin can't read their date from it.
+Give them a `date` property and they show up in your views too; notes created
+by a [capture target](property-capture.md#capture-targets) get their date
+property automatically.
+
+### Session Notes
+
+Not every value has to go into the daily note. I log the push-ups and planks I
+do through the day into one strength session note per day, using a [capture
+target](property-capture.md#capture-targets) and a button in my daily note. For
+weekly goals on those values, use the "days with a value" measure, so a day
+with two sessions counts once.
+
 ## Visualization Selection
 
 ### Choose the Right Chart

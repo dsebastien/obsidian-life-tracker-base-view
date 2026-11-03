@@ -141,13 +141,13 @@ reads as one sentence:
 | Average of the values | Mean over the period                                   | "Average mood of at least 7" |
 | Most recent value     | The last reading                                       | "At most 80 kg"              |
 
-Values logged as `0` do not count toward "entries with a value" or "days with a
-value" — writing `push_ups: 0` records that you did not do it.
+Values logged as `0` count for neither "entries with a value" nor "days with a
+value": writing `push_ups: 0` records that you did **not** do it.
 
-With one daily note per day, "entries" and "days" give the same number. When a
-view shows session notes and two of them can fall on the same day (a gym
-session and a through-the-day session), use "days with a value" for a days-a-week
-goal: "entries with a value" would count that day twice.
+With one daily note per day, entries and days give the same number. With
+session notes, they don't. On a day with a gym session and a "Through the day"
+session, "entries with a value" counts 2. For a days-a-week goal, pick "days
+with a value": it counts that day once.
 
 Targets are per visualization, so one property can carry two goals at once: a
 consistency ring (days a week) and a volume ring (reps a week) side by side.
@@ -206,10 +206,11 @@ for entries using this priority:
 With a **Date anchor** property set in the view, that property comes first,
 then the file name, then the creation time.
 
-Session notes (for example `2026-11-03 (Strength Session)`) are dated by their
-`date` property. One base can show daily notes and session notes together:
-daily notes get their date from the file name, session notes from `date`, and
-a **Sum** aggregation adds up the values of one day.
+A session note like `2026-11-03 (Strength Session)` has no date the plugin can
+read from its file name, so it's dated by its `date` property. That's why one
+base can show daily notes and session notes together: daily notes get their
+date from the file name, session notes from `date`. Set the card's aggregation
+to **Sum** to add up the values of one day.
 
 If your notes use another naming convention (`Journal 2026-07-30`, `20260730`,
 `30.07.2026`, …), add a filename date pattern in **Settings → Life Tracker →

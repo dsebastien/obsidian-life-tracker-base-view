@@ -21,14 +21,17 @@ presets, patterns and Starter Kit properties) are not searchable. Requires Obsid
 
 ### Capture Targets
 
-On the **Capture targets** page, under **Capture**. A capture target sends some
-properties to a note other than the daily note, for example the strength
-session of the day. Each target adds a command **Capture today: \<target
-name\>**, and the quick-add panel groups its rows by target. No targets (the
-default) means every property goes to the daily note.
+On the **Capture targets** page, under **Capture**.
+
+A capture target sends some properties to a note other than the daily note. I
+use one for the push-ups and planks I do through the day: they go into that
+day's strength session note. Each target adds a command **Capture today:
+\<target name\>**, and the quick-add panel groups its rows by note.
+
+No targets (the default) means every property goes to the daily note.
 
 See [Capture targets](property-capture.md#capture-targets) for the fields, how
-notes are found and created, and an example.
+notes are found and created, and my full setup.
 
 ### High Contrast
 
@@ -132,17 +135,22 @@ A few things worth knowing:
   vault because you updated it.
 - **You're always asked first**, and the confirmation shows you the exact path.
 - **Nothing is ever overwritten.** If a daily note is already there, it's
-  reused. For a [capture target](property-capture.md#capture-targets), a file
-  at the planned path is never reused (it can be another note of the same
-  type): the next free name is used instead.
+  reused. A [capture target](property-capture.md#capture-targets) never reuses
+  a file only because it sits at the planned path: that file can be another
+  note of the same type, like a gym session on the same day. The next free
+  name is used instead.
 - **Templates go through Templater, exactly once.** If Templater is already set
   up to template new files itself, the plugin steps back and lets it. Applying a
-  second template on top would duplicate the whole note.
+  second template on top would duplicate the whole note. Capture targets are
+  the exception: Life Tracker always applies their template itself, and
+  Templater's folder template doesn't run on top.
 - **No Templater? The note is still created**, and it still gets your captured
   values. Recording the data is the point.
 - If the resulting filename is one the plugin can't read a date from, you're
   warned before anything is created. Such a note won't show up in your views.
   Adding a matching [filename date pattern](#filename-date-patterns) fixes it.
+  A note for a capture target with a date property gets no warning: it's
+  dated by that property.
 
 #### If your daily notes live in week folders
 
@@ -300,8 +308,8 @@ order:
 3. **File metadata**: the creation time
 
 When the view sets a **Date anchor** property, that property is used first,
-then the file name, then the creation time. Picking a property is an explicit
-choice for that view, so it wins over the file name.
+then the file name, then the creation time. Why? Because you picked that
+property on purpose, for that view. A file name shouldn't quietly override it.
 
 The Life Tracking Grid has no date anchor setting and always uses the first
 order.

@@ -254,16 +254,22 @@ target reads as one sentence:
 
 > _\<measure\>_ per _\<period\>_ must be _\<at least / at most\>_ _\<value\>_
 
-| Measure               | Meaning                  | Example goal                 |
-| --------------------- | ------------------------ | ---------------------------- |
-| Entries with a value  | Days you actually did it | "Push-ups on 3 days a week"  |
-| Total of the values   | Volume added up          | "150 squats a week"          |
-| Average of the values | Mean over the period     | "Average mood of at least 7" |
-| Most recent value     | The last reading         | "At most 80 kg"              |
+| Measure               | Meaning                                                | Example goal                 |
+| --------------------- | ------------------------------------------------------ | ---------------------------- |
+| Entries with a value  | Notes with a value (one per note)                      | "Push-ups on 3 days a week"  |
+| Days with a value     | Days with a value; several notes on one day count once | "Push-ups on 3 days a week"  |
+| Total of the values   | Volume added up                                        | "150 squats a week"          |
+| Average of the values | Mean over the period                                   | "Average mood of at least 7" |
+| Most recent value     | The last reading                                       | "At most 80 kg"              |
 
-Days logged as `0` do not count toward "entries with a value" — writing
-`push_ups: 0` records that you did **not** do it, so a "3 days a week" goal is
-not satisfied by logging zeros every day.
+Values logged as `0` count for neither "entries with a value" nor "days with a
+value": writing `push_ups: 0` records that you did **not** do it, so a "3 days
+a week" goal is not satisfied by logging zeros every day.
+
+Entries and days only differ when several notes share a day. If your push-ups
+live in session notes, a day with a gym session and a "Through the day"
+session is 2 entries but 1 day. For a days-a-week goal, pick "days with a
+value".
 
 Targets belong to a visualization, not to a property, so one property can carry
 two goals side by side: a consistency ring (days a week) and a volume ring (reps
@@ -284,9 +290,9 @@ the right way round:
 | At most (stay under) | Green      | Yellow      | Red once exceeded |
 
 The yellow warning band needs a meaningful zero to measure against, so it only
-applies to "entries with a value" and "total of the values". A weight of 79
-against an 80 kg ceiling is not "99% of a budget" — that scale does not start at
-zero — so "average" and "most recent value" goals are simply met or missed.
+applies to "entries with a value", "days with a value" and "total of the
+values". A weight of 79 against an 80 kg ceiling is not "99% of a budget" — that
+scale does not start at zero — so "average" and "most recent value" goals are simply met or missed.
 
 If you have set a property's **value direction** in the plugin settings
 (_higher is better_ / _lower is better_), it preselects the matching goal
@@ -296,9 +302,9 @@ of what you want, and most properties carry no value direction at all.
 
 ### Periods with nothing recorded
 
-For "entries with a value" and "total of the values", an empty period is a real
-zero: doing nothing all week genuinely is 0 days and 0 reps, and the ring turns
-red.
+For "entries with a value", "days with a value" and "total of the values", an
+empty period is a real zero: doing nothing all week genuinely is 0 days and 0
+reps, and the ring turns red.
 
 For "average" and "most recent value" it is _unknown_ instead. A week you forgot
 to weigh yourself shows a grey ring and a dash — not a weight of 0 kg, which
