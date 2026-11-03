@@ -133,15 +133,21 @@ reads as one sentence:
 
 > _\<measure\>_ per _\<period\>_ must be _\<at least / at most\>_ _\<value\>_
 
-| Measure               | Meaning                  | Example goal                 |
-| --------------------- | ------------------------ | ---------------------------- |
-| Entries with a value  | Days you actually did it | "Push-ups on 3 days a week"  |
-| Total of the values   | Volume added up          | "150 squats a week"          |
-| Average of the values | Mean over the period     | "Average mood of at least 7" |
-| Most recent value     | The last reading         | "At most 80 kg"              |
+| Measure               | Meaning                                                | Example goal                 |
+| --------------------- | ------------------------------------------------------ | ---------------------------- |
+| Entries with a value  | Notes with a value (one per note)                      | "Push-ups on 3 days a week"  |
+| Days with a value     | Days with a value; several notes on one day count once | "Push-ups on 3 days a week"  |
+| Total of the values   | Volume added up                                        | "150 squats a week"          |
+| Average of the values | Mean over the period                                   | "Average mood of at least 7" |
+| Most recent value     | The last reading                                       | "At most 80 kg"              |
 
-Days you logged as `0` do not count toward "entries with a value" — writing
-`push_ups: 0` records that you did not do it.
+Values logged as `0` do not count toward "entries with a value" or "days with a
+value" — writing `push_ups: 0` records that you did not do it.
+
+With one daily note per day, "entries" and "days" give the same number. When a
+view shows session notes and two of them can fall on the same day (a gym
+session and a through-the-day session), use "days with a value" for a days-a-week
+goal: "entries with a value" would count that day twice.
 
 Targets are per visualization, so one property can carry two goals at once: a
 consistency ring (days a week) and a volume ring (reps a week) side by side.
@@ -190,11 +196,20 @@ Hover over chart elements to see detailed information:
 
 ## Date Anchoring
 
-The plugin determines dates for entries using this priority:
+Without a **Date anchor** in the view settings, the plugin determines dates
+for entries using this priority:
 
 1. **Filename pattern**: YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-Qq, YYYY — plus any custom patterns you add
-2. **Date anchor property**: Configured in view settings
-3. **File metadata**: Creation or modification time
+2. **The `date` property**, then the `created` property
+3. **File metadata**: the creation time
+
+With a **Date anchor** property set in the view, that property comes first,
+then the file name, then the creation time.
+
+Session notes (for example `2026-11-03 (Strength Session)`) are dated by their
+`date` property. One base can show daily notes and session notes together:
+daily notes get their date from the file name, session notes from `date`, and
+a **Sum** aggregation adds up the values of one day.
 
 If your notes use another naming convention (`Journal 2026-07-30`, `20260730`,
 `30.07.2026`, …), add a filename date pattern in **Settings → Life Tracker →

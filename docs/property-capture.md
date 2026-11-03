@@ -15,16 +15,17 @@ Before capturing data, define which properties to track:
 2. Click **Add definition**
 3. Configure each property:
 
-| Field       | Description                                                                                                            |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Name        | Frontmatter property key                                                                                               |
-| Type        | text, number, checkbox, date, datetime, list, tags                                                                     |
-| Required    | Labeled toggle in the row; required properties come first in the capture modal and drive the "Missing required" filter |
-| Default     | Pre-filled value for new entries                                                                                       |
-| Constraints | Min/max/step for numbers, allowed values for text                                                                      |
-| Note filter | Folder, tag, or regex pattern to limit scope                                                                           |
-| Quick add   | Whether the property is listed in the quick-add panel (off by default)                                                 |
-| Description | Help text shown in the capture dialog (line breaks are kept, e.g. one line per value) and as the input placeholder     |
+| Field        | Description                                                                                                                                         |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name         | Frontmatter property key                                                                                                                            |
+| Type         | text, number, checkbox, date, datetime, list, tags                                                                                                  |
+| Required     | Labeled toggle in the row; required properties come first in the capture modal and drive the "Missing required" filter                              |
+| Default      | Pre-filled value for new entries                                                                                                                    |
+| Constraints  | Min/max/step for numbers, allowed values for text                                                                                                   |
+| Note filter  | Folder, tag, or regex pattern to limit scope                                                                                                        |
+| Quick add    | Whether the property is listed in the quick-add panel (off by default)                                                                              |
+| Capture into | The note quick add, quick-add links and "Capture today" write the property into: automatic, the daily note, or a [capture target](#capture-targets) |
+| Description  | Help text shown in the capture dialog (line breaks are kept, e.g. one line per value) and as the input placeholder                                  |
 
 For **number** properties you can set a **min**, **max**, and optional **step**. The step controls the slider granularity (e.g. `1` for whole-number scores, `0.5` for half points); leave it empty to allow fine decimal values. If you fill in only one bound, the other is inferred automatically (min → `max = min + 100`, max → `min = 0`) and the inferred value is shown so there's no silent guessing.
 
@@ -104,6 +105,11 @@ Use the command **Life Tracker: Capture today** to capture data for today withou
 
 If no note matches, you get a notice telling you so. Unless you've turned on **Create missing notes when capturing**, in which case the plugin offers to create the note for you and then opens capture on it. See [Creating missing notes](configuration.md#creating-missing-notes).
 
+"Capture today" lists only the properties that go to the daily note. A property
+that goes to a [capture target](#capture-targets) is captured with that
+target's own command, **Life Tracker: Capture today: \<target name\>**. With no
+capture targets, every property goes to the daily note, as before.
+
 ### Single Note Mode
 
 When invoked from a regular note:
@@ -134,6 +140,13 @@ quick-add properties of one day's note, all at once, each with its usual editor:
 −/+ buttons, emoji buttons, a checkbox. Every change saves immediately; there is
 no Next or Done.
 
+When some quick-add properties go to a [capture target](#capture-targets), the
+panel groups its rows: one group for the daily note, then one group per target,
+each with its own note for that day. A group whose note does not exist yet
+shows **Create note** (when **Create missing notes when capturing** is on).
+**Full capture** in a group header opens the capture dialog on that group's
+note. With only the daily note, the panel has no groups and looks as before.
+
 - With a daily note open, the panel edits that day, so you can fill in an old
   daily note in place. Otherwise it edits today.
 - ‹ and › move one day; **Today** jumps back.
@@ -162,13 +175,123 @@ obsidian://life-tracker-quick-add?property=water&increment
 | `decrement[=n]`   | Number: remove one step, or `n`                                 |
 | `toggle`          | Checkbox: flip it                                               |
 | `set=<value>`     | Set any non-list property, e.g. `set=7`, `set=true`, `set=mild` |
+| `append=<value>`  | List or tags property: add one entry, e.g. `append=12@60`       |
 | `date=YYYY-MM-DD` | Optional. The day to write to; today when absent                |
 
 Use exactly one action per link. A link with no property opens the panel. Links
 always target today (or `date`), never the note you have open, so a shortcut
-behaves the same every time. Values are clamped to the property's range and
+behaves the same every time. The note is the property's destination: the daily
+note, or the note of its [capture target](#capture-targets) for that day, so a
+push-ups link writes into the day's strength session when push-ups go there.
+`append` is refused on properties that are not lists.
+
+Example, one set of 12 reps at 60 kg on a list property `leg_press`:
+
+```
+obsidian://life-tracker-quick-add?property=leg_press&append=12@60
+```
+
+Values are clamped to the property's range and
 validated; a rejected value shows a notice and nothing is written. A notice
 confirms each write, e.g. "Water: 6 (today)".
+
+## Capture Targets
+
+By default every captured value goes to the daily note. A **capture target**
+sends some properties to another note instead, for example the strength session
+of the day for the small exercises you do through the day (push-ups, squats,
+plank).
+
+Set targets up in **Settings → Life Tracker → Capture targets**. Each target has:
+
+| Field         | Meaning                                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Name          | Shown in the command name and in the quick-add panel                                                              |
+| Note type     | An Obsidian Starter Kit note type, or "Folder and file name" to work without the Starter Kit                      |
+| Folder        | Without the Starter Kit: where the notes live, with placeholders such as `{{year}}`                               |
+| File name     | Without the Starter Kit: name of a new note, with `{{date}}` and the other date placeholders                      |
+| Tags          | Without the Starter Kit: tags a note must have; added to a new note                                               |
+| Template      | Optional template for a new note. With a Starter Kit note type, overrides the note type's template                |
+| Date property | The property that holds the date of the note (`date` by default)                                                  |
+| Match filter  | `property = value` pairs a note must have, for example `workout_kind` = `Through the day`. All of them must match |
+
+Below the fields, **Properties** lists the properties that currently go to the
+target, and the name row shows the command name and its id.
+
+### Which properties go to a target
+
+Each property definition has a **Capture into** setting:
+
+- **Automatic** (default): with the Obsidian Starter Kit, a property imported
+  from a note type goes to the capture target of that note type, when exactly
+  one target uses it. Otherwise the property goes to the daily note. The
+  dropdown shows what automatic resolves to.
+- **Daily note**: always the daily note.
+- A target: always that target.
+
+A property is still defined once. The target only says which note it is written
+into.
+
+### How the note is found
+
+For a day, the plugin looks only in the target's folder for that day (for
+example `Sessions/Strength/2026` for `Sessions/Strength/{{year}}`), including
+its subfolders. A note is the target's note when:
+
+1. it is of the target's note type: one of the Starter Kit note type's filters
+   matches it (for example its tag), or, without the Starter Kit, it has all the
+   target's tags;
+2. every match filter pair matches its properties (case does not matter; for a
+   list property, one item is enough);
+3. its date property holds that day (`2026-11-03`, or a date and time on that
+   day). When the date property is empty, the date in the file name is used
+   (a filename date pattern, or a name that starts with `YYYY-MM-DD`).
+
+If several notes match, the most recently modified one is used. A different
+note of the same type on the same day (for example a gym session synced from
+Garmin with another `workout_kind`) is never used.
+
+### When the note does not exist
+
+With **Create missing notes when capturing** on, the plugin offers to create the
+note and shows its path first. Nothing is created without your confirmation.
+
+- The name comes from the note type (its name prefix and suffix around the
+  date, for example `2026-11-03 (Strength Session)`) or from the target's file
+  name. If a file with that name already exists, it is **not** reused: the next
+  free name is taken, with a number after the date
+  (`2026-11-03 2 (Strength Session)`).
+- The note is created in its final folder with its final name, then the
+  template runs through Templater, so the template sees the date in the title.
+- Then the plugin writes the date property, every match filter value and the
+  note type's (or target's) tags into the note.
+- **Without Templater** (or when the template fails or is missing), the note is
+  created empty and still gets the date property, the filter values and the
+  tags, so it is found again and appears in your views.
+
+Notes created for a target are dated by their date property, so views find them
+even when the file name is not a date. Views read the `date` property
+automatically; a target that uses another date property needs the view's
+**Date anchor** set to that property.
+
+### Example: small exercises in the day's strength session
+
+1. In the Starter Kit, move the bodyweight counters (`health_exercise_push_ups`,
+   …) to the strength sessions note type. In **Settings → Life Tracker →
+   Obsidian Starter Kit**, the existing definitions are now flagged because
+   their source moved: unlink them, then import them from the strength sessions
+   note type. The import adopts each definition, so its value direction, emojis,
+   value mapping and quick-add setting are kept.
+2. Create a capture target "Through the day": note type **Strength Sessions**,
+   match filter `workout_kind` = `Through the day`.
+3. The imported counters now go to that target automatically. Turn on **Show in
+   quick add** for them.
+4. Quick add shows a "Through the day" group, and a link such as
+   `obsidian://life-tracker-quick-add?property=health_exercise_push_ups&increment=10`
+   adds 10 push-ups to the day's through-the-day session, creating it on first
+   use.
+5. To capture from a button (for example Meta Bind), use the command id shown on
+   the target, `life-tracker:capture-today-target-<id>`.
 
 ## Modal Interface
 

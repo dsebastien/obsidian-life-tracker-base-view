@@ -51,6 +51,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Batch mode**: process notes from Grid View or Life Tracker View with smart filtering (skip complete notes)
 - **Auto-save**: values saved automatically as you type with visual feedback
 - **Grid View**: card-based Base view type for editing properties across multiple notes
+- **Capture targets**: send some properties to a note other than the daily note, such as the strength session of the day; quick add, quick-add links and a "Capture today: <target>" command per target find that note (or create it) for you
 
 ### User Experience
 
@@ -61,7 +62,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Confetti celebration**: optional animation when completing property capture
 - **Quick add**: log a value in one tap: a panel with the counters and checkboxes you pick, or an `obsidian://` link you can put on your phone's home screen to add a glass of water without opening anything
 - **Auto-advance**: optionally jump to the next property as soon as you pick a value from a dropdown, emoji button, or checkbox
-- **Goals and targets**: set a goal per visualization — "3 days a week", "150 reps a week", "at most 80 kg" — and see progress against it; with a running total the target line accumulates alongside the data
+- **Goals and targets**: set a goal per visualization — "3 days a week", "150 reps a week", "at most 80 kg" — and see progress against it; with a running total the target line accumulates alongside the data. "Days with a value" counts a day once even when two notes share it
 - **Personal records**: properties with a polarity show their personal best (🏆) on charts and heatmaps, and beating it pops a "New record!" notice — checkbox properties show a completion rate (✅ 42/90 days) instead, since their best is always "true"
 - **Progress ring**: circular progress toward a target for the period you're in, color-coded, with the hit rate and recent trend underneath
 - **High contrast mode**: maximum-contrast rendering (thick borders, strong colors, nothing dimmed) for users who need high visibility
@@ -137,7 +138,7 @@ Use the "Life Tracker: Capture today" command to jump straight to today's daily 
 
 ### Quick Add
 
-For logging one value fast (a glass of water, a pushup set, a checkbox), use **Life Tracker: Quick add** or the ribbon icon. It opens a small panel listing the properties you marked **Show in quick add**, each with its −/+ buttons, toggle or emoji buttons. Each tap saves immediately. With a daily note open, it edits that day; otherwise today. Use ‹ › to switch days.
+For logging one value fast (a glass of water, a pushup set, a checkbox), use **Life Tracker: Quick add** or the ribbon icon. It opens a small panel listing the properties you marked **Show in quick add**, each with its −/+ buttons, toggle or emoji buttons. Each tap saves immediately. With a daily note open, it edits that day; otherwise today. Use ‹ › to switch days. When some properties go to a [capture target](#capture-targets), the panel groups them by note.
 
 For true one-tap logging, use a link:
 
@@ -145,12 +146,18 @@ For true one-tap logging, use a link:
 obsidian://life-tracker-quick-add?property=water&increment
 ```
 
-Put it on your phone's home screen (iOS Shortcuts, an Android shortcut or widget) and each tap adds one glass to today's note. See [the guide](docs/property-capture.md#quick-add) for all actions.
+Put it on your phone's home screen (iOS Shortcuts, an Android shortcut or widget) and each tap adds one glass to today's note. `append=12@60` adds one entry to a list property, such as a set of 12 reps at 60 kg. See [the guide](docs/property-capture.md#quick-add) for all actions.
+
+### Capture Targets
+
+Not everything belongs in the daily note. The push-ups, squats and planks you do through the day can go into the day's strength session note instead. Create a **capture target** in **Settings → Life Tracker → Capture targets**: a note type (an Obsidian Starter Kit note type, or a folder and file name), a match filter such as `workout_kind` = `Through the day`, and a date property.
+
+Then pick the target in a property's **Capture into** setting, or let it happen automatically for properties imported from that Starter Kit note type. Quick add, quick-add links and the **Capture today: \<target\>** command find the day's note by its type, filter and date — never a different note of the same type on the same day — and offer to create it from its template when it is missing. See [the guide](docs/property-capture.md#capture-targets).
 
 ### Creating Missing Notes
 
 Skip a day and there's no note to capture into. Turn on **Create missing notes
-when capturing** in **Settings → Life Tracker → Dates**, and "Capture today"
+when capturing** in **Settings → Life Tracker → Creating missing notes**, and "Capture today"
 offers to create the note first, then opens capture on it.
 
 The plugin never invents a location. It reads the folder, template and naming
@@ -210,6 +217,7 @@ Property definitions let you configure which frontmatter properties to track acr
 - **Value emojis**: give values or ranges their own emoji (`1-2` → 😞, `3` → 😐, `4-5` → 😄). They appear in tooltips and as one-tap buttons in the capture dialog, so you can log a 5 by tapping 😄.
 - **Default value**: Pre-filled when capturing new data
 - **Show in quick add**: list the property in the quick-add panel (off by default; turn it on for the few things you log often)
+- **Capture into**: the note captured values go to: automatic, the daily note, or a capture target
 - **Note filtering**: Apply the property only to specific notes by folder, tag, or regex pattern
 - **Reordering**: Drag and drop to reorder property definitions (affects modal and grid order)
 - **Copy definitions**: Duplicate an existing property definition to quickly create similar ones

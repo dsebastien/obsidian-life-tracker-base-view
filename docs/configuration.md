@@ -11,12 +11,24 @@ Access via **Settings → Life Tracker**.
 
 Settings are grouped into sections: **Capture**, **Visualizations**, **Dates**,
 **Creating missing notes** and **About**. The larger editors open as their own
-pages: **Property definitions**, **Visualization presets** (under
-Visualizations), **Filename date patterns** (under Dates) and **Obsidian
-Starter Kit** (shown only when that plugin is installed and enabled). The
+pages: **Property definitions**, **Capture targets** (under Capture),
+**Visualization presets** (under Visualizations), **Filename date patterns**
+(under Dates) and **Obsidian Starter Kit** (shown only when that plugin is
+installed and enabled). The
 settings search finds every setting in the sections and each page by its
-name; the entries on the pages (property definitions, presets, patterns and
-Starter Kit properties) are not searchable. Requires Obsidian 1.13 or later.
+name; the entries on the pages (property definitions, capture targets,
+presets, patterns and Starter Kit properties) are not searchable. Requires Obsidian 1.13 or later.
+
+### Capture Targets
+
+On the **Capture targets** page, under **Capture**. A capture target sends some
+properties to a note other than the daily note, for example the strength
+session of the day. Each target adds a command **Capture today: \<target
+name\>**, and the quick-add panel groups its rows by target. No targets (the
+default) means every property goes to the daily note.
+
+See [Capture targets](property-capture.md#capture-targets) for the fields, how
+notes are found and created, and an example.
 
 ### High Contrast
 
@@ -119,7 +131,10 @@ A few things worth knowing:
 - **It's off by default.** A plugin shouldn't start writing new files into your
   vault because you updated it.
 - **You're always asked first**, and the confirmation shows you the exact path.
-- **Nothing is ever overwritten.** If a note is already there, it's reused.
+- **Nothing is ever overwritten.** If a daily note is already there, it's
+  reused. For a [capture target](property-capture.md#capture-targets), a file
+  at the planned path is never reused (it can be another note of the same
+  type): the next free name is used instead.
 - **Templates go through Templater, exactly once.** If Templater is already set
   up to template new files itself, the plugin steps back and lets it. Applying a
   second template on top would duplicate the whole note.
@@ -183,7 +198,7 @@ Configured via the view's settings panel (gear icon).
 | -------------------- | -------- | -------------------------------------------------------------------------- |
 | Granularity          | daily    | Time grouping (daily to yearly)                                            |
 | Time frame           | all_time | Date range filter                                                          |
-| Date anchor          | (auto)   | Property to use for date resolution                                        |
+| Date anchor          | (auto)   | Property to use for date resolution; when set, it wins over the file name  |
 | Grid columns         | 3        | Number of columns (1-6)                                                    |
 | Show legend          | true     | Display chart legends                                                      |
 | Legend position      | right    | Where the legend sits on pie/doughnut/polar charts (top/right/bottom/left) |
@@ -277,11 +292,19 @@ a name, and takes precedence over the view-wide **Color scheme** setting.
 
 ## Date Anchor Resolution
 
-Priority order for determining entry dates:
+When the view has no **Date anchor** set, the date of a note comes from, in
+order:
 
 1. **Filename pattern**: your [custom patterns](#filename-date-patterns) first, then the built-in YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-Qq, YYYY
-2. **Date anchor property**: Configured in view settings
-3. **File metadata**: ctime or mtime
+2. **The `date` property**, then the `created` property
+3. **File metadata**: the creation time
+
+When the view sets a **Date anchor** property, that property is used first,
+then the file name, then the creation time. Picking a property is an explicit
+choice for that view, so it wins over the file name.
+
+The Life Tracking Grid has no date anchor setting and always uses the first
+order.
 
 ## Configuration Priority
 

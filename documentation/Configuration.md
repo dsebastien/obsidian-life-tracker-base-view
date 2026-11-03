@@ -12,6 +12,24 @@ Stored in plugin data, applies to all views.
 | `showConfettiOnCapture` | boolean                       | `true`  | Confetti animation when a capture completes                  |
 | `weekStartsOn`          | 0 \| 1 \| 6                   | `1`     | First day of the week (0 = Sunday, 1 = Monday, 6 = Saturday) |
 | `filenameDatePatterns`  | FilenameDatePattern[]         | `[]`    | Custom `{{token}}` filename date patterns (see below)        |
+| `createMissingNotes`    | boolean                       | `false` | Offer to create a missing note when capturing                |
+| `dailyNoteTypeId`       | string                        | `''`    | Starter Kit note type used to create daily notes             |
+| `captureTargets`        | CaptureTarget[]               | `[]`    | Destinations other than the daily note (see below)           |
+
+### Capture targets
+
+`CaptureTarget` (`src/app/types/plugin/capture-target.types.ts`): `id`, `name`,
+`noteTypeId` (Starter Kit; `''` = standalone), `folder`, `fileNamePattern`,
+`tags` (standalone), `templatePath` (override), `filters`
+(`{ property, value }[]`), `dateProperty` (`date`). Loaded field by field by
+`sanitizeCaptureTargets`; malformed entries are defaulted or dropped, duplicate
+ids re-minted.
+
+`PropertyDefinition.captureTargetId`: absent = automatic, `'daily-note'` = daily
+note, else a target id. Non-string values are dropped on load.
+
+Rules: `documentation/Business Rules.md` → Capture Targets. Plan:
+`documentation/plans/capture-targets.md`.
 
 ### Filename date patterns
 
@@ -41,7 +59,7 @@ Configured via Obsidian's view options UI.
 | -------------------- | --------------- | ---------- | ----------------------------------------------------------- |
 | `granularity`        | TimeGranularity | `daily`    | Time grouping for aggregation                               |
 | `timeFrame`          | TimeFrameId     | `all_time` | Filter data range (all_time, last_7_days, this_month, etc.) |
-| `dateAnchorProperty` | property        | (none)     | Override date anchor property                               |
+| `dateAnchorProperty` | property        | (none)     | Date anchor property; when set it comes before the filename |
 | `embeddedHeight`     | number          | `400`      | Height in embedded mode (px)                                |
 | `cellSize`           | number          | `12`       | Heatmap cell size (px)                                      |
 | `showEmptyDates`     | boolean         | `true`     | Show dates with no data                                     |

@@ -27,8 +27,13 @@ src/
       date-anchor.types.ts         # Date anchor types
     commands/
       index.ts                     # Command registration
-      capture-command.ts           # Property capture command
+      capture-command.ts           # Capture properties / Capture today (per destination)
+      capture-note.ts              # Find or create a destination's note (daily note or capture target)
+      capture-target-commands.ts   # One "Capture today: <target>" command per target, re-synced on settings change
+      quick-add-command.ts         # Quick add panel, ribbon and obsidian:// link
     services/
+      capture-target.utils.ts      # Pure: property → target, note matching, layout, free names, creation values
+      capture-target.service.ts    # Vault: scan the target folder, plan creation, write creation values
       date-anchor.service.ts       # Extract dates from entries (filename, properties)
       data-aggregation.service.ts  # Aggregate data for visualizations
       frontmatter.service.ts       # Read/write frontmatter properties
@@ -122,7 +127,7 @@ All editors:
 
 ### Services
 
-- **DateAnchorService**: Resolves date for each entry (filename pattern > property > file metadata). Filename parsing goes through `parseDateFromFilename`, which tries the user's custom `{{token}}` patterns first, then the built-in ISO formats (issue #139)
+- **DateAnchorService**: Resolves date for each entry. Automatic chain: filename pattern > `date` > `created` > ctime; a view's date anchor property comes first when set. Filename parsing goes through `parseDateFromFilename`, which tries the user's custom `{{token}}` patterns first, then the built-in ISO formats (issue #139)
 - **DataAggregationService**: Groups data by time granularity, produces visualization-ready structures
 - **FrontmatterService**: Read/write frontmatter, validate against property definitions
 - **ColumnConfigService**: Manages per-property visualization configs (persisted in view config)
