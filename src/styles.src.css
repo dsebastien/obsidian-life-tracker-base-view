@@ -129,6 +129,10 @@
         @apply pl-4;
     }
 
+    .lt-capture-target-issues .setting-item-description {
+        color: var(--text-error);
+    }
+
     /* ========================================
    LIFE TRACKER VIEW
    ======================================== */

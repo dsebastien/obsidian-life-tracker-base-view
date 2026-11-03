@@ -328,6 +328,29 @@ export function describeLayoutError(error: TargetLayoutError, target: CaptureTar
     }
 }
 
+/**
+ * What is wrong with a target, for the settings page: a setup that makes it
+ * unusable, and match filter rows that are incomplete and therefore ignored.
+ * Empty when the target is fine.
+ */
+export function describeTargetIssues(
+    target: CaptureTarget,
+    noteType: StarterKitNoteType | null
+): string[] {
+    const issues: string[] = []
+    const layout = describeTargetLayout(target, noteType)
+    if (!isTargetLayout(layout)) issues.push(describeLayoutError(layout, target))
+
+    target.filters.forEach((filter, index) => {
+        if (!filter.property.trim() || !filter.value.trim()) {
+            issues.push(
+                `Match filter row ${index + 1} needs both a property and a value; it is ignored.`
+            )
+        }
+    })
+    return issues
+}
+
 /** The folder to scan and create in for a date, or null when it cannot be rendered */
 export function renderTargetFolder(layout: TargetLayout, date: Date): string | null {
     const folder = renderDateTokens(layout.folder, date)

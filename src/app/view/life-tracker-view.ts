@@ -371,7 +371,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private getDateAnchorConfig(): DateAnchorConfig[] | undefined {
         // Stored as an opaque property id (branded string); narrow to string first.
         const dateAnchorProperty = getStringConfig(this.cfg, 'dateAnchorProperty') as
-            BasesPropertyId | undefined
+            | BasesPropertyId
+            | undefined
 
         if (!dateAnchorProperty) {
             // No custom property set, use default behavior
@@ -2492,7 +2493,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 break
 
             case 'confetti-setting-changed':
-                // This doesn't affect the visualization view, no refresh needed
+            case 'capture-targets-changed':
+                // These don't affect the visualization view, no refresh needed
                 break
 
             case 'high-contrast-changed':

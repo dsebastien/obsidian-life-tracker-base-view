@@ -13,6 +13,7 @@ import {
     completeFilters,
     definitionsForDestination,
     describeLayoutError,
+    describeTargetIssues,
     describeTargetLayout,
     groupByDestination,
     isOfTargetType,
@@ -605,5 +606,30 @@ describe('sanitizeCaptureTargets', () => {
         expect(targets).toHaveLength(3)
         expect(new Set(targets.map((target) => target.id)).size).toBe(3)
         expect(targets[0]?.id).toBe('a')
+    })
+})
+
+describe('describeTargetIssues (review #10, #11)', () => {
+    test('a usable target has no issues', () => {
+        expect(describeTargetIssues(throughTheDay(), STRENGTH_TYPE)).toEqual([])
+    })
+
+    test('lists incomplete filter rows and an unusable setup', () => {
+        const issues = describeTargetIssues(
+            throughTheDay({
+                noteTypeId: '',
+                folder: 'W',
+                fileNamePattern: 'Workout',
+                filters: [
+                    { property: 'workout_kind', value: '' },
+                    { property: 'kind', value: 'x' }
+                ]
+            }),
+            null
+        )
+        expect(issues).toEqual([
+            'The file name pattern of capture target "Through the day" needs {{date}}.',
+            'Match filter row 1 needs both a property and a value; it is ignored.'
+        ])
     })
 })

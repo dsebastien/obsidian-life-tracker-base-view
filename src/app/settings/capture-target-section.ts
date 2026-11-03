@@ -1,13 +1,19 @@
 import { Setting, type App } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
-import { createCaptureTarget, type CaptureTarget } from '../types'
+import { createCaptureTarget, type CaptureTarget, type SettingsChangeInfo } from '../types'
 import { FolderSuggest } from '../components/ui/folder-suggest'
 import { MarkdownFileSuggest } from '../components/ui/markdown-file-suggest'
 import {
     captureTargetCommandId,
     captureTargetCommandName
 } from '../commands/capture-target-commands'
-import { definitionsForDestination } from '../services/capture-target.utils'
+import { definitionsForDestination, describeTargetIssues } from '../services/capture-target.utils'
+
+/**
+ * Every edit on this page: capture only. Views ignore it, so typing a target
+ * name does not redraw every open Life Tracker view on each keystroke.
+ */
+const CAPTURE_TARGETS_CHANGED: SettingsChangeInfo = { type: 'capture-targets-changed' }
 
 /** Note type dropdown value for a target that does not use the Starter Kit */
 const STANDALONE_OPTION = ''
@@ -65,7 +71,7 @@ export class CaptureTargetSection {
                         draft.captureTargets.push(
                             createCaptureTarget(crypto.randomUUID(), 'New target')
                         )
-                    })
+                    }, CAPTURE_TARGETS_CHANGED)
                     this.requestRerender()
                 })
         })
@@ -76,7 +82,7 @@ export class CaptureTargetSection {
         await this.plugin.updateSettings((draft) => {
             const target = draft.captureTargets.find((candidate) => candidate.id === id)
             if (target) edit(target)
-        })
+        }, CAPTURE_TARGETS_CHANGED)
     }
 
     private renderTarget(container: HTMLElement, target: CaptureTarget): void {
@@ -112,7 +118,7 @@ export class CaptureTargetSection {
                                     delete definition.captureTargetId
                                 }
                             }
-                        })
+                        }, CAPTURE_TARGETS_CHANGED)
                         this.requestRerender()
                     })
             })
@@ -157,6 +163,7 @@ export class CaptureTargetSection {
             })
 
         this.renderFilters(card, target)
+        this.renderIssues(card, target)
         this.renderUsage(card, target)
     }
 
@@ -298,6 +305,25 @@ export class CaptureTargetSection {
                     })
             })
         })
+    }
+
+    /**
+     * Problems with the target (unusable setup, incomplete filter rows),
+     * checked when the page is drawn
+     */
+    private renderIssues(container: HTMLElement, target: CaptureTarget): void {
+        const noteType = target.noteTypeId
+            ? (this.plugin.starterKit
+                  .listNoteTypes()
+                  .find((candidate) => candidate.id === target.noteTypeId) ?? null)
+            : null
+        const issues = describeTargetIssues(target, noteType)
+        if (issues.length === 0) return
+
+        const desc = new DocumentFragment()
+        for (const issue of issues) desc.createDiv({ text: issue })
+        const setting = new Setting(container).setName('Problems').setDesc(desc)
+        setting.settingEl.addClass('lt-capture-target-issues')
     }
 
     /** Which properties go to this target, so the setup can be checked here */

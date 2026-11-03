@@ -1423,6 +1423,7 @@ export class GridView extends BasesView implements FileProvider {
             case 'preset-deleted':
             case 'animation-duration-changed':
             case 'confetti-setting-changed':
+            case 'capture-targets-changed':
                 break
 
             case 'high-contrast-changed':

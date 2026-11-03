@@ -9,4 +9,6 @@ export type SettingsChangeInfo =
     | { type: 'property-definitions-changed' }
     | { type: 'confetti-setting-changed' }
     | { type: 'high-contrast-changed' }
+    // Capture targets and "Capture into": capture only, no view shows them
+    | { type: 'capture-targets-changed' }
     | { type: 'full' } // Generic change requiring full refresh

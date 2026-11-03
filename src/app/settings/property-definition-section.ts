@@ -422,15 +422,20 @@ export class PropertyDefinitionSection {
                     .setValue(Object.hasOwn(options, stored) ? stored : AUTOMATIC_TARGET_OPTION)
                     .onChange(async (value) => {
                         if (!Object.hasOwn(options, value)) return
-                        await this.plugin.updateSettings((draft) => {
-                            const d = draft.propertyDefinitions.find((d) => d.id === definition.id)
-                            if (!d) return
-                            if (value === AUTOMATIC_TARGET_OPTION) {
-                                delete d.captureTargetId
-                            } else {
-                                d.captureTargetId = value
-                            }
-                        })
+                        await this.plugin.updateSettings(
+                            (draft) => {
+                                const d = draft.propertyDefinitions.find(
+                                    (d) => d.id === definition.id
+                                )
+                                if (!d) return
+                                if (value === AUTOMATIC_TARGET_OPTION) {
+                                    delete d.captureTargetId
+                                } else {
+                                    d.captureTargetId = value
+                                }
+                            },
+                            { type: 'capture-targets-changed' }
+                        )
                     })
             })
     }
