@@ -29,6 +29,7 @@ import { computeHeatmapStreaks } from './heatmap-streak.utils'
 import {
     aggregateForChart as chartAggregation,
     aggregateForNoteChart as noteChartAggregation,
+    aggregateForDatePerNoteChart as datePerNoteChartAggregation,
     aggregateForPieChart as pieChartAggregation,
     aggregateForScatterChart as scatterChartAggregation,
     aggregateForBubbleChart as bubbleChartAggregation,
@@ -246,6 +247,18 @@ export class DataAggregationService {
         displayName: string
     ): ChartData {
         return noteChartAggregation(dataPoints, propertyId, displayName)
+    }
+
+    /**
+     * Aggregate data for a chart plotting one point per note at its own date
+     * (3.4.0). Points are in date order; notes without a date are skipped.
+     */
+    aggregateForDatePerNoteChart(
+        dataPoints: VisualizationDataPoint[],
+        propertyId: BasesPropertyId,
+        displayName: string
+    ): ChartData {
+        return datePerNoteChartAggregation(dataPoints, propertyId, displayName)
     }
 
     /**

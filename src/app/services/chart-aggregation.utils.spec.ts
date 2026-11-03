@@ -8,6 +8,7 @@ import {
     aggregateForPieChart,
     aggregateForChart,
     aggregateForNoteChart,
+    aggregateForDatePerNoteChart,
     aggregateForScatterChart,
     aggregateForBubbleChart,
     aggregateForOverlayChart,
@@ -807,5 +808,85 @@ describe('aggregateForNoteChart (issue #69)', () => {
         const result = aggregateForNoteChart(dataPoints, propertyId, 'Rating')
 
         expect(result.labels).toEqual(['My Note v1.2', '.hidden'])
+    })
+})
+
+describe('aggregateForDatePerNoteChart (3.4.0)', () => {
+    const propertyId = 'note.pace' as BasesPropertyId
+
+    test('one point per note at its own date, in date order', () => {
+        const dataPoints = [
+            createDataPoint('Runs/2025-06-24 (Running Session).md', '2025-06-24', {
+                numericValue: 387
+            }),
+            createDataPoint('Runs/2025-06-20 (Running Session).md', '2025-06-20', {
+                numericValue: 390
+            }),
+            createDataPoint('Runs/2025-07-15 (Running Session).md', '2025-07-15', {
+                numericValue: 372
+            })
+        ]
+        const result = aggregateForDatePerNoteChart(dataPoints, propertyId, 'Pace')
+
+        expect(result.labels).toEqual([
+            '2025-06-20 (Running Session)',
+            '2025-06-24 (Running Session)',
+            '2025-07-15 (Running Session)'
+        ])
+        expect(result.xValues).toEqual([
+            new Date('2025-06-20').getTime(),
+            new Date('2025-06-24').getTime(),
+            new Date('2025-07-15').getTime()
+        ])
+        expect(result.datasets[0]!.data).toEqual([390, 387, 372])
+        expect(result.datasets[0]!.filePaths).toEqual([
+            ['Runs/2025-06-20 (Running Session).md'],
+            ['Runs/2025-06-24 (Running Session).md'],
+            ['Runs/2025-07-15 (Running Session).md']
+        ])
+        expect(result.skippedWithoutDate).toBe(0)
+    })
+
+    test('two notes on one day are two points, no aggregation', () => {
+        const dataPoints = [
+            createDataPoint('Morning.md', '2025-06-24', { numericValue: 400 }),
+            createDataPoint('Evening.md', '2025-06-24', { numericValue: 380 })
+        ]
+        const result = aggregateForDatePerNoteChart(dataPoints, propertyId, 'Pace')
+        expect(result.datasets[0]!.data).toEqual([400, 380])
+        expect(result.labels).toEqual(['Morning', 'Evening'])
+    })
+
+    test('notes without a date are skipped and counted', () => {
+        const dataPoints = [
+            createDataPoint('Dated.md', '2025-06-24', { numericValue: 387 }),
+            createDataPoint('Undated.md', null, { numericValue: 390 }),
+            createDataPoint('Undated 2.md', null, { numericValue: 391 })
+        ]
+        const result = aggregateForDatePerNoteChart(dataPoints, propertyId, 'Pace')
+        expect(result.labels).toEqual(['Dated'])
+        expect(result.skippedWithoutDate).toBe(2)
+    })
+
+    test('notes without a value draw nothing, never a 0', () => {
+        const dataPoints = [
+            createDataPoint('A.md', '2025-06-20', { numericValue: 387 }),
+            createDataPoint('B.md', '2025-06-21', { numericValue: null }),
+            createDataPoint('C.md', '2025-06-22', { numericValue: 380 })
+        ]
+        const result = aggregateForDatePerNoteChart(dataPoints, propertyId, 'Pace')
+        expect(result.datasets[0]!.data).toEqual([387, 380])
+        expect(result.skippedWithoutDate).toBe(0)
+    })
+
+    test('nothing to plot yields empty labels', () => {
+        const result = aggregateForDatePerNoteChart(
+            [createDataPoint('Undated.md', null, { numericValue: 1 })],
+            propertyId,
+            'Pace'
+        )
+        expect(result.labels).toEqual([])
+        expect(result.datasets).toEqual([])
+        expect(result.skippedWithoutDate).toBe(1)
     })
 })

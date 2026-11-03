@@ -9,7 +9,7 @@
  */
 export interface ChartDatasetConfig {
     label: string
-    data: (number | null)[] | { x: number; y: number; r?: number }[]
+    data: (number | null)[] | { x: number; y: number | null; r?: number }[]
     backgroundColor?: string | string[]
     borderColor?: string | string[]
     borderWidth?: number

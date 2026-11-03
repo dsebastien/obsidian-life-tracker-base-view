@@ -24,7 +24,7 @@ import {
     formatValue,
     isDurationFormat
 } from '../../../../utils'
-import type { Chart as ChartJsChart } from 'chart.js'
+import type { Chart as ChartJsChart, ScaleOptions } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
 import { referenceLineEndValue, type ReferenceLineSpec } from './reference-lines.utils'
 import { format } from 'date-fns'
@@ -36,6 +36,7 @@ import {
     type CartesianModel
 } from './cartesian-datasets.utils'
 import { planYAxis, yAxisBeginsAtZero } from './y-axis-plan.utils'
+import { buildDateTicks, dateTickPixelWidth } from './date-ticks.utils'
 
 /** Format an epoch-ms x value as a compact date for scatter axis ticks / tooltips. */
 function formatTimestamp(ms: number): string {
@@ -270,7 +271,12 @@ export function referenceLineBounds(
  */
 export function buildReferenceLineAnnotations(
     referenceLines: ReferenceLineSpec[] | undefined,
-    labelCount: number
+    labelCount: number,
+    /**
+     * First and last x values on a time-proportional axis (date-per-note,
+     * 3.4.0). Absent on category axes, where x values are label indices
+     */
+    xRange?: { min: number; max: number }
 ): Record<string, AnnotationOptions> {
     const annotations: Record<string, AnnotationOptions> = {}
 
@@ -285,7 +291,9 @@ export function buildReferenceLineAnnotations(
                 type: 'line',
                 // A sloped line needs explicit x endpoints (category indices);
                 // a horizontal one spans the chart on its own
-                ...(isSloped ? { xMin: 0, xMax: labelCount - 1 } : {}),
+                ...(isSloped
+                    ? { xMin: xRange?.min ?? 0, xMax: xRange?.max ?? labelCount - 1 }
+                    : {}),
                 yMin: line.value,
                 yMax: referenceLineEndValue(line, labelCount),
                 borderColor: line.color,
@@ -363,6 +371,65 @@ export function cartesianYBounds(
 }
 
 /**
+ * First and last x of a time-proportional axis, or undefined on a category
+ * axis
+ */
+export function timeAxisRange(chartData: ChartData): { min: number; max: number } | undefined {
+    const xValues = chartData.xValues
+    if (!xValues || xValues.length === 0) return undefined
+    return { min: Math.min(...xValues), max: Math.max(...xValues) }
+}
+
+/** Half a day: the margin around a time axis whose notes all share one instant */
+const SINGLE_INSTANT_PADDING_MS = 12 * 3600_000
+
+/**
+ * The x-axis of the date-per-note axis (3.4.0): a linear scale over epoch-ms
+ * values with calendar-aligned date ticks, horizontal labels, auto-skipped.
+ * Chart.js has no date adapter in this bundle, so ticks come from
+ * `buildDateTicks` instead of a `time` scale.
+ */
+function timeXAxis(xValues: number[], chartConfig: ChartConfig): ScaleOptions<'linear'> {
+    const first = Math.min(...xValues)
+    const last = Math.max(...xValues)
+    const padding = last > first ? 0 : SINGLE_INSTANT_PADDING_MS
+    let tickFormat = 'MMM d, yyyy'
+
+    return {
+        type: 'linear',
+        display: true,
+        min: first - padding,
+        max: last + padding,
+        // Bars need half a bar of room at both ends
+        offset: chartConfig.chartType === 'bar',
+        grid: {
+            display: chartConfig.showGrid
+        },
+        afterBuildTicks: (axis): void => {
+            const width = axis.width > 0 ? axis.width : 300
+            // Size the tick count for the short format first, then for the
+            // format the chosen unit actually uses
+            let ticks = buildDateTicks(axis.min, axis.max, width / dateTickPixelWidth('MMM d'))
+            const fitting = buildDateTicks(
+                axis.min,
+                axis.max,
+                width / dateTickPixelWidth(ticks.format)
+            )
+            if (fitting.values.length < ticks.values.length) ticks = fitting
+            tickFormat = ticks.format
+            axis.ticks = ticks.values.map((value) => ({ value }))
+        },
+        ticks: {
+            maxRotation: 0,
+            minRotation: 0,
+            autoSkip: true,
+            autoSkipPadding: 12,
+            callback: (value): string => format(new Date(Number(value)), tickFormat)
+        }
+    }
+}
+
+/**
  * Initialize cartesian chart (line, bar, area)
  */
 export function initCartesianChart(
@@ -394,7 +461,11 @@ export function initCartesianChart(
     const yBounds = cartesianYBounds(model, referenceLines, labelCount, chartConfig)
 
     // Build annotation configuration if reference lines exist
-    const annotations = buildReferenceLineAnnotations(referenceLines, labelCount)
+    const annotations = buildReferenceLineAnnotations(
+        referenceLines,
+        labelCount,
+        timeAxisRange(chartData)
+    )
 
     return new Chart(ctx, {
         type: chartJsType,
@@ -431,6 +502,22 @@ export function initCartesianChart(
                     // The marker repeats the series' own point: one row is enough
                     filter: (item): boolean => !isOutlierMarkerDataset(item.dataset),
                     callbacks: {
+                        // On a time axis the default title is a raw timestamp:
+                        // say the date and the note instead (3.4.0)
+                        ...(chartData.xValues
+                            ? {
+                                  title: (items: { dataIndex: number }[]): string => {
+                                      const index = items[0]?.dataIndex
+                                      const current = getChartData()
+                                      if (index === undefined || !current) return ''
+                                      const x = current.xValues?.[index]
+                                      const name = current.labels[index] ?? ''
+                                      return x === undefined
+                                          ? name
+                                          : `${format(new Date(x), 'MMM d, yyyy')} · ${name}`
+                                  }
+                              }
+                            : {}),
                         label: (context: CartesianTooltipContext) => {
                             const label = context.dataset.label ?? ''
                             const plotted = context.parsed.y
@@ -459,22 +546,24 @@ export function initCartesianChart(
                 }
             },
             scales: {
-                x: {
-                    display: true,
-                    offset: true, // Add space at edges for first/last bars
-                    bounds: 'ticks', // Ensure edge ticks remain visible
-                    grid: {
-                        display: chartConfig.showGrid,
-                        offset: true
-                    },
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45,
-                        autoSkipPadding: 10,
-                        includeBounds: true, // Include first/last labels
-                        align: 'center'
-                    }
-                },
+                x: chartData.xValues
+                    ? timeXAxis(chartData.xValues, chartConfig)
+                    : {
+                          display: true,
+                          offset: true, // Add space at edges for first/last bars
+                          bounds: 'ticks', // Ensure edge ticks remain visible
+                          grid: {
+                              display: chartConfig.showGrid,
+                              offset: true
+                          },
+                          ticks: {
+                              maxRotation: 45,
+                              minRotation: 45,
+                              autoSkipPadding: 10,
+                              includeBounds: true, // Include first/last labels
+                              align: 'center'
+                          }
+                      },
                 y: {
                     display: true,
                     beginAtZero: model.beginAtZero,

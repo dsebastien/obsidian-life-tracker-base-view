@@ -256,6 +256,50 @@ export function aggregateForNoteChart(
 }
 
 /**
+ * Aggregate data for a cartesian chart whose x-axis places one point per note
+ * at the note's own date anchor (3.4.0, `xAxisSource: 'date-per-note'`).
+ *
+ * No per-period aggregation: two runs on one day are two points. Points are
+ * sorted by date (stably, so same-day notes keep the view's order), which is
+ * also the order the moving average and the trend read them in. Notes without
+ * a date anchor cannot be placed and are counted in `skippedWithoutDate`;
+ * notes without a value have nothing to draw and are left out (on a
+ * time-proportional axis the gap shows as distance, never as a 0).
+ */
+export function aggregateForDatePerNoteChart(
+    dataPoints: VisualizationDataPoint[],
+    propertyId: BasesPropertyId,
+    displayName: string
+): ChartData {
+    const dated = dataPoints.filter((p) => p.dateAnchor !== null)
+    const skippedWithoutDate = dataPoints.length - dated.length
+
+    const plotted = dated
+        .filter((p) => p.numericValue !== null)
+        .map((point, order) => ({ point, time: point.dateAnchor!.date.getTime(), order }))
+        .sort((a, b) => a.time - b.time || a.order - b.order)
+
+    if (plotted.length === 0) {
+        return { propertyId, displayName, labels: [], datasets: [], skippedWithoutDate }
+    }
+
+    return {
+        propertyId,
+        displayName,
+        labels: plotted.map(({ point }) => noteNameFromPath(point.filePath)),
+        xValues: plotted.map(({ time }) => time),
+        skippedWithoutDate,
+        datasets: [
+            {
+                label: displayName,
+                data: plotted.map(({ point }) => point.numericValue),
+                filePaths: plotted.map(({ point }) => [point.filePath])
+            }
+        ]
+    }
+}
+
+/**
  * Label used for entries without a value.
  */
 const NO_DATA_LABEL = 'No data'

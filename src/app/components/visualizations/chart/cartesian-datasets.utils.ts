@@ -176,5 +176,17 @@ export function buildCartesianModel(
         })
     })
 
+    // A time-proportional axis (date-per-note, 3.4.0) places each point at its
+    // own timestamp: Chart.js reads `{ x, y }` points on a linear x scale
+    const xValues = chartData.xValues
+    if (xValues) {
+        for (const dataset of datasets) {
+            dataset.data = (dataset.data as (number | null)[]).map((y, i) => ({
+                x: xValues[i] ?? 0,
+                y
+            }))
+        }
+    }
+
     return { datasets, yPlan, beginAtZero }
 }

@@ -107,6 +107,14 @@ export interface ChartData {
     displayName: string
     labels: string[]
     datasets: ChartDataset[]
+    /**
+     * Epoch-ms x position of each point, when the x-axis is time-proportional
+     * (date-per-note axis, 3.4.0). `labels` then holds the full note names,
+     * for tooltips and export
+     */
+    xValues?: number[]
+    /** Notes left out because they have no date anchor (date-per-note axis) */
+    skippedWithoutDate?: number
 }
 
 /**

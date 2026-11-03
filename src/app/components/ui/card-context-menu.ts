@@ -667,6 +667,11 @@ export function showCardContextMenu(
                 value: 'date',
                 text: 'Date'
             })
+            // One point per note at its own date, time-proportional (3.4.0)
+            const datePerNoteOption = xAxisSelect.createEl('option', {
+                value: 'date-per-note',
+                text: 'Date, one point per note'
+            })
             const noteNameOption = xAxisSelect.createEl('option', {
                 value: 'note-name',
                 text: 'Note name'
@@ -675,6 +680,8 @@ export function showCardContextMenu(
             const effectiveXAxis = currentXAxisSource ?? DEFAULT_X_AXIS_SOURCE
             if (effectiveXAxis === 'note-name') {
                 noteNameOption.selected = true
+            } else if (effectiveXAxis === 'date-per-note') {
+                datePerNoteOption.selected = true
             } else {
                 dateOption.selected = true
             }

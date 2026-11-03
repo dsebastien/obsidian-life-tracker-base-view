@@ -98,11 +98,14 @@ export const DEFAULT_TARGET_WARN_THRESHOLD = 0.5
  *   preserves prior behavior)
  * - 'note-name': one point per note, labeled with the note's name, in the
  *   view's own sort order. Entries need no date anchor on this axis
+ * - 'date-per-note': one point per note at its own date anchor, on a
+ *   time-proportional axis, with no per-period aggregation (3.4.0). Notes
+ *   without a date anchor are skipped
  */
-export type XAxisSource = 'date' | 'note-name'
+export type XAxisSource = 'date' | 'note-name' | 'date-per-note'
 
 /** Every valid x-axis source, for runtime validation of stored config */
-export const X_AXIS_SOURCES: readonly XAxisSource[] = ['date', 'note-name']
+export const X_AXIS_SOURCES: readonly XAxisSource[] = ['date', 'note-name', 'date-per-note']
 
 /**
  * Default x-axis source when none is configured.

@@ -33,7 +33,8 @@ import {
     initPieChart,
     initRadarChart,
     initRangeChart,
-    initScatterChart
+    initScatterChart,
+    timeAxisRange
 } from './chart-initializers'
 import {
     buildCartesianModel,
@@ -56,6 +57,17 @@ import { isBooleanSeries } from '../../../services/completion.utils'
 import { formatHoursAsTime } from '../../../services/range-aggregation.utils'
 import { Notice } from 'obsidian'
 import { format as formatDate } from 'date-fns'
+
+/**
+ * A data entry with its value hidden: null for plain values, `{ x, y: null }`
+ * for points on a time-proportional axis
+ */
+function hiddenPoint<T>(point: T): T | null {
+    if (typeof point === 'object' && point !== null && 'x' in point) {
+        return { ...point, y: null }
+    }
+    return null
+}
 
 /**
  * Chart.js-based visualization for line and bar charts
@@ -259,6 +271,9 @@ export class ChartVisualization extends BaseVisualization {
         // Personal record chip (issue #56) — first render never announces
         this.renderRecordInfo(data, false)
 
+        // Notes the date-per-note axis could not place (3.4.0)
+        this.renderMissingDateInfo()
+
         // Initialize chart (async, errors handled internally)
         void this.initChart()
     }
@@ -273,10 +288,29 @@ export class ChartVisualization extends BaseVisualization {
     }
 
     /**
+     * Whether this chart plots one point per note at its own date, on a
+     * time-proportional axis (3.4.0). Radar charts keep their period spokes.
+     */
+    private usesDatePerNoteAxis(): boolean {
+        return (
+            this.chartConfig.xAxisSource === 'date-per-note' &&
+            this.isCartesianType() &&
+            this.chartConfig.chartType !== 'radar'
+        )
+    }
+
+    /**
      * Numeric aggregation for cartesian/radar charts: by time period, or one
      * point per note when the x-axis plots note names (issue #69).
      */
     private aggregateNumericChartData(data: VisualizationDataPoint[]): ChartData {
+        if (this.usesDatePerNoteAxis()) {
+            return sharedAggregationService.aggregateForDatePerNoteChart(
+                data,
+                this.propertyId,
+                this.displayName
+            )
+        }
         if (this.usesNoteNameAxis()) {
             return sharedAggregationService.aggregateForNoteChart(
                 data,
@@ -333,8 +367,10 @@ export class ChartVisualization extends BaseVisualization {
         const source = chartData.datasets[0]
         if (!source) return
 
+        // On the note axes the window counts notes, not periods (3.4.0)
+        const unit = this.usesNoteNameAxis() || this.usesDatePerNoteAxis() ? 'note' : 'period'
         chartData.datasets.push({
-            label: `${period}-period average`,
+            label: `${period}-${unit} average`,
             data: computeMovingAverage(source.data, period),
             filePaths: chartData.labels.map(() => []),
             isMovingAverage: true
@@ -882,6 +918,29 @@ export class ChartVisualization extends BaseVisualization {
 
         // A data update can set a new personal record (issue #56)
         this.renderRecordInfo(data, true)
+
+        // The count of undated notes moves with the data (3.4.0)
+        this.renderMissingDateInfo()
+    }
+
+    /**
+     * On the date-per-note axis, say how many notes were left out for having
+     * no date anchor (3.4.0): a chart silently showing fewer points than the
+     * view has notes reads as missing data. Sits in the trend row, pinned to
+     * the card bottom like the other chips.
+     */
+    private renderMissingDateInfo(): void {
+        if (!this.trendStatsEl) return
+        this.trendStatsEl.querySelector('.lt-missing-date-item')?.remove()
+
+        const skipped = this.chartData?.skippedWithoutDate ?? 0
+        if (!this.usesDatePerNoteAxis() || skipped === 0) return
+
+        this.trendStatsEl.createSpan({
+            cls: 'lt-chart-trend-item lt-missing-date-item',
+            text: `${skipped} ${skipped === 1 ? 'note' : 'notes'} without a date`,
+            attr: { 'aria-label': 'Notes without a date anchor cannot be placed on this axis' }
+        })
     }
 
     /**
@@ -962,7 +1021,11 @@ export class ChartVisualization extends BaseVisualization {
             chartData.datasets
         )
         const labelCount = chartData.labels.length
-        annotationOptions.annotations = buildReferenceLineAnnotations(referenceLines, labelCount)
+        annotationOptions.annotations = buildReferenceLineAnnotations(
+            referenceLines,
+            labelCount,
+            timeAxisRange(chartData)
+        )
 
         // The y-axis plan moves with the data: bounds and tick step
         const yScale = this.chart.options.scales?.['y']
@@ -1049,6 +1112,23 @@ export class ChartVisualization extends BaseVisualization {
             }
         }
 
+        if (this.chartData?.xValues) {
+            // Date-per-note axis (3.4.0): one row per note, its date first
+            const data = this.chartData
+            const xValues = data.xValues ?? []
+            return {
+                headers: ['Date', 'Note', ...data.datasets.map((d) => d.label)],
+                rows: data.labels.map((label, i) => {
+                    const x = xValues[i]
+                    return [
+                        x === undefined ? null : formatDate(new Date(x), 'yyyy-MM-dd'),
+                        label,
+                        ...data.datasets.map((d) => d.data[i] ?? null)
+                    ]
+                })
+            }
+        }
+
         if (this.chartData) {
             const data = this.chartData
             return {
@@ -1129,9 +1209,10 @@ export class ChartVisualization extends BaseVisualization {
             return
         }
 
-        // Start with all null values (hidden)
+        // Start with all null values (hidden). Points on a time axis keep
+        // their x: Chart.js cannot parse a bare null in `{ x, y }` data
         this.chart.data.datasets.forEach((dataset) => {
-            dataset.data = dataset.data.map(() => null)
+            dataset.data = dataset.data.map((point) => hiddenPoint(point))
         })
         this.chart.update('none')
 

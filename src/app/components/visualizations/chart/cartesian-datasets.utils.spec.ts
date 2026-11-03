@@ -138,3 +138,20 @@ describe('buildCartesianModel - outliers (3.4.0)', () => {
         expect(model.datasets.filter((d) => isOutlierMarkerDataset(d))).toHaveLength(1)
     })
 })
+
+describe('buildCartesianModel - date-per-note axis (3.4.0)', () => {
+    test('points carry their timestamp, markers included', () => {
+        const xValues = paces.map((_, i) => Date.UTC(2025, 5, 1 + i * 3))
+        const data: ChartData = { ...chartData(series(paces)), xValues }
+        const model = buildCartesianModel(data, lineConfig, undefined)
+
+        const main = model.datasets[0]!.data as { x: number; y: number | null }[]
+        expect(main[0]).toEqual({ x: xValues[0]!, y: 372 })
+        expect(main[5]!.x).toBe(xValues[5]!)
+        expect(main[5]!.y).toBe(model.yPlan.max!)
+
+        const marker = model.datasets[1]!.data as { x: number; y: number | null }[]
+        expect(marker[0]).toEqual({ x: xValues[0]!, y: null })
+        expect(marker[5]).toEqual({ x: xValues[5]!, y: model.yPlan.max! })
+    })
+})

@@ -6,7 +6,11 @@ import {
 } from './reference-lines.utils'
 import type { BasesPropertyId } from 'obsidian'
 import { TimeGranularity, type ChartConfig, type ChartDataset } from '../../../types'
-import { buildReferenceLineAnnotations, referenceLineBounds } from './chart-initializers'
+import {
+    buildReferenceLineAnnotations,
+    referenceLineBounds,
+    timeAxisRange
+} from './chart-initializers'
 
 const baseConfig = {
     granularity: TimeGranularity.Daily,
@@ -280,5 +284,29 @@ describe('buildCartesianReferenceLines - value format (3.4.0)', () => {
             []
         )
         expect(custom[0]!.label).toBe('Easy pace')
+    })
+})
+
+describe('time axis reference lines (3.4.0)', () => {
+    test('a sloped line spans the first and last timestamps', () => {
+        const lines = [{ value: 10, label: 'Target', color: '#000', cumulativePerPeriod: true }]
+        const annotations = buildReferenceLineAnnotations(lines, 3, { min: 1000, max: 5000 })
+        const line = annotations['referenceLine0'] as { xMin?: number; xMax?: number }
+        expect(line.xMin).toBe(1000)
+        expect(line.xMax).toBe(5000)
+    })
+
+    test('timeAxisRange reads the x values, undefined on category axes', () => {
+        const base = {
+            propertyId: 'note.pace' as BasesPropertyId,
+            displayName: 'Pace',
+            labels: ['a', 'b', 'c'],
+            datasets: []
+        }
+        expect(timeAxisRange(base)).toBeUndefined()
+        expect(timeAxisRange({ ...base, xValues: [3000, 1000, 2000] })).toEqual({
+            min: 1000,
+            max: 3000
+        })
     })
 })
