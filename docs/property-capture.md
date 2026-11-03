@@ -209,9 +209,10 @@ sleep or water. Less so for data that belongs to a session.
 
 Here's my own case. I do small exercises through the day: push-ups, planks,
 squats. I want them in one strength session note per day
-(`2026-11-03 (Strength Session)`, with `workout_kind: Through the day`), in the
-same folder as the gym sessions Garmin syncs for me. A **capture target** sends
-some properties to a note like that one instead of the daily note.
+(`2026-11-03 Through the day (Strength Session)`, with
+`workout_kind: Through the day`), in the same folder as the gym sessions Garmin
+syncs for me. A **capture target** sends some properties to a note like that
+one instead of the daily note.
 
 Set targets up in **Settings → Life Tracker → Capture targets**. Each target has:
 
@@ -220,15 +221,17 @@ Set targets up in **Settings → Life Tracker → Capture targets**. Each target
 | Name          | Shown in the command name and in the quick-add panel                                                                                                                      |
 | Note type     | An Obsidian Starter Kit note type, or "Folder and file name" to work without the Starter Kit                                                                              |
 | Folder        | Without the Starter Kit: where the notes live, with placeholders such as `{{year}}`                                                                                       |
-| File name     | Name of a new note. Must contain `{{date}}`; other date placeholders are allowed. With a note type: optional, the text around the date (see below)                        |
+| File name     | Name of a new note. Must contain `{{date}}`; other date placeholders are allowed. With a note type: optional, its own text around the date (see below)                    |
 | Tags          | Without the Starter Kit: tags a note must have; added to a new note                                                                                                       |
 | Template      | Optional template for a new note. With a Starter Kit note type, overrides the note type's template                                                                        |
 | Date property | The property that holds the date of the note (`date` by default)                                                                                                          |
 | Match filter  | `property = value` pairs a note must have, for example `workout_kind` = `Through the day`. All of them must match. A row without a property or without a value is ignored |
 
 Under the fields, **Problems** tells you what's wrong with the target, if
-anything: a missing folder, a file name without `{{date}}`, or an incomplete
-match filter row. **Properties** lists the properties that go to the target
+anything: a missing folder, a file name without `{{date}}`, a name capture
+would refuse (see [When the note does not exist](#when-the-note-does-not-exist)),
+or an incomplete match filter row. It's checked again when you leave the file
+name or folder field. **Properties** lists the properties that go to the target
 right now. The **Name** row shows the target's command and its id, which you
 need to [capture from a button](#capture-from-a-button).
 
@@ -286,15 +289,39 @@ With **Create missing notes when capturing** on, the plugin offers to create the
 note and shows you its path first. Nothing is created without your
 confirmation.
 
-- The name comes from the note type (its name prefix and suffix around the
-  date, for example `2026-11-03 (Strength Session)`) or from the target's file
-  name. With a note type, a file name sets the text around the date, and the
-  note type still adds its prefix and suffix: `{{date}} Through the day` gives
-  `2026-11-03 Through the day (Strength Session)`. If you type the suffix in
-  the file name too, it is not added twice. An empty file name, or `{{date}}`
-  alone, gives the note type's name. A file name without `{{date}}` is ignored
-  and listed under **Problems**. If a file with that name already exists, it is **not** reused, because
-  it can be another note of the same type. The next free name is taken, with a
+- Without a note type, the name comes from the target's file name. With a
+  note type, it's the note type's name prefix and suffix around the date, for
+  example `2026-11-03 (Strength Session)`.
+- With a note type, the target's file name is optional. It sets the text around
+  the date, and the note type still adds its prefix and suffix:
+  `{{date}} Through the day` gives
+  `2026-11-03 Through the day (Strength Session)`. Typed the note type's prefix
+  or suffix in the file name too? It isn't added twice. Only a whole word is
+  removed: with the suffix ` Log`, `Gym log` loses its `log`, and `Backlog`
+  stays as it is. An empty file name, or `{{date}}` alone, gives the note
+  type's usual name. A file name without `{{date}}` is ignored, and
+  **Problems** tells you so.
+- With a note type, some names are refused: unknown tokens (`{{time}}`), date
+  formats (`{{date:YYYY}}`), `/` or `\` (the folder comes from the note type),
+  `: ? * " < > |`, `# ^ [ ]` (they break links to the note), and a name that
+  ends with a dot. Only the text you type is checked, never the note type's
+  own prefix and suffix. **Problems** lists them before you capture, and
+  capture refuses them with the same message.
+- Without a note type, the file name works exactly as in 3.5.0: `/` makes
+  subfolders (`{{year}}/{{date}}`), and `#` and a trailing dot are accepted.
+  **Problems** may warn you about a name that capture already refused.
+- A target keeps one file name per mode, and the settings page shows the one
+  of the current mode. Switching modes doesn't copy one into the other: a file
+  name you set before you switched the target to a note type is ignored, and
+  comes back if you switch the target back.
+- Upgrading from 3.5.0 or earlier changes nothing: your targets with a note
+  type keep their usual names until you type a file name for them. On
+  Obsidian Sync, a device with an older version ignores that file name and
+  keeps the note type's usual name. If that device saves its Life Tracker
+  settings, the file name of those targets is lost: older versions keep only
+  the capture target settings they know.
+- If a file with that name already exists, it is **not** reused, because it
+  can be another note of the same type. The next free name is taken, with a
   number right after the date (`2026-11-03 2 (Strength Session)`).
 - Before asking, the plugin checks that it would find the new note again. If
   the note type's filters wouldn't match it (for example a regex filter that
@@ -353,7 +380,8 @@ Here's how I set it up in my own vault, with the Obsidian Starter Kit.
    Sessions**, match filter `workout_kind` = `Through the day`, file name
    `{{date}} Through the day`. Template and date property stay at their
    defaults. The day's note is `2026-11-03 Through the day (Strength Session)`,
-   so it never takes the name of the gym session note Garmin creates.
+   so it never clashes with the gym session note Garmin syncs
+   (`2026-11-03 (Strength Session)`).
 3. The imported counters now go to that target automatically. **Show in quick
    add** is on for them.
 4. Quick add shows a "Through the day" group. A link such as

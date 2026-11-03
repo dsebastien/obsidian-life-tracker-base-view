@@ -156,9 +156,9 @@ Put it on your phone's home screen (iOS Shortcuts, an Android shortcut or widget
 
 ### Capture Targets
 
-Some values don't belong in the daily note. I do push-ups and planks through the day, and I want them in one strength session note per day (`2026-11-03 (Strength Session)`), in the same folder as my gym sessions. A capture target sends those values there.
+Some values don't belong in the daily note. I do push-ups and planks through the day, and I want them in one strength session note per day (`2026-11-03 Through the day (Strength Session)`), in the same folder as my gym sessions. A capture target sends those values there.
 
-Create one in **Settings → Life Tracker → Capture targets**: a note type (an Obsidian Starter Kit note type, or a folder and file name), a match filter such as `workout_kind` = `Through the day`, and a date property. Then pick the target in a property's **Capture into** setting, or let the properties imported from that Starter Kit note type go there automatically.
+Create one in **Settings → Life Tracker → Capture targets**: a note type (an Obsidian Starter Kit note type, or a folder and file name), a match filter such as `workout_kind` = `Through the day`, a date property and, with a Starter Kit note type, an optional file name for the text around the date (`{{date}} Through the day`). Then pick the target in a property's **Capture into** setting, or let the properties imported from that Starter Kit note type go there automatically.
 
 From then on, quick add, quick-add links and the target's own **Capture today: \<target\>** command write into the day's note. They find it by its type, match filter and date, never use another note of the same type on the same day, and offer to create it from its template when it's missing. The command has an id you can put on a button: mine is a **💪 Small exercises** button in my daily note. See [the guide](docs/property-capture.md#capture-targets).
 
