@@ -1,50 +1,79 @@
-### Capture into notes other than the daily note
+### Capture into a note other than the daily note
 
-Until now, quick add, quick-add links and "Capture today" always wrote into the
-daily note. Some values belong elsewhere: the push-ups, squats and planks you do
-through the day can now go into the strength session note of that day.
+Until now, everything you captured landed in the daily note: quick add,
+quick-add links and "Capture today" all wrote there. Fine for mood or sleep.
+Less so for data that belongs to a session.
 
-- New **Settings → Life Tracker → Capture targets** page. A capture target is a
-  note type (an Obsidian Starter Kit note type, or a folder and file name), a
-  match filter such as `workout_kind` = `Through the day`, an optional template
-  and a date property (`date` by default).
-- Each property has a new **Capture into** setting: automatic, the daily note,
-  or a capture target. Automatic sends a property imported from a Starter Kit
-  note type to the capture target of that note type.
-- The note is found by its type, its match filter and its date property. Another
-  note of the same type on the same day, such as a gym session synced from
-  Garmin, is never used.
-- When the note is missing and **Create missing notes when capturing** is on,
-  the plugin asks first, then creates it from its template. If the file name is
-  taken, it uses the next free name (`2026-11-03 2 (Strength Session)`). It then
-  writes the date, the match filter values and the tags, also when Templater is
-  not installed.
-- Each capture target adds a command **Capture today: \<target\>**.
+Here's my own case. I do small exercises through the day: push-ups, planks,
+squats. I want them in one strength session note per day
+(`2026-11-03 (Strength Session)`, with `workout_kind: Through the day`), in the
+same folder as the gym sessions Garmin syncs for me. Those gym sessions must
+never receive the push-ups.
+
+This release adds **capture targets** for that.
+
+- New page: **Settings → Life Tracker → Capture targets**. A target is a note
+  type (an Obsidian Starter Kit note type, or a folder and file name), a match
+  filter such as `workout_kind` = `Through the day`, an optional template and a
+  date property (`date` by default).
+- Each property gets a **Capture into** setting: automatic, the daily note, or
+  a capture target. Automatic sends a property imported from a Starter Kit note
+  type to the target of that note type.
+- The plugin finds the day's note by its type, its match filter and its date
+  property. Another note of the same type on the same day (my Garmin session)
+  is never used.
+- No note yet? With **Create missing notes when capturing** on, the plugin asks
+  first, then creates it from its template. If the file name is taken, it picks
+  the next free one (`2026-11-03 2 (Strength Session)`). It then writes the
+  date, the match filter values and the tags, even without Templater.
 - "Capture today" now lists only the properties that go to the daily note.
-  Without capture targets nothing changes.
 
-### Quick add
+No capture targets? Then nothing changes for you.
 
-- The panel groups its rows by note: the daily note, then each capture target,
-  each with its own **Create note** and **Full capture** buttons. With only the
-  daily note, the panel looks as before.
-- Quick-add links write into the note of the property's capture target. Links
-  do not change.
-- New link action `append=<value>` adds one entry to a list property, for
-  example `append=12@60` for a set of 12 reps at 60 kg.
+### One command per target, ready for a button
 
-### Goals
+Each target adds its own command: **Capture today: \<target name\>**. The
+target's settings show the command id, `life-tracker:capture-today-target-<id>`,
+so you can run it from a button, a hotkey or any plugin that runs commands.
+Renaming the target keeps the id, so your button keeps working.
 
-- New measure **Days with a value**: the number of days with at least one
-  non-zero value. Two notes on the same day count as one day, so "3 days a
-  week" stays right with session notes. "Entries with a value" keeps counting
-  notes, and existing goals are not changed.
+In my vault, a Meta Bind button in my daily note template, **💪 Small
+exercises**, runs that command. One tap opens the capture dialog on today's
+"Through the day" note, and offers to create the note first when it doesn't
+exist yet.
+
+### Quick add, grouped by note
+
+- The quick-add panel now groups its rows by note: the daily note, then each
+  capture target. Each group has its own **Full capture** button, and a
+  **Create note** button when its note doesn't exist yet (with **Create missing
+  notes when capturing** on). With only the daily note, the panel looks exactly
+  like before.
+- Quick-add links write into the note of the property's capture target. Your
+  links don't change: once push-ups go to a target, the same push-ups link
+  writes there.
+- New link action `append=<value>`: adds one entry to a list (or tags)
+  property. For example, `append=12@60` logs a set of 12 reps at 60 kg.
+
+### Goals: "Days with a value"
+
+A new measure for goals: the number of days with at least one non-zero value.
+Two notes on the same day count as one day, so a "3 days a week" goal stays
+right when a gym session and a "Through the day" session share a day.
+
+"Entries with a value" still counts notes, and your existing goals don't
+change.
 
 ### Fixes
 
 - Notes created from a Starter Kit note type keep the spaces of the name
-  suffix: `2026-11-03 (Strength Session)`, not `2026-11-03(Strength Session)`.
-- The "this note will not appear in your views" warning no longer shows for
-  notes created for a capture target with a date property.
-- The documentation now describes the date order the views use: with a date
-  anchor property set in a view, that property comes before the file name.
+  prefix and suffix: `2026-11-03 (Strength Session)`, not
+  `2026-11-03(Strength Session)`.
+- No false "this note will not appear in your views" warning for session
+  notes. That check only looks at the file name, and
+  `2026-11-03 (Strength Session)` has no date it can read. A note created for a
+  capture target with a date property is dated by that property, so the check
+  is skipped.
+- The documentation was wrong about dates. With a **Date anchor** property set
+  in a view, that property comes first, before the file name. The plugin
+  already worked that way; the docs now say so.
