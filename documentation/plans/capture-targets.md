@@ -79,8 +79,12 @@ An explicit id pointing at a deleted target falls back to automatic.
   confirmation shows the path.
 - Name: Starter Kit prefix + `YYYY-MM-DD` + suffix, or the standalone pattern.
   A Starter Kit target with a pattern holding `{{date}}`: prefix + pattern
-  (text around the date) + suffix, a typed trailing suffix dropped. Empty
-  pattern or `{{date}}` alone: the plain type name.
+  (text around the date) + suffix, a typed leading prefix or trailing suffix
+  dropped at a word boundary. Empty pattern or `{{date}}` alone: the plain
+  type name. A pattern with `/` or `\`, or one that renders to no valid name,
+  is listed under Problems and refused at capture with the same message.
+  Settings from 3.5.0: a one-time migration (`completedMigrations`) resets the
+  pattern of every note type target to `{{date}}` (it was hidden there).
   If a file exists at that path, the next free name is used: a counter goes
   right after the date part (`2026-11-03 2 (Strength Session)`). An existing
   file is never reused for a target.
