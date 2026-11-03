@@ -351,3 +351,86 @@ describe('FrontmatterService.getIssues()', () => {
         expect(service.hasIssues({ energy: 'good' }, [def])).toBe(false)
     })
 })
+
+describe('FrontmatterService.update (review #2: lost increments)', () => {
+    /**
+     * A vault where the metadata cache lags (always the old snapshot) and
+     * processFrontMatter is atomic per file, like Obsidian's vault.process.
+     */
+    function laggingApp(initial: Record<string, unknown>): {
+        app: App
+        disk: Record<string, unknown>
+    } {
+        const disk: Record<string, unknown> = { ...initial }
+        const staleCache = { ...initial }
+        let queue = Promise.resolve()
+        const app = {
+            metadataCache: { getFileCache: () => ({ frontmatter: staleCache }) },
+            fileManager: {
+                processFrontMatter: (
+                    _file: TFile,
+                    callback: (fm: Record<string, unknown>) => void
+                ): Promise<void> => {
+                    const run = queue.then(() => callback(disk))
+                    queue = run.catch(() => undefined)
+                    return run
+                }
+            }
+        }
+        return { app: app as never, disk }
+    }
+
+    const increment = (current: unknown): { ok: true; value: unknown } => ({
+        ok: true,
+        value: (typeof current === 'number' ? current : 0) + 1
+    })
+
+    test('two concurrent increments both count, whatever the cache says', async () => {
+        const { app, disk } = laggingApp({ push_ups: 0 })
+        const service = new FrontmatterService(app)
+
+        await Promise.all([
+            service.update(makeFile(), 'push_ups', increment),
+            service.update(makeFile(), 'push_ups', increment)
+        ])
+
+        expect(disk['push_ups']).toBe(2)
+    })
+
+    test('two concurrent appends keep both sets', async () => {
+        const { app, disk } = laggingApp({ leg_press: ['10@50'] })
+        const service = new FrontmatterService(app)
+        const append =
+            (entry: string) =>
+            (current: unknown): { ok: true; value: unknown } => ({
+                ok: true,
+                value: [...(Array.isArray(current) ? (current as unknown[]) : []), entry]
+            })
+
+        await Promise.all([
+            service.update(makeFile(), 'leg_press', append('12@60')),
+            service.update(makeFile(), 'leg_press', append('12@65'))
+        ])
+
+        expect(disk['leg_press']).toEqual(['10@50', '12@60', '12@65'])
+    })
+
+    test('a refused update leaves the note untouched and reports why', async () => {
+        const { app, disk } = laggingApp({ push_ups: 3 })
+        const result = await new FrontmatterService(app).update(makeFile(), 'push_ups', () => ({
+            ok: false,
+            error: 'too many'
+        }))
+        expect(result).toEqual({ ok: false, error: 'too many' })
+        expect(disk).toEqual({ push_ups: 3 })
+    })
+
+    test('an empty value removes the property', async () => {
+        const { app, disk } = laggingApp({ note: 'x' })
+        await new FrontmatterService(app).update(makeFile(), 'note', () => ({
+            ok: true,
+            value: ''
+        }))
+        expect('note' in disk).toBe(false)
+    })
+})

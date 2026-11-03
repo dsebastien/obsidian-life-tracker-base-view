@@ -1,7 +1,7 @@
 import { Notice, type ObsidianProtocolData, type TFile } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import { QuickAddModal } from '../components/modals/quick-add-modal'
-import { FrontmatterService } from '../services/frontmatter.service'
+import { FrontmatterService, type FrontmatterUpdateResult } from '../services/frontmatter.service'
 import { PropertyRecognitionService } from '../services/property-recognition.service'
 import {
     QUICK_ADD_PROTOCOL_ACTION,
@@ -115,25 +115,27 @@ async function applyToNote(
         return
     }
 
+    // The new value is computed from the note as it is when written, not
+    // from the cache: two quick taps (or two links joining one creation)
+    // must both count
     const frontmatterService = new FrontmatterService(plugin.app)
-    const current = frontmatterService.read(file)[definition.name]
-    const result = applyQuickAddAction(definition, current, action)
-    if (!result.ok) {
-        new Notice(`Life Tracker quick add: ${result.error}`)
-        return
-    }
-
-    const validation = frontmatterService.validate(result.value, definition)
-    if (!validation.valid) {
-        new Notice(`Life Tracker quick add: ${label}: ${validation.error ?? 'invalid value'}`)
-        return
-    }
-
+    let result: FrontmatterUpdateResult
     try {
-        await frontmatterService.write(file, { [definition.name]: result.value })
+        result = await frontmatterService.update(file, definition.name, (current) => {
+            const next = applyQuickAddAction(definition, current, action)
+            if (!next.ok) return next
+            const validation = frontmatterService.validate(next.value, definition)
+            return validation.valid
+                ? next
+                : { ok: false, error: `${label}: ${validation.error ?? 'invalid value'}` }
+        })
     } catch (error: unknown) {
         log('Failed to save frontmatter', 'error', error)
         new Notice(`Failed to save "${label}" for ${file.basename} — your value was not persisted`)
+        return
+    }
+    if (!result.ok) {
+        new Notice(`Life Tracker quick add: ${result.error}`)
         return
     }
 

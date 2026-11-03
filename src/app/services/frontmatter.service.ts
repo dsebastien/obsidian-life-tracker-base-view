@@ -1,6 +1,12 @@
 import type { App, TFile } from 'obsidian'
 import type { PropertyDefinition, ValidationResult, PropertyIssue } from '../types'
 
+/** Outcome of `FrontmatterService.update` */
+export type FrontmatterUpdateResult = { ok: true; value: unknown } | { ok: false; error: string }
+
+/** Aborts a `processFrontMatter` call without writing when an update is refused */
+class RefusedUpdate extends Error {}
+
 /**
  * Service for reading and writing frontmatter properties
  */
@@ -55,6 +61,44 @@ export class FrontmatterService {
                 }
             }
         )
+    }
+
+    /**
+     * Change one property from its value at write time.
+     *
+     * `compute` runs inside `processFrontMatter`, which reads, changes and
+     * saves the file in one step, so it sees the value on disk, not the
+     * metadata cache. Two quick increments on the same note then add up
+     * instead of both writing "current + 1" from the same stale read.
+     *
+     * When `compute` refuses (`ok: false`) the file is left untouched. An
+     * empty value removes the property, like `write`.
+     */
+    async update(
+        file: TFile,
+        name: string,
+        compute: (current: unknown) => FrontmatterUpdateResult
+    ): Promise<FrontmatterUpdateResult> {
+        let result: FrontmatterUpdateResult = { ok: false, error: 'not written' }
+        try {
+            await this.app.fileManager.processFrontMatter(
+                file,
+                (frontmatter: Record<string, unknown>) => {
+                    result = compute(frontmatter[name])
+                    if (!result.ok) throw new RefusedUpdate()
+                    const value = result.value
+                    if (value === null || value === undefined || value === '') {
+                        delete frontmatter[name]
+                    } else {
+                        frontmatter[name] = value
+                    }
+                }
+            )
+        } catch (error: unknown) {
+            if (error instanceof RefusedUpdate) return result
+            throw error
+        }
+        return result
     }
 
     /**
