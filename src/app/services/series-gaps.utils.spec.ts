@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import {
     GAP_MIN_MS,
+    clearGapStretches,
+    isolatedPointIndices,
     computeSegmentedMovingAverage,
     findGapBreaks,
     gapBreaksFor,
@@ -181,5 +183,52 @@ describe('gapBreaksFor (issue #185)', () => {
         expect(
             gapBreaksFor(chartData({ periodTimes: values.map((_, i) => day(i)) }), lineConfig)
         ).toBeUndefined()
+    })
+})
+
+describe('clearGapStretches (issue #185)', () => {
+    test('clears the slots a running total filled before a gap', () => {
+        // Values, two empty periods ("Show empty dates"), then a break
+        const raw = [1, 2, null, null, 5]
+        const total = [1, 3, 3, 3, 8]
+        const breaks = [false, false, false, false, true]
+        expect(clearGapStretches(total, raw, breaks)).toEqual([1, 3, null, null, 8])
+    })
+
+    test('clears the slots a moving average filled before a gap', () => {
+        const raw = [4, null, null, 10]
+        const breaks = [false, false, false, true]
+        const average = computeSegmentedMovingAverage(raw, 3, breaks)
+        expect(average).toEqual([4, 4, 4, 10])
+        expect(clearGapStretches(average, raw, breaks)).toEqual([4, null, null, 10])
+    })
+
+    test('keeps empty slots inside a segment, and everything without breaks', () => {
+        const raw = [1, null, 3]
+        expect(clearGapStretches([1, 1, 4], raw, [false, false, false])).toEqual([1, 1, 4])
+        expect(clearGapStretches([1, 1, 4], raw, undefined)).toEqual([1, 1, 4])
+    })
+})
+
+describe('isolatedPointIndices (issue #185)', () => {
+    test('a point with a break before and after is isolated', () => {
+        const values = [1, 2, 3, 4, 5]
+        const breaks = [false, false, true, true, false]
+        expect(isolatedPointIndices(values, breaks)).toEqual([2])
+    })
+
+    test('a last point after a break is isolated', () => {
+        expect(isolatedPointIndices([1, 2, 3], [false, false, true])).toEqual([2])
+    })
+
+    test('a point between an empty slot and a break is isolated', () => {
+        expect(isolatedPointIndices([1, null, 3, 4], [false, false, false, true])).toEqual([
+            0, 2, 3
+        ])
+    })
+
+    test('nothing without breaks', () => {
+        expect(isolatedPointIndices([1, null, 3], undefined)).toEqual([])
+        expect(isolatedPointIndices([1, null, 3], [false, false, false])).toEqual([])
     })
 })

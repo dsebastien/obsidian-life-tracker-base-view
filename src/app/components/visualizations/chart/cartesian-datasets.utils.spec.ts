@@ -9,6 +9,7 @@ import {
     OUTLIER_MARKER_RADIUS,
     POINT_MARKER_THRESHOLD
 } from './cartesian-datasets.utils'
+import { computeSegmentedMovingAverage, gapBreaksFor } from '../../../services/series-gaps.utils'
 import {
     TimeGranularity,
     type ChartConfig,
@@ -320,5 +321,73 @@ describe('datasetsToggledWith (3.4.0)', () => {
         expect(datasetsToggledWith(datasets, 0)).toEqual([0, 2])
         expect(datasetsToggledWith(datasets, 1)).toEqual([1, 3])
         expect(datasetsToggledWith([{ label: 'A' }], 0)).toEqual([0])
+    })
+})
+
+describe('points isolated by gaps stay visible (issue #185)', () => {
+    const DAY = 24 * 3600_000
+    // 60 daily values, then 6 values 15 days apart: each of those is alone
+    const times = [
+        ...Array.from({ length: 60 }, (_, i) => i * DAY),
+        ...Array.from({ length: 6 }, (_, i) => (59 + 15 * (i + 1)) * DAY)
+    ]
+    const values = times.map((_, i) => 100 + (i % 5))
+
+    function gapData(withAverage: boolean): ChartData {
+        const data: ChartData = { ...chartData(series(values)), periodTimes: times }
+        data.gapBreaks = gapBreaksFor(data, lineConfig)
+        if (withAverage) {
+            data.datasets.push({
+                label: '7-period average',
+                data: computeSegmentedMovingAverage(values, 7, data.gapBreaks),
+                filePaths: values.map(() => []),
+                isMovingAverage: true
+            })
+        }
+        return data
+    }
+
+    function radiusAt(radius: number | number[] | undefined, index: number): number {
+        return Array.isArray(radius) ? (radius[index] ?? 0) : (radius ?? 3)
+    }
+
+    test('the raw series gives the 6 later points a marker, not the dense ones', () => {
+        const data = gapData(false)
+        expect(data.gapBreaks?.slice(60)).toEqual([true, true, true, true, true, true])
+        const model = buildCartesianModel(data, lineConfig, undefined)
+        const radius = model.datasets[0]!.pointRadius
+        for (let i = 60; i < 66; i++) expect(radiusAt(radius, i)).toBeGreaterThan(0)
+        expect(radiusAt(radius, 30)).toBe(0)
+    })
+
+    test('the moving average and the faded raw series do too', () => {
+        const model = buildCartesianModel(gapData(true), lineConfig, undefined)
+        for (const dataset of model.datasets.slice(0, 2)) {
+            for (let i = 60; i < 66; i++) {
+                expect(radiusAt(dataset.pointRadius, i)).toBeGreaterThan(0)
+            }
+        }
+    })
+
+    test('a series without breaks keeps its markers hidden', () => {
+        const dense = Array.from({ length: 60 }, (_, i) => 100 + (i % 5))
+        const model = buildCartesianModel(chartData(series(dense)), lineConfig, undefined)
+        expect(model.datasets[0]!.pointRadius).toBe(0)
+    })
+})
+
+describe('overlay checkbox series are never fitted (issue #187)', () => {
+    test('a dataset marked boolean gets no outlier markers', () => {
+        const weekly = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 1]
+        const asNumbers = buildCartesianModel(chartData(series(weekly)), lineConfig, undefined)
+        expect(asNumbers.yPlan.clamped[0]).toHaveLength(1)
+
+        const model = buildCartesianModel(
+            chartData({ ...series(weekly), isBoolean: true }),
+            lineConfig,
+            undefined
+        )
+        expect(model.yPlan.clamped[0]).toEqual([])
+        expect(model.datasets).toHaveLength(1)
     })
 })

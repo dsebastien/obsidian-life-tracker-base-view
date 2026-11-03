@@ -460,7 +460,7 @@ Line and area charts on a date axis (**Date** or **Date, one point per note**) s
 
 Two points are far apart when they are further apart than 3 times the usual spacing between your points, or 14 days, whichever is longer. For daily data, a break of more than two weeks stops the line. For monthly data, a break of more than about three months does.
 
-The raw line, the area below it, and the moving average all stop at the gap. The points themselves stay where they are.
+The raw line, the area below it, and the moving average all stop at the gap. The points themselves stay where they are, and a point with no line on either side always gets a marker, even on a busy chart.
 
 This is on by default. To keep one continuous line, set **Break line across gaps** to **Off** in the card's right-click menu (`breakLineAcrossGaps: false` in the `.base` file). The **Note name** axis has no dates, so its line never breaks. Overlay charts keep one continuous line, and the overlay editor has no **Break line across gaps** switch.
 

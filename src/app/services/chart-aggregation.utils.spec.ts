@@ -944,3 +944,34 @@ describe('spreadSameInstantTimes (3.4.0)', () => {
         expect(new Date(spread[1]!).getDate()).toBe(24)
     })
 })
+
+describe('aggregateForOverlayChart - checkbox series (issue #187)', () => {
+    test('marks a checkbox property series as boolean, not a numeric one', () => {
+        const days = ['2025-01-01', '2025-01-02', '2025-01-03']
+        const result = aggregateForOverlayChart(
+            [
+                {
+                    propertyId: 'note.meditated',
+                    displayName: 'Meditated',
+                    dataPoints: days.map((d, i) =>
+                        createDataPoint(`m${i}.md`, d, {
+                            numericValue: i === 1 ? 0 : 1,
+                            booleanValue: i !== 1
+                        })
+                    )
+                },
+                {
+                    propertyId: 'note.mood',
+                    displayName: 'Mood',
+                    dataPoints: days.map((d, i) =>
+                        createDataPoint(`n${i}.md`, d, { numericValue: 3 + i })
+                    )
+                }
+            ],
+            'Overlay',
+            TimeGranularity.Daily
+        )
+        expect(result.datasets[0]?.isBoolean).toBe(true)
+        expect(result.datasets[1]?.isBoolean).toBeUndefined()
+    })
+})

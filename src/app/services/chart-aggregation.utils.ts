@@ -20,6 +20,7 @@ import {
 } from '../types'
 import { formatDateByGranularity, minOf, maxOf } from '../../utils'
 import { getTimeKey, normalizeDate } from './date-grouping.utils'
+import { isBooleanSeries } from './completion.utils'
 
 /**
  * Capitalize a boolean string value.
@@ -904,7 +905,9 @@ export function aggregateForOverlayChart(
             label: propData.displayName,
             data,
             filePaths,
-            propertyId: propData.propertyId
+            propertyId: propData.propertyId,
+            // Checkbox series have no outliers, averaged or not
+            ...(isBooleanSeries(propData.dataPoints) ? { isBoolean: true } : {})
         })
     }
 

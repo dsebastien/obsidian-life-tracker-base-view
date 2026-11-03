@@ -17,8 +17,11 @@ export interface ChartDatasetConfig {
     fill?: boolean
     /** Dash pattern for the line (used by the moving-average overlay) */
     borderDash?: number[]
-    /** Point radius; 0 hides the points (used by the moving-average overlay) */
-    pointRadius?: number
+    /**
+     * Point radius; 0 hides the points (used by the moving-average overlay).
+     * Per point when only some points show (isolated by gaps, issue #185)
+     */
+    pointRadius?: number | number[]
     /** Point radius on hover; kept non-zero so hidden points still highlight */
     pointHoverRadius?: number
     /**

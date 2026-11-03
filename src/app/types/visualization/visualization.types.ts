@@ -158,6 +158,11 @@ export interface ChartDataset {
     propertyId?: BasesPropertyId
     /** Marks the synthetic moving-average dataset (dashed styling, issue #101) */
     isMovingAverage?: boolean
+    /**
+     * Checkbox values (an overlay series of a boolean property): never
+     * outlier-fitted, even once averaged per period
+     */
+    isBoolean?: boolean
 }
 
 /**

@@ -2,6 +2,7 @@ import type { ChartConfig, ChartData, ChartDatasetConfig } from '../../../types'
 import { getChartColorScheme, getColorWithAlpha } from '../../../../utils'
 import { referenceLineValues, type ReferenceLineSpec } from './reference-lines.utils'
 import { planYAxis, yAxisBeginsAtZero, type YAxisPlan } from './y-axis-plan.utils'
+import { isolatedPointIndices } from '../../../services/series-gaps.utils'
 
 /**
  * Chart.js datasets and y-axis plan for a line, bar or area chart. Built the
@@ -50,6 +51,30 @@ export const MOVING_AVERAGE_LINE_WIDTH = 2.5
 
 /** Opacity of the raw series drawn behind a moving average */
 export const RAW_SERIES_ALPHA = 0.35
+
+/**
+ * Marker radius of a point no line reaches (issue #185): with markers hidden
+ * above 40 points, a point alone between two gaps would not be drawn at all
+ */
+export const ISOLATED_POINT_RADIUS = 3
+
+/**
+ * Give the isolated points of a line a visible marker when its markers are
+ * hidden (radius 0): a per-point radius, 0 everywhere else. A dataset that
+ * already shows its points is left as is.
+ */
+function showIsolatedPoints(
+    dataset: ChartDatasetConfig,
+    breaks: readonly boolean[] | undefined
+): void {
+    if (dataset.pointRadius !== 0) return
+    const data = dataset.data as (number | null)[]
+    const isolated = isolatedPointIndices(data, breaks)
+    if (isolated.length === 0) return
+    const radius = new Array<number>(data.length).fill(0)
+    for (const index of isolated) radius[index] = ISOLATED_POINT_RADIUS
+    dataset.pointRadius = radius
+}
 
 /** Marker radius of a value drawn at the axis edge: always visible */
 export const OUTLIER_MARKER_RADIUS = 6
@@ -114,7 +139,8 @@ export function buildCartesianModel(
                 !dataset.isMovingAverage &&
                 !chartConfig.runningTotal &&
                 !options.listData &&
-                !options.booleanData
+                !options.booleanData &&
+                !dataset.isBoolean
         })),
         referenceValues: referenceLineValues(referenceLines, chartData.labels.length),
         scale: chartConfig.scale,
@@ -186,6 +212,12 @@ export function buildCartesianModel(
             ...(isBar ? {} : densePointStyle(data))
         }
     })
+
+    // A point that gap breaks leave without a line must still be drawn
+    // (issue #185), on the raw series and on the moving average alike
+    if (!isBar) {
+        for (const dataset of datasets) showIsolatedPoints(dataset, chartData.gapBreaks)
+    }
 
     // Values drawn at the axis edge get a triangle marker pointing the way
     // the real value lies (3.4.0). A separate line dataset without a line, so

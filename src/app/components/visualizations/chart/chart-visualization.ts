@@ -43,7 +43,11 @@ import {
     type CartesianModel
 } from './cartesian-datasets.utils'
 import { computeRunningTotal, computeTrend } from '../../../services/chart-aggregation.utils'
-import { computeSegmentedMovingAverage, gapBreaksFor } from '../../../services/series-gaps.utils'
+import {
+    clearGapStretches,
+    computeSegmentedMovingAverage,
+    gapBreaksFor
+} from '../../../services/series-gaps.utils'
 import { withoutOutliers } from '../../../services/outlier.utils'
 import { buildCartesianReferenceLines } from './reference-lines.utils'
 import { missingDateAriaLabel, missingDateText, trendWindowLabel } from './chart-format.utils'
@@ -360,7 +364,12 @@ export class ChartVisualization extends BaseVisualization {
         // and "reads" as +133%. The rate is what the arrow is meant to convey.
         this.trendSourceData = [...source.data]
 
-        source.data = computeRunningTotal(source.data)
+        // The total carried into empty slots must not run on across a gap
+        source.data = clearGapStretches(
+            computeRunningTotal(source.data),
+            this.trendSourceData,
+            chartData.gapBreaks
+        )
         source.label = `${source.label} (running total)`
     }
 
@@ -389,7 +398,12 @@ export class ChartVisualization extends BaseVisualization {
         chartData.datasets.push({
             label: `${period}-${unit} average`,
             // One average per segment: a window never spans a gap (issue #185)
-            data: computeSegmentedMovingAverage(values, period, chartData.gapBreaks),
+            // and gives no value to the empty slots before a gap
+            data: clearGapStretches(
+                computeSegmentedMovingAverage(values, period, chartData.gapBreaks),
+                source.data,
+                chartData.gapBreaks
+            ),
             filePaths: chartData.labels.map(() => []),
             isMovingAverage: true
         })

@@ -136,3 +136,52 @@ export function gapBreaksFor(
     const breaks = findGapBreaks(times, source.data)
     return breaks.some(Boolean) ? breaks : undefined
 }
+
+/**
+ * Clear the slots a derived series filled inside a gap (issue #185). A
+ * running total carries its total into empty slots, and a moving average
+ * gives them the mean of its window; with "Show empty dates" those slots sit
+ * between the last point before a gap and the break, and would draw the line
+ * on across the gap. Every slot between a break and the previous slot that
+ * has a value in `reference` (the real values) is set to null.
+ */
+export function clearGapStretches(
+    values: readonly (number | null)[],
+    reference: readonly (number | null)[],
+    breaks: readonly boolean[] | undefined
+): (number | null)[] {
+    const result = [...values]
+    if (!breaks) return result
+    breaks.forEach((isBreak, index) => {
+        if (!isBreak) return
+        for (let k = index - 1; k >= 0 && reference[k] === null; k--) {
+            result[k] = null
+        }
+    })
+    return result
+}
+
+/**
+ * Indices of the points no line segment reaches (issue #185): a value whose
+ * neighbours are empty, or across a break. Above 40 points line charts hide
+ * their markers, so these points would not be drawn at all; they get a
+ * marker of their own. Empty when the series has no breaks, as before.
+ */
+export function isolatedPointIndices(
+    values: readonly (number | null)[],
+    breaks: readonly boolean[] | undefined
+): number[] {
+    if (!breaks?.some(Boolean)) return []
+    const has = (i: number): boolean => {
+        const v = values[i]
+        return v !== null && v !== undefined && Number.isFinite(v)
+    }
+    const isolated: number[] = []
+    values.forEach((_, i) => {
+        if (!has(i)) return
+        const joinedBefore = i > 0 && has(i - 1) && !breaks[i]
+        const joinedAfter = i + 1 < values.length && has(i + 1) && !breaks[i + 1]
+        if (!joinedBefore && !joinedAfter) isolated.push(i)
+    })
+    return isolated
+}
