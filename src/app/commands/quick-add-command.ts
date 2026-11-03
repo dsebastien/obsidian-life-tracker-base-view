@@ -104,7 +104,13 @@ async function applyToNote(
     if (!definition) return
     const label = definition.displayName || definition.name
 
-    if (!new PropertyRecognitionService(plugin.app).propertyAppliesToFile(file, definition)) {
+    // A capture target decides where its properties go: it already matched
+    // the note by type, filter and date, and a note it just created may not
+    // be fully indexed yet. Only the daily note is checked against mappings.
+    if (
+        !target &&
+        !new PropertyRecognitionService(plugin.app).propertyAppliesToFile(file, definition)
+    ) {
         new Notice(`Life Tracker quick add: ${label} does not apply to ${file.basename}`)
         return
     }

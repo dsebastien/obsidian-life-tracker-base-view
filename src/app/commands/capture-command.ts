@@ -23,6 +23,11 @@ export interface CaptureContext {
      * destination is this note. All definitions when absent.
      */
     definitions?: PropertyDefinition[]
+    /**
+     * Use `definitions` as they are, without the note filtering (mappings):
+     * a capture target already decided these properties go to this note.
+     */
+    ignoreMappings?: boolean
 }
 
 /**
@@ -83,7 +88,12 @@ export function captureToday(plugin: LifeTrackerPlugin, target: CaptureTarget | 
             ? (captureTargets.find((candidate) => candidate.id === target.id) ?? target)
             : null
         const definitions = definitionsForDestination(propertyDefinitions, captureTargets, current)
-        new PropertyCaptureModal(plugin, { mode: 'single-note', file, definitions }).open()
+        new PropertyCaptureModal(plugin, {
+            mode: 'single-note',
+            file,
+            definitions,
+            ignoreMappings: current !== null
+        }).open()
     })
 }
 

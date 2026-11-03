@@ -120,10 +120,11 @@ export class QuickAddModal extends Modal {
                 continue
             }
 
-            const definitions = this.recognitionService.getApplicableProperties(
-                file,
-                section.definitions
-            )
+            // A capture target decides where its properties go; only the
+            // daily note is filtered by the properties' note filtering
+            const definitions = section.target
+                ? section.definitions
+                : this.recognitionService.getApplicableProperties(file, section.definitions)
             if (definitions.length === 0) {
                 body.createDiv({
                     cls: 'lt-quick-add-empty',
@@ -165,7 +166,12 @@ export class QuickAddModal extends Modal {
         this.close()
         const { propertyDefinitions, captureTargets } = this.plugin.settings
         const definitions = definitionsForDestination(propertyDefinitions, captureTargets, target)
-        new PropertyCaptureModal(this.plugin, { mode: 'single-note', file, definitions }).open()
+        new PropertyCaptureModal(this.plugin, {
+            mode: 'single-note',
+            file,
+            definitions,
+            ignoreMappings: target !== null
+        }).open()
     }
 
     private renderHeader(container: HTMLElement): void {

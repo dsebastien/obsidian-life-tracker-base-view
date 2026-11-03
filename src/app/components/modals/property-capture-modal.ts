@@ -143,11 +143,11 @@ export class PropertyCaptureModal extends Modal {
         const allDefinitions = this.context.definitions ?? this.plugin.settings.propertyDefinitions
 
         // Filter to only applicable definitions for this file
-        // Order is preserved from the settings array
-        this.sortedDefinitions = this.recognitionService.getApplicableProperties(
-            file,
-            allDefinitions
-        )
+        // Order is preserved from the settings array. A capture target hands
+        // in its own properties, already decided for this note.
+        this.sortedDefinitions = this.context.ignoreMappings
+            ? [...allDefinitions]
+            : this.recognitionService.getApplicableProperties(file, allDefinitions)
 
         // Load existing values from frontmatter (synchronous - uses metadata cache)
         this.savedValues = this.frontmatterService.readDefinedProperties(
