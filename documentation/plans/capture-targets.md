@@ -131,7 +131,8 @@ property, delete. Property definitions get a **Capture into** dropdown.
 - `src/app/services/capture-target.utils.ts`: pure resolution, matching, naming
 - `src/app/services/capture-target.service.ts`: vault lookup, creation, writes
 - `src/app/commands/capture-target-commands.ts`: per-target commands
-- `src/app/commands/daily-note.ts`: shared create-then flow
+- `src/app/commands/capture-note.ts`: find or create a destination's note
+- `src/app/components/ui/markdown-file-suggest.ts`: template path suggester
 - `src/app/settings/capture-target-section.ts`: settings page
 - quick add modal, quick-add utils, capture command, progress aggregation
 

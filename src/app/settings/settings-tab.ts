@@ -247,7 +247,7 @@ export class LifeTrackerPluginSettingTab extends PluginSettingTab {
             items: [
                 {
                     name: 'Create missing notes when capturing',
-                    desc: 'When capturing for a date with no note, offer to create it. The folder and template come from the Starter Kit note type below, or from the periodic notes plugin.',
+                    desc: 'When capturing for a date with no note, offer to create it. The folder and template come from the Starter Kit note type below, or from the periodic notes plugin. Capture targets use their own note type.',
                     control: { type: 'toggle', key: 'createMissingNotes' }
                 },
                 // Both rows below read Starter Kit at each render, never when
