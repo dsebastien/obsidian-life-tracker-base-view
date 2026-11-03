@@ -41,14 +41,18 @@ export interface ReferenceLineConfig {
  * What a target measures inside each period (issue #6).
  *
  * - `count`: number of entries with a meaningful value — "meditate 5 days/week"
+ *   when there is one note per day
+ * - `days`: number of distinct days with at least one meaningful value — stays
+ *   right when several notes share a day (a gym session and a through-the-day
+ *   session)
  * - `sum`: total of the values — "150 squats/week"
  * - `average`: mean of the values — "average mood of at least 7"
  * - `latest`: the most recent value in the period — "weigh at most 80kg"
  */
-export type TargetMetric = 'count' | 'sum' | 'average' | 'latest'
+export type TargetMetric = 'count' | 'days' | 'sum' | 'average' | 'latest'
 
 /** Every valid target metric, for runtime validation of stored config */
-export const TARGET_METRICS: readonly TargetMetric[] = ['count', 'sum', 'average', 'latest']
+export const TARGET_METRICS: readonly TargetMetric[] = ['count', 'days', 'sum', 'average', 'latest']
 
 /**
  * Whether hitting the target means reaching it or staying under it (issue #6)

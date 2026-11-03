@@ -48,7 +48,13 @@ function formatAmount(value: number): string {
  */
 export function describeTarget(target: TargetConfig): string {
     const amount = formatAmount(target.value)
-    const unit = target.unit ? ` ${target.unit}` : target.metric === 'count' ? ' entries' : ''
+    const unit = target.unit
+        ? ` ${target.unit}`
+        : target.metric === 'count'
+          ? ' entries'
+          : target.metric === 'days'
+            ? ' days'
+            : ''
     const direction = target.direction === 'at-most' ? 'at most' : 'at least'
     return `${direction} ${amount}${unit} per ${periodLabel(target.period, 1)}`
 }
@@ -123,7 +129,7 @@ export class ProgressVisualization extends BaseVisualization {
         // A rate only makes sense for metrics that accumulate: "≥ 150 reps per
         // week" reads right, "≤ 80 kg per week" does not
         const per =
-            target.metric === 'count' || target.metric === 'sum'
+            target.metric === 'count' || target.metric === 'days' || target.metric === 'sum'
                 ? `/${periodLabel(target.period, 1)}`
                 : ''
 

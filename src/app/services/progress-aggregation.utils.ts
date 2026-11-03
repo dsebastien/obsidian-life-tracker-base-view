@@ -25,7 +25,11 @@ import { computeDatedStreaks } from './heatmap-streak.utils'
 /**
  * Fold the values of one period into the single number the target compares to
  */
-function foldPeriod(values: number[], metric: TargetConfig['metric']): number {
+function foldPeriod(
+    values: number[],
+    metric: TargetConfig['metric'],
+    dayKeys: readonly string[] = []
+): number {
     switch (metric) {
         case 'count':
             // Zero is deliberately excluded: a daily note recording
@@ -33,6 +37,16 @@ function foldPeriod(values: number[], metric: TargetConfig['metric']): number {
             // would make "3 days a week" trivially true for anyone who logs
             // every day
             return values.filter((value) => value !== 0).length
+
+        case 'days': {
+            // Same zero rule as `count`, but several entries on one day (two
+            // session notes) count once: "3 days a week" means days
+            const days = new Set<string>()
+            values.forEach((value, index) => {
+                if (value !== 0) days.add(dayKeys[index] ?? `entry-${index}`)
+            })
+            return days.size
+        }
 
         case 'sum':
             return values.reduce((total, value) => total + value, 0)
@@ -131,7 +145,7 @@ export function progressStatus(
  * "fraction of the target" a fair reading of how far along a period is
  */
 export function accumulatesFromZero(metric: TargetConfig['metric']): boolean {
-    return metric === 'count' || metric === 'sum'
+    return metric === 'count' || metric === 'days' || metric === 'sum'
 }
 
 /**
@@ -152,7 +166,10 @@ export function aggregateForProgress(
         .filter((point) => point.dateAnchor !== null)
         .sort((a, b) => compareAsc(a.dateAnchor!.date, b.dateAnchor!.date))
 
-    const buckets = new Map<string, { date: Date; values: number[]; filePaths: string[] }>()
+    const buckets = new Map<
+        string,
+        { date: Date; values: number[]; dayKeys: string[]; filePaths: string[] }
+    >()
 
     for (const point of dated) {
         const date = point.dateAnchor!.date
@@ -160,20 +177,29 @@ export function aggregateForProgress(
 
         let bucket = buckets.get(key)
         if (!bucket) {
-            bucket = { date: normalizeDate(date, target.period), values: [], filePaths: [] }
+            bucket = {
+                date: normalizeDate(date, target.period),
+                values: [],
+                dayKeys: [],
+                filePaths: []
+            }
             buckets.set(key, bucket)
         }
 
         if (point.numericValue !== null) {
             bucket.values.push(point.numericValue)
+            bucket.dayKeys.push(getTimeKey(date, TimeGranularity.Daily))
         } else if (point.booleanValue !== null) {
             bucket.values.push(point.booleanValue ? 1 : 0)
+            bucket.dayKeys.push(getTimeKey(date, TimeGranularity.Daily))
         }
         bucket.filePaths.push(point.filePath)
     }
 
     const periods: ProgressPeriod[] = [...buckets.values()]
-        .map(({ date, values, filePaths }) => buildPeriod(date, values, target, filePaths))
+        .map(({ date, values, dayKeys, filePaths }) =>
+            buildPeriod(date, values, target, filePaths, dayKeys)
+        )
         .sort((a, b) => compareAsc(a.date, b.date))
 
     const current = pickCurrentPeriod(periods, target, viewDateRange)
@@ -227,10 +253,11 @@ function buildPeriod(
     date: Date,
     values: number[],
     target: TargetConfig,
-    filePaths: string[]
+    filePaths: string[],
+    dayKeys: readonly string[] = []
 ): ProgressPeriod {
     const hasData = values.length > 0
-    const actual = foldPeriod(values, target.metric)
+    const actual = foldPeriod(values, target.metric, dayKeys)
     const status = progressStatus(actual, target, hasData)
 
     return {

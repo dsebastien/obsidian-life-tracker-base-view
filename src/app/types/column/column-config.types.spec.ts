@@ -26,6 +26,11 @@ describe('normalizeTargetConfig', () => {
         })
     })
 
+    test('accepts the days metric and keeps a stored count as count', () => {
+        expect(normalizeTargetConfig({ ...VALID, metric: 'days' })?.metric).toBe('days')
+        expect(normalizeTargetConfig(VALID)?.metric).toBe('count')
+    })
+
     test('treats a missing "enabled" as enabled: a hand-written target is meant to be on', () => {
         expect(normalizeTargetConfig(VALID)?.enabled).toBe(true)
         expect(normalizeTargetConfig({ ...VALID, enabled: false })?.enabled).toBe(false)

@@ -359,3 +359,31 @@ describe('periodLabel', () => {
         expect(periodLabel(TimeGranularity.Daily, 2)).toBe('days')
     })
 })
+
+describe('days metric', () => {
+    // Monday 2026-11-02 to Sunday 2026-11-08: a gym session and a
+    // through-the-day session share Monday
+    const week = [
+        point('2026-11-02T08:00:00', 20),
+        point('2026-11-02T18:00:00', 15),
+        point('2026-11-04T12:00:00', 10),
+        point('2026-11-05T12:00:00', 0)
+    ]
+
+    test('counts distinct days with a non-zero entry, where count counts notes', () => {
+        const days = aggregateForProgress(week, PROP_ID, 'Push-ups', target({ metric: 'days' }))
+        const count = aggregateForProgress(week, PROP_ID, 'Push-ups', target({ metric: 'count' }))
+        expect(days.current?.actual).toBe(2)
+        expect(count.current?.actual).toBe(3)
+    })
+
+    test('a 3-days target is not met by three notes over two days', () => {
+        const days = aggregateForProgress(week, PROP_ID, 'Push-ups', target({ metric: 'days' }))
+        expect(days.current?.met).toBe(false)
+        expect(days.current?.status).toBe('close')
+    })
+
+    test('an empty period is a real zero, like count', () => {
+        expect(progressStatus(0, target({ metric: 'days' }), false)).toBe('behind')
+    })
+})

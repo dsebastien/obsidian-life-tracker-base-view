@@ -1146,7 +1146,8 @@ function showDiscreteColorSchemeModal(
  * Options for the target modal's dropdowns, in the order they are presented
  */
 const TARGET_METRIC_OPTIONS: ReadonlyArray<{ value: TargetMetric; label: string }> = [
-    { value: 'count', label: 'Entries with a value (e.g. days done)' },
+    { value: 'count', label: 'Entries with a value (one per note)' },
+    { value: 'days', label: 'Days with a value (several notes on a day count once)' },
     { value: 'sum', label: 'Total of the values' },
     { value: 'average', label: 'Average of the values' },
     { value: 'latest', label: 'Most recent value' }
