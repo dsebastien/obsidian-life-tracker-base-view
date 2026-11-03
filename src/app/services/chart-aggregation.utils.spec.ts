@@ -9,6 +9,7 @@ import {
     aggregateForChart,
     aggregateForNoteChart,
     aggregateForDatePerNoteChart,
+    spreadSameInstantTimes,
     aggregateForScatterChart,
     aggregateForBubbleChart,
     aggregateForOverlayChart,
@@ -847,14 +848,28 @@ describe('aggregateForDatePerNoteChart (3.4.0)', () => {
         expect(result.skippedWithoutDate).toBe(0)
     })
 
-    test('two notes on one day are two points, no aggregation', () => {
+    test('two notes on one day are two points, no aggregation, spread within the day', () => {
+        const midnight = new Date(2025, 5, 24).getTime()
         const dataPoints = [
-            createDataPoint('Morning.md', '2025-06-24', { numericValue: 400 }),
-            createDataPoint('Evening.md', '2025-06-24', { numericValue: 380 })
+            localPoint('Morning.md', midnight, 400),
+            localPoint('Evening.md', midnight, 380)
         ]
         const result = aggregateForDatePerNoteChart(dataPoints, propertyId, 'Pace')
         expect(result.datasets[0]!.data).toEqual([400, 380])
         expect(result.labels).toEqual(['Morning', 'Evening'])
+        // The first keeps its date, the second moves half a day later: both
+        // reachable, both still on June 24
+        expect(result.xValues).toEqual([midnight, midnight + 12 * 3600_000])
+    })
+
+    test('notes without a date and without a value are not counted as skipped', () => {
+        const dataPoints = [
+            createDataPoint('Dated.md', '2025-06-24', { numericValue: 387 }),
+            createDataPoint('Empty.md', null, { numericValue: null }),
+            createDataPoint('Undated.md', null, { numericValue: 390 })
+        ]
+        const result = aggregateForDatePerNoteChart(dataPoints, propertyId, 'Pace')
+        expect(result.skippedWithoutDate).toBe(1)
     })
 
     test('notes without a date are skipped and counted', () => {
@@ -888,5 +903,44 @@ describe('aggregateForDatePerNoteChart (3.4.0)', () => {
         expect(result.labels).toEqual([])
         expect(result.datasets).toEqual([])
         expect(result.skippedWithoutDate).toBe(1)
+    })
+})
+
+/** A data point anchored at a given epoch-ms instant */
+function localPoint(filePath: string, time: number, value: number): VisualizationDataPoint {
+    return {
+        ...createDataPoint(filePath, null, { numericValue: value }),
+        dateAnchor: {
+            date: new Date(time),
+            source: { type: 'filename', pattern: 'YYYY-MM-DD' },
+            confidence: 'high'
+        }
+    }
+}
+
+describe('spreadSameInstantTimes (3.4.0)', () => {
+    const midnight = new Date(2025, 5, 24).getTime()
+    const hour = 3600_000
+
+    test('distinct instants are untouched', () => {
+        expect(spreadSameInstantTimes([1, 2, 3])).toEqual([1, 2, 3])
+    })
+
+    test('a group of three at midnight takes thirds of the day, in order', () => {
+        const next = midnight + 24 * hour
+        expect(spreadSameInstantTimes([midnight, midnight, midnight, next])).toEqual([
+            midnight,
+            midnight + 8 * hour,
+            midnight + 16 * hour,
+            next
+        ])
+    })
+
+    test('a group late in the day stays within that day', () => {
+        const late = midnight + 20 * hour
+        const spread = spreadSameInstantTimes([late, late])
+        expect(spread[0]).toBe(late)
+        expect(spread[1]).toBe(late + 2 * hour)
+        expect(new Date(spread[1]!).getDate()).toBe(24)
     })
 })

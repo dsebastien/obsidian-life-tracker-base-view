@@ -255,14 +255,49 @@ export function aggregateForNoteChart(
     }
 }
 
+/** One day in milliseconds */
+const DAY_MS = 24 * 3600_000
+
+/**
+ * Spread notes that share one instant across the rest of their day, in order
+ * (3.4.0). Filename dates all land on local midnight, so two runs on one day
+ * would sit on the same x: one point hides the other and a hover or click
+ * can never reach the second. The first note keeps its instant; the k notes of
+ * a group get slots of (time to the end of the day) / k. Distinct instants are
+ * untouched. Input must be sorted ascending; the output keeps that order.
+ */
+export function spreadSameInstantTimes(times: readonly number[]): number[] {
+    const result = [...times]
+    let start = 0
+    while (start < times.length) {
+        let end = start + 1
+        while (end < times.length && times[end] === times[start]) end++
+        const count = end - start
+        if (count > 1) {
+            const instant = times[start]!
+            const midnight = new Date(instant)
+            midnight.setHours(24, 0, 0, 0)
+            const room = Math.min(midnight.getTime() - instant, DAY_MS)
+            const slot = Math.floor(room / count)
+            for (let i = 0; i < count; i++) {
+                result[start + i] = instant + i * slot
+            }
+        }
+        start = end
+    }
+    return result
+}
+
 /**
  * Aggregate data for a cartesian chart whose x-axis places one point per note
  * at the note's own date anchor (3.4.0, `xAxisSource: 'date-per-note'`).
  *
  * No per-period aggregation: two runs on one day are two points. Points are
  * sorted by date (stably, so same-day notes keep the view's order), which is
- * also the order the moving average and the trend read them in. Notes without
- * a date anchor cannot be placed and are counted in `skippedWithoutDate`;
+ * also the order the moving average and the trend read them in. Notes sharing
+ * one instant are spread within their day (`spreadSameInstantTimes`). Notes
+ * with a value but no date anchor cannot be placed and are counted in
+ * `skippedWithoutDate`;
  * notes without a value have nothing to draw and are left out (on a
  * time-proportional axis the gap shows as distance, never as a 0).
  */
@@ -271,13 +306,18 @@ export function aggregateForDatePerNoteChart(
     propertyId: BasesPropertyId,
     displayName: string
 ): ChartData {
-    const dated = dataPoints.filter((p) => p.dateAnchor !== null)
-    const skippedWithoutDate = dataPoints.length - dated.length
+    // Only notes that would have been drawn count as "without a date": a note
+    // with neither a date nor a value has nothing to show on any axis
+    const skippedWithoutDate = dataPoints.filter(
+        (p) => p.dateAnchor === null && p.numericValue !== null
+    ).length
 
-    const plotted = dated
-        .filter((p) => p.numericValue !== null)
+    const sorted = dataPoints
+        .filter((p) => p.dateAnchor !== null && p.numericValue !== null)
         .map((point, order) => ({ point, time: point.dateAnchor!.date.getTime(), order }))
         .sort((a, b) => a.time - b.time || a.order - b.order)
+    const times = spreadSameInstantTimes(sorted.map(({ time }) => time))
+    const plotted = sorted.map((entry, i) => ({ ...entry, time: times[i] ?? entry.time }))
 
     if (plotted.length === 0) {
         return { propertyId, displayName, labels: [], datasets: [], skippedWithoutDate }

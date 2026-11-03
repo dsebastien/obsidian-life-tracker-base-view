@@ -33,10 +33,9 @@ import {
     initPieChart,
     initRadarChart,
     initRangeChart,
-    initScatterChart,
-    timeAxisBounds,
-    timeAxisRange
+    initScatterChart
 } from './chart-initializers'
+import { timeAxisBounds, timeAxisRange } from './time-axis.utils'
 import {
     buildCartesianModel,
     isOutlierMarkerDataset,
@@ -1031,7 +1030,7 @@ export class ChartVisualization extends BaseVisualization {
         // A time-proportional x-axis spans the notes now shown (3.4.0)
         const xScale = this.chart.options.scales?.['x']
         if (xScale && chartData.xValues && chartData.xValues.length > 0) {
-            const bounds = timeAxisBounds(chartData.xValues)
+            const bounds = timeAxisBounds(chartData.xValues, this.chartConfig.chartType === 'bar')
             Object.assign(xScale, { min: bounds.min, max: bounds.max })
         }
 

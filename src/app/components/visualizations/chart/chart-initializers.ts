@@ -24,7 +24,7 @@ import {
     formatValue,
     isDurationFormat
 } from '../../../../utils'
-import type { Chart as ChartJsChart, ScaleOptions } from 'chart.js'
+import type { Chart as ChartJsChart, Plugin, ScaleOptions } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
 import { referenceLineEndValue, type ReferenceLineSpec } from './reference-lines.utils'
 import { format } from 'date-fns'
@@ -37,6 +37,13 @@ import {
 } from './cartesian-datasets.utils'
 import { planYAxis, yAxisBeginsAtZero } from './y-axis-plan.utils'
 import { buildDateTicks, dateTickPixelWidth } from './date-ticks.utils'
+import {
+    cartesianInteraction,
+    TIME_AXIS_MAX_BAR_THICKNESS,
+    timeAxisBarThickness,
+    timeAxisBounds,
+    timeAxisRange
+} from './time-axis.utils'
 
 /** Format an epoch-ms x value as a compact date for scatter axis ticks / tooltips. */
 function formatTimestamp(ms: number): string {
@@ -371,42 +378,13 @@ export function cartesianYBounds(
 }
 
 /**
- * First and last x of a time-proportional axis, or undefined on a category
- * axis
- */
-export function timeAxisRange(chartData: ChartData): { min: number; max: number } | undefined {
-    const xValues = chartData.xValues
-    if (!xValues || xValues.length === 0) return undefined
-    return { min: Math.min(...xValues), max: Math.max(...xValues) }
-}
-
-/** Half a day: the margin around a time axis whose notes all share one instant */
-const SINGLE_INSTANT_PADDING_MS = 12 * 3600_000
-
-/** Share of the span left empty at each end, so edge points are not cut */
-const TIME_AXIS_EDGE_PADDING = 0.02
-
-/**
- * Bounds of a time-proportional x-axis: first to last note plus a small
- * margin, or half a day on each side when every note shares one instant (a
- * zero-width axis)
- */
-export function timeAxisBounds(xValues: number[]): { min: number; max: number } {
-    const first = Math.min(...xValues)
-    const last = Math.max(...xValues)
-    const padding =
-        last > first ? (last - first) * TIME_AXIS_EDGE_PADDING : SINGLE_INSTANT_PADDING_MS
-    return { min: first - padding, max: last + padding }
-}
-
-/**
  * The x-axis of the date-per-note axis (3.4.0): a linear scale over epoch-ms
  * values with calendar-aligned date ticks, horizontal labels, auto-skipped.
  * Chart.js has no date adapter in this bundle, so ticks come from
  * `buildDateTicks` instead of a `time` scale.
  */
-function timeXAxis(xValues: number[], chartConfig: ChartConfig): ScaleOptions<'linear'> {
-    const bounds = timeAxisBounds(xValues)
+export function timeXAxis(xValues: number[], chartConfig: ChartConfig): ScaleOptions<'linear'> {
+    const bounds = timeAxisBounds(xValues, chartConfig.chartType === 'bar')
     let tickFormat = 'MMM d, yyyy'
 
     return {
@@ -414,8 +392,10 @@ function timeXAxis(xValues: number[], chartConfig: ChartConfig): ScaleOptions<'l
         display: true,
         min: bounds.min,
         max: bounds.max,
-        // Bars need half a bar of room at both ends
-        offset: chartConfig.chartType === 'bar',
+        // Never `offset` here: on a linear scale it reserves room per tick
+        // (counted before auto-skip) and squeezes the notes toward the middle.
+        // Bars get their room from the half-day padding instead
+        offset: false,
         grid: {
             display: chartConfig.showGrid
         },
@@ -439,6 +419,31 @@ function timeXAxis(xValues: number[], chartConfig: ChartConfig): ScaleOptions<'l
             autoSkip: true,
             autoSkipPadding: 12,
             callback: (value): string => format(new Date(Number(value)), tickFormat)
+        }
+    }
+}
+
+/**
+ * Sets the bar width on the date-per-note axis right before the bars are
+ * laid out, when the axis width is known (3.4.0). Chart.js sizes bars on a
+ * linear axis from the smallest gap between two notes, which turns a year of
+ * runs into hairlines, and has no minimum width of its own.
+ */
+function timeAxisBarThicknessPlugin(getChartData: () => ChartData | null): Plugin {
+    return {
+        id: 'ltTimeAxisBarThickness',
+        beforeDatasetsUpdate: (chart): void => {
+            const xScale = chart.scales['x']
+            const xValues = getChartData()?.xValues
+            if (!xScale || !xValues) return
+            const thickness = timeAxisBarThickness(xValues, xScale.width, xScale.min, xScale.max)
+            for (const dataset of chart.data.datasets) {
+                if (isOutlierMarkerDataset(dataset)) continue
+                Object.assign(dataset, {
+                    barThickness: thickness,
+                    maxBarThickness: TIME_AXIS_MAX_BAR_THICKNESS
+                })
+            }
         }
     }
 }
@@ -516,6 +521,11 @@ export function initCartesianChart(
             labels: chartData.labels,
             datasets
         },
+        // Bars on the time axis need a width Chart.js cannot derive (3.4.0)
+        plugins:
+            chartData.xValues && chartConfig.chartType === 'bar'
+                ? [timeAxisBarThicknessPlugin(getChartData)]
+                : [],
         options: {
             animation: chartAnimation(),
             responsive: true,
@@ -526,10 +536,7 @@ export function initCartesianChart(
                     right: 60 // Extra space for last x-axis labels
                 }
             },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
+            interaction: cartesianInteraction(chartData.xValues !== undefined),
             plugins: {
                 legend: {
                     // Always show legend when there are multiple datasets (list
