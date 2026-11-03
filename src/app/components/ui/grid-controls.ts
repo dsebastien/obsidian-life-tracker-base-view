@@ -132,7 +132,7 @@ function createColumnsControl(
         if (settings.columns > 1) {
             settings.columns--
             valueEl.textContent = String(settings.columns)
-            onChange(settings)
+            onChange({ columns: settings.columns })
         }
     })
 
@@ -140,7 +140,7 @@ function createColumnsControl(
         if (settings.columns < 6) {
             settings.columns++
             valueEl.textContent = String(settings.columns)
-            onChange(settings)
+            onChange({ columns: settings.columns })
         }
     })
 }
@@ -177,6 +177,6 @@ function createTimeFrameControl(
     // Event handler
     selectEl.addEventListener('change', () => {
         settings.timeFrame = selectEl.value as TimeFrame
-        onChange(settings)
+        onChange({ timeFrame: settings.timeFrame })
     })
 }

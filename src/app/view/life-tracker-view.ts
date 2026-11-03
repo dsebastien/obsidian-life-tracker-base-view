@@ -54,7 +54,7 @@ import {
     createDragReorderController,
     type DragReorderController
 } from '../components/ui/card-drag-handle'
-import { DEFAULT_GRID_COLUMNS } from './view-options'
+import { gridSettingWrites, readGridSettings, sameGridSettings } from './grid-settings.utils'
 import {
     DATA_ATTR_FULL,
     getTimeFrameDateRange,
@@ -341,7 +341,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const entries = this.data.data
 
         // Get time frame date range
-        const timeFrameDateRange = getTimeFrameDateRange(this.gridSettings.timeFrame)
+        const timeFrameDateRange = getTimeFrameDateRange(readGridSettings(this.cfg).timeFrame)
 
         // If no time frame filtering (AllTime), return all files
         if (!timeFrameDateRange) {
@@ -376,8 +376,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     private getDateAnchorConfig(): DateAnchorConfig[] | undefined {
         // Stored as an opaque property id (branded string); narrow to string first.
         const dateAnchorProperty = getStringConfig(this.cfg, 'dateAnchorProperty') as
-            | BasesPropertyId
-            | undefined
+            BasesPropertyId | undefined
 
         if (!dateAnchorProperty) {
             // No custom property set, use default behavior
@@ -598,11 +597,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             return
         }
 
-        // Load grid settings from config
-        const savedColumns = getNumberConfig(this.cfg, 'gridColumns')
-        const savedTimeFrame = getEnumConfig(this.cfg, 'timeFrame', TIME_FRAME_OPTIONS)
-        this.gridSettings.columns = savedColumns ?? DEFAULT_GRID_COLUMNS
-        this.gridSettings.timeFrame = savedTimeFrame ?? TimeFrame.AllTime
+        // Grid settings always come from the view config (issue #189)
+        this.gridSettings = readGridSettings(this.cfg)
 
         // Create control bar at the top (hidden when the user opted out)
         const hideControlBar = getBoolConfig(this.cfg, 'hideControlBar') ?? false
@@ -613,28 +609,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             createGridControls(
                 this.containerEl,
                 this.gridSettings,
-                (settings) => {
-                    const timeFrameChanged = this.gridSettings.timeFrame !== settings.timeFrame
-                    this.gridSettings = settings
-
-                    // Set flag to prevent full re-render when config.set triggers onDataUpdated
-                    this.isUpdatingGridSettings = true
-
-                    // Persist grid settings to view config
-                    this.config.set('gridColumns', settings.columns)
-                    this.config.set('timeFrame', settings.timeFrame)
-
-                    // Reset flag after config updates
-                    this.isUpdatingGridSettings = false
-
-                    if (timeFrameChanged) {
-                        // Time frame changed - need full re-render to filter data
-                        this.onDataUpdated()
-                    } else {
-                        // Just columns changed - apply CSS changes, no full re-render needed
-                        this.applyGridSettings()
-                    }
-                },
+                (change) => this.handleGridSettingsChange(change),
                 {
                     onCreateOverlay: () => this.openCreateOverlayModal(),
                     onResetCardOrder: () => this.resetCardOrder(),
@@ -759,6 +734,13 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             getEnumConfig(this.cfg, 'granularity', TIME_GRANULARITY_OPTIONS) ??
             TimeGranularity.Daily
         if (this.previousGranularity !== null && this.previousGranularity !== currentGranularity) {
+            return false
+        }
+
+        // Grid settings changed in the config (the .base file was edited, or
+        // Bases reloaded it): re-read them and rebuild the control bar showing
+        // them, rather than keep the in-memory copy (issue #189)
+        if (!sameGridSettings(readGridSettings(this.cfg), this.gridSettings)) {
             return false
         }
 
@@ -2536,6 +2518,37 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         // compare" and lets the incremental path keep the old DOM order.
         this.forceFullRender = true
         this.onDataUpdated()
+    }
+
+    /**
+     * A grid setting changed by the user in the control bar (issue #189).
+     * Writes only that setting, compared with the config as it is now, so an
+     * edit made to the `.base` file since the last render is never replaced by
+     * the view's in-memory copy. The only place the view writes grid settings.
+     */
+    private handleGridSettingsChange(change: Partial<GridSettings>): void {
+        const rendered = this.gridSettings
+        const current = readGridSettings(this.cfg)
+        const writes = gridSettingWrites(current, change)
+        this.gridSettings = { ...current, ...change }
+
+        // Set flag to prevent full re-render when config.set triggers onDataUpdated
+        this.isUpdatingGridSettings = true
+        try {
+            for (const write of writes) {
+                this.config.set(write.key, write.value)
+            }
+        } finally {
+            this.isUpdatingGridSettings = false
+        }
+
+        if (this.gridSettings.timeFrame !== rendered.timeFrame) {
+            // Time frame changed - need full re-render to filter data
+            this.onDataUpdated()
+        } else {
+            // Just columns changed - apply CSS changes, no full re-render needed
+            this.applyGridSettings()
+        }
     }
 
     /**
