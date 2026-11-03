@@ -249,7 +249,13 @@ its subfolders. A note is the target's note when:
 
 If several notes match, the most recently modified one is used. A different
 note of the same type on the same day (for example a gym session synced from
-Garmin with another `workout_kind`) is never used.
+Garmin with another `workout_kind`) is never used. Before offering to create a
+note, the plugin also reads the notes of that folder from disk, so a note that
+Obsidian has not indexed yet is not created twice. Two quick taps while the
+note is being created add to the same note.
+
+Properties that go to a target are written into the target's note without
+checking their **Note filtering**: the target decides where they go.
 
 ### When the note does not exist
 
@@ -263,6 +269,9 @@ note and shows its path first. Nothing is created without your confirmation.
   (`2026-11-03 2 (Strength Session)`).
 - The note is created in its final folder with its final name, then the
   template runs through Templater, so the template sees the date in the title.
+  The template is the target's, else the note type's. Life Tracker applies it
+  itself, even when Templater has a folder template for that folder: the
+  folder template does not run on this note.
 - Then the plugin writes the date property, every match filter value and the
   note type's (or target's) tags into the note.
 - **Without Templater** (or when the template fails or is missing), the note is
