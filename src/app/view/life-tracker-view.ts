@@ -69,7 +69,7 @@ import {
 
 import { ColumnConfigService } from './column-config.service'
 import { MaximizeStateService } from './maximize-state.service'
-import { resolveCardTitle } from './card-title.utils'
+import { normalizeCardTitle, resolveCardTitle } from './card-title.utils'
 import { getVisualizationConfig } from './visualization-config.helper'
 import { getBoolConfig, getEnumConfig, getNumberConfig, getStringConfig } from './config-accessors'
 import { overlayIdToPropertyId } from './overlay-id'
@@ -1399,7 +1399,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const visualization = this.createVisualization(
             cardEl,
             columnConfig,
-            resolveCardTitle(columnConfig.displayName, displayName, columnConfig.propertyId)
+            resolveCardTitle(columnConfig.title, displayName)
         )
 
         // Wire up maximize callback (using visualization ID)
@@ -1548,7 +1548,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         const visualization = this.createVisualization(
             cardEl,
             newConfig,
-            resolveCardTitle(newConfig.displayName, displayName, newConfig.propertyId)
+            resolveCardTitle(newConfig.title, displayName)
         )
         visualization.setMaximizeCallback((maximize) => {
             this.maximizeService.handleMaximizeToggle(newConfig.id, maximize)
@@ -1943,6 +1943,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.target,
             vizConfig.valueFormat,
             vizConfig.outliers,
+            vizConfig.title,
             this.findPropertyDefinition(propertyId)?.polarity,
             hasListValues,
             isFromPreset,
@@ -2195,6 +2196,32 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 this.applyConfigChange(propertyId, visualizationId, displayName)
                 break
 
+            case 'configureTitle':
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        const newId = this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme,
+                            preset.referenceLine
+                        )
+                        this.columnConfigService.updateVisualizationConfig(propertyId, newId, {
+                            title: normalizeCardTitle(action.title)
+                        })
+                    }
+                } else {
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { title: normalizeCardTitle(action.title) }
+                    )
+                }
+                this.applyConfigChange(propertyId, visualizationId, displayName)
+                break
+
             case 'configureValueFormat':
                 if (isFromPreset) {
                     const preset = this.columnConfigService.findMatchingPreset(propertyId)
@@ -2350,7 +2377,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                 // Exports are named after the card, as its title reads
                 void this.exportVisualizationImage(
                     visualizationId,
-                    resolveCardTitle(currentConfig?.displayName, displayName, propertyId)
+                    resolveCardTitle(currentConfig?.title, displayName)
                 )
                 break
             }
@@ -2358,7 +2385,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             case 'exportCsv': {
                 void this.exportVisualizationCsv(
                     visualizationId,
-                    resolveCardTitle(currentConfig?.displayName, displayName, propertyId)
+                    resolveCardTitle(currentConfig?.title, displayName)
                 )
                 break
             }

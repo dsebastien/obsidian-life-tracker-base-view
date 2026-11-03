@@ -196,6 +196,11 @@ export interface ColumnVisualizationConfig {
     visualizationType: VisualizationType
     /** Display name (cached from when configured) */
     displayName: string
+    /**
+     * The card's own title, set from "Card title…" in its menu (3.4.0).
+     * Absent or empty: the card shows the property's display name
+     */
+    title?: string
     /** Timestamp when configured */
     configuredAt: number
     /** Scale configuration for numeric visualizations (Heatmap, BarChart, LineChart) */

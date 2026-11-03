@@ -1,31 +1,27 @@
-import type { BasesPropertyId } from 'obsidian'
-
 /**
  * Title of a configured card (3.4.0).
  *
- * A card shows its own `displayName` when it has one, so several cards on one
- * property ("Run days", "Distance per run (km)") stay distinguishable. The
- * property's display name is used otherwise, as before.
+ * A card shows its own `title` when it has one, so several cards on one
+ * property ("Run days", "Distance per run (km)") stay distinguishable; the
+ * property's current display name otherwise, as before.
  *
- * `displayName` is also written automatically when a card is configured (the
- * property's display name at that moment). A value that is just the raw
- * property name (`distance_kilometers`, `note.distance_kilometers`) carries no
- * intent, so it gives way to the current display name: a display name set in
- * the Base later still shows up on those cards.
+ * `displayName` is deliberately not used: it is written automatically when a
+ * card is configured, so every existing card carries one, and showing it would
+ * freeze each card on the name its property had back then.
+ *
+ * `title` comes from a hand-editable `.base` file: anything but a non-empty
+ * string reads as absent.
  */
-export function resolveCardTitle(
-    configuredName: string | undefined,
-    propertyDisplayName: string,
-    propertyId: BasesPropertyId
-): string {
-    const custom = configuredName?.trim() ?? ''
-    if (custom === '') return propertyDisplayName
+export function resolveCardTitle(title: unknown, propertyDisplayName: string): string {
+    const custom = typeof title === 'string' ? title.trim() : ''
+    return custom === '' ? propertyDisplayName : custom
+}
 
-    const rawName = propertyId.slice(propertyId.indexOf('.') + 1)
-    const lowered = custom.toLowerCase()
-    if (lowered === propertyId.toLowerCase() || lowered === rawName.toLowerCase()) {
-        return propertyDisplayName
-    }
-
-    return custom
+/**
+ * The `title` to store for what the user typed: trimmed, and absent when
+ * empty so clearing the field hands the card back to the property name.
+ */
+export function normalizeCardTitle(input: string): string | undefined {
+    const trimmed = input.trim()
+    return trimmed === '' ? undefined : trimmed
 }

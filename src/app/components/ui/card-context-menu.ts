@@ -126,6 +126,8 @@ export function showCardContextMenu(
     currentValueFormat: ValueFormat | undefined,
     /** Whether outliers may set the auto scale (3.4.0) */
     currentOutlierMode: OutlierMode | undefined,
+    /** The card's own title, if any (3.4.0) */
+    currentTitle: string | undefined,
     /** Polarity of the visualized property, used to default a new target's
      *  direction and to flag a contradictory one (issue #21) */
     currentPolarity: ValuePolarity | undefined,
@@ -221,6 +223,19 @@ export function showCardContextMenu(
     pinBtn.addEventListener('click', () => {
         close()
         onAction({ type: 'togglePin' })
+    })
+
+    // Card title (3.4.0): several cards on one property stay distinguishable
+    const titleBtn = header.createEl('button', {
+        cls: 'lt-card-popover-btn'
+    })
+    setIcon(titleBtn, 'pencil')
+    titleBtn.createSpan({ text: 'Card title…' })
+    titleBtn.addEventListener('click', () => {
+        close()
+        showCardTitleModal(currentTitle, (title) => {
+            onAction({ type: 'configureTitle', title })
+        })
     })
 
     // Maximize/Minimize button
@@ -1084,6 +1099,85 @@ function showCustomScaleModal(
 
     // Focus min input
     minInput.focus()
+}
+
+/**
+ * Ask for the card's own title (3.4.0). Apply with an empty field clears it,
+ * and the card shows its property's name again.
+ */
+function showCardTitleModal(
+    currentTitle: string | undefined,
+    onConfirm: (title: string) => void
+): void {
+    const overlay = activeDocument.body.createDiv({ cls: 'lt-scale-modal-overlay' })
+
+    const modal = overlay.createDiv({
+        cls: 'lt-scale-modal',
+        attr: { 'role': 'dialog', 'aria-modal': 'true', 'aria-label': 'Card title' }
+    })
+    trapFocus(modal)
+
+    modal.createDiv({ cls: 'lt-scale-modal-header', text: 'Card title' })
+
+    const form = modal.createDiv({ cls: 'lt-scale-modal-form' })
+    const input = form.createEl('input', {
+        type: 'text',
+        cls: 'lt-scale-modal-input',
+        placeholder: 'Property name'
+    })
+    input.value = currentTitle ?? ''
+    form.createDiv({
+        cls: 'lt-mapping-hint',
+        text: 'Leave empty to show the property name.'
+    })
+
+    const handleEscape = (e: KeyboardEvent): void => {
+        if (e.key === 'Escape') {
+            cleanup()
+        }
+    }
+
+    const cleanup = (): void => {
+        activeDocument.removeEventListener('keydown', handleEscape)
+        overlay.remove()
+    }
+
+    const buttons = modal.createDiv({ cls: 'lt-scale-modal-buttons' })
+
+    const cancelBtn = buttons.createEl('button', {
+        cls: 'lt-scale-modal-btn lt-scale-modal-btn--secondary',
+        text: 'Cancel'
+    })
+    cancelBtn.addEventListener('click', () => {
+        cleanup()
+    })
+
+    const confirmBtn = buttons.createEl('button', {
+        cls: 'lt-scale-modal-btn lt-scale-modal-btn--primary',
+        text: 'Apply'
+    })
+    confirmBtn.addEventListener('click', () => {
+        onConfirm(input.value)
+        cleanup()
+    })
+
+    form.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            confirmBtn.click()
+        }
+    })
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            cleanup()
+        }
+    })
+
+    activeDocument.addEventListener('keydown', handleEscape)
+
+    input.focus()
+    input.select()
 }
 
 /**

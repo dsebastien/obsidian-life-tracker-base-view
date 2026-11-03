@@ -24,6 +24,8 @@ export type CardMenuAction =
     | { type: 'configureRunningTotal'; runningTotal: boolean }
     /** Choose what the x-axis plots: time periods or note names (issue #69) */
     | { type: 'configureXAxisSource'; xAxisSource: XAxisSource | undefined }
+    /** Set the card's own title; an empty string clears it (3.4.0) */
+    | { type: 'configureTitle'; title: string }
     /** Show values as numbers or durations (3.4.0) */
     | { type: 'configureValueFormat'; valueFormat: ValueFormat | undefined }
     /** Fit the auto scale to the bulk of the data, or show every value (3.4.0) */
