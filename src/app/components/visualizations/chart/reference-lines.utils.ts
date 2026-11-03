@@ -1,6 +1,7 @@
 import type { BasesPropertyId } from 'obsidian'
+import { TimeGranularity } from '../../../types'
 import type { ChartConfig, ChartDataset, ReferenceLineConfig } from '../../../types'
-import { formatValue, getChartColorScheme } from '../../../../utils'
+import { formatTargetAmount, formatValue, getChartColorScheme } from '../../../../utils'
 import { periodLabel } from '../../../services/progress-aggregation.utils'
 
 /**
@@ -22,6 +23,32 @@ export interface ReferenceLineSpec {
      * total (issue #158)
      */
     cumulativePerPeriod?: boolean
+    /**
+     * How many target periods the line accumulates over, when that is not the
+     * number of plotted labels: on the date-per-note axis it comes from the
+     * time span the notes cover (3.4.0)
+     */
+    cumulativePeriods?: number
+}
+
+/** Average length of each target period in ms, for time-proportional axes */
+const PERIOD_MS: Record<TimeGranularity, number> = {
+    [TimeGranularity.Daily]: 86_400_000,
+    [TimeGranularity.Weekly]: 7 * 86_400_000,
+    [TimeGranularity.Monthly]: (365.25 / 12) * 86_400_000,
+    [TimeGranularity.Quarterly]: (365.25 / 4) * 86_400_000,
+    [TimeGranularity.Yearly]: 365.25 * 86_400_000
+}
+
+/**
+ * Periods of a target covered by a time span, counting the first: notes from
+ * June 1 to June 15 cover 15 days, or 3 weeks (3.4.0)
+ */
+export function periodsInTimeSpan(
+    range: { min: number; max: number },
+    period: TimeGranularity
+): number {
+    return Math.max(0, range.max - range.min) / PERIOD_MS[period] + 1
 }
 
 /**
@@ -30,7 +57,9 @@ export interface ReferenceLineSpec {
  * `value × periods`.
  */
 export function referenceLineEndValue(line: ReferenceLineSpec, labelCount: number): number {
-    return line.cumulativePerPeriod ? line.value * Math.max(1, labelCount) : line.value
+    return line.cumulativePerPeriod
+        ? line.value * Math.max(1, line.cumulativePeriods ?? labelCount)
+        : line.value
 }
 
 /**
@@ -67,7 +96,9 @@ export const TARGET_LINE_DASH = [2, 3]
 export function buildCartesianReferenceLines(
     chartConfig: ChartConfig,
     overlayReferenceLines: Record<BasesPropertyId, ReferenceLineConfig> | undefined,
-    datasets: ChartDataset[]
+    datasets: ChartDataset[],
+    /** First and last note on the date-per-note axis (3.4.0); absent on period axes */
+    timeRange?: { min: number; max: number }
 ): ReferenceLineSpec[] {
     const referenceLines: ReferenceLineSpec[] = []
     const colors = getChartColorScheme(chartConfig.colorScheme)
@@ -95,7 +126,37 @@ export function buildCartesianReferenceLines(
     if (target?.enabled) {
         const unit = target.unit ? ` ${target.unit}` : ''
 
-        if (chartConfig.runningTotal) {
+        // Count and days targets count entries or days: never a duration
+        const amount = formatTargetAmount(
+            target.value,
+            target.metric,
+            chartConfig.valueFormat,
+            String
+        )
+        const cumulative = {
+            value: target.value,
+            label: `Target: ${amount}${unit} per ${periodLabel(target.period, 1)} (cumulative)`,
+            color: colors[0] ?? '#8884d8',
+            dash: TARGET_LINE_DASH,
+            labelPosition: 'start' as const,
+            cumulativePerPeriod: true
+        }
+
+        if (chartConfig.runningTotal && chartConfig.xAxisSource === 'date-per-note') {
+            // On a time-proportional axis the slope comes from the time the
+            // notes span, whatever the target's period (3.4.0): notes over 15
+            // days against "50 per day" end at 50 × 15. Without a span (no
+            // notes yet) there is nothing to draw against
+            if (timeRange) {
+                referenceLines.push({
+                    ...cumulative,
+                    cumulativePeriods: periodsInTimeSpan(timeRange, target.period)
+                })
+            }
+        } else if (chartConfig.runningTotal && chartConfig.xAxisSource === 'note-name') {
+            // The note-name axis has no time: notes are not periods, so a
+            // per-period goal has no honest slope there and is not drawn
+        } else if (chartConfig.runningTotal) {
             // Against a cumulative series a static per-period target is
             // misleading: "50 per day" must climb 50 a day alongside the data
             // (issue #158). That only translates cleanly when the target's
@@ -103,19 +164,12 @@ export function buildCartesianReferenceLines(
             // no honest slope on a daily axis, so it is dropped rather than
             // drawn wrong.
             if (target.period === chartConfig.granularity) {
-                referenceLines.push({
-                    value: target.value,
-                    label: `Target: ${show(target.value)}${unit} per ${periodLabel(target.period, 1)} (cumulative)`,
-                    color: colors[0] ?? '#8884d8',
-                    dash: TARGET_LINE_DASH,
-                    labelPosition: 'start',
-                    cumulativePerPeriod: true
-                })
+                referenceLines.push(cumulative)
             }
         } else {
             referenceLines.push({
                 value: target.value,
-                label: `Target: ${show(target.value)}${unit}`,
+                label: `Target: ${amount}${unit}`,
                 color: colors[0] ?? '#8884d8',
                 dash: TARGET_LINE_DASH,
                 labelPosition: 'start'

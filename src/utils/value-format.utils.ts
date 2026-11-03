@@ -1,4 +1,4 @@
-import type { ValueFormat } from '../app/types/column/column-config.types'
+import type { TargetMetric, ValueFormat } from '../app/types/column/column-config.types'
 
 /**
  * Display formatting for card values (3.4.0): plain numbers or durations.
@@ -132,4 +132,27 @@ export function axisStep(
     return format && isDurationFormat(format)
         ? durationTickStep(range, format, maxIntervals)
         : niceNumberStep(range, maxIntervals)
+}
+
+/**
+ * Integers stay bare, fractions keep one decimal: the progress ring's own
+ * number rendering
+ */
+export function formatAmount(value: number): string {
+    return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+/**
+ * Format an amount measured by a target in the card's value format (3.4.0).
+ * `count` and `days` measure how many entries or days, never the property's
+ * own unit, so they always stay plain numbers: "Target: 3", not "Target: 0:03".
+ */
+export function formatTargetAmount(
+    value: number,
+    metric: TargetMetric,
+    valueFormat: ValueFormat | undefined,
+    formatNumber: (value: number) => string = formatAmount
+): string {
+    if (metric === 'count' || metric === 'days') return formatNumber(value)
+    return formatValue(value, valueFormat, formatNumber)
 }

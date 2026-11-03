@@ -624,7 +624,8 @@ export class ChartVisualization extends BaseVisualization {
                 const referenceLines = buildCartesianReferenceLines(
                     this.chartConfig,
                     this.overlayReferenceLines,
-                    this.chartData.datasets
+                    this.chartData.datasets,
+                    timeAxisRange(this.chartData)
                 )
 
                 this.chart = initCartesianChart(
@@ -865,7 +866,8 @@ export class ChartVisualization extends BaseVisualization {
             const referenceLines = buildCartesianReferenceLines(
                 this.chartConfig,
                 this.overlayReferenceLines,
-                newChartData.datasets
+                newChartData.datasets,
+                timeAxisRange(newChartData)
             )
             model = buildCartesianModel(newChartData, this.chartConfig, referenceLines, {
                 listData: this.renderedListAggregation
@@ -1025,7 +1027,8 @@ export class ChartVisualization extends BaseVisualization {
         const referenceLines = buildCartesianReferenceLines(
             this.chartConfig,
             this.overlayReferenceLines,
-            chartData.datasets
+            chartData.datasets,
+            timeAxisRange(chartData)
         )
         const labelCount = chartData.labels.length
         annotationOptions.annotations = buildReferenceLineAnnotations(

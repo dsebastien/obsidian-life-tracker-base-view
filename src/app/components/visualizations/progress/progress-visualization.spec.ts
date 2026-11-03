@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
-import { describeTarget, formatTargetAmount } from './progress-visualization'
+import { describeTarget } from './progress-visualization'
+import { formatTargetAmount } from '../../../../utils'
 import { TimeGranularity, type TargetConfig } from '../../../types'
 
 const paceTarget: TargetConfig = {

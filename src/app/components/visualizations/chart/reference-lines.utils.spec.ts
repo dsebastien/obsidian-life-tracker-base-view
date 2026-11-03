@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import {
     buildCartesianReferenceLines,
+    periodsInTimeSpan,
+    referenceLineEndValue,
     REFERENCE_LINE_DASH,
     TARGET_LINE_DASH
 } from './reference-lines.utils'
@@ -290,5 +292,94 @@ describe('time axis reference lines (3.4.0)', () => {
         const line = annotations['referenceLine0'] as { xMin?: number; xMax?: number }
         expect(line.xMin).toBe(1000)
         expect(line.xMax).toBe(5000)
+    })
+})
+
+describe('targets on per-note axes (3.4.0)', () => {
+    const DAY = 86_400_000
+    const dailyTarget = {
+        enabled: true,
+        value: 50,
+        metric: 'sum' as const,
+        period: TimeGranularity.Daily,
+        direction: 'at-least' as const
+    }
+
+    test('periodsInTimeSpan counts the first period', () => {
+        expect(periodsInTimeSpan({ min: 0, max: 14 * DAY }, TimeGranularity.Daily)).toBe(15)
+        expect(periodsInTimeSpan({ min: 0, max: 14 * DAY }, TimeGranularity.Weekly)).toBe(3)
+        expect(periodsInTimeSpan({ min: 5, max: 5 }, TimeGranularity.Daily)).toBe(1)
+    })
+
+    test('date-per-note: the cumulative target slopes over the time the notes span', () => {
+        const lines = buildCartesianReferenceLines(
+            {
+                ...baseConfig,
+                runningTotal: true,
+                xAxisSource: 'date-per-note',
+                // A weekly target on a daily view still has an honest slope in time
+                target: { ...dailyTarget, period: TimeGranularity.Weekly }
+            },
+            undefined,
+            [],
+            { min: 0, max: 14 * DAY }
+        )
+        expect(lines).toHaveLength(1)
+        expect(lines[0]!.cumulativePeriods).toBe(3)
+        // Three notes, three weeks: the end value follows the weeks, not the notes
+        expect(referenceLineEndValue(lines[0]!, 3)).toBe(150)
+    })
+
+    test('date-per-note without notes draws no cumulative target', () => {
+        const lines = buildCartesianReferenceLines(
+            {
+                ...baseConfig,
+                runningTotal: true,
+                xAxisSource: 'date-per-note',
+                target: dailyTarget
+            },
+            undefined,
+            []
+        )
+        expect(lines).toEqual([])
+    })
+
+    test('note-name: notes are not periods, the cumulative target is not drawn', () => {
+        const lines = buildCartesianReferenceLines(
+            { ...baseConfig, runningTotal: true, xAxisSource: 'note-name', target: dailyTarget },
+            undefined,
+            []
+        )
+        expect(lines).toEqual([])
+    })
+
+    test('a plain target still draws on the per-note axes', () => {
+        const lines = buildCartesianReferenceLines(
+            { ...baseConfig, xAxisSource: 'note-name', target: dailyTarget },
+            undefined,
+            []
+        )
+        expect(lines.map((l) => l.label)).toEqual(['Target: 50'])
+    })
+})
+
+describe('target labels and the value format (3.4.0)', () => {
+    test('count and days targets stay counts under a duration format', () => {
+        const lines = buildCartesianReferenceLines(
+            {
+                ...baseConfig,
+                valueFormat: 'duration-mm-ss',
+                target: {
+                    enabled: true,
+                    value: 3,
+                    metric: 'days',
+                    period: TimeGranularity.Weekly,
+                    direction: 'at-least'
+                }
+            },
+            undefined,
+            []
+        )
+        expect(lines[0]!.label).toBe('Target: 3')
     })
 })

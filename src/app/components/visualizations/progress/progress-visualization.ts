@@ -6,14 +6,13 @@ import type {
     ProgressData,
     ProgressPeriod,
     TargetConfig,
-    TargetMetric,
     ValueFormat,
     VisualizationDataPoint,
     VisualizationDateRange
 } from '../../../types'
 import { aggregateForProgress, periodLabel } from '../../../services/progress-aggregation.utils'
 import { TouchNavigationGate } from '../touch-navigation'
-import { formatDateByGranularity, formatValue, log, setCssProps } from '../../../../utils'
+import { formatDateByGranularity, formatTargetAmount, log, setCssProps } from '../../../../utils'
 
 /**
  * Circular progress toward a goal target (issues #6 and #126).
@@ -37,27 +36,6 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 const RECENT_PERIOD_COUNT = 26
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
-
-/**
- * Format a number for display: integers stay bare, fractions keep one decimal
- */
-function formatAmount(value: number): string {
-    return Number.isInteger(value) ? String(value) : value.toFixed(1)
-}
-
-/**
- * Format an amount measured by a target in the card's value format (3.4.0).
- * `count` and `days` measure how many entries or days, never the property's
- * own unit, so they always stay plain numbers.
- */
-export function formatTargetAmount(
-    value: number,
-    metric: TargetMetric,
-    valueFormat: ValueFormat | undefined
-): string {
-    if (metric === 'count' || metric === 'days') return formatAmount(value)
-    return formatValue(value, valueFormat, formatAmount)
-}
 
 /**
  * One-line statement of what the target asks for, e.g. "3 days per week"

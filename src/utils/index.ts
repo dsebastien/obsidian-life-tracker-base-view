@@ -193,5 +193,7 @@ export {
     durationTickStep,
     niceNumberStep,
     axisStep,
-    DURATION_MAX_INTERVALS
+    DURATION_MAX_INTERVALS,
+    formatAmount,
+    formatTargetAmount
 } from './value-format.utils'
