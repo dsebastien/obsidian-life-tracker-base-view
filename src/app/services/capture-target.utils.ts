@@ -252,10 +252,7 @@ export interface TargetLayout {
 
 /** Why a target cannot be used */
 export type TargetLayoutError =
-    | 'missing-note-type'
-    | 'missing-folder'
-    | 'missing-file-name'
-    | 'missing-date-token'
+    'missing-note-type' | 'missing-folder' | 'missing-file-name' | 'missing-date-token'
 
 /** The `{{date}}` token of a file name pattern (case-insensitive, like rendering) */
 const DATE_TOKEN = /\{\{\s*date\s*\}\}/i

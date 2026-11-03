@@ -56,8 +56,7 @@ export interface TargetCreationPlan {
 }
 
 export type TargetCreationPlanResult =
-    | { ok: true; plan: TargetCreationPlan }
-    | { ok: false; error: string }
+    { ok: true; plan: TargetCreationPlan } | { ok: false; error: string }
 
 /**
  * How recently a note must have changed to be re-read from disk on a cache
