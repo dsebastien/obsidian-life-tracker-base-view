@@ -9,7 +9,6 @@ import {
     extractBoolean,
     extractNumber,
     parseDateFromPath,
-    parseListValue,
     startOfDay
 } from '../../utils'
 import { computeSteppedValue } from '../components/editing/number-step.utils'
@@ -144,8 +143,8 @@ export function parseQuickAddParams(params: Record<string, string>): QuickAddPar
             action = { kind: 'set', value: raw }
             break
         case 'append': {
-            // A bare `&append` arrives as "true": there is nothing to add
-            const value = raw === 'true' ? '' : raw.trim()
+            // Any non-empty value is an entry, "true" included
+            const value = raw.trim()
             if (!value) {
                 return { ok: false, error: 'Missing value: use append=<value>' }
             }
@@ -229,9 +228,21 @@ export function applyQuickAddAction(
             if (definition.type !== 'list' && definition.type !== 'tags') {
                 return { ok: false, error: `${label} is not a list property; append needs a list` }
             }
-            return { ok: true, value: [...parseListValue(current), action.value] }
+            return { ok: true, value: [...existingListItems(current), action.value] }
         }
     }
+}
+
+/**
+ * The items already in a list property, kept as they are: numbers stay
+ * numbers and objects stay objects, so appending never rewrites them. Empty
+ * entries (YAML's `[null]` for `field:`) are dropped; a single scalar value
+ * counts as one item.
+ */
+function existingListItems(current: unknown): unknown[] {
+    const isBlank = (item: unknown): boolean => item === null || item === undefined || item === ''
+    if (Array.isArray(current)) return (current as unknown[]).filter((item) => !isBlank(item))
+    return isBlank(current) ? [] : [current]
 }
 
 function parseSetValue(definition: PropertyDefinition, raw: string): QuickAddValueResult {

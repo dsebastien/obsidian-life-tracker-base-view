@@ -207,12 +207,31 @@ describe('append', () => {
         })
     })
 
-    test('refuses a bare or empty append, and append combined with another action', () => {
-        const invalid: Array<Record<string, string>> = [
-            { append: 'true' },
-            { append: '  ' },
-            { append: '1', set: '2' }
-        ]
+    test('accepts any non-empty value, "true" included (review #14)', () => {
+        const result = parseQuickAddParams({ ...base, append: 'true' })
+        expect(result.ok && result.request.kind === 'apply' && result.request.action).toEqual({
+            kind: 'append',
+            value: 'true'
+        })
+    })
+
+    test('keeps existing items as they are: numbers and objects are not stringified (review #14)', () => {
+        const list = makeDef({ type: 'list' })
+        const set = { reps: 10, weight: 50 }
+        expect(
+            applyQuickAddAction(list, [5, set, null], { kind: 'append', value: '12@60' })
+        ).toEqual({
+            ok: true,
+            value: [5, set, '12@60']
+        })
+        expect(applyQuickAddAction(list, 'single', { kind: 'append', value: 'x' })).toEqual({
+            ok: true,
+            value: ['single', 'x']
+        })
+    })
+
+    test('refuses an empty append, and append combined with another action', () => {
+        const invalid: Array<Record<string, string>> = [{ append: '  ' }, { append: '1', set: '2' }]
         for (const params of invalid) {
             expect(parseQuickAddParams({ ...base, ...params }).ok).toBe(false)
         }
