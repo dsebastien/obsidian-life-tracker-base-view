@@ -99,18 +99,28 @@ function normalizeValue(value: unknown): string {
 }
 
 /**
- * Whether frontmatter matches every filter pair. Trimmed, case-insensitive
- * comparison; a list value matches when one of its items does. A pair with an
- * empty property name is ignored (a half-filled settings row).
+ * The filter pairs that count: both a property and a value. A half-filled
+ * settings row is ignored for matching and never written, so it can neither
+ * match notes that lack the property nor write `property: ''` into a note.
+ */
+export function completeFilters(filters: readonly CaptureTargetFilter[]): CaptureTargetFilter[] {
+    return filters
+        .map((filter) => ({ property: filter.property.trim(), value: filter.value.trim() }))
+        .filter((filter) => filter.property.length > 0 && filter.value.length > 0)
+}
+
+/**
+ * Whether frontmatter matches every complete filter pair. Trimmed,
+ * case-insensitive comparison; a list value matches when one of its items
+ * does. Incomplete pairs are ignored (see `completeFilters`).
  */
 export function matchesFilters(
     frontmatter: Record<string, unknown>,
     filters: readonly CaptureTargetFilter[]
 ): boolean {
-    return filters.every((filter) => {
-        const property = filter.property.trim()
-        if (!property) return true
-        const wanted = filter.value.trim().toLowerCase()
+    return completeFilters(filters).every((filter) => {
+        const property = filter.property
+        const wanted = filter.value.toLowerCase()
         const actual = frontmatter[property]
         if (Array.isArray(actual)) {
             return actual.some((item) => normalizeValue(item) === wanted)
@@ -133,26 +143,42 @@ function parseLeadingIsoDay(text: string): Date | null {
     return date
 }
 
+/** `[[2026-11-03]]` or `[[2026-11-03|alias]]` → `2026-11-03` */
+const WIKILINK = /^\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]$/
+
 /**
- * A note's date: its date property (`YYYY-MM-DD`, or a datetime starting with
- * one) when set, otherwise the date in its file name (filename patterns at
- * daily granularity, then a leading `YYYY-MM-DD` such as in
- * `2026-11-03 (Strength Session)`).
+ * The day a date property value names, or null when it names none: an ISO
+ * date, a datetime starting with one (`2026-11-03T08:15`), a wikilink to a
+ * daily note (`[[2026-11-03]]`), or a Date from a YAML parser that reads
+ * timestamps (UTC midnight for a bare date: its calendar day is kept).
+ */
+export function parseDateValue(raw: unknown): Date | null {
+    if (raw instanceof Date) {
+        if (Number.isNaN(raw.getTime())) return null
+        return new Date(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate())
+    }
+    if (typeof raw !== 'string') return null
+    const text = raw.trim()
+    const link = WIKILINK.exec(text)
+    const inner = link ? (link[1] ?? '').trim() : text
+    // A link may point to a path: the daily note's name is its last segment
+    return parseLeadingIsoDay(inner.slice(inner.lastIndexOf('/') + 1))
+}
+
+/**
+ * A note's date: its date property when it names a day (see
+ * `parseDateValue`), otherwise the date in its file name (filename patterns
+ * at daily granularity, then a leading `YYYY-MM-DD` such as in
+ * `2026-11-03 (Strength Session)`). A property value that names no day
+ * (`soon`, a broken link) falls back to the file name as well.
  */
 export function readTargetNoteDate(
     candidate: Pick<TargetNoteCandidate, 'path' | 'basename' | 'frontmatter'>,
     dateProperty: string
 ): Date | null {
     const property = dateProperty.trim()
-    const raw = property ? candidate.frontmatter[property] : undefined
-    if (typeof raw === 'string' && raw.trim()) {
-        return parseLeadingIsoDay(raw)
-    }
-    // A YAML parser that reads timestamps hands over a Date (UTC midnight
-    // for a bare date): take its calendar day, not the local one
-    if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
-        return new Date(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate())
-    }
+    const fromProperty = property ? parseDateValue(candidate.frontmatter[property]) : null
+    if (fromProperty) return fromProperty
 
     const parsed = parseDateFromPath(candidate.path)
     if (parsed && parsed.granularity === TimeGranularity.Daily) return parsed.date
@@ -225,7 +251,14 @@ export interface TargetLayout {
 }
 
 /** Why a target cannot be used */
-export type TargetLayoutError = 'missing-note-type' | 'missing-folder' | 'missing-file-name'
+export type TargetLayoutError =
+    | 'missing-note-type'
+    | 'missing-folder'
+    | 'missing-file-name'
+    | 'missing-date-token'
+
+/** The `{{date}}` token of a file name pattern (case-insensitive, like rendering) */
+const DATE_TOKEN = /\{\{\s*date\s*\}\}/i
 
 /**
  * The layout of a target, or the reason it is unusable.
@@ -260,9 +293,11 @@ export function describeTargetLayout(
     const pattern = target.fileNamePattern
     if (!pattern.trim()) return 'missing-file-name'
 
-    // The counter goes right after the last token, which is the date part
-    const lastToken = pattern.lastIndexOf('}}')
-    const split = lastToken === -1 ? pattern.length : lastToken + 2
+    // The counter goes right after the date, as Starter Kit names do
+    // (`<date> 2 (…)`); a name without the date could never be told apart
+    const dateToken = DATE_TOKEN.exec(pattern)
+    if (!dateToken) return 'missing-date-token'
+    const split = dateToken.index + dateToken[0].length
     return {
         folder,
         head: pattern.slice(0, split),
@@ -288,6 +323,8 @@ export function describeLayoutError(error: TargetLayoutError, target: CaptureTar
                 : `Capture target "${target.name}" has no folder.`
         case 'missing-file-name':
             return `Capture target "${target.name}" has no file name pattern.`
+        case 'missing-date-token':
+            return `The file name pattern of capture target "${target.name}" needs {{date}}.`
     }
 }
 
@@ -332,40 +369,67 @@ export function resolveFreeTargetPath(
 }
 
 /**
+ * Frontmatter tags as written: the `tags` and the singular `tag` key, each a
+ * list or a comma- or space-separated string, like Obsidian's
+ * `parseFrontMatterTags`. `#` kept as written.
+ */
+export function readFrontmatterTags(frontmatter: Record<string, unknown>): string[] {
+    const tags: string[] = []
+    for (const key of ['tags', 'tag']) {
+        const raw = frontmatter[key]
+        if (Array.isArray(raw)) {
+            for (const tag of raw) {
+                if (typeof tag === 'string' && tag.trim()) tags.push(tag.trim())
+            }
+        } else if (typeof raw === 'string') {
+            tags.push(
+                ...raw
+                    .split(/[,\s]+/)
+                    .map((tag) => tag.trim())
+                    .filter((tag) => tag.length > 0)
+            )
+        }
+    }
+    return tags
+}
+
+/**
  * The frontmatter written into a note right after the plugin created it: the
- * date property, every filter pair, and the mandatory tags merged into
- * `tags`. This is what makes the note findable again, template or not.
+ * date property, every complete filter pair, and the mandatory tags merged
+ * into `tags`. This is what makes the note findable again, template or not.
+ *
+ * A date the note already has for that day is kept as written (a template's
+ * `2026-11-03T08:15` or `[[2026-11-03]]`); only a missing or different value
+ * is replaced.
  */
 export function buildCreationFrontmatter(
     target: CaptureTarget,
     layout: TargetLayout,
     date: Date,
-    currentTags: unknown
+    current: Record<string, unknown>
 ): Record<string, unknown> {
     const values: Record<string, unknown> = {}
 
     const dateProperty = target.dateProperty.trim()
-    if (dateProperty) values[dateProperty] = formatDateISO(date)
+    if (dateProperty) {
+        const existing = parseDateValue(current[dateProperty])
+        if (!existing || !isSameDay(existing, date)) values[dateProperty] = formatDateISO(date)
+    }
 
-    for (const filter of target.filters) {
-        const property = filter.property.trim()
-        if (property) values[property] = filter.value.trim()
+    for (const filter of completeFilters(target.filters)) {
+        values[filter.property] = filter.value
     }
 
     if (layout.tags.length > 0) {
-        const existing = Array.isArray(currentTags)
-            ? currentTags.filter((tag): tag is string => typeof tag === 'string')
-            : typeof currentTags === 'string' && currentTags.trim()
-              ? [currentTags.trim()]
-              : []
-        const merged = [...existing]
-        for (const tag of layout.tags) {
-            const present = merged.some(
-                (candidate) => candidate.replace(/^#/, '').toLowerCase() === tag.toLowerCase()
-            )
-            if (!present) merged.push(tag)
+        // `tags` only: a singular `tag` key is left as it is
+        const existing = readFrontmatterTags({ tags: current['tags'] })
+        const present = readFrontmatterTags(current).map((tag) =>
+            tag.replace(/^#/, '').toLowerCase()
+        )
+        const missing = layout.tags.filter((tag) => !present.includes(tag.toLowerCase()))
+        if (missing.length > 0 || typeof current['tags'] === 'string') {
+            values['tags'] = [...existing, ...missing]
         }
-        values['tags'] = merged
     }
 
     return values

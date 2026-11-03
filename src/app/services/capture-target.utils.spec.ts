@@ -10,7 +10,9 @@ import {
 import { createDefaultPropertyDefinition } from '../types/property/property-definition.types'
 import {
     buildCreationFrontmatter,
+    completeFilters,
     definitionsForDestination,
+    describeLayoutError,
     describeTargetLayout,
     groupByDestination,
     isOfTargetType,
@@ -18,6 +20,8 @@ import {
     matchesFilters,
     needsDiscoverabilityWarning,
     pickTargetNote,
+    parseDateValue,
+    readFrontmatterTags,
     readTargetNoteDate,
     resolveDefinitionTarget,
     resolveFreeTargetPath,
@@ -186,9 +190,20 @@ describe('matchesFilters', () => {
         expect(matchesFilters({}, [{ property: ' ', value: 'x' }])).toBe(true)
     })
 
-    test('an empty value matches an empty or missing property', () => {
+    test('an incomplete row is ignored, never matching notes without the property (review #10)', () => {
         expect(matchesFilters({}, [{ property: 'kind', value: '' }])).toBe(true)
-        expect(matchesFilters({ kind: 'x' }, [{ property: 'kind', value: '' }])).toBe(false)
+        expect(
+            matchesFilters({ workout_kind: 'Full body' }, [
+                { property: 'workout_kind', value: 'Full body' },
+                { property: 'kind', value: ' ' }
+            ])
+        ).toBe(true)
+        expect(
+            completeFilters([
+                { property: ' a ', value: ' b ' },
+                { property: 'c', value: '' }
+            ])
+        ).toEqual([{ property: 'a', value: 'b' }])
     })
 })
 
@@ -215,11 +230,19 @@ describe('readTargetNoteDate', () => {
         ).toEqual(NOV_3)
     })
 
-    test('an invalid property date is not silently replaced by the file name', () => {
-        expect(readTargetNoteDate(candidate({ frontmatter: { date: 'soon' } }), 'date')).toBeNull()
+    test('a property value that names no day falls back to the file name (review #8)', () => {
+        expect(readTargetNoteDate(candidate({ frontmatter: { date: 'soon' } }), 'date')).toEqual(
+            NOV_3
+        )
         expect(
             readTargetNoteDate(candidate({ frontmatter: { date: '2026-02-31' } }), 'date')
-        ).toBeNull()
+        ).toEqual(NOV_3)
+        expect(
+            readTargetNoteDate(
+                candidate({ frontmatter: { date: '[[2026-11-03]]' }, basename: 'x', path: 'x.md' }),
+                'date'
+            )
+        ).toEqual(NOV_3)
     })
 
     test('a date parsed by YAML as a Date keeps its calendar day', () => {
@@ -336,7 +359,32 @@ describe('describeTargetLayout', () => {
         ).toBe('missing-file-name')
     })
 
-    test('a standalone pattern is split after its last token', () => {
+    test('the counter goes right after {{date}}, not after the last token (review #11)', () => {
+        const layout = describeTargetLayout(
+            throughTheDay({
+                noteTypeId: '',
+                folder: 'W',
+                fileNamePattern: '{{date}} Workout {{year}}'
+            }),
+            null
+        ) as TargetLayout
+        expect(
+            resolveFreeTargetPath(layout, NOV_3, (path) => path === 'W/2026-11-03 Workout 2026.md')
+                ?.path
+        ).toBe('W/2026-11-03 2 Workout 2026.md')
+    })
+
+    test('a standalone pattern without {{date}} is refused (review #11)', () => {
+        const target = throughTheDay({
+            noteTypeId: '',
+            folder: 'W',
+            fileNamePattern: '{{year}} Workout'
+        })
+        expect(describeTargetLayout(target, null)).toBe('missing-date-token')
+        expect(describeLayoutError('missing-date-token', target)).toContain('{{date}}')
+    })
+
+    test('a standalone pattern is split after its date token', () => {
         const layout = describeTargetLayout(
             throughTheDay({
                 noteTypeId: '',
@@ -396,24 +444,68 @@ describe('resolveFreeTargetPath', () => {
 
 describe('buildCreationFrontmatter', () => {
     const layout = describeTargetLayout(throughTheDay(), STRENGTH_TYPE) as TargetLayout
+    const ALL_TAGS = ['zone/journal', 'type/session/sport/strength']
 
     test('writes the date, the filters and merges the mandatory tags', () => {
-        expect(buildCreationFrontmatter(throughTheDay(), layout, NOV_3, ['zone/journal'])).toEqual({
+        expect(
+            buildCreationFrontmatter(throughTheDay(), layout, NOV_3, { tags: ['zone/journal'] })
+        ).toEqual({
             date: '2026-11-03',
             workout_kind: 'Through the day',
-            tags: ['zone/journal', 'type/session/sport/strength']
+            tags: ALL_TAGS
         })
     })
 
-    test('a single-string tags value and a missing one are merged too', () => {
-        expect(buildCreationFrontmatter(throughTheDay(), layout, NOV_3, 'mine')['tags']).toEqual([
-            'mine',
-            'zone/journal',
-            'type/session/sport/strength'
-        ])
-        expect(buildCreationFrontmatter(throughTheDay(), layout, NOV_3, undefined)['tags']).toEqual(
-            ['zone/journal', 'type/session/sport/strength']
+    test('a one-string tags value is split, not kept as one tag (review #9)', () => {
+        expect(
+            buildCreationFrontmatter(throughTheDay(), layout, NOV_3, { tags: 'journal, daily' })[
+                'tags'
+            ]
+        ).toEqual(['journal', 'daily', ...ALL_TAGS])
+        expect(buildCreationFrontmatter(throughTheDay(), layout, NOV_3, {})['tags']).toEqual(
+            ALL_TAGS
         )
+    })
+
+    test('tags already present (also under the singular tag key) are not added again', () => {
+        const values = buildCreationFrontmatter(throughTheDay(), layout, NOV_3, {
+            tags: ['#zone/journal'],
+            tag: 'type/session/sport/strength'
+        })
+        expect(values['tags']).toBeUndefined()
+    })
+
+    test('a date the template wrote for that day is kept as written (review #8)', () => {
+        for (const date of ['2026-11-03T08:15', '[[2026-11-03]]', '[[Journal/2026-11-03|Tue]]']) {
+            expect(
+                buildCreationFrontmatter(throughTheDay(), layout, NOV_3, { date })['date']
+            ).toBeUndefined()
+        }
+        // A different day or something unreadable is replaced
+        expect(
+            buildCreationFrontmatter(throughTheDay(), layout, NOV_3, { date: '2026-11-04' })['date']
+        ).toBe('2026-11-03')
+        expect(
+            buildCreationFrontmatter(throughTheDay(), layout, NOV_3, { date: '<% tp.date %>' })[
+                'date'
+            ]
+        ).toBe('2026-11-03')
+    })
+
+    test('incomplete filter rows are never written (review #10)', () => {
+        const values = buildCreationFrontmatter(
+            throughTheDay({
+                filters: [
+                    { property: 'workout_kind', value: '' },
+                    { property: '', value: 'x' },
+                    { property: ' location ', value: ' Home ' }
+                ]
+            }),
+            layout,
+            NOV_3,
+            {}
+        )
+        expect(values).toEqual({ date: '2026-11-03', location: 'Home', tags: ALL_TAGS })
     })
 
     test('no tags to add, no date property: neither is written', () => {
@@ -421,9 +513,41 @@ describe('buildCreationFrontmatter', () => {
             throughTheDay({ dateProperty: ' ', filters: [] }),
             { ...layout, tags: [] },
             NOV_3,
-            undefined
+            {}
         )
         expect(values).toEqual({})
+    })
+})
+
+describe('readFrontmatterTags (review #17)', () => {
+    test('reads tags and the singular tag key, lists or strings', () => {
+        expect(readFrontmatterTags({ tags: ['a', ' ', 3], tag: 'b, #c d' })).toEqual([
+            'a',
+            'b',
+            '#c',
+            'd'
+        ])
+        expect(readFrontmatterTags({})).toEqual([])
+    })
+})
+
+describe('parseDateValue (review #8)', () => {
+    test('ISO dates, datetimes, wikilinks and Dates', () => {
+        for (const value of [
+            '2026-11-03',
+            '2026-11-03T08:15',
+            ' [[2026-11-03]] ',
+            '[[Journal/2026-11-03|Tuesday]]',
+            new Date('2026-11-03T00:00:00Z')
+        ]) {
+            expect(parseDateValue(value)).toEqual(NOV_3)
+        }
+    })
+
+    test('anything else names no day', () => {
+        for (const value of ['soon', '[[Some note]]', '2026-02-31', 42, null, new Date('x')]) {
+            expect(parseDateValue(value)).toBeNull()
+        }
     })
 })
 

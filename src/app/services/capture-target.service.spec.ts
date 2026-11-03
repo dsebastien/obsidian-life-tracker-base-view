@@ -55,8 +55,11 @@ function file(
 }
 
 /** A vault holding `files`, with folders derived from their paths */
-function createHost(files: FakeFile[]): CaptureTargetHost<FakeFile> & { scanned: string[] } {
+function createHost(
+    files: FakeFile[]
+): CaptureTargetHost<FakeFile> & { scanned: string[]; reads: string[] } {
     const scanned: string[] = []
+    const reads: string[] = []
     const childrenOf = (folder: string): unknown[] => {
         const direct = files.filter((f) => f.parent?.path === folder)
         const subfolders = new Set<string>()
@@ -74,6 +77,7 @@ function createHost(files: FakeFile[]): CaptureTargetHost<FakeFile> & { scanned:
     }
     return {
         scanned,
+        reads,
         vault: {
             getFolderByPath: (path) => {
                 scanned.push(path)
@@ -83,7 +87,10 @@ function createHost(files: FakeFile[]): CaptureTargetHost<FakeFile> & { scanned:
                 return exists ? { children: childrenOf(path) } : null
             },
             getFileByPath: (path) => files.find((f) => f.path === path) ?? null,
-            read: (f) => Promise.resolve(JSON.stringify(f.disk ?? f.frontmatter))
+            cachedRead: (f) => {
+                reads.push(f.path)
+                return Promise.resolve(JSON.stringify(f.disk ?? f.frontmatter))
+            }
         },
         metadataCache: {
             getFileCache: (f) => ({ frontmatter: f.frontmatter })
@@ -283,5 +290,75 @@ describe('a note the cache has not indexed yet (vault bug: a second note offered
         expect(s.isIndexedAsTargetNote(through, TARGET, JAN_2)).toBe(false)
         through.frontmatter = THROUGH
         expect(s.isIndexedAsTargetNote(through, TARGET, JAN_2)).toBe(true)
+    })
+})
+
+describe('planCreation refuses a note it would never find again (review #4)', () => {
+    test('a regex mapping the numbered name breaks', () => {
+        const regexType: StarterKitNoteType = {
+            ...STRENGTH_TYPE,
+            mappings: [
+                {
+                    type: 'regex',
+                    value: '^\\d{4}-\\d{2}-\\d{2} \\(Strength Session\\)$',
+                    enabled: true
+                }
+            ]
+        }
+        const gym = file('2026-11-03 (Strength Session)', { workout_kind: 'Full body' })
+        const host = createHost([gym])
+        const s = new CaptureTargetService(host, () => regexType, parseJson)
+
+        const result = s.planCreation(TARGET, NOV_3)
+        expect(result.ok).toBe(false)
+        expect(!result.ok && result.error).toContain('would not be recognized')
+    })
+
+    test('a note without a readable date is refused', () => {
+        const result = service([]).service.planCreation(
+            {
+                ...TARGET,
+                noteTypeId: '',
+                folder: 'Moves',
+                fileNamePattern: 'Moves {{date}}',
+                dateProperty: ''
+            },
+            NOV_3
+        )
+        // No date property, and "Moves 2026-11-03" does not start with the date
+        expect(result.ok).toBe(false)
+        expect(!result.ok && result.error).toContain('no date')
+    })
+})
+
+describe('the disk fallback reads only likely candidates (review #5)', () => {
+    test('old, indexed notes of other days are not read', async () => {
+        const now = Date.now()
+        const old = file(
+            '2026-10-01 (Strength Session)',
+            { ...STRENGTH_TAGS, date: '2026-10-01' },
+            now - 86_400_000
+        )
+        const recent = file('Renamed session', { ...STRENGTH_TAGS, date: '2026-10-02' }, now)
+        const sameDay = file(
+            '2026-11-03 (Strength Session)',
+            { ...STRENGTH_TAGS, date: '2026-11-03', workout_kind: 'Full body' },
+            now - 86_400_000
+        )
+        const { host, service: s } = service([old, recent, sameDay])
+
+        expect(await s.findNoteVerified(TARGET, NOV_3)).toBeNull()
+        expect(host.reads.sort()).toEqual([recent.path, sameDay.path].sort())
+    })
+
+    test('an unindexed note is read whatever its name and age', async () => {
+        const unindexed = file('Untitled', {}, 0)
+        unindexed.disk = { ...STRENGTH_TAGS, date: '2026-11-03', workout_kind: 'Through the day' }
+        const { host, service: s } = service([unindexed])
+        const cache = host.metadataCache
+        host.metadataCache = {
+            getFileCache: (f) => (f === unindexed ? null : cache.getFileCache(f))
+        }
+        expect(await s.findNoteVerified(TARGET, NOV_3)).toBe(unindexed)
     })
 })

@@ -1,8 +1,10 @@
 import type { CaptureTarget, StarterKitNoteType } from '../types'
-import { log } from '../../utils'
+import { formatDateISO, log } from '../../utils'
 import type { NoteTargetResolution } from './note-target.service'
 import {
     buildCreationFrontmatter,
+    isOfTargetType,
+    readFrontmatterTags,
     describeLayoutError,
     describeTargetLayout,
     isTargetLayout,
@@ -31,8 +33,8 @@ export interface CaptureTargetHost<F extends TargetFileLike> {
     vault: {
         getFolderByPath(path: string): { children: readonly unknown[] } | null
         getFileByPath(path: string): F | null
-        /** Read a file from disk, bypassing the metadata cache */
-        read(file: F): Promise<string>
+        /** Read a file's text, bypassing the metadata cache */
+        cachedRead(file: F): Promise<string>
     }
     metadataCache: {
         getFileCache(file: F): { frontmatter?: unknown } | null
@@ -57,18 +59,11 @@ export type TargetCreationPlanResult =
     | { ok: true; plan: TargetCreationPlan }
     | { ok: false; error: string }
 
-/** Frontmatter tags as strings, `#` kept as written */
-function readTags(frontmatter: Record<string, unknown>): string[] {
-    const raw = frontmatter['tags']
-    if (Array.isArray(raw)) return raw.filter((tag): tag is string => typeof tag === 'string')
-    if (typeof raw === 'string') {
-        return raw
-            .split(/[,\s]+/)
-            .map((tag) => tag.trim())
-            .filter((tag) => tag.length > 0)
-    }
-    return []
-}
+/**
+ * How recently a note must have changed to be re-read from disk on a cache
+ * miss: a write the cache has not caught up with is seconds old, not hours.
+ */
+const RECENT_CHANGE_MS = 10 * 60 * 1000
 
 /** A lookup candidate from a file and its frontmatter */
 function toCandidate<F extends TargetFileLike>(
@@ -80,7 +75,7 @@ function toCandidate<F extends TargetFileLike>(
         path: file.path,
         basename: file.basename,
         folder: file.parent?.path ?? '',
-        tags: readTags(frontmatter),
+        tags: readFrontmatterTags(frontmatter),
         frontmatter,
         mtime: file.stat.mtime
     }
@@ -105,7 +100,8 @@ export class CaptureTargetService<F extends TargetFileLike> {
     constructor(
         private readonly app: CaptureTargetHost<F>,
         private readonly getNoteType: (id: string) => StarterKitNoteType | null,
-        private readonly parseFrontmatter: (content: string) => Record<string, unknown> | null
+        private readonly parseFrontmatter: (content: string) => Record<string, unknown> | null,
+        private readonly now: () => number = () => Date.now()
     ) {}
 
     private noteTypeOf(target: CaptureTarget): StarterKitNoteType | null {
@@ -156,19 +152,28 @@ export class CaptureTargetService<F extends TargetFileLike> {
      *
      * The cache lags behind writes: a note just created and filled may still
      * be indexed as empty, and the cache alone would then offer to create a
-     * second note for the same day. Disk is only read on a miss, which happens
-     * once a day per target (before its note exists).
+     * second note for the same day. Only the notes that could be such a note
+     * are read: a name holding the day's ISO date, a note the cache has no
+     * frontmatter for, or one modified in the last minutes. A folder without
+     * a `{{year}}` can hold thousands of notes, and this runs on phones.
      */
     async findNoteVerified(target: CaptureTarget, date: Date): Promise<F | null> {
         const cached = this.findNote(target, date)
         if (cached) return cached
 
         const noteType = this.noteTypeOf(target)
+        const isoDay = formatDateISO(date)
+        const recentSince = this.now() - RECENT_CHANGE_MS
         const candidates: Array<TargetNoteCandidate & { file: F }> = []
         for (const file of this.filesInTargetFolder(target, date)) {
+            const indexed = this.app.metadataCache.getFileCache(file)?.frontmatter !== undefined
+            const worthReading =
+                file.basename.includes(isoDay) || !indexed || file.stat.mtime >= recentSince
+            if (!worthReading) continue
+
             let content: string
             try {
-                content = await this.app.vault.read(file)
+                content = await this.app.vault.cachedRead(file)
             } catch (error: unknown) {
                 log('Could not read a note while looking for a capture target note', 'debug', {
                     path: file.path,
@@ -232,6 +237,11 @@ export class CaptureTargetService<F extends TargetFileLike> {
             }
         }
 
+        // The note about to be created must be one this target finds again:
+        // otherwise every capture would create yet another note
+        const unfindable = this.whyNotFindable(target, layout, resolved, date)
+        if (unfindable) return { ok: false, error: unfindable }
+
         return {
             ok: true,
             plan: {
@@ -248,6 +258,38 @@ export class CaptureTargetService<F extends TargetFileLike> {
     }
 
     /**
+     * Why a note created at `resolved` would not be found again by this
+     * target, or null when it would. Checked with exactly what creation writes
+     * (tags, date, filters); a template can only add to that.
+     */
+    private whyNotFindable(
+        target: CaptureTarget,
+        layout: TargetLayout,
+        resolved: { path: string; folder: string },
+        date: Date
+    ): string | null {
+        const noteType = this.noteTypeOf(target)
+        const basename = resolved.path
+            .slice(resolved.path.lastIndexOf('/') + 1)
+            .replace(/\.md$/, '')
+        const frontmatter = buildCreationFrontmatter(target, layout, date, {})
+        const candidate: TargetNoteCandidate = {
+            path: resolved.path,
+            basename,
+            folder: resolved.folder,
+            tags: readFrontmatterTags(frontmatter),
+            frontmatter,
+            mtime: 0
+        }
+        if (pickTargetNote([candidate], target, noteType, date)) return null
+
+        if (!isOfTargetType(candidate, target, noteType)) {
+            return `A note created at ${resolved.path} would not be recognized as a "${noteType?.name ?? target.name}" note: none of the note type's filters (tag, folder or regex) matches it. Adjust the note type's filters or the capture target.`
+        }
+        return `A note created at ${resolved.path} would carry no date Life Tracker can read. Set a date property on capture target "${target.name}".`
+    }
+
+    /**
      * Write what makes a freshly created note this target's note: the date
      * property, the filter values and the mandatory tags. Runs after the
      * template, so it completes a templated note and fills an empty one.
@@ -260,7 +302,7 @@ export class CaptureTargetService<F extends TargetFileLike> {
     ): Promise<boolean> {
         try {
             await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-                const values = buildCreationFrontmatter(target, layout, date, frontmatter['tags'])
+                const values = buildCreationFrontmatter(target, layout, date, frontmatter)
                 for (const [key, value] of Object.entries(values)) {
                     frontmatter[key] = value
                 }
