@@ -57,6 +57,17 @@ function optionalString(value: unknown): string | null {
     return trimmed.length > 0 ? trimmed : null
 }
 
+/**
+ * A note name prefix or suffix: kept exactly as written, spaces included. The
+ * Starter Kit stores `" (Strength Session)"` with its leading space on
+ * purpose; trimming it would name new notes `2026-11-03(Strength Session)`.
+ * Only a missing or all-whitespace affix counts as absent.
+ */
+function optionalAffix(value: unknown): string | null {
+    if (typeof value !== 'string') return null
+    return value.trim().length > 0 ? value : null
+}
+
 function isValidNoteType(value: unknown): value is StarterKitNoteType {
     if (!value || typeof value !== 'object') return false
     const candidate = value as Partial<StarterKitNoteType>
@@ -163,8 +174,8 @@ export class StarterKitService {
             // trusted straight into a vault path (issue #160).
             associatedFolder: optionalString(noteType.associatedFolder),
             templatePath: optionalString(noteType.templatePath),
-            noteNamePrefix: optionalString(noteType.noteNamePrefix),
-            noteNameSuffix: optionalString(noteType.noteNameSuffix),
+            noteNamePrefix: optionalAffix(noteType.noteNamePrefix),
+            noteNameSuffix: optionalAffix(noteType.noteNameSuffix),
             tags: Array.isArray(noteType.tags)
                 ? noteType.tags.filter((tag): tag is string => typeof tag === 'string')
                 : []
