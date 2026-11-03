@@ -93,7 +93,11 @@ import {
     PropertySelectionModal,
     type SelectableProperty
 } from '../components/modals/property-selection-modal'
-import { OverlayEditModal, type EditableProperty } from '../components/modals/overlay-edit-modal'
+import {
+    OverlayEditModal,
+    overlayUpdateFromEditResult,
+    type EditableProperty
+} from '../components/modals/overlay-edit-modal'
 
 /**
  * Data attribute for visualization ID.
@@ -1745,20 +1749,20 @@ export class LifeTrackerView extends BasesView implements FileProvider {
         new OverlayEditModal(this.plugin, overlayConfig, availableProperties, {
             onSave: (result) => {
                 // Update the overlay config with new values
-                this.columnConfigService.updateOverlayConfig(overlayConfig.id, {
-                    displayName: result.displayName,
-                    visualizationType: result.visualizationType,
-                    propertyIds: result.propertyIds,
-                    referenceLines: result.referenceLines,
-                    hideIndividualVisualizations: result.hideIndividualVisualizations,
-                    aggregationMethod: result.aggregationMethod,
-                    valueFormat: result.valueFormat,
-                    outliers: result.outliers
-                })
+                this.columnConfigService.updateOverlayConfig(
+                    overlayConfig.id,
+                    overlayUpdateFromEditResult(result)
+                )
+                // Overlays only change on the full path: the incremental one
+                // re-aggregates against the existing configs and would show
+                // the edit (format, outliers, aggregation, reference lines)
+                // only after the Base is reopened
+                this.forceFullRender = true
                 this.onDataUpdated()
             },
             onDelete: () => {
                 this.columnConfigService.deleteOverlayConfig(overlayConfig.id)
+                this.forceFullRender = true
                 this.onDataUpdated()
             }
         }).open()

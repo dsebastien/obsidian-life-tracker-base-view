@@ -41,6 +41,25 @@ export interface OverlayEditResult {
 }
 
 /**
+ * The overlay config fields an edit writes. Every field the modal edits must
+ * be here, or the edit is silently dropped on save
+ */
+export function overlayUpdateFromEditResult(
+    result: OverlayEditResult
+): Partial<Omit<OverlayVisualizationConfig, 'id'>> {
+    return {
+        displayName: result.displayName,
+        visualizationType: result.visualizationType,
+        propertyIds: result.propertyIds,
+        referenceLines: result.referenceLines,
+        hideIndividualVisualizations: result.hideIndividualVisualizations,
+        aggregationMethod: result.aggregationMethod,
+        valueFormat: result.valueFormat,
+        outliers: result.outliers
+    }
+}
+
+/**
  * Callbacks for the overlay edit modal
  */
 export interface OverlayEditCallbacks {
