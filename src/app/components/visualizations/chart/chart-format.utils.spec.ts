@@ -1,5 +1,5 @@
 import { test, expect, describe } from 'bun:test'
-import { areAllValuesIntegers, formatMetricValue } from './chart-format.utils'
+import { areAllValuesIntegers, formatMetricValue, stripNoteTypeSuffix } from './chart-format.utils'
 
 describe('areAllValuesIntegers', () => {
     test('true for whole numbers and nulls', () => {
@@ -31,5 +31,27 @@ describe('formatMetricValue', () => {
 
     test('rounds to at most two fraction digits', () => {
         expect(formatMetricValue(3.14159, false)).toBe('3.14')
+    })
+})
+
+describe('stripNoteTypeSuffix (3.4.0)', () => {
+    test('drops one trailing type suffix', () => {
+        expect(stripNoteTypeSuffix('2025-06-24 (Running Session)')).toBe('2025-06-24')
+        expect(stripNoteTypeSuffix('Dune (Book)')).toBe('Dune')
+        expect(stripNoteTypeSuffix('2025-06-24 2 (Strength Session)')).toBe('2025-06-24 2')
+    })
+
+    test('only the last suffix goes', () => {
+        expect(stripNoteTypeSuffix('Dune (1965) (Book)')).toBe('Dune (1965)')
+    })
+
+    test('names without a trailing suffix are untouched', () => {
+        expect(stripNoteTypeSuffix('Dune')).toBe('Dune')
+        expect(stripNoteTypeSuffix('Notes (draft) final')).toBe('Notes (draft) final')
+        expect(stripNoteTypeSuffix('2025-06-24')).toBe('2025-06-24')
+    })
+
+    test('a name that is only a suffix is kept', () => {
+        expect(stripNoteTypeSuffix('(Inbox)')).toBe('(Inbox)')
     })
 })

@@ -28,7 +28,7 @@ import type { Chart as ChartJsChart, ScaleOptions } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
 import { referenceLineEndValue, type ReferenceLineSpec } from './reference-lines.utils'
 import { format } from 'date-fns'
-import { areAllValuesIntegers, formatMetricValue } from './chart-format.utils'
+import { areAllValuesIntegers, formatMetricValue, stripNoteTypeSuffix } from './chart-format.utils'
 import { formatHoursAsTime } from '../../../services/range-aggregation.utils'
 import {
     DENSE_SERIES_POINT_THRESHOLD,
@@ -430,6 +430,35 @@ function timeXAxis(xValues: number[], chartConfig: ChartConfig): ScaleOptions<'l
 }
 
 /**
+ * The x-axis of the note-name axis (3.4.0): labels without the note-type
+ * suffix, horizontal when they fit, rotated up to 45° otherwise, and
+ * auto-skipped so they never overlap. Tooltips keep the full note name.
+ */
+function noteNameXAxis(
+    getChartData: () => ChartData | null,
+    chartConfig: ChartConfig
+): ScaleOptions<'category'> {
+    return {
+        display: true,
+        offset: true, // Add space at edges for first/last bars
+        grid: {
+            display: chartConfig.showGrid,
+            offset: true
+        },
+        ticks: {
+            minRotation: 0,
+            maxRotation: 45,
+            autoSkip: true,
+            autoSkipPadding: 10,
+            align: 'center',
+            // Category ticks carry the label index as their value
+            callback: (value): string =>
+                stripNoteTypeSuffix(getChartData()?.labels[Number(value)] ?? String(value))
+        }
+    }
+}
+
+/**
  * Initialize cartesian chart (line, bar, area)
  */
 export function initCartesianChart(
@@ -548,22 +577,24 @@ export function initCartesianChart(
             scales: {
                 x: chartData.xValues
                     ? timeXAxis(chartData.xValues, chartConfig)
-                    : {
-                          display: true,
-                          offset: true, // Add space at edges for first/last bars
-                          bounds: 'ticks', // Ensure edge ticks remain visible
-                          grid: {
-                              display: chartConfig.showGrid,
-                              offset: true
-                          },
-                          ticks: {
-                              maxRotation: 45,
-                              minRotation: 45,
-                              autoSkipPadding: 10,
-                              includeBounds: true, // Include first/last labels
-                              align: 'center'
-                          }
-                      },
+                    : chartConfig.xAxisSource === 'note-name'
+                      ? noteNameXAxis(getChartData, chartConfig)
+                      : {
+                            display: true,
+                            offset: true, // Add space at edges for first/last bars
+                            bounds: 'ticks', // Ensure edge ticks remain visible
+                            grid: {
+                                display: chartConfig.showGrid,
+                                offset: true
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                autoSkipPadding: 10,
+                                includeBounds: true, // Include first/last labels
+                                align: 'center'
+                            }
+                        },
                 y: {
                     display: true,
                     beginAtZero: model.beginAtZero,

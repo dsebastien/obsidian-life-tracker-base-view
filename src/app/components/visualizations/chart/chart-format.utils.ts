@@ -22,3 +22,17 @@ export function formatMetricValue(value: number, integersOnly: boolean): string 
         maximumFractionDigits: integersOnly ? 0 : 2
     })
 }
+
+/** One trailing parenthesized suffix, e.g. ` (Running Session)` */
+const TRAILING_SUFFIX_PATTERN = /\s*\([^()]*\)\s*$/
+
+/**
+ * Note name as an axis label (3.4.0): without the trailing note-type suffix
+ * many vaults append (`2025-06-24 (Running Session)` → `2025-06-24`), so
+ * labels stay short enough to sit horizontally. A name that is nothing but a
+ * suffix is kept whole. Tooltips keep the full name.
+ */
+export function stripNoteTypeSuffix(noteName: string): string {
+    const stripped = noteName.replace(TRAILING_SUFFIX_PATTERN, '')
+    return stripped.trim() === '' ? noteName : stripped
+}
