@@ -3,6 +3,7 @@ import { LifeTrackerPlugin } from './plugin'
 import { createDefaultPropertyDefinition } from './types'
 import type { PluginSettings, SettingsChangeInfo } from './types'
 import type { LifeTrackerPluginSettingTab } from './settings/settings-tab'
+import { NOTE_TYPE_FILE_NAME_PATTERN_MIGRATION } from './settings/settings-migrations'
 
 const definition = (name: string) => ({ ...createDefaultPropertyDefinition(`id-${name}`, 0), name })
 
@@ -169,5 +170,75 @@ describe('malformed property definitions (review #12)', () => {
         expect(plugin.settings.propertyDefinitions).toHaveLength(3)
         const mood = plugin.settings.propertyDefinitions[2]
         expect(mood && 'captureTargetId' in mood).toBe(false)
+    })
+})
+
+describe('one-time settings migrations', () => {
+    const MIGRATION_ID = NOTE_TYPE_FILE_NAME_PATTERN_MIGRATION.id
+    const hiddenPattern = {
+        id: 't1',
+        name: 'Through the day',
+        noteTypeId: 'nt-strength',
+        fileNamePattern: '{{date}} (Workout)'
+    }
+
+    test('settings from 3.5.0 get the hidden pattern reset once, and saved', async () => {
+        const { plugin, disk } = await createPlugin({ captureTargets: [hiddenPattern] })
+
+        expect(plugin.settings.captureTargets[0]?.fileNamePattern).toBe('{{date}}')
+        const saved = disk.data as PluginSettings
+        expect(saved.captureTargets[0]?.fileNamePattern).toBe('{{date}}')
+        expect(saved.completedMigrations).toEqual([MIGRATION_ID])
+    })
+
+    test('a pattern set after the upgrade survives restarts', async () => {
+        const { plugin, disk } = await createPlugin({ captureTargets: [hiddenPattern] })
+        await plugin.updateSettings((draft) => {
+            const target = draft.captureTargets[0]
+            if (target) target.fileNamePattern = '{{date}} Gym'
+        })
+
+        const restarted = await createPlugin(disk.data)
+        expect(restarted.plugin.settings.captureTargets[0]?.fileNamePattern).toBe('{{date}} Gym')
+    })
+
+    test('an external file without the marker does not run the migration again', async () => {
+        const { plugin, disk } = await createPlugin({ captureTargets: [hiddenPattern] })
+
+        // Written by 3.5.0 on another device: the marker is gone
+        disk.data = { captureTargets: [{ ...hiddenPattern, fileNamePattern: '{{date}} Gym' }] }
+        await plugin.onExternalSettingsChange()
+
+        expect(plugin.settings.captureTargets[0]?.fileNamePattern).toBe('{{date}} Gym')
+        expect(plugin.settings.completedMigrations).toEqual([MIGRATION_ID])
+    })
+
+    test('a fresh install marks every migration done and writes nothing', async () => {
+        let saves = 0
+        const plugin = new LifeTrackerPlugin({} as never, {} as never)
+        plugin.loadData = () => Promise.resolve(null)
+        plugin.saveData = () => {
+            saves++
+            return Promise.resolve()
+        }
+        await plugin.loadSettings()
+
+        expect(plugin.settings.completedMigrations).toEqual([MIGRATION_ID])
+        expect(saves).toBe(0)
+    })
+
+    test('settings that already ran it are left alone and not rewritten', async () => {
+        const stored = { captureTargets: [hiddenPattern], completedMigrations: [MIGRATION_ID] }
+        let saves = 0
+        const plugin = new LifeTrackerPlugin({} as never, {} as never)
+        plugin.loadData = () => Promise.resolve(structuredClone(stored))
+        plugin.saveData = () => {
+            saves++
+            return Promise.resolve()
+        }
+        await plugin.loadSettings()
+
+        expect(plugin.settings.captureTargets[0]?.fileNamePattern).toBe('{{date}} (Workout)')
+        expect(saves).toBe(0)
     })
 })

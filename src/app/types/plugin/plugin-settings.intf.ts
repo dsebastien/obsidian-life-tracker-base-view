@@ -116,6 +116,13 @@ export interface PluginSettings {
      * property going to the daily note.
      */
     captureTargets: CaptureTarget[]
+
+    /**
+     * Ids of the one-time settings migrations already applied to this vault's
+     * settings (see `src/app/settings/settings-migrations.ts`). A migration
+     * listed here never runs again, so a value set after it is never reset.
+     */
+    completedMigrations: string[]
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -129,5 +136,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     highContrast: false,
     createMissingNotes: false,
     dailyNoteTypeId: '',
-    captureTargets: []
+    captureTargets: [],
+    completedMigrations: []
 }
