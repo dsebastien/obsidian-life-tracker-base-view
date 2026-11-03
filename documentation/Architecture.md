@@ -37,7 +37,8 @@ src/
       date-anchor.service.ts       # Extract dates from entries (filename, properties)
       data-aggregation.service.ts  # Aggregate data for visualizations
       frontmatter.service.ts       # Read/write frontmatter properties
-      chart-aggregation.utils.ts   # Chart-specific aggregation
+      chart-aggregation.utils.ts   # Chart-specific aggregation (incl. date-per-note)
+      outlier.utils.ts             # Quartiles + Tukey fences (3.4.0)
       date-grouping.utils.ts       # Time period grouping
     view/
       life-tracker-view.ts         # Main BasesView (visualizations)
@@ -46,6 +47,7 @@ src/
         grid-view-options.ts       # Grid view options
       view-options.ts              # Life tracker view options
       column-config.service.ts     # Per-column config management (memoized per render cycle)
+      card-title.utils.ts          # Card title: own displayName or property name (3.4.0)
       card-order.service.ts        # Manual order + pinning reconciliation
       card-order.types.ts          # Order/pin config keys and serialization
       maximize-state.service.ts    # Card maximize/minimize state
@@ -71,6 +73,12 @@ src/
         base-visualization.ts      # Abstract base class
         heatmap/                   # GitHub-style heatmap
         chart/                     # Chart.js wrapper (line, bar, area, pie, etc.)
+          chart-initializers.ts    # Chart.js configs per type; time / note-name x-axes
+          cartesian-datasets.utils.ts # Pure: line/bar/area datasets, MA emphasis, outlier markers
+          y-axis-plan.utils.ts     # Pure: y range, tick step, outlier clamping
+          date-ticks.utils.ts      # Pure: calendar-aligned ticks for the date-per-note axis
+          reference-lines.utils.ts # Reference / target line specs and labels
+          chart-format.utils.ts    # Tooltip number format, note-type suffix stripping
         tag-cloud/                 # Frequency-sized tags
         timeline/                  # Date distribution
   utils/
@@ -78,6 +86,7 @@ src/
     filename-date.utils.ts   # Filename date parsing: built-in + {{token}} patterns
     color.utils.ts           # Heatmap color scales
     value.utils.ts           # Extract values from Obsidian Value types
+    value-format.utils.ts    # Number / duration display formats, duration tick ladder (3.4.0)
     log.utils.ts             # Debug logging
   styles.src.css             # Tailwind source (compiled to styles.css)
 ```
@@ -152,3 +161,13 @@ BasesEntry[] → DateAnchorService → DataAggregationService → Visualization.
 2. Date anchors resolved per entry
 3. Data aggregated by granularity
 4. Visualization renders to DOM
+
+## Cartesian Chart Pipeline (3.4.0)
+
+```
+ChartData → buildCartesianReferenceLines → buildCartesianModel (planYAxis) → initCartesianChart
+```
+
+- `buildCartesianModel` is shared by the first render and incremental updates, so both apply the same y-axis plan, clamping and marker datasets. An update whose marker datasets differ (outliers appear or disappear) falls back to a full render.
+- Tooltips read real values through a `getChartData()` getter, so a clamped point always reports its real value after updates.
+- The date-per-note axis uses a linear x scale over epoch ms and sets its ticks in `afterBuildTicks` from `buildDateTicks` (no Chart.js date adapter is bundled).

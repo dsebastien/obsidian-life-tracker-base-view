@@ -27,12 +27,15 @@ Per-visualization settings stored in view config. Multiple visualizations can ex
 - `id`: Unique visualization ID (UUID)
 - `propertyId`: Bases property ID
 - `visualizationType`: Selected visualization
-- `displayName`: Cached display name
+- `displayName`: Card title when set (3.4.0); written with the property display name at configuration time
 - `scale`: Optional ScaleConfig
 - `colorScheme`: Optional color scheme override
 - `heatmapCellSize`: Optional heatmap cell size override
 - `heatmapShowMonthLabels`: Optional heatmap month labels visibility
 - `heatmapShowDayLabels`: Optional heatmap day labels visibility
+- `xAxisSource`: `date` | `note-name` | `date-per-note` (cartesian charts)
+- `valueFormat`: `ValueFormat` — `number` | `duration-mm-ss` | `duration-h-mm` (3.4.0)
+- `outliers`: `OutlierMode` — `fit` | `show-all` (3.4.0)
 
 **Note**: A property can have multiple visualizations, each independently configurable. The `ColumnConfigMap` stores arrays of configs per property.
 
@@ -68,6 +71,12 @@ Single data point for visualization:
 ### HeatmapData / ChartData / TagCloudData / TimelineData
 
 Aggregated data ready for rendering. Contains cells/points grouped by time period with min/max ranges.
+
+`ChartData` on the date-per-note axis (3.4.0) also carries `xValues` (epoch ms per point; `labels` then hold full note names) and `skippedWithoutDate` (notes left out for lacking a date anchor).
+
+### YAxisPlan (3.4.0)
+
+Output of `planYAxis` (`chart/y-axis-plan.utils.ts`): optional explicit `min`/`max`/`stepSize`, the data each series plots (outliers clamped to the axis edge), and the `clamped` points per series (index, real value, side). `buildCartesianModel` turns it into Chart.js datasets plus one outlier marker dataset per series with clamped points.
 
 ## Configuration Hierarchy
 

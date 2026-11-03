@@ -7,8 +7,9 @@ markers, long rotated labels like `2025-06-24 (Running Session)`, and seconds
 instead of `6:27`. Cards configured with their own `displayName` all showed the
 property name.
 
-Status: implemented on `feat/chart-readability`; needs manual verification in a
-live vault (see Verification).
+Status: **done** on `feat/chart-readability` (all build steps below shipped;
+`bun run tsc`, `bun run lint`, `bun test`, `bun run build` clean). Needs manual
+verification in a live vault (see Verification). Not merged or released.
 
 ## Features
 
@@ -48,7 +49,7 @@ overlay edit modal.
 | Point markers                             | Hidden above 40 points per dataset on line/area (`pointRadius: 0`, hover radius 4, hit radius 8). Was 500.                                                                                                                                                              |
 | Moving average emphasis                   | Average: solid, 2.5 px, full color, drawn on top, first in legend/tooltip (`order`). Raw series: 1 px, 35% opacity, no fill, small faded points (hidden above 40). Click handling picks the first element that has notes, since `order` reorders elements.              |
 
-## Build sequence
+## Build sequence (all done)
 
 1. `ValueFormat` type + normalization, `src/utils/value-format.utils.ts` (+ spec): duration formatting, tick step ladder.
 2. Wire the format into chart ticks/tooltips/reference labels/records, heatmap tooltip/legend, progress ring; card menu + overlay modal + view action.
@@ -58,11 +59,12 @@ overlay edit modal.
 6. Outlier menu option + overlay modal option; initial render and incremental update use the same plan.
 7. `aggregateForDatePerNoteChart` (+ spec), `chart/date-ticks.utils.ts` (+ spec), linear x axis, menu option, skipped count.
 8. `stripNoteTypeSuffix` (+ spec) on the note-name axis.
-9. Business rules, technical docs, README and `docs/`.
+9. Point markers hidden above 40 points (`POINT_MARKER_THRESHOLD`), moving average emphasis (`cartesian-datasets.utils.ts`).
+10. Business rules, technical docs, README and `docs/`.
 
 ## Verification (manual, in a vault)
 
-See the final checklist in the branch's report; the same list is kept here.
+Agents cannot run Obsidian: everything below needs a look in a vault.
 
 - Pace card with `valueFormat: duration-mm-ss`: y ticks `5:00, 5:30, 6:00…`, tooltip `6:27`, record `Record: 5:12`, reference line label formatted.
 - Same card with the 49997 value: axis stays on the bulk, the outlier is a triangle at the top edge, tooltip shows `13:53:17 (outside the scale)`; `outliers: show-all` restores the full range.
@@ -71,3 +73,14 @@ See the final checklist in the branch's report; the same list is kept here.
 - 170-point line: no markers until hover; a 20-point line keeps markers.
 - Moving average on: average solid and first in legend, raw thin and faded; clicking a point opens its note.
 - Three cards on one property with their own `displayName`: each shows its own title; progress keeps `· ≥ N days/week`.
+- Incremental update (edit a pace value in a note while the view is open): axis, markers and the "notes without a date" count follow; adding or removing the outlier rebuilds the card.
+- Play animation on a date-per-note chart: points appear left to right, no console error.
+- Overlay with `valueFormat`/`outliers` set from the edit modal: ticks, tooltips and markers follow; range charts ignore both.
+- Heatmap and progress ring with `duration-mm-ss` / `duration-h-mm`: tooltip, record chip, ring center, goal and strip tooltips formatted; count/days targets stay plain numbers.
+- Mobile: tap a clamped point shows its real value; second tap opens the note.
+
+## Follow-ups (not done)
+
+- The moving average uses real values, so one outlier pulls the average off the axis for a window. An option to leave outliers out of the average may be worth adding.
+- Number-format line charts still start at 0 when auto-scaled (backward compatible); a "fit to data" baseline option could help non-duration metrics too.
+- A `displayName` cached at configuration time and later renamed in the Base keeps the old title; a "Rename card" menu entry would make titles explicit.

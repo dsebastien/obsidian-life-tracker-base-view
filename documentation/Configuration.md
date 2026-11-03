@@ -117,18 +117,46 @@ Stored in view config under `columnConfigs` key as `Record<PropertyId, ColumnVis
 
 **Multiple visualizations per property**: Each property can have multiple visualizations, each independently configurable. Right-click a visualization to add a new one (copies settings from source) or remove it (only if 2+ exist for the property).
 
-| Field                    | Description                              |
-| ------------------------ | ---------------------------------------- |
-| `id`                     | Unique visualization ID (UUID)           |
-| `propertyId`             | Bases property ID                        |
-| `visualizationType`      | Selected visualization                   |
-| `displayName`            | Cached property name                     |
-| `configuredAt`           | Timestamp                                |
-| `scale`                  | Optional {min, max}                      |
-| `colorScheme`            | Optional color scheme                    |
-| `heatmapCellSize`        | Optional heatmap cell size override      |
-| `heatmapShowMonthLabels` | Optional heatmap month labels visibility |
-| `heatmapShowDayLabels`   | Optional heatmap day labels visibility   |
+| Field                    | Description                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| `id`                     | Unique visualization ID (UUID)                                                              |
+| `propertyId`             | Bases property ID                                                                           |
+| `visualizationType`      | Selected visualization                                                                      |
+| `displayName`            | Card title (3.4.0); written with the property name at config time, editable in the `.base`  |
+| `configuredAt`           | Timestamp                                                                                   |
+| `scale`                  | Optional {min, max}                                                                         |
+| `colorScheme`            | Optional color scheme                                                                       |
+| `heatmapCellSize`        | Optional heatmap cell size override                                                         |
+| `heatmapShowMonthLabels` | Optional heatmap month labels visibility                                                    |
+| `heatmapShowDayLabels`   | Optional heatmap day labels visibility                                                      |
+| `referenceLine`          | Optional `{ enabled, value, label? }`                                                       |
+| `aggregationMethod`      | `average` (default) \| `sum`                                                                |
+| `movingAveragePeriod`    | Rolling mean window (7, 14, 30); absent = off                                               |
+| `runningTotal`           | Plot the cumulative total                                                                   |
+| `target`                 | Goal target (see Business Rules → Goals and Targets)                                        |
+| `xAxisSource`            | `date` (default) \| `note-name` \| `date-per-note` (3.4.0)                                  |
+| `valueFormat`            | `number` (default) \| `duration-mm-ss` (seconds → m:ss) \| `duration-h-mm` (minutes → h:mm) |
+| `outliers`               | `fit` (default) \| `show-all` — whether outliers may set the auto-scaled y-axis (3.4.0)     |
+
+Unknown `xAxisSource`, `valueFormat` and `outliers` values are ignored (default
+behavior). Rules: `documentation/Business Rules.md` → Value Format, Card Titles,
+Chart Outliers, Chart X-Axis Source.
+
+Example (`.base` YAML, one card):
+
+```yaml
+columnConfigs:
+    note.pace_seconds_per_kilometer:
+        - id: 8c0f…
+          propertyId: note.pace_seconds_per_kilometer
+          visualizationType: line-chart
+          displayName: Pace (min/km)
+          configuredAt: 1730000000000
+          xAxisSource: date-per-note
+          valueFormat: duration-mm-ss
+          movingAveragePeriod: 7
+          # outliers: show-all   # opt out of fitting the scale to the bulk
+```
 
 ## Overlay Config (Per-View)
 
@@ -145,6 +173,9 @@ Stored in view config under `overlayConfigs` key as `Record<OverlayId, OverlayVi
 | `colorScheme`                  | Optional color scheme                                     |
 | `referenceLines`               | Optional per-property reference line configs              |
 | `hideIndividualVisualizations` | Hide individual property cards when true (default: false) |
+| `aggregationMethod`            | `average` (default) \| `sum`                              |
+| `valueFormat`                  | Same values as per-column config (3.4.0)                  |
+| `outliers`                     | Same values as per-column config (3.4.0)                  |
 
 ## Scale Presets
 

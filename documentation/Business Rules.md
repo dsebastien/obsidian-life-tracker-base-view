@@ -143,8 +143,8 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Heatmap cell interaction uses one delegated listener set on the grid root, detached on `destroy()` — never per-cell listeners (issue #104)
 - Tag cloud and timeline updates are skipped when the aggregated content is unchanged, and the tag cloud updates sizes in place when only frequencies changed
 - View-config reads in `ColumnConfigService` are memoized per render cycle and invalidated at the start of each cycle (and on every write)
-- Line/area datasets above 500 points render without point markers (`pointRadius: 0`, hover and hit radius preserved); dense scatter charts shrink their dots. No data points are ever dropped
-- Chart.js' decimation plugin is deliberately not enabled: it requires a linear/time x scale with `parsing: false`, while these charts use a category scale of formatted period labels
+- Line/area datasets with more than 40 non-null points render without point markers (`pointRadius: 0`, hover radius 4, hit radius 8; was 500 before 3.4.0, lowered because 170 sessions drew overlapping dots that hid the line). Outlier markers always stay visible. Dense scatter charts (above 500 points) shrink their dots. No data points are ever dropped
+- Chart.js' decimation plugin is deliberately not enabled: it requires a linear/time x scale with `parsing: false`, while most of these charts use a category scale of formatted period labels
 - The incremental fast path only re-aggregates data against the **existing** visualization configs. Every view setting baked into those configs — time frame, time granularity, control-bar visibility, trend and streak toggles — MUST therefore invalidate the fast path in `canDoIncrementalUpdate`, or the change only appears after the Base is reopened (issue #146). A setting added to the view options without a matching guard is silently ignored until reload
 
 ## Card Ordering
@@ -180,6 +180,11 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - List-valued properties keep the time-based presence aggregation: the option is hidden for them rather than shown inert
 - An unknown stored `xAxisSource` value falls back to the date axis
 - Radar charts share the cartesian aggregation path but keep the date axis: their spokes are periods by design
+- `xAxisSource: 'date-per-note'` (3.4.0) plots one point per note at its own date anchor on a time-proportional axis: no per-period aggregation (two notes on one day are two points), gaps show as distance. Points are in date order (stable, so same-day notes keep the view order); the moving average and the trend read notes in that order
+- On the date-per-note axis, notes without a date anchor are skipped and counted in the trend row ("N notes without a date"); notes without a value draw nothing (never a 0)
+- The date-per-note axis is a Chart.js linear scale over epoch-ms values with calendar-aligned ticks (day, week, month, quarter, year) built by the plugin: no Chart.js date adapter is bundled, and adding one would be a new runtime dependency. Labels stay horizontal and are auto-skipped; the tooltip title is "date · note name"
+- On the note-name axis, tick labels drop one trailing `(…)` suffix (`2025-06-24 (Running Session)` → `2025-06-24`), start horizontal, rotate at most 45° and are auto-skipped. Tooltips and CSV keep the full note name. A name that is only a suffix is kept whole
+- On both note axes the moving average is labelled per note (`7-note average`)
 
 ## Missing Values in Charts
 
@@ -326,7 +331,9 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Only line and area charts support the moving average overlay; offered windows are 7, 14, and 30 periods
 - Only single-dataset numeric charts get the overlay (list data and overlay charts already carry multiple datasets)
 - Missing periods are skipped inside the window, never counted as 0
-- Rendered as a thin dashed line in the dataset's color, without points or fill
+- When on, the average is the main line (3.4.0): solid, 2.5 px, full dataset color, no points, drawn on top and listed first in the legend and tooltip (Chart.js `order`). The raw series becomes a 1 px line at 35% opacity, without fill, with small faded points (none above 40 points). Without a moving average, the series styling is unchanged
+- The average is computed on real values, never on values clamped to the axis edge (see Chart Outliers); it can leave the axis and is clipped by the chart area
+- A click opens the first clicked element that has notes behind it: the average (and outlier markers) come first in `order` and carry none
 
 ## Trend Indicator
 
@@ -352,6 +359,10 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 ## Visualization Export
 
 - CSV export serializes exactly what the visualization displays (aggregated values), not raw frontmatter
+- CSV export keeps raw numbers whatever the value format (`387`, not `6:27`): a spreadsheet can compute on numbers, not on duration strings. Range charts in time mode are the exception (see Range Charts)
+- Values clamped to the axis edge are exported with their real value
+- The date-per-note axis exports one row per note: `Date` (yyyy-MM-dd), `Note` (full name), then the series
+- Export file names use the card title (see Card Titles)
 - Image export requires a canvas, so it is only offered for Chart.js types
 - Exports are written to the vault's attachment folder via `getAvailablePathForAttachment`
 
@@ -444,7 +455,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Status drives color: `met` (green), `close` (yellow, at or above the warn threshold, default 50% of the target), `behind` (red), `no-data` (neutral).
 - `no-data` applies to `average` and `latest` targets only: a period with nothing recorded is _unknown_, not zero. Without it, "at most 80 kg" would read as met in every week the user forgot to weigh themselves. `count`, `days` and `sum` treat an empty period as a real zero — doing nothing all week genuinely is 0 days and 0 reps.
 - A `no-data` period is never counted as met, and is excluded from the hit rate's denominator.
-- The ring's title carries the goal (`Squats · ≥ 3 days/week`) because card titles are per property and one property can carry several goals. The `/period` suffix is only added for `count`, `days` and `sum`, the metrics that accumulate — "≤ 80 kg per week" would read as a rate.
+- The ring's title carries the goal (`Squats · ≥ 3 days/week`) because one property can carry several goals. The goal suffix follows the card title, own or property name (see Card Titles). The `/period` suffix is only added for `count`, `days` and `sum`, the metrics that accumulate — "≤ 80 kg per week" would read as a rate.
 - Streaks count periods that **met** the target, not periods with any data: two squats in a three-a-week goal is not a week of the habit. Same present-reaching rule as the heatmap's streaks (issue #100).
 - The history strip shows the last 26 periods, stretched to the card width.
 - `close` only applies to at-least targets. An at-most target that is not met has already been exceeded — there is nothing close about it.
@@ -474,3 +485,33 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - For overlay charts, each property can have its own independent reference line
 - Reference line colors match the dataset color for visual consistency
 - Default label format is "Reference: {value}" if no custom label is provided — "Target:" is the goal target line's prefix, and the two must not read alike (issue #156)
+
+## Value Format
+
+- `valueFormat` per visualization (and per overlay), stored in the `.base` view config, so it travels with the Base. No plugin setting (3.4.0)
+- `number` (default, absent): unchanged behavior. `duration-mm-ss`: the value is seconds, shown `m:ss`, `h:mm:ss` from one hour (330 → `5:30`). `duration-h-mm`: the value is minutes, shown `h:mm` (95 → `1:35`). Rounded to the unit shown
+- Negative or non-finite values fall back to the number format: they have no duration reading
+- Display only: aggregation, trend, records, targets and CSV keep working on the raw number. The trend row keeps its percentage
+- Applies to y-axis ticks, tooltips (moving average included), default reference-line and target labels (custom labels stay as typed), records and record notices, heatmap tooltips, numeric keys of a discrete heatmap legend, and progress ring amounts
+- Progress: only `sum`, `average` and `latest` amounts are formatted; `count` and `days` count entries or days, never the property's unit
+- Duration axes tick on a duration ladder (seconds: 1/2/5/10/15/30 s, 1/2/5/10/15/30 min, 1/2/3/6/12/24 h; minutes: 1/2/5/10/15/30 min, 1/2/3/6/12/24 h), the smallest step covering the range in at most 6 intervals
+- Line and area charts with a duration format fit the y-axis to their data instead of starting at 0: a pace of 5:00–7:00 drawn from 0:00 flattens every change. Bars always start at 0 (a bar from a non-zero baseline lies about its length). Number-format charts keep starting at 0. An explicit scale wins
+- Offered for heatmap, line, bar, area, scatter, bubble and progress cards. Pie, doughnut, polar and radar plot counts of values; tag cloud and timeline show no numbers
+- An unknown stored value reads as `number`
+
+## Card Titles
+
+- A configured card shows its own `displayName` when it is non-empty and not just the raw property name (`distance_kilometers`, `note.distance_kilometers`, case-insensitive); otherwise the property's display name (3.4.0). Several cards on one property ("Run days", "Distance per run (km)") stay distinguishable
+- `displayName` is also written automatically at configuration time (the property display name then). A raw-name value carries no intent and gives way, so a display name set in the Base later still shows. A cached display name that was later renamed in the Base keeps showing the old name: there is no way to tell it from a custom title
+- The title is used for the card header, maximized view, progress goal suffix (`Run days · ≥ 3 days/week`), empty states, record notices, series label and export file names. Data points keep the property's display name
+
+## Chart Outliers
+
+- Line, bar and area charts (and line/bar/area overlays) with no explicit scale fit the y-axis to the bulk of the data (3.4.0, default `outliers: fit`). One bad entry (49997 among ~380) otherwise set the axis to 0–50,000
+- Outliers are values beyond Tukey's far-out fences, Q1 − 3·IQR and Q3 + 3·IQR (linear-interpolated quartiles), computed per series. Fences apply only with at least 8 values, IQR > 0 (a mostly-0 habit series would otherwise make every 1 an outlier), and when they actually exclude something
+- Fitted series: real per-period or per-note values. Never fitted: the moving average, running totals (one jump carries into every later point), list (0/1) data
+- Axis range when fitting: in-fence values of every series, plus every reference/target line value, plus 0 when the axis starts at 0; rounded out to a nice step (duration ladder for duration formats, 1/2/5 × 10ⁿ otherwise). Bounds and step are set explicitly
+- Values beyond the axis are drawn at its edge and get a triangle marker (up above, down below) in the series color, from a separate marker dataset: always visible, never in the legend or the tooltip. The tooltip of the series shows the real value plus "(outside the scale)"
+- A value beyond the fences but inside the rounded axis is drawn as is
+- The moving average, trend, records and CSV use real values, never clamped ones
+- `outliers: show-all` (card menu "Outliers", overlay modal) restores the full range. An explicit scale (`min` or `max` set) always wins: no fitting
