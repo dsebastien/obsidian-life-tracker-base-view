@@ -3193,6 +3193,28 @@
         @apply flex justify-end mt-4;
     }
 
+    /* One group per destination (daily note, capture targets) */
+    .lt-quick-add-section {
+        @apply flex flex-col gap-2 mb-4;
+    }
+
+    .lt-quick-add-section:last-child {
+        @apply mb-0;
+    }
+
+    .lt-quick-add-section-header {
+        @apply flex items-center justify-between gap-3;
+    }
+
+    .lt-quick-add-section-title {
+        @apply text-sm font-semibold;
+        color: var(--text-normal);
+    }
+
+    .lt-quick-add-section-capture {
+        @apply text-xs;
+    }
+
     /* Phones: stack label over editor so −/+ and emoji rows get full width */
     @media (max-width: 480px) {
         .lt-quick-add-row {

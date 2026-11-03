@@ -195,3 +195,53 @@ describe('applyQuickAddAction', () => {
         expect(apply(text, null, { kind: 'set', value: 'true' }).ok).toBe(false)
     })
 })
+
+describe('append', () => {
+    const base = { action: 'life-tracker-quick-add', property: 'leg_press' }
+
+    test('parses append=<value>, trimmed', () => {
+        const result = parseQuickAddParams({ ...base, append: ' 12@60 ' })
+        expect(result.ok && result.request.kind === 'apply' && result.request.action).toEqual({
+            kind: 'append',
+            value: '12@60'
+        })
+    })
+
+    test('refuses a bare or empty append, and append combined with another action', () => {
+        const invalid: Array<Record<string, string>> = [
+            { append: 'true' },
+            { append: '  ' },
+            { append: '1', set: '2' }
+        ]
+        for (const params of invalid) {
+            expect(parseQuickAddParams({ ...base, ...params }).ok).toBe(false)
+        }
+    })
+
+    test('adds one entry after the existing ones', () => {
+        const list = makeDef({ type: 'list' })
+        const action: QuickAddAction = { kind: 'append', value: '12@60' }
+        expect(applyQuickAddAction(list, ['10@50'], action)).toEqual({
+            ok: true,
+            value: ['10@50', '12@60']
+        })
+        expect(applyQuickAddAction(list, null, action)).toEqual({ ok: true, value: ['12@60'] })
+        expect(applyQuickAddAction(list, [null], action)).toEqual({ ok: true, value: ['12@60'] })
+        expect(
+            applyQuickAddAction(makeDef({ type: 'tags' }), ['a'], { kind: 'append', value: 'b' })
+        ).toEqual({
+            ok: true,
+            value: ['a', 'b']
+        })
+    })
+
+    test('is refused on non-list properties', () => {
+        for (const type of ['number', 'checkbox', 'text', 'date', 'datetime'] as const) {
+            const result = applyQuickAddAction(makeDef({ type }), null, {
+                kind: 'append',
+                value: 'x'
+            })
+            expect(result.ok).toBe(false)
+        }
+    })
+})

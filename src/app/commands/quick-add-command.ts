@@ -11,7 +11,9 @@ import {
     resolveQuickAddDate,
     type QuickAddAction
 } from '../services/quick-add.utils'
-import { findDailyNote, offerToCreateDailyNote } from './daily-note'
+import { destinationName, withCaptureNote } from './capture-note'
+import { resolveDefinitionTarget } from '../services/capture-target.utils'
+import type { CaptureTarget } from '../types'
 import { formatDateISO, isSameDay, log } from '../../utils'
 
 const NO_DEFINITIONS_MESSAGE =
@@ -76,16 +78,12 @@ function handleQuickAddLink(plugin: LifeTrackerPlugin, params: ObsidianProtocolD
         return
     }
 
-    const apply = (file: TFile): void => {
-        void applyToNote(plugin, file, definition.name, request.action, date)
-    }
-
-    const file = findDailyNote(plugin, date)
-    if (file) {
-        apply(file)
-        return
-    }
-    offerToCreateDailyNote(plugin, date, apply)
+    // The property's capture target decides the note: the day's session note
+    // for a session property, the daily note otherwise
+    const target = resolveDefinitionTarget(definition, plugin.settings.captureTargets)
+    withCaptureNote(plugin, target, date, (file: TFile) => {
+        void applyToNote(plugin, file, definition.name, request.action, date, target)
+    })
 }
 
 /**
@@ -99,7 +97,8 @@ async function applyToNote(
     file: TFile,
     propertyName: string,
     action: QuickAddAction,
-    date: Date
+    date: Date,
+    target: CaptureTarget | null
 ): Promise<void> {
     const definition = plugin.settings.propertyDefinitions.find((d) => d.name === propertyName)
     if (!definition) return
@@ -133,10 +132,12 @@ async function applyToNote(
     }
 
     const day = isSameDay(date, new Date()) ? 'today' : formatDateISO(date)
-    new Notice(`${label}: ${formatValue(result.value)} (${day})`)
+    const where = target ? `, ${destinationName(target)}` : ''
+    new Notice(`${label}: ${formatValue(result.value)} (${day}${where})`)
 }
 
 function formatValue(value: unknown): string {
     if (typeof value === 'boolean') return value ? '✓' : '✗'
+    if (Array.isArray(value)) return value.map(String).join(', ')
     return String(value)
 }

@@ -9,6 +9,7 @@ import {
     extractBoolean,
     extractNumber,
     parseDateFromPath,
+    parseListValue,
     startOfDay
 } from '../../utils'
 import { computeSteppedValue } from '../components/editing/number-step.utils'
@@ -45,6 +46,8 @@ export type QuickAddAction =
     | { kind: 'decrement'; amount: number | null }
     | { kind: 'toggle' }
     | { kind: 'set'; value: string }
+    /** Add one entry to a list property, e.g. `12@20` (reps@weight) */
+    | { kind: 'append'; value: string }
 
 export type QuickAddRequest =
     /** No property: open the panel on `date` (today when null) */
@@ -52,9 +55,10 @@ export type QuickAddRequest =
     | { kind: 'apply'; property: string; action: QuickAddAction; date: Date | null }
 
 export type QuickAddParseResult =
-    { ok: true; request: QuickAddRequest } | { ok: false; error: string }
+    | { ok: true; request: QuickAddRequest }
+    | { ok: false; error: string }
 
-const ACTION_PARAMS = ['increment', 'decrement', 'toggle', 'set'] as const
+const ACTION_PARAMS = ['increment', 'decrement', 'toggle', 'set', 'append'] as const
 
 /**
  * Parse an ISO day (YYYY-MM-DD) as local midnight. `new Date('2026-10-04')`
@@ -86,7 +90,8 @@ function parseAmount(raw: string): number | null | undefined {
  * Read the parameters of an `obsidian://life-tracker-quick-add` link.
  *
  * - `property`: property name or display name (case-insensitive)
- * - one of `increment[=n]`, `decrement[=n]`, `toggle`, `set=<value>`
+ * - one of `increment[=n]`, `decrement[=n]`, `toggle`, `set=<value>`,
+ *   `append=<value>`
  * - `date=YYYY-MM-DD`: optional, today when absent
  *
  * No `property` and no action opens the panel instead.
@@ -112,7 +117,7 @@ export function parseQuickAddParams(params: Record<string, string>): QuickAddPar
     if (actions.length === 0) {
         return {
             ok: false,
-            error: 'Missing action: add one of increment, decrement, toggle or set=<value>'
+            error: 'Missing action: add one of increment, decrement, toggle, set=<value> or append=<value>'
         }
     }
     if (actions.length > 1) {
@@ -138,6 +143,15 @@ export function parseQuickAddParams(params: Record<string, string>): QuickAddPar
         case 'set':
             action = { kind: 'set', value: raw }
             break
+        case 'append': {
+            // A bare `&append` arrives as "true": there is nothing to add
+            const value = raw === 'true' ? '' : raw.trim()
+            if (!value) {
+                return { ok: false, error: 'Missing value: use append=<value>' }
+            }
+            action = { kind: 'append', value }
+            break
+        }
     }
 
     return { ok: true, request: { kind: 'apply', property, action, date } }
@@ -211,6 +225,12 @@ export function applyQuickAddAction(
         }
         case 'set':
             return parseSetValue(definition, action.value)
+        case 'append': {
+            if (definition.type !== 'list' && definition.type !== 'tags') {
+                return { ok: false, error: `${label} is not a list property; append needs a list` }
+            }
+            return { ok: true, value: [...parseListValue(current), action.value] }
+        }
     }
 }
 
