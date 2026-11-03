@@ -2,8 +2,10 @@ import { describe, expect, test } from 'bun:test'
 import type { BasesPropertyId } from 'obsidian'
 import {
     buildCartesianModel,
+    densePointStyle,
     isOutlierMarkerDataset,
-    OUTLIER_MARKER_RADIUS
+    OUTLIER_MARKER_RADIUS,
+    POINT_MARKER_THRESHOLD
 } from './cartesian-datasets.utils'
 import {
     TimeGranularity,
@@ -153,5 +155,40 @@ describe('buildCartesianModel - date-per-note axis (3.4.0)', () => {
         const marker = model.datasets[1]!.data as { x: number; y: number | null }[]
         expect(marker[0]).toEqual({ x: xValues[0]!, y: null })
         expect(marker[5]).toEqual({ x: xValues[5]!, y: model.yPlan.max! })
+    })
+})
+
+describe('point markers (3.4.0)', () => {
+    test('kept up to 40 points, hidden above, still hoverable', () => {
+        expect(POINT_MARKER_THRESHOLD).toBe(40)
+        expect(densePointStyle(new Array<number>(40).fill(1))).toEqual({})
+        expect(densePointStyle(new Array<number>(41).fill(1))).toEqual({
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointHitRadius: 8
+        })
+    })
+
+    test('gaps do not count as points', () => {
+        const sparse = [...new Array<number>(30).fill(1), ...new Array<null>(30).fill(null)]
+        expect(densePointStyle(sparse)).toEqual({})
+    })
+
+    test('a 170-point line has no markers; its outlier marker stays visible', () => {
+        const values = Array.from({ length: 170 }, (_, i) => 380 + (i % 10))
+        values[42] = 49997
+        const model = buildCartesianModel(chartData(series(values)), lineConfig, undefined)
+        expect(model.datasets[0]!.pointRadius).toBe(0)
+        expect(model.datasets[1]!.pointRadius).toBe(OUTLIER_MARKER_RADIUS)
+    })
+
+    test('bars have no markers to hide', () => {
+        const values = Array.from({ length: 170 }, (_, i) => 380 + (i % 10))
+        const model = buildCartesianModel(
+            chartData(series(values)),
+            { ...lineConfig, chartType: 'bar' },
+            undefined
+        )
+        expect(model.datasets[0]!.pointRadius).toBeUndefined()
     })
 })

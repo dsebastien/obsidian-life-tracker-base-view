@@ -10,28 +10,36 @@ import { planYAxis, yAxisBeginsAtZero, type YAxisPlan } from './y-axis-plan.util
  */
 
 /**
- * Above this many points per dataset, line/area charts stop drawing point
- * markers (issue #104). Multi-year daily vaults plot thousands of points; the
- * markers dominate both draw time and visual noise, while the line itself stays
- * cheap. No data is dropped — every point is still plotted and still
- * hoverable through `pointHitRadius`.
- *
- * Chart.js' own decimation plugin cannot help here: it requires a `linear` or
- * `time` x scale with `parsing: false`, and these charts use a category scale
- * built from formatted period labels.
+ * Above this many points per dataset, scatter charts shrink their dots (issue
+ * #104). Scatter marks cannot be hidden: they *are* the data.
  */
 export const DENSE_SERIES_POINT_THRESHOLD = 500
 
 /**
- * Point styling for a dataset of `pointCount` values. Dense series hide their
- * markers but keep a generous hit radius so tooltips still work.
+ * Above this many points per dataset, line and area charts stop drawing point
+ * markers (3.4.0; was 500, issue #104). 170 running sessions drew 170
+ * overlapping dots that hid the line itself; the line carries the shape, and
+ * a point still shows on hover. No data is dropped — every point is still
+ * plotted and still hoverable through `pointHitRadius`.
+ *
+ * Chart.js' own decimation plugin cannot help here: it requires a `linear` or
+ * `time` x scale with `parsing: false`, and most of these charts use a
+ * category scale built from formatted period labels.
  */
-export function densePointStyle(pointCount: number): {
+export const POINT_MARKER_THRESHOLD = 40
+
+/**
+ * Point styling for a line/area dataset. Above the threshold the markers are
+ * hidden but stay reachable: a hover radius shows the point under the cursor
+ * and a generous hit radius keeps tooltips easy to trigger.
+ */
+export function densePointStyle(data: readonly (number | null)[]): {
     pointRadius?: number
     pointHoverRadius?: number
     pointHitRadius?: number
 } {
-    if (pointCount <= DENSE_SERIES_POINT_THRESHOLD) {
+    const pointCount = data.filter((value) => value !== null).length
+    if (pointCount <= POINT_MARKER_THRESHOLD) {
         return {}
     }
     return { pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 8 }
@@ -134,7 +142,7 @@ export function buildCartesianModel(
             tension: chartConfig.tension,
             fill: shouldFill,
             // Bars have no point markers to hide (issue #104)
-            ...(isBar ? {} : densePointStyle(data.length))
+            ...(isBar ? {} : densePointStyle(data))
         }
     })
 
