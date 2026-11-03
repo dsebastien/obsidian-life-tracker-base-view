@@ -4,11 +4,7 @@ import type { CaptureTarget, PropertyDefinition, PropertyEditor } from '../../ty
 import { FrontmatterService } from '../../services/frontmatter.service'
 import { PropertyRecognitionService } from '../../services/property-recognition.service'
 import { isShownInQuickAdd } from '../../services/quick-add.utils'
-import {
-    destinationName,
-    findCaptureNote,
-    offerToCreateCaptureNote
-} from '../../commands/capture-note'
+import { destinationName, findCaptureNote, withCaptureNote } from '../../commands/capture-note'
 import { definitionsForDestination, groupByDestination } from '../../services/capture-target.utils'
 import { createPropertyEditor } from '../editing/property-editor'
 import { AUTO_SAVE_DEBOUNCE_MS } from '../editing/editing.constants'
@@ -58,14 +54,43 @@ export class QuickAddModal extends Modal {
         this.recognitionService = new PropertyRecognitionService(plugin.app)
     }
 
+    /**
+     * Whether the panel is showing. A note creation can finish after the
+     * panel was closed; its callback must not draw editors into a closed
+     * panel, where nothing would ever destroy them.
+     */
+    private isOpen = false
+
     override onOpen(): void {
+        this.isOpen = true
         this.contentEl.addClass('lt-quick-add-modal')
         this.render()
     }
 
     override onClose(): void {
+        this.isOpen = false
         this.teardown()
         this.contentEl.empty()
+    }
+
+    /**
+     * Notes found or created from this panel, per destination and day, for
+     * when the metadata cache has not caught up with them yet.
+     */
+    private readonly knownFiles = new Map<string, TFile>()
+
+    private knownFile(target: CaptureTarget | null): TFile | null {
+        const file = this.knownFiles.get(knownFileKey(target, this.date))
+        // A note deleted meanwhile is not shown
+        return file && this.app.vault.getFileByPath(file.path) ? file : null
+    }
+
+    /** Redraw for a day after an asynchronous step, only if still relevant */
+    private rerenderIfShowing(date: Date): void {
+        // The panel may be closed, or showing another day, by now
+        if (!this.isOpen || !isSameDay(this.date, date)) return
+        this.teardown()
+        this.render()
     }
 
     /** Flush typed edits still waiting on the debounce, then drop the editors */
@@ -106,7 +131,9 @@ export class QuickAddModal extends Modal {
 
         let dailyFile: TFile | null = null
         for (const section of sections) {
-            const file = findCaptureNote(this.plugin, section.target, this.date)
+            const file =
+                findCaptureNote(this.plugin, section.target, this.date) ??
+                this.knownFile(section.target)
             if (!section.target) dailyFile = file
 
             const sectionEl = grouped
@@ -226,12 +253,12 @@ export class QuickAddModal extends Modal {
         const createBtn = empty.createEl('button', { cls: 'mod-cta', text: 'Create note' })
         const date = this.date
         createBtn.addEventListener('click', () => {
-            offerToCreateCaptureNote(this.plugin, target, date, () => {
-                // The user may have moved to another day while confirming
-                if (isSameDay(this.date, date)) {
-                    this.teardown()
-                    this.render()
-                }
+            // For a target, the disk is checked before creation is offered: a
+            // note the cache has not indexed yet is shown, not created twice
+            withCaptureNote(this.plugin, target, date, (file) => {
+                // Remember it: the cache may not show it yet on the redraw
+                this.knownFiles.set(knownFileKey(target, date), file)
+                this.rerenderIfShowing(date)
             })
         })
     }
@@ -323,6 +350,11 @@ export class QuickAddModal extends Modal {
                 )
             })
     }
+}
+
+/** Key of a destination's note for a day in the panel's memory */
+function knownFileKey(target: CaptureTarget | null, date: Date): string {
+    return `${target?.id ?? 'daily'}|${formatDateISO(date)}`
 }
 
 /** Key of one property's value in one note: two destinations never share it */
