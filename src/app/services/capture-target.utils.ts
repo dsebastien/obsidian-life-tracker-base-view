@@ -257,14 +257,47 @@ export type TargetLayoutError =
 /** The `{{date}}` token of a file name pattern (case-insensitive, like rendering) */
 const DATE_TOKEN = /\{\{\s*date\s*\}\}/i
 
+/** Whether a file name pattern is set but has no `{{date}}` token */
+function lacksDateToken(pattern: string): boolean {
+    return pattern.trim().length > 0 && !DATE_TOKEN.test(pattern)
+}
+
+/**
+ * The text a Starter Kit target's own file name pattern puts around the date,
+ * or null when the pattern is empty or has no `{{date}}` (the type's plain
+ * `<prefix><date><suffix>` name is then used). The pattern is trimmed: the
+ * type's affixes bring their own spacing. A trailing copy of the type's suffix
+ * is dropped, so `{{date}} Gym (Strength Session)` does not end up with the
+ * suffix twice.
+ */
+function splitNoteTypePattern(
+    pattern: string,
+    suffix: string
+): { head: string; tail: string } | null {
+    const trimmed = pattern.trim()
+    const dateToken = DATE_TOKEN.exec(trimmed)
+    if (!dateToken) return null
+    const split = dateToken.index + dateToken[0].length
+    let tail = trimmed.slice(split)
+    const typedSuffix = suffix.trim()
+    if (typedSuffix && tail.toLowerCase().endsWith(typedSuffix.toLowerCase())) {
+        tail = tail.slice(0, tail.length - typedSuffix.length).trimEnd()
+    }
+    return { head: trimmed.slice(0, split), tail }
+}
+
 /**
  * The layout of a target, or the reason it is unusable.
  *
- * A Starter Kit target takes the note type's folder, name affixes and tags;
- * its basename is the ISO date wrapped in the affixes, like daily notes
- * created from a note type. A standalone target uses its own folder and
- * pattern. Both need a folder: lookup is bounded to it, never the whole vault.
- * The target's template, when set, overrides the note type's.
+ * A Starter Kit target takes the note type's folder, name affixes, template
+ * and tags. Its basename is `<prefix><date><suffix>`, like daily notes created
+ * from a note type; when the target has a file name pattern with `{{date}}`,
+ * that pattern sets the text around the date:
+ * `<prefix><pattern up to the date><pattern after the date><suffix>`. A
+ * pattern without `{{date}}` is ignored (the settings page flags it). A
+ * standalone target uses its own folder and pattern. Both need a folder:
+ * lookup is bounded to it, never the whole vault. The target's template, when
+ * set, overrides the note type's.
  */
 export function describeTargetLayout(
     target: CaptureTarget,
@@ -276,10 +309,13 @@ export function describeTargetLayout(
         if (!noteType) return 'missing-note-type'
         const folder = noteType.associatedFolder?.trim() ?? ''
         if (!folder) return 'missing-folder'
+        const prefix = noteType.noteNamePrefix ?? ''
+        const suffix = noteType.noteNameSuffix ?? ''
+        const own = splitNoteTypePattern(target.fileNamePattern, suffix)
         return {
             folder,
-            head: `${noteType.noteNamePrefix ?? ''}{{date}}`,
-            tail: noteType.noteNameSuffix ?? '',
+            head: `${prefix}${own?.head ?? '{{date}}'}`,
+            tail: `${own?.tail ?? ''}${suffix}`,
             templatePath: ownTemplate ?? noteType.templatePath ?? null,
             tags: cleanTags(noteType.tags ?? [])
         }
@@ -337,6 +373,12 @@ export function describeTargetIssues(
     const issues: string[] = []
     const layout = describeTargetLayout(target, noteType)
     if (!isTargetLayout(layout)) issues.push(describeLayoutError(layout, target))
+    else if (target.noteTypeId && lacksDateToken(target.fileNamePattern)) {
+        // Usable, but the pattern is ignored: say so, as standalone mode does
+        issues.push(
+            `${describeLayoutError('missing-date-token', target)} Until then, the note type name is used.`
+        )
+    }
 
     target.filters.forEach((filter, index) => {
         if (!filter.property.trim() || !filter.value.trim()) {

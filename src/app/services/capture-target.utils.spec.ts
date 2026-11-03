@@ -405,6 +405,112 @@ describe('describeTargetLayout', () => {
     })
 })
 
+describe('file name pattern with a note type', () => {
+    const folder = '40 Journal/46 Sessions/Sport/Strength/2026'
+
+    /** The basename a target note gets on Nov 3 when the name is free */
+    function nameFor(target: CaptureTarget, noteType: StarterKitNoteType = STRENGTH_TYPE): string {
+        const layout = describeTargetLayout(target, noteType)
+        if (!isTargetLayout(layout)) throw new Error(layout)
+        const path = resolveFreeTargetPath(layout, NOV_3, () => false)?.path ?? ''
+        return path.slice(path.lastIndexOf('/') + 1)
+    }
+
+    test('an empty pattern keeps the type name', () => {
+        expect(nameFor(throughTheDay({ fileNamePattern: '' }))).toBe(
+            '2026-11-03 (Strength Session).md'
+        )
+        expect(nameFor(throughTheDay({ fileNamePattern: '   ' }))).toBe(
+            '2026-11-03 (Strength Session).md'
+        )
+    })
+
+    test('the old default {{date}} keeps the type name', () => {
+        expect(nameFor(throughTheDay({ fileNamePattern: '{{date}}' }))).toBe(
+            '2026-11-03 (Strength Session).md'
+        )
+        expect(nameFor(throughTheDay({ fileNamePattern: ' {{date}} ' }))).toBe(
+            '2026-11-03 (Strength Session).md'
+        )
+    })
+
+    test('text after the date goes before the type suffix', () => {
+        expect(nameFor(throughTheDay({ fileNamePattern: '{{date}} Through the day' }))).toBe(
+            '2026-11-03 Through the day (Strength Session).md'
+        )
+    })
+
+    test('text before the date goes after the type prefix', () => {
+        const prefixed: StarterKitNoteType = { ...STRENGTH_TYPE, noteNamePrefix: 'S ' }
+        expect(nameFor(throughTheDay({ fileNamePattern: 'Gym {{date}} AM' }), prefixed)).toBe(
+            'S Gym 2026-11-03 AM (Strength Session).md'
+        )
+    })
+
+    test('a suffix typed in the pattern is not added twice', () => {
+        expect(
+            nameFor(
+                throughTheDay({ fileNamePattern: '{{date}} Through the day (Strength Session)' })
+            )
+        ).toBe('2026-11-03 Through the day (Strength Session).md')
+        expect(nameFor(throughTheDay({ fileNamePattern: '{{date}} (strength session)' }))).toBe(
+            '2026-11-03 (Strength Session).md'
+        )
+    })
+
+    test('the counter goes right after the date', () => {
+        const layout = describeTargetLayout(
+            throughTheDay({ fileNamePattern: '{{date}} Through the day' }),
+            STRENGTH_TYPE
+        ) as TargetLayout
+        expect(layout.head).toBe('{{date}}')
+        expect(layout.tail).toBe(' Through the day (Strength Session)')
+        expect(
+            resolveFreeTargetPath(
+                layout,
+                NOV_3,
+                (path) => path === `${folder}/2026-11-03 Through the day (Strength Session).md`
+            )?.path
+        ).toBe(`${folder}/2026-11-03 2 Through the day (Strength Session).md`)
+    })
+
+    test('a pattern without {{date}} keeps the type name and is flagged', () => {
+        const target = throughTheDay({ fileNamePattern: 'Through the day' })
+        expect(nameFor(target)).toBe('2026-11-03 (Strength Session).md')
+        const issues = describeTargetIssues(target, STRENGTH_TYPE)
+        expect(issues).toHaveLength(1)
+        expect(issues[0]).toContain('{{date}}')
+        expect(describeTargetIssues(throughTheDay({ fileNamePattern: '' }), STRENGTH_TYPE)).toEqual(
+            []
+        )
+    })
+
+    test('the type keeps its folder, template and tags', () => {
+        const layout = describeTargetLayout(
+            throughTheDay({ fileNamePattern: '{{date}} Through the day', folder: 'Ignored' }),
+            STRENGTH_TYPE
+        ) as TargetLayout
+        expect(layout.folder).toBe(STRENGTH_TYPE.associatedFolder ?? '')
+        expect(layout.templatePath).toBe(STRENGTH_TYPE.templatePath ?? null)
+        expect(layout.tags).toEqual(['zone/journal', 'type/session/sport/strength'])
+    })
+
+    test('finding the note does not depend on its name', () => {
+        const named = candidate({
+            path: `${folder}/2026-11-03 (Strength Session).md`,
+            basename: '2026-11-03 (Strength Session)'
+        })
+        expect(
+            pickTargetNote(
+                [named],
+                throughTheDay({ fileNamePattern: '{{date}} Through the day' }),
+                STRENGTH_TYPE,
+                NOV_3
+            )
+        ).toBe(named)
+    })
+})
+
 describe('resolveFreeTargetPath', () => {
     const layout = describeTargetLayout(throughTheDay(), STRENGTH_TYPE) as TargetLayout
     const folder = '40 Journal/46 Sessions/Sport/Strength/2026'

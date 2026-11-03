@@ -25,7 +25,11 @@ export interface CaptureTarget {
     noteTypeId: string
     /** Standalone: folder, may carry `{{token}}`s, e.g. `Sessions/{{year}}` */
     folder: string
-    /** Standalone: basename pattern with `{{token}}`s, e.g. `{{date}} (Workout)` */
+    /**
+     * Basename pattern with `{{token}}`s, e.g. `{{date}} (Workout)`. With a
+     * note type: optional, the text around `{{date}}`; the type adds its name
+     * prefix and suffix. Empty or without `{{date}}`: the type's plain name
+     */
     fileNamePattern: string
     /** Template applied on creation; overrides the note type's. Empty = none */
     templatePath: string

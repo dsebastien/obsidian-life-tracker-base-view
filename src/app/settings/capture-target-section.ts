@@ -125,7 +125,9 @@ export class CaptureTargetSection {
 
         this.renderNoteType(card, target)
 
-        if (!target.noteTypeId) {
+        if (target.noteTypeId) {
+            this.renderFileNameField(card, target)
+        } else {
             this.renderStandaloneFields(card, target)
         }
 
@@ -187,7 +189,7 @@ export class CaptureTargetSection {
             .setName('Note type')
             .setDesc(
                 this.plugin.starterKit.isAvailable()
-                    ? 'A Starter Kit note type gives the folder, name, template and tags of the note. Notes are found by the note type, the match filter and the date.'
+                    ? 'A Starter Kit note type gives the folder, name prefix and suffix, template and tags of the note. Notes are found by the note type, the match filter and the date.'
                     : 'Without the Obsidian Starter Kit, set the folder and file name below.'
             )
             .addDropdown((dropdown) => {
@@ -221,20 +223,7 @@ export class CaptureTargetSection {
                 new FolderSuggest(text.inputEl, this.app)
             })
 
-        new Setting(container)
-            .setName('File name')
-            .setDesc(
-                'Name of a new note, without .md. Use {{date}} for the date. When the name is taken, a number is added after the date.'
-            )
-            .addText((text) => {
-                text.setPlaceholder('{{date}} (Workout)')
-                    .setValue(target.fileNamePattern)
-                    .onChange(async (value) => {
-                        await this.update(target.id, (t) => {
-                            t.fileNamePattern = value
-                        })
-                    })
-            })
+        this.renderFileNameField(container, target)
 
         new Setting(container)
             .setName('Tags')
@@ -247,6 +236,31 @@ export class CaptureTargetSection {
                     .onChange(async (value) => {
                         await this.update(target.id, (t) => {
                             t.tags = parseTagField(value)
+                        })
+                    })
+            })
+    }
+
+    /**
+     * The file name pattern. With a note type it only sets the text around
+     * the date: the type adds its prefix and suffix
+     */
+    private renderFileNameField(container: HTMLElement, target: CaptureTarget): void {
+        new Setting(container)
+            .setName('File name')
+            .setDesc(
+                target.noteTypeId
+                    ? 'Optional. Name of a new note, without .md: the text around {{date}}. The note type adds its prefix and suffix. Empty: the date only. When the name is taken, a number is added after the date.'
+                    : 'Name of a new note, without .md. Use {{date}} for the date. When the name is taken, a number is added after the date.'
+            )
+            .addText((text) => {
+                text.setPlaceholder(
+                    target.noteTypeId ? '{{date}} Through the day' : '{{date}} (Workout)'
+                )
+                    .setValue(target.fileNamePattern)
+                    .onChange(async (value) => {
+                        await this.update(target.id, (t) => {
+                            t.fileNamePattern = value
                         })
                     })
             })
