@@ -456,13 +456,13 @@ The average never reaches across a gap in your data (see [Gaps in the line](#gap
 
 ## Gaps in the line
 
-Line and area charts on a date axis (**Date** or **Date, one point per note**) stop the line when two points are far apart in time. Without this, a break from December to March drew a long straight line, and a moving average drew a flat stretch that looked like a stable trend.
+Line and area charts on a date axis (**Date** or **Date, one point per note**) stop the line when two points are far apart in time. Without this, a running pace card with no runs from December to February drew one straight line across the winter, and its moving average drew a flat stretch.
 
-Two points are far apart when the time between them is more than three times the usual time between your points, and at least 14 days. For daily data, a break of more than two weeks stops the line. For monthly data, a break of more than about three months does.
+Two points are far apart when they are further apart than 3 times the usual spacing between your points, or 14 days, whichever is longer. For daily data, a break of more than two weeks stops the line. For monthly data, a break of more than about three months does.
 
 The raw line, the area below it, and the moving average all stop at the gap. The points themselves stay where they are.
 
-This is on by default. To keep one continuous line, set **Break line across gaps** to **Off** in the card's right-click menu (`breakLineAcrossGaps: false` in the `.base` file). The **Note name** axis has no dates, so its line never breaks.
+This is on by default. To keep one continuous line, set **Break line across gaps** to **Off** in the card's right-click menu (`breakLineAcrossGaps: false` in the `.base` file). The **Note name** axis has no dates, so its line never breaks. Overlay charts keep one continuous line, and the overlay editor has no **Break line across gaps** switch.
 
 ## Running Total
 

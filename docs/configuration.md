@@ -285,7 +285,9 @@ columnConfigs:
 ```
 
 Leave a key out to keep its default. An unknown value is ignored. Overlays
-(`overlayConfigs`) accept `valueFormat` and `outliers` too.
+(`overlayConfigs`) accept `valueFormat` and `outliers` too, but not
+`excludeOutliersFromAverage` or `breakLineAcrossGaps`: an overlay always keeps
+one continuous line.
 
 `displayName` is written on every card automatically, and the card doesn't
 show it. To name a card, set `title` (or use **Card title…**).
