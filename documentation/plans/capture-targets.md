@@ -29,9 +29,12 @@ interface CaptureTarget {
     noteTypeId: string
     /** Standalone: folder with {{token}}s, e.g. Sessions/{{year}} */
     folder: string
-    /** Basename pattern with {{token}}s, e.g. {{date}} (Strength Session).
-     *  With a note type: optional text around {{date}}, inside the type's affixes */
+    /** Standalone: basename pattern with {{token}}s, e.g. {{date}} (Workout).
+     *  Never read with a note type (3.5.0 hid it there) */
     fileNamePattern: string
+    /** Note type only: optional text around {{date}}, inside the type's
+     *  affixes; '' = the type's usual name */
+    noteTypeFileName: string
     /** Optional template; overrides the note type's template; '' = none */
     templatePath: string
     /** Standalone: tags a note must carry, written on creation */
@@ -78,15 +81,16 @@ An explicit id pointing at a deleted target falls back to automatic.
 - Opt-in (`createMissingNotes`) and confirmed, exactly like daily notes. The
   confirmation shows the path.
 - Name: Starter Kit prefix + `YYYY-MM-DD` + suffix, or the standalone pattern.
-  A Starter Kit target with a pattern holding `{{date}}`: prefix + pattern
-  (text around the date) + suffix, a typed leading prefix or trailing suffix
-  dropped at a word boundary. Empty pattern or `{{date}}` alone: the plain
-  type name. A pattern with `/` or `\`, `# ^ [ ]`, a trailing dot, or one
-  that renders to no valid name, is listed under Problems and refused at
-  capture with the same message. Standalone targets keep the 3.5.0 rules (`/`
-  makes subfolders; only unknown tokens and illegal path characters fail).
-  Settings from 3.5.0: a one-time migration (`completedMigrations`) resets the
-  pattern of every note type target to `{{date}}` (it was hidden there).
+  A Starter Kit target with `noteTypeFileName` holding `{{date}}`: prefix +
+  pattern (text around the date) + suffix, a typed leading prefix or trailing
+  suffix dropped at a word boundary. Empty or `{{date}}` alone: the plain type
+  name. `/` or `\`, `# ^ [ ]` or a trailing dot in that text, or a value that
+  renders to no valid name, is listed under Problems and refused at capture
+  with the same message; the type's own affixes are not checked.
+  `fileNamePattern` is standalone-only (never read with a note type, so a
+  pattern hidden in 3.5.0 cannot count; no migration, loading never writes).
+  Standalone targets keep the 3.5.0 rules (`/` makes subfolders; only unknown
+  tokens and illegal path characters fail).
   If a file exists at that path, the next free name is used: a counter goes
   right after the date part (`2026-11-03 2 (Strength Session)`). An existing
   file is never reused for a target.

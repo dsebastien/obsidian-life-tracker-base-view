@@ -12,11 +12,6 @@ import {
 } from './types'
 import { LifeTrackerPluginSettingTab } from './settings/settings-tab'
 import {
-    allMigrationIds,
-    readCompletedMigrations,
-    runPendingMigrations
-} from './settings/settings-migrations'
-import {
     createCoalescingWriter,
     log,
     setCustomFilenameDatePatterns,
@@ -280,28 +275,19 @@ export class LifeTrackerPlugin extends Plugin {
      */
     async loadSettings() {
         log('Loading settings', 'debug')
-        const migrated = this.applyLoadedSettings((await this.loadData()) as PluginSettings | null)
-        // Persist what a one-time migration changed, with its marker, so it
-        // stays done even if nothing else is ever saved
-        if (migrated) await this.saveSettings()
+        this.applyLoadedSettings((await this.loadData()) as PluginSettings | null)
     }
 
     /**
      * Replace the in-memory settings with the contents of `data.json`, taking
-     * each known field only when it has the right shape (defaults otherwise),
-     * then run the one-time migrations not yet done.
-     *
-     * @returns whether a migration ran (the caller decides whether to save)
+     * each known field only when it has the right shape (defaults otherwise)
      */
-    private applyLoadedSettings(loadedSettings: PluginSettings | null): boolean {
+    private applyLoadedSettings(loadedSettings: PluginSettings | null): void {
         if (!loadedSettings) {
             log('Using default settings', 'debug')
             this.settings = structuredClone(DEFAULT_SETTINGS)
-            // Nothing to migrate in a fresh install: mark every migration
-            // done so none can ever reset what the user sets from now on
-            this.settings.completedMigrations = allMigrationIds()
             this.applyRuntimeSettings()
-            return false
+            return
         }
 
         const draft = structuredClone(DEFAULT_SETTINGS)
@@ -366,23 +352,9 @@ export class LifeTrackerPlugin extends Plugin {
                 }))
         }
 
-        // Migrations done: those recorded on disk, plus those this session
-        // already ran. A file written by an older version (another device
-        // through Sync) drops the field; a migration must still never run
-        // twice, or it would reset what the user set after it
-        draft.completedMigrations = [
-            ...new Set([
-                ...readCompletedMigrations(loadedSettings.completedMigrations),
-                ...this.settings.completedMigrations
-            ])
-        ]
-        const migrations = runPendingMigrations(draft)
-        if (migrations.length > 0) log('Settings migrated', 'debug', migrations)
-
         this.settings = draft
         this.applyRuntimeSettings()
         log(`Settings loaded`, 'debug', loadedSettings)
-        return migrations.length > 0
     }
 
     /**

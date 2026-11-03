@@ -26,11 +26,19 @@ export interface CaptureTarget {
     /** Standalone: folder, may carry `{{token}}`s, e.g. `Sessions/{{year}}` */
     folder: string
     /**
-     * Basename pattern with `{{token}}`s, e.g. `{{date}} (Workout)`. With a
-     * note type: optional, the text around `{{date}}`; the type adds its name
-     * prefix and suffix. Empty or without `{{date}}`: the type's plain name
+     * Standalone: basename pattern with `{{token}}`s, e.g. `{{date}} (Workout)`.
+     * Ignored with a note type (3.5.0 hid it there, so a value left from a
+     * standalone setup must never count): see `noteTypeFileName`
      */
     fileNamePattern: string
+    /**
+     * With a note type only: the text around `{{date}}`, e.g.
+     * `{{date}} Through the day`; the type adds its name prefix and suffix.
+     * Empty (the default) or without `{{date}}`: the type's usual name.
+     * A separate field so versions that do not know it keep naming by the
+     * note type, and switching modes never carries one pattern into the other
+     */
+    noteTypeFileName: string
     /** Template applied on creation; overrides the note type's. Empty = none */
     templatePath: string
     /** Standalone: tags a note must carry; written on creation */
@@ -61,6 +69,7 @@ export function createCaptureTarget(id: string, name: string): CaptureTarget {
         noteTypeId: '',
         folder: '',
         fileNamePattern: DEFAULT_TARGET_FILE_NAME_PATTERN,
+        noteTypeFileName: '',
         templatePath: '',
         tags: [],
         filters: [],
@@ -107,6 +116,7 @@ export function sanitizeCaptureTarget(
         noteTypeId: stringOr(entry['noteTypeId'], ''),
         folder: stringOr(entry['folder'], ''),
         fileNamePattern: stringOr(entry['fileNamePattern'], DEFAULT_TARGET_FILE_NAME_PATTERN),
+        noteTypeFileName: stringOr(entry['noteTypeFileName'], ''),
         templatePath: stringOr(entry['templatePath'], ''),
         tags,
         filters,

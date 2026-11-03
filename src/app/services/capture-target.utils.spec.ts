@@ -335,7 +335,7 @@ describe('describeTargetLayout', () => {
             tail: ' (Strength Session)',
             templatePath: '50 Resources/54 Templates/Templater/TPL Strength Session.md',
             tags: ['zone/journal', 'type/session/sport/strength'],
-            strictName: true
+            ownText: null
         })
     })
 
@@ -402,7 +402,7 @@ describe('describeTargetLayout', () => {
             tail: ' (quick)',
             templatePath: null,
             tags: ['workout'],
-            strictName: false
+            ownText: null
         })
     })
 })
@@ -419,32 +419,32 @@ describe('file name pattern with a note type', () => {
     }
 
     test('an empty pattern keeps the type name', () => {
-        expect(nameFor(throughTheDay({ fileNamePattern: '' }))).toBe(
+        expect(nameFor(throughTheDay({ noteTypeFileName: '' }))).toBe(
             '2026-11-03 (Strength Session).md'
         )
-        expect(nameFor(throughTheDay({ fileNamePattern: '   ' }))).toBe(
+        expect(nameFor(throughTheDay({ noteTypeFileName: '   ' }))).toBe(
             '2026-11-03 (Strength Session).md'
         )
     })
 
     test('the old default {{date}} keeps the type name', () => {
-        expect(nameFor(throughTheDay({ fileNamePattern: '{{date}}' }))).toBe(
+        expect(nameFor(throughTheDay({ noteTypeFileName: '{{date}}' }))).toBe(
             '2026-11-03 (Strength Session).md'
         )
-        expect(nameFor(throughTheDay({ fileNamePattern: ' {{date}} ' }))).toBe(
+        expect(nameFor(throughTheDay({ noteTypeFileName: ' {{date}} ' }))).toBe(
             '2026-11-03 (Strength Session).md'
         )
     })
 
     test('text after the date goes before the type suffix', () => {
-        expect(nameFor(throughTheDay({ fileNamePattern: '{{date}} Through the day' }))).toBe(
+        expect(nameFor(throughTheDay({ noteTypeFileName: '{{date}} Through the day' }))).toBe(
             '2026-11-03 Through the day (Strength Session).md'
         )
     })
 
     test('text before the date goes after the type prefix', () => {
         const prefixed: StarterKitNoteType = { ...STRENGTH_TYPE, noteNamePrefix: 'S ' }
-        expect(nameFor(throughTheDay({ fileNamePattern: 'Gym {{date}} AM' }), prefixed)).toBe(
+        expect(nameFor(throughTheDay({ noteTypeFileName: 'Gym {{date}} AM' }), prefixed)).toBe(
             'S Gym 2026-11-03 AM (Strength Session).md'
         )
     })
@@ -452,17 +452,17 @@ describe('file name pattern with a note type', () => {
     test('a suffix typed in the pattern is not added twice', () => {
         expect(
             nameFor(
-                throughTheDay({ fileNamePattern: '{{date}} Through the day (Strength Session)' })
+                throughTheDay({ noteTypeFileName: '{{date}} Through the day (Strength Session)' })
             )
         ).toBe('2026-11-03 Through the day (Strength Session).md')
-        expect(nameFor(throughTheDay({ fileNamePattern: '{{date}} (strength session)' }))).toBe(
+        expect(nameFor(throughTheDay({ noteTypeFileName: '{{date}} (strength session)' }))).toBe(
             '2026-11-03 (Strength Session).md'
         )
     })
 
     test('the counter goes right after the date', () => {
         const layout = describeTargetLayout(
-            throughTheDay({ fileNamePattern: '{{date}} Through the day' }),
+            throughTheDay({ noteTypeFileName: '{{date}} Through the day' }),
             STRENGTH_TYPE
         ) as TargetLayout
         expect(layout.head).toBe('{{date}}')
@@ -477,19 +477,19 @@ describe('file name pattern with a note type', () => {
     })
 
     test('a pattern without {{date}} keeps the type name and is flagged', () => {
-        const target = throughTheDay({ fileNamePattern: 'Through the day' })
+        const target = throughTheDay({ noteTypeFileName: 'Through the day' })
         expect(nameFor(target)).toBe('2026-11-03 (Strength Session).md')
         const issues = describeTargetIssues(target, STRENGTH_TYPE)
         expect(issues).toHaveLength(1)
         expect(issues[0]).toContain('{{date}}')
-        expect(describeTargetIssues(throughTheDay({ fileNamePattern: '' }), STRENGTH_TYPE)).toEqual(
-            []
-        )
+        expect(
+            describeTargetIssues(throughTheDay({ noteTypeFileName: '' }), STRENGTH_TYPE)
+        ).toEqual([])
     })
 
     test('the type keeps its folder, template and tags', () => {
         const layout = describeTargetLayout(
-            throughTheDay({ fileNamePattern: '{{date}} Through the day', folder: 'Ignored' }),
+            throughTheDay({ noteTypeFileName: '{{date}} Through the day', folder: 'Ignored' }),
             STRENGTH_TYPE
         ) as TargetLayout
         expect(layout.folder).toBe(STRENGTH_TYPE.associatedFolder ?? '')
@@ -505,7 +505,7 @@ describe('file name pattern with a note type', () => {
         expect(
             pickTargetNote(
                 [named],
-                throughTheDay({ fileNamePattern: '{{date}} Through the day' }),
+                throughTheDay({ noteTypeFileName: '{{date}} Through the day' }),
                 STRENGTH_TYPE,
                 NOV_3
             )
@@ -513,14 +513,14 @@ describe('file name pattern with a note type', () => {
     })
 
     test('{{DATE}} in upper case is the date token, like when rendering', () => {
-        expect(nameFor(throughTheDay({ fileNamePattern: '{{DATE}} Gym' }))).toBe(
+        expect(nameFor(throughTheDay({ noteTypeFileName: '{{DATE}} Gym' }))).toBe(
             '2026-11-03 Gym (Strength Session).md'
         )
-        expect(nameFor(throughTheDay({ fileNamePattern: '{{ Date }} Gym' }))).toBe(
+        expect(nameFor(throughTheDay({ noteTypeFileName: '{{ Date }} Gym' }))).toBe(
             '2026-11-03 Gym (Strength Session).md'
         )
         expect(
-            describeTargetIssues(throughTheDay({ fileNamePattern: '{{DATE}} Gym' }), STRENGTH_TYPE)
+            describeTargetIssues(throughTheDay({ noteTypeFileName: '{{DATE}} Gym' }), STRENGTH_TYPE)
         ).toEqual([])
         const standalone = throughTheDay({
             noteTypeId: '',
@@ -539,7 +539,7 @@ describe('typed prefix and suffix', () => {
             noteNamePrefix: prefix,
             noteNameSuffix: suffix
         }
-        const layout = describeTargetLayout(throughTheDay({ fileNamePattern: pattern }), noteType)
+        const layout = describeTargetLayout(throughTheDay({ noteTypeFileName: pattern }), noteType)
         if (!isTargetLayout(layout)) throw new Error(layout)
         const path = resolveFreeTargetPath(layout, NOV_3, () => false)?.path ?? ''
         return path.slice(path.lastIndexOf('/') + 1, -'.md'.length)
@@ -581,6 +581,81 @@ describe('typed prefix and suffix', () => {
     })
 })
 
+describe('noteTypeFileName and the legacy fileNamePattern', () => {
+    function nameFor(target: CaptureTarget, noteType: StarterKitNoteType = STRENGTH_TYPE): string {
+        const layout = describeTargetLayout(target, noteType)
+        if (!isTargetLayout(layout)) throw new Error(layout)
+        const path = resolveFreeTargetPath(layout, NOV_3, () => false)?.path ?? ''
+        return path.slice(path.lastIndexOf('/') + 1)
+    }
+
+    test('a fileNamePattern left from a standalone setup is ignored with a note type', () => {
+        for (const legacy of ['{{date}} (Workout)', '{{year}}/{{date}}', '{{date}} #1', 'Gym']) {
+            const target = throughTheDay({ fileNamePattern: legacy })
+            expect(nameFor(target)).toBe('2026-11-03 (Strength Session).md')
+            expect(describeTargetIssues(target, STRENGTH_TYPE, NOV_3)).toEqual([])
+        }
+    })
+
+    test('noteTypeFileName drives the name, whatever fileNamePattern holds', () => {
+        const target = throughTheDay({
+            fileNamePattern: '{{date}} (Workout)',
+            noteTypeFileName: '{{date}} Gym'
+        })
+        expect(nameFor(target)).toBe('2026-11-03 Gym (Strength Session).md')
+    })
+
+    test('a standalone target ignores noteTypeFileName', () => {
+        const target = throughTheDay({
+            noteTypeId: '',
+            folder: 'Sessions',
+            fileNamePattern: '{{date}} (Workout)',
+            noteTypeFileName: '{{date}} Gym'
+        })
+        expect(nameFor(target, STRENGTH_TYPE)).toBe('2026-11-03 (Workout).md')
+    })
+
+    test('a note type affix with # or a trailing dot still works with an empty field', () => {
+        const hashed: StarterKitNoteType = {
+            ...STRENGTH_TYPE,
+            noteNamePrefix: '#S ',
+            noteNameSuffix: ' (Gym).'
+        }
+        const target = throughTheDay()
+        expect(nameFor(target, hashed)).toBe('#S 2026-11-03 (Gym)..md')
+        expect(describeTargetIssues(target, hashed, NOV_3)).toEqual([])
+        // Own text is checked, the affixes are not
+        expect(nameFor(throughTheDay({ noteTypeFileName: '{{date}} AM' }), hashed)).toBe(
+            '#S 2026-11-03 AM (Gym)..md'
+        )
+        expect(nameFor(throughTheDay({ noteTypeFileName: '{{date}} #1' }), hashed)).toBe('')
+    })
+})
+
+describe('typed affixes: Unicode', () => {
+    function nameWith(pattern: string, suffix: string): string {
+        const noteType: StarterKitNoteType = { ...STRENGTH_TYPE, noteNameSuffix: suffix }
+        const layout = describeTargetLayout(throughTheDay({ noteTypeFileName: pattern }), noteType)
+        if (!isTargetLayout(layout)) throw new Error(layout)
+        const path = resolveFreeTargetPath(layout, NOV_3, () => false)?.path ?? ''
+        return path.slice(path.lastIndexOf('/') + 1, -'.md'.length)
+    }
+
+    test('a combining mark continues a word: no boundary before the suffix', () => {
+        expect(nameWith('{{date}} Cafe\u0301Log', ' Log')).toBe('2026-11-03 Cafe\u0301Log Log')
+    })
+
+    test('a character whose length changes when lower-cased never makes a wrong cut', () => {
+        // 'İ'.toLowerCase() is two code units: slicing by that length cut "Gym"
+        const name = nameWith('{{date}} Gym İ', ' i\u0307')
+        expect(name.startsWith('2026-11-03 Gym İ')).toBe(true)
+    })
+
+    test('a suffix copy in another case is dropped where it actually starts', () => {
+        expect(nameWith('{{date}} Gym ÉTÉ', ' Été')).toBe('2026-11-03 Gym Été')
+    })
+})
+
 describe('file name patterns capture would refuse', () => {
     const standalone = (fileNamePattern: string): CaptureTarget =>
         throughTheDay({ noteTypeId: '', folder: 'Sessions', fileNamePattern })
@@ -609,7 +684,7 @@ describe('file name patterns capture would refuse', () => {
     ])(
         'with a note type, %s is listed under Problems and refused at capture',
         (_label, pattern) => {
-            const target = throughTheDay({ fileNamePattern: pattern })
+            const target = throughTheDay({ noteTypeFileName: pattern })
             const noteType: StarterKitNoteType = { ...STRENGTH_TYPE, noteNameSuffix: null }
             expect(describeTargetIssues(target, noteType, NOV_3)).toEqual([NOTE_TYPE_INVALID])
             const layout = describeTargetLayout(target, noteType)
@@ -644,7 +719,7 @@ describe('file name patterns capture would refuse', () => {
         expect(describeTargetIssues(standalone('{{date}} (Workout)'), null, NOV_3)).toEqual([])
         expect(
             describeTargetIssues(
-                throughTheDay({ fileNamePattern: '{{date}} AM' }),
+                throughTheDay({ noteTypeFileName: '{{date}} AM' }),
                 STRENGTH_TYPE,
                 NOV_3
             )
@@ -654,7 +729,7 @@ describe('file name patterns capture would refuse', () => {
     test.each(['{{year}}/{{date}}', '{{date}}/Gym', '{{date}}\\Gym'])(
         'with a note type, a folder separator in %s is its own problem',
         (pattern) => {
-            const typed = throughTheDay({ fileNamePattern: pattern })
+            const typed = throughTheDay({ noteTypeFileName: pattern })
             expect(describeTargetLayout(typed, STRENGTH_TYPE)).toBe('folder-in-file-name')
             expect(describeTargetIssues(typed, STRENGTH_TYPE, NOV_3)).toEqual([
                 'The file name pattern of capture target "Through the day" contains / or \\. A file name cannot hold folders: the note type gives the folder.'
@@ -854,6 +929,7 @@ describe('sanitizeCaptureTargets', () => {
             noteTypeId: '',
             folder: '',
             fileNamePattern: '{{date}}',
+            noteTypeFileName: '',
             templatePath: '',
             tags: ['t'],
             filters: [{ property: 'a', value: 'b' }],

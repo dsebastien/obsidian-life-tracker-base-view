@@ -15,12 +15,12 @@ Stored in plugin data, applies to all views.
 | `createMissingNotes`    | boolean                       | `false` | Offer to create a missing note when capturing                |
 | `dailyNoteTypeId`       | string                        | `''`    | Starter Kit note type used to create daily notes             |
 | `captureTargets`        | CaptureTarget[]               | `[]`    | Destinations other than the daily note (see below)           |
-| `completedMigrations`   | string[]                      | `[]`    | Ids of one-time settings migrations already run (see below)  |
 
 ### Capture targets
 
 `CaptureTarget` (`src/app/types/plugin/capture-target.types.ts`): `id`, `name`,
-`noteTypeId` (Starter Kit; `''` = standalone), `folder`, `fileNamePattern`,
+`noteTypeId` (Starter Kit; `''` = standalone), `folder`, `fileNamePattern`
+(standalone only), `noteTypeFileName` (note type only; `''` = the type's name),
 `tags` (standalone), `templatePath` (override), `filters`
 (`{ property, value }[]`), `dateProperty` (`date`). Loaded field by field by
 `sanitizeCaptureTargets`; malformed entries are defaulted or dropped, duplicate
@@ -31,14 +31,6 @@ note, else a target id. Non-string values are dropped on load.
 
 Rules: `documentation/Business Rules.md` → Capture Targets. Plan:
 `documentation/plans/capture-targets.md`.
-
-### Settings migrations
-
-`src/app/settings/settings-migrations.ts`: one-time migrations, each with a
-stable id. On load, every id not in `completedMigrations` runs in order, is
-recorded, and the settings are saved. A fresh install records every id. Never
-reuse or rename an id. Rules: `documentation/Business Rules.md` → Capture
-Targets.
 
 ### Filename date patterns
 

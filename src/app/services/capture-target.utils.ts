@@ -249,11 +249,14 @@ export interface TargetLayout {
     /** Tags a created note must carry */
     tags: string[]
     /**
-     * Whether the name also refuses link-breaking characters (`# ^ [ ]`) and
-     * a trailing dot. True for a Starter Kit target; false for a standalone
-     * one, which keeps the 3.5.0 rules (only what the path itself refuses)
+     * The text the user typed around the date in a Starter Kit target's
+     * `noteTypeFileName` (templates, typed affixes already dropped), or null.
+     * Only this text is checked for link-breaking characters (`# ^ [ ]`) and
+     * a trailing dot: the type's own affixes and standalone patterns keep the
+     * 3.5.0 rules (only what the path itself refuses).
+     * `endsName`: no type suffix follows, so `tail` ends the name
      */
-    strictName: boolean
+    ownText: { head: string; tail: string; endsName: boolean } | null
 }
 
 /** Why a target cannot be used */
@@ -275,12 +278,37 @@ function lacksDateToken(pattern: string): boolean {
 /** A folder separator: a note type target's pattern names a file, never folders */
 const FOLDER_SEPARATOR = /[/\\]/
 
-/** A letter or digit: text continuing a word, so not a boundary */
-const WORD_CHARACTER = /[\p{L}\p{N}]/u
+/** A letter, combining mark or digit: text continuing a word, so not a boundary */
+const WORD_CHARACTER = /[\p{L}\p{M}\p{N}]/u
 
-/** Whether a character is a word boundary: absent, or not a letter or digit */
+/** Whether a character is a word boundary: absent, or not part of a word */
 function isBoundary(character: string | undefined): boolean {
     return character === undefined || !WORD_CHARACTER.test(character)
+}
+
+/** First and last code points (not UTF-16 halves) of a string */
+function firstCharacter(text: string): string | undefined {
+    return [...text][0]
+}
+function lastCharacter(text: string): string | undefined {
+    return [...text].at(-1)
+}
+
+/** `text` escaped for a `u`-flag regex (only syntax characters are escaped) */
+function escapeForRegExp(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+}
+
+/**
+ * Where a case-insensitive copy of `affix` sits at the end (or start) of
+ * `text`, measured on `text` itself: lower-casing first and slicing by the
+ * lower-cased length cuts at the wrong place for characters whose length
+ * changes with case (`İ` is one code unit, `i̇` two)
+ */
+function matchAffix(text: string, affix: string, at: 'start' | 'end'): RegExpExecArray | null {
+    if (!affix) return null
+    const source = escapeForRegExp(affix)
+    return new RegExp(at === 'start' ? `^${source}` : `${source}$`, 'iu').exec(text)
 }
 
 /**
@@ -294,14 +322,19 @@ function isBoundary(character: string | undefined): boolean {
  * its own leading space: with suffix `_S`, `Gym _S` stays `Gym _S`.
  */
 function dropTypedSuffix(tail: string, suffix: string): string {
-    const lowerTail = tail.toLowerCase()
     const typed = suffix.trim()
     let kept: string | null = null
-    if (suffix && lowerTail.endsWith(suffix.toLowerCase())) {
-        kept = tail.slice(0, tail.length - suffix.length)
-    } else if (typed && lowerTail.endsWith(typed.toLowerCase())) {
-        const before = tail.slice(0, tail.length - typed.length)
-        if (isBoundary(before.at(-1)) || isBoundary(typed[0])) kept = before
+    const whole = matchAffix(tail, suffix, 'end')
+    if (whole) {
+        kept = tail.slice(0, whole.index)
+    } else {
+        const trimmed = matchAffix(tail, typed, 'end')
+        if (trimmed) {
+            const before = tail.slice(0, trimmed.index)
+            if (isBoundary(lastCharacter(before)) || isBoundary(firstCharacter(typed))) {
+                kept = before
+            }
+        }
     }
     if (kept === null) return tail
     return /^\s/.test(suffix) ? kept.trimEnd() : kept
@@ -313,14 +346,19 @@ function dropTypedSuffix(tail: string, suffix: string): string {
  * leaves `Sauna {{date}}` alone.
  */
 function dropTypedPrefix(head: string, prefix: string): string {
-    const lowerHead = head.toLowerCase()
     const typed = prefix.trim()
     let kept: string | null = null
-    if (prefix && lowerHead.startsWith(prefix.toLowerCase())) {
-        kept = head.slice(prefix.length)
-    } else if (typed && lowerHead.startsWith(typed.toLowerCase())) {
-        const after = head.slice(typed.length)
-        if (isBoundary(after[0]) || isBoundary(typed.at(-1))) kept = after
+    const whole = matchAffix(head, prefix, 'start')
+    if (whole) {
+        kept = head.slice(whole[0].length)
+    } else {
+        const trimmed = matchAffix(head, typed, 'start')
+        if (trimmed) {
+            const after = head.slice(trimmed[0].length)
+            if (isBoundary(firstCharacter(after)) || isBoundary(lastCharacter(typed))) {
+                kept = after
+            }
+        }
     }
     if (kept === null) return head
     return /\s$/.test(prefix) ? kept.trimStart() : kept
@@ -353,11 +391,12 @@ function splitNoteTypePattern(
  *
  * A Starter Kit target takes the note type's folder, name affixes, template
  * and tags. Its basename is `<prefix><date><suffix>`, like daily notes created
- * from a note type; when the target has a file name pattern with `{{date}}`,
- * that pattern sets the text around the date:
+ * from a note type; when the target's `noteTypeFileName` holds `{{date}}`,
+ * it sets the text around the date:
  * `<prefix><pattern up to the date><pattern after the date><suffix>`. A
- * pattern without `{{date}}` is ignored (the settings page flags it). A
- * standalone target uses its own folder and pattern. Both need a folder:
+ * pattern without `{{date}}` is ignored (the settings page flags it), and so
+ * is `fileNamePattern` (standalone only). A standalone target uses its own
+ * folder and `fileNamePattern`. Both need a folder:
  * lookup is bounded to it, never the whole vault. The target's template, when
  * set, overrides the note type's.
  */
@@ -373,15 +412,15 @@ export function describeTargetLayout(
         if (!folder) return 'missing-folder'
         const prefix = noteType.noteNamePrefix ?? ''
         const suffix = noteType.noteNameSuffix ?? ''
-        const own = splitNoteTypePattern(target.fileNamePattern, prefix, suffix)
-        if (own && FOLDER_SEPARATOR.test(target.fileNamePattern)) return 'folder-in-file-name'
+        const own = splitNoteTypePattern(target.noteTypeFileName, prefix, suffix)
+        if (own && FOLDER_SEPARATOR.test(target.noteTypeFileName)) return 'folder-in-file-name'
         return {
             folder,
             head: `${prefix}${own?.head ?? '{{date}}'}`,
             tail: `${own?.tail ?? ''}${suffix}`,
             templatePath: ownTemplate ?? noteType.templatePath ?? null,
             tags: cleanTags(noteType.tags ?? []),
-            strictName: true
+            ownText: own ? { ...own, endsName: suffix.length === 0 } : null
         }
     }
 
@@ -403,7 +442,7 @@ export function describeTargetLayout(
         tags: cleanTags(target.tags),
         // A standalone pattern may hold `/` (`{{year}}/{{date}}` makes
         // subfolders) and any name the path accepts, as in 3.5.0
-        strictName: false
+        ownText: null
     }
 }
 
@@ -433,8 +472,8 @@ export function describeLayoutError(error: TargetLayoutError, target: CaptureTar
 /**
  * Why a usable layout still gives no valid path, for the settings page and
  * capture alike: an unknown `{{token}}` (`{{time}}`, `{{date:YYYY}}`) or a
- * character a file name cannot hold; with a note type, also a link-breaking
- * character or a trailing dot (see `TargetLayout.strictName`)
+ * character a file name cannot hold; in a note type target's own text, also
+ * a link-breaking character or a trailing dot (see `TargetLayout.ownText`)
  */
 export function describeInvalidPath(target: CaptureTarget): string {
     const what = target.noteTypeId
@@ -460,7 +499,7 @@ export function describeTargetIssues(
     else if (resolveFreeTargetPath(layout, date, () => false) === null) {
         // What capture would refuse: say so before the first capture does
         issues.push(describeInvalidPath(target))
-    } else if (target.noteTypeId && lacksDateToken(target.fileNamePattern)) {
+    } else if (target.noteTypeId && lacksDateToken(target.noteTypeFileName)) {
         // Usable, but the pattern is ignored: say so, as standalone mode does
         issues.push(
             `${describeLayoutError('missing-date-token', target)} Until then, the note type name is used.`
@@ -491,6 +530,19 @@ export function renderTargetFolder(layout: TargetLayout, date: Date): string | n
  */
 const LINK_BREAKING_CHARS = /[#^[\]|]/
 
+/**
+ * Whether the user's own text around the date makes a name worth creating:
+ * no link-breaking character, and no trailing dot when it ends the name
+ * (`Gym..md` is a legal path, but a name ending in a dot is one Windows tools
+ * and sync clients mangle). Unknown tokens are caught by rendering the layout
+ */
+function isValidOwnText(own: NonNullable<TargetLayout['ownText']>, date: Date): boolean {
+    const head = renderDateTokens(own.head, date, { preserveWhitespace: true }) ?? ''
+    const tail = renderDateTokens(own.tail, date, { preserveWhitespace: true }) ?? ''
+    if (LINK_BREAKING_CHARS.test(`${head}${tail}`)) return false
+    return !(own.endsName && tail.endsWith('.'))
+}
+
 /** Largest counter tried before giving up on a free name */
 const MAX_NAME_ATTEMPTS = 100
 
@@ -501,8 +553,8 @@ const MAX_NAME_ATTEMPTS = 100
  * session on the same day as the through-the-day session).
  *
  * Null when the layout cannot be rendered to a safe path (unknown token,
- * illegal character; with `strictName`, also a link-breaking character or a
- * name ending in a dot), or no free name is found.
+ * illegal character; in the user's `ownText`, also a link-breaking character
+ * or a trailing dot), or no free name is found.
  */
 export function resolveFreeTargetPath(
     layout: TargetLayout,
@@ -515,12 +567,7 @@ export function resolveFreeTargetPath(
     const head = renderDateTokens(layout.head, date, { preserveWhitespace: true })
     const tail = renderDateTokens(layout.tail, date, { preserveWhitespace: true })
     if (head === null || tail === null) return null
-    if (layout.strictName) {
-        if (LINK_BREAKING_CHARS.test(`${head}${tail}`)) return null
-        // `Gym..md` is a legal path, but a name ending in a dot is one Windows
-        // tools and sync clients mangle: refuse it as folder names already are
-        if (`${head}${tail}`.endsWith('.')) return null
-    }
+    if (layout.ownText && !isValidOwnText(layout.ownText, date)) return null
 
     for (let counter = 1; counter <= MAX_NAME_ATTEMPTS; counter++) {
         const basename = counter === 1 ? `${head}${tail}` : `${head} ${counter}${tail}`

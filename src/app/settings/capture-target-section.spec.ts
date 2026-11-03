@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'bun:test'
-import { fileNameFieldDescription, parseTagField } from './capture-target-section'
+import { createCaptureTarget } from '../types'
+import {
+    fileNameFieldDescription,
+    fileNameFieldValue,
+    parseTagField,
+    setFileNameFieldValue
+} from './capture-target-section'
 
 describe('parseTagField', () => {
     test('splits on commas and spaces, drops # and empties', () => {
@@ -31,5 +37,37 @@ describe('fileNameFieldDescription', () => {
                 'Date formats such as {{date:YYYY}} are not supported.'
             )
         }
+    })
+})
+
+describe('File name field binding', () => {
+    const base = {
+        ...createCaptureTarget('t1', 'Through the day'),
+        fileNamePattern: '{{date}} (Workout)'
+    }
+
+    test('standalone edits fileNamePattern, note type edits noteTypeFileName', () => {
+        const standalone = structuredClone(base)
+        setFileNameFieldValue(standalone, '{{date}} Moves')
+        expect(standalone.fileNamePattern).toBe('{{date}} Moves')
+        expect(standalone.noteTypeFileName).toBe('')
+
+        const typed = { ...structuredClone(base), noteTypeId: 'nt-strength' }
+        expect(fileNameFieldValue(typed)).toBe('')
+        setFileNameFieldValue(typed, '{{date}} Gym')
+        expect(typed.noteTypeFileName).toBe('{{date}} Gym')
+        expect(typed.fileNamePattern).toBe('{{date}} (Workout)')
+    })
+
+    test('switching the mode keeps the two patterns apart', () => {
+        const target = structuredClone(base)
+        target.noteTypeId = 'nt-strength'
+        expect(fileNameFieldValue(target)).toBe('')
+        setFileNameFieldValue(target, '{{date}} Gym')
+
+        target.noteTypeId = ''
+        expect(fileNameFieldValue(target)).toBe('{{date}} (Workout)')
+        target.noteTypeId = 'nt-strength'
+        expect(fileNameFieldValue(target)).toBe('{{date}} Gym')
     })
 })

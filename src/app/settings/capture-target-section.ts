@@ -26,6 +26,22 @@ export function parseTagField(text: string): string[] {
         .filter((tag) => tag.length > 0)
 }
 
+/**
+ * The pattern the File name field shows and edits: `fileNamePattern` for a
+ * standalone target, `noteTypeFileName` for a note type target. Two fields,
+ * so switching the mode never carries one pattern into the other, and a
+ * pattern hidden in 3.5.0 never names a note type target's notes
+ */
+export function fileNameFieldValue(target: CaptureTarget): string {
+    return target.noteTypeId ? target.noteTypeFileName : target.fileNamePattern
+}
+
+/** Write the File name field into the pattern of the target's current mode */
+export function setFileNameFieldValue(target: CaptureTarget, value: string): void {
+    if (target.noteTypeId) target.noteTypeFileName = value
+    else target.fileNamePattern = value
+}
+
 /** Description of the File name field, for a target with or without a note type */
 export function fileNameFieldDescription(target: Pick<CaptureTarget, 'noteTypeId'>): string {
     const formats = 'Date formats such as {{date:YYYY}} are not supported.'
@@ -288,10 +304,10 @@ export class CaptureTargetSection {
                 text.setPlaceholder(
                     target.noteTypeId ? '{{date}} Through the day' : '{{date}} (Workout)'
                 )
-                    .setValue(target.fileNamePattern)
+                    .setValue(fileNameFieldValue(target))
                     .onChange(async (value) => {
                         await this.update(target.id, (t) => {
-                            t.fileNamePattern = value
+                            setFileNameFieldValue(t, value)
                         })
                     })
                 text.inputEl.addEventListener('blur', onCommitted)
