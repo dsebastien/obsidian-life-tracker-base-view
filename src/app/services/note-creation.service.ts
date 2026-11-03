@@ -87,6 +87,16 @@ export interface VaultPath {
     path: string
 }
 
+/** How `ensureNote` creates a note */
+export interface EnsureNoteOptions {
+    /**
+     * Apply the resolution's template through Templater even when Templater
+     * would template the new file itself (capture targets). Daily notes keep
+     * the default: a configured folder template wins, so nothing runs twice.
+     */
+    alwaysApplyTemplate?: boolean
+}
+
 /** Outcome of asking for a note at a resolved target */
 export interface NoteCreationOutcome {
     /**
@@ -213,7 +223,10 @@ export class NoteCreationService {
      * driven explicitly. With no Templater at all the note is still created,
      * empty, because the captured properties matter more than the template.
      */
-    async ensureNote(resolution: NoteTargetResolution): Promise<NoteCreationOutcome | null> {
+    async ensureNote(
+        resolution: NoteTargetResolution,
+        options: EnsureNoteOptions = {}
+    ): Promise<NoteCreationOutcome | null> {
         const { path, folder } = resolution.target
 
         if (this.app.vault.getFileByPath(path)) return { path, created: false }
@@ -226,7 +239,16 @@ export class NoteCreationService {
         }
 
         const templater = this.getTemplater()
-        const autoApplies = templaterWillAutoApply(templater?.settings ?? null, path)
+        // A capture target names its template: it is driven explicitly even
+        // when Templater would template the new file on its own. Templater's
+        // creation hook skips files it is creating itself (it marks them as
+        // pending before its delayed check), so the template still runs once,
+        // and a vault-wide folder template (a note type picker) cannot replace
+        // the target's template.
+        const forceTemplate =
+            options.alwaysApplyTemplate === true && resolution.templatePath !== null
+        const autoApplies =
+            !forceTemplate && templaterWillAutoApply(templater?.settings ?? null, path)
         const templateFile =
             resolution.templatePath !== null && !autoApplies
                 ? this.app.vault.getFileByPath(resolution.templatePath)

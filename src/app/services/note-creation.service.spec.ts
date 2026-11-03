@@ -249,6 +249,45 @@ describe('templating', () => {
         expect(outcome?.created).toBe(true)
     })
 
+    test('a capture target drives its own template even when a folder template would fire', async () => {
+        // Vault bug: the root folder template (a note type picker) templated
+        // the target note instead of the strength session template
+        const { app, state } = createApp({
+            templaterEnabled: true,
+            templaterSettings: DISPATCHER_SETTINGS
+        })
+
+        const outcome = await new NoteCreationService(app, 5, 5).ensureNote(resolution(), {
+            alwaysApplyTemplate: true
+        })
+
+        expect(outcome).toEqual({ path: TARGET_PATH, created: true })
+        expect(state.templaterCalls).toHaveLength(1)
+        expect(state.templaterCalls[0]?.[1]).toBe(TARGET_FOLDER)
+        expect(state.templaterCalls[0]?.[2]).toBe('2026-08-30')
+        expect(state.templaterCalls[0]?.[3]).toBe(false)
+        // Never an empty file for the folder template to pick up
+        expect(state.createCalls).toEqual([])
+    })
+
+    test('a capture target without a template leaves Templater its own trigger', async () => {
+        const { app, state } = createApp({
+            templaterEnabled: true,
+            templaterSettings: DISPATCHER_SETTINGS
+        })
+
+        const pending = new NoteCreationService(app, 5, 5).ensureNote(
+            resolution({ templatePath: null }),
+            { alwaysApplyTemplate: true }
+        )
+        state.emitModify(TARGET_PATH)
+        state.emitIndexed(TARGET_PATH)
+        await pending
+
+        expect(state.templaterCalls).toEqual([])
+        expect(state.createCalls).toEqual([TARGET_PATH])
+    })
+
     test('creates the note anyway when Templater is not installed', async () => {
         const { app, state } = createApp({ templaterEnabled: false })
 
