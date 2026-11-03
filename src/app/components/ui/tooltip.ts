@@ -1,6 +1,6 @@
-import { formatDateByGranularity, formatValueWithEmoji } from '../../../utils'
+import { formatDateByGranularity, formatValue, formatValueWithEmoji } from '../../../utils'
 import { TimeGranularity } from '../../types'
-import type { EmojiMapping } from '../../types'
+import type { EmojiMapping, ValueFormat } from '../../types'
 
 /**
  * Shared tooltip component for visualizations
@@ -102,12 +102,20 @@ export function formatHeatmapTooltip(
     displayName: string,
     granularity: TimeGranularity = TimeGranularity.Daily,
     /** Value → emoji map from the property definition (issue #22) */
-    valueEmojis?: EmojiMapping | null
+    valueEmojis?: EmojiMapping | null,
+    /** The card's value format (3.4.0); absent reads as numbers */
+    valueFormat?: ValueFormat
 ): { title: string; value: string; subtitle: string } {
     const dateStr = formatDateByGranularity(date, granularity)
 
     const valueStr =
-        value !== null ? formatValueWithEmoji(value, valueEmojis, value.toFixed(2)) : 'No data'
+        value !== null
+            ? formatValueWithEmoji(
+                  value,
+                  valueEmojis,
+                  formatValue(value, valueFormat, (v) => v.toFixed(2))
+              )
+            : 'No data'
 
     const subtitle = count > 0 ? `${count} ${count === 1 ? 'entry' : 'entries'}` : ''
 

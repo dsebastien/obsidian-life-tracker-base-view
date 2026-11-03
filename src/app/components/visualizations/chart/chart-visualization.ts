@@ -21,19 +21,21 @@ import {
     getChartColorScheme,
     getColorWithAlpha,
     resolveTrendSentiment,
-    describeTrendSentiment
+    describeTrendSentiment,
+    formatValue
 } from '../../../../utils'
 import type { ChartClickElement, ChartInstance } from './chart-types'
 import {
     buildReferenceLineAnnotations,
+    cartesianYBounds,
     initBubbleChart,
     initCartesianChart,
     initPieChart,
     initRadarChart,
     initRangeChart,
-    initScatterChart,
-    referenceLineBounds
+    initScatterChart
 } from './chart-initializers'
+import { buildCartesianModel, type CartesianModel } from './cartesian-datasets.utils'
 import {
     computeMovingAverage,
     computeRunningTotal,
@@ -588,6 +590,7 @@ export class ChartVisualization extends BaseVisualization {
                     Chart,
                     ctx,
                     this.chartData,
+                    buildCartesianModel(this.chartData, this.chartConfig, referenceLines),
                     this.chartConfig,
                     (elements) => this.handleChartClick(elements),
                     referenceLines
@@ -808,6 +811,23 @@ export class ChartVisualization extends BaseVisualization {
             return
         }
 
+        // Same datasets and y-axis plan as a first render would build. Radar
+        // charts have no cartesian y-axis to plan: their data goes in as is
+        let model: CartesianModel | null = null
+        if (this.chartConfig.chartType !== 'radar') {
+            const referenceLines = buildCartesianReferenceLines(
+                this.chartConfig,
+                this.overlayReferenceLines,
+                newChartData.datasets
+            )
+            model = buildCartesianModel(newChartData, this.chartConfig, referenceLines)
+            if (model.datasets.length !== this.chart!.data.datasets.length) {
+                this.destroy()
+                this.render(data)
+                return
+            }
+        }
+
         // Update stored data
         this.chartData = newChartData
 
@@ -815,19 +835,20 @@ export class ChartVisualization extends BaseVisualization {
         this.chart!.data.labels = newChartData.labels
 
         // Update all datasets (supports multiple datasets for list data)
-        for (let i = 0; i < newChartData.datasets.length; i++) {
-            const newDataset = newChartData.datasets[i]
+        const nextDatasets: { data: unknown[]; label: string }[] =
+            model?.datasets ?? newChartData.datasets
+        nextDatasets.forEach((newDataset, i) => {
             const chartDataset = this.chart!.data.datasets[i]
-            if (newDataset && chartDataset) {
-                chartDataset.data = newDataset.data
+            if (chartDataset) {
+                chartDataset.data = newDataset.data as typeof chartDataset.data
                 chartDataset.label = newDataset.label
             }
-        }
+        })
 
         // A cumulative target line depends on the period count (issue #158),
         // so the annotations and the bounds that keep them visible must track
         // the new labels rather than the ones the chart was built with
-        this.refreshReferenceLines(newChartData)
+        if (model) this.refreshReferenceLines(newChartData, model)
 
         // Clear animation state since data changed
         this.originalData = []
@@ -886,15 +907,20 @@ export class ChartVisualization extends BaseVisualization {
             isRecordImprovement(this.lastRecordValue, record, polarity) &&
             shouldAnnounceRecord(this.propertyId, record.value)
         ) {
-            new Notice(`🏆 New record! ${this.displayName}: ${formatRecordValue(record.value)}`)
+            new Notice(`🏆 New record! ${this.displayName}: ${this.formatRecord(record.value)}`)
         }
         this.lastRecordValue = record.value
 
         const dateSuffix = record.date ? ` (${formatDate(record.date, 'MMM d, yyyy')})` : ''
         this.trendStatsEl.createSpan({
             cls: 'lt-chart-trend-item lt-record-item',
-            text: `🏆 Record: ${formatRecordValue(record.value)}${dateSuffix}`
+            text: `🏆 Record: ${this.formatRecord(record.value)}${dateSuffix}`
         })
+    }
+
+    /** A record value in the card's value format ("Record: 5:12") */
+    private formatRecord(value: number): string {
+        return formatValue(value, this.chartConfig.valueFormat, formatRecordValue)
     }
 
     /**
@@ -902,7 +928,7 @@ export class ChartVisualization extends BaseVisualization {
      * the current labels. Horizontal lines are unaffected by the label count,
      * but a cumulative target line (issue #158) ends at value × periods.
      */
-    private refreshReferenceLines(chartData: ChartData): void {
+    private refreshReferenceLines(chartData: ChartData, model: CartesianModel): void {
         if (!this.chart || !this.isCartesianType()) return
 
         const annotationOptions = this.chart.options.plugins?.annotation
@@ -916,15 +942,17 @@ export class ChartVisualization extends BaseVisualization {
         const labelCount = chartData.labels.length
         annotationOptions.annotations = buildReferenceLineAnnotations(referenceLines, labelCount)
 
+        // The y-axis plan moves with the data: bounds and tick step
         const yScale = this.chart.options.scales?.['y']
-        if (yScale) {
-            const { suggestedMin, suggestedMax } = referenceLineBounds(
-                referenceLines,
-                labelCount,
-                this.chartConfig
-            )
-            yScale.suggestedMin = suggestedMin
-            yScale.suggestedMax = suggestedMax
+        if (yScale && yScale.type !== 'category' && yScale.type !== 'radialLinear') {
+            const bounds = cartesianYBounds(model, referenceLines, labelCount, this.chartConfig)
+            yScale.min = bounds.min
+            yScale.max = bounds.max
+            yScale.suggestedMin = bounds.suggestedMin
+            yScale.suggestedMax = bounds.suggestedMax
+            if (yScale.ticks) {
+                Object.assign(yScale.ticks, { stepSize: model.yPlan.stepSize })
+            }
         }
     }
 

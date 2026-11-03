@@ -95,7 +95,13 @@ export {
     X_AXIS_SOURCE_SUPPORTED_TYPES,
     supportsXAxisSource,
     OVERLAY_ONLY_TYPES,
-    isOverlayOnly
+    isOverlayOnly,
+    VALUE_FORMATS,
+    DEFAULT_VALUE_FORMAT,
+    VALUE_FORMAT_OPTIONS,
+    VALUE_FORMAT_SUPPORTED_TYPES,
+    supportsValueFormat,
+    normalizeValueFormat
 } from './column'
 export type {
     ScaleConfig,
@@ -113,7 +119,8 @@ export type {
     TargetConfig,
     TargetMetric,
     TargetDirection,
-    XAxisSource
+    XAxisSource,
+    ValueFormat
 } from './column'
 
 // Editor types

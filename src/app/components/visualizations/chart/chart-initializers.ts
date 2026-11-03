@@ -11,7 +11,8 @@ import type {
     ChartDatasetConfig,
     ChartInstance,
     PieTooltipContext,
-    PointTooltipContext
+    PointTooltipContext,
+    ValueFormat
 } from '../../../types'
 import {
     getColorWithAlpha,
@@ -19,14 +20,18 @@ import {
     getChartColorScheme,
     getValueMatchedSegmentColors,
     prefersReducedMotion,
-    formatValueWithEmoji
+    formatValueWithEmoji,
+    formatValue,
+    isDurationFormat
 } from '../../../../utils'
 import type { Chart as ChartJsChart } from 'chart.js'
 import type { AnnotationOptions } from 'chartjs-plugin-annotation'
-import type { ReferenceLineSpec } from './reference-lines.utils'
+import { referenceLineEndValue, type ReferenceLineSpec } from './reference-lines.utils'
 import { format } from 'date-fns'
 import { areAllValuesIntegers, formatMetricValue } from './chart-format.utils'
 import { formatHoursAsTime } from '../../../services/range-aggregation.utils'
+import { DENSE_SERIES_POINT_THRESHOLD, type CartesianModel } from './cartesian-datasets.utils'
+import { planYAxis, yAxisBeginsAtZero } from './y-axis-plan.utils'
 
 /** Format an epoch-ms x value as a compact date for scatter axis ticks / tooltips. */
 function formatTimestamp(ms: number): string {
@@ -62,34 +67,6 @@ function chartAnimation(): false | undefined {
  * (`flex: 1` plus a `min-height`), and it must be dedicated to the canvas and
  * relatively positioned — both true of `.lt-chart`.
  */
-
-/**
- * Above this many points per dataset, line/area charts stop drawing point
- * markers (issue #104). Multi-year daily vaults plot thousands of points; the
- * markers dominate both draw time and visual noise, while the line itself stays
- * cheap. No data is dropped — every point is still plotted and still
- * hoverable through `pointHitRadius`.
- *
- * Chart.js' own decimation plugin cannot help here: it requires a `linear` or
- * `time` x scale with `parsing: false`, and these charts use a category scale
- * built from formatted period labels.
- */
-export const DENSE_SERIES_POINT_THRESHOLD = 500
-
-/**
- * Point styling for a dataset of `pointCount` values. Dense series hide their
- * markers but keep a generous hit radius so tooltips still work.
- */
-function densePointStyle(pointCount: number): {
-    pointRadius?: number
-    pointHoverRadius?: number
-    pointHitRadius?: number
-} {
-    if (pointCount <= DENSE_SERIES_POINT_THRESHOLD) {
-        return {}
-    }
-    return { pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 8 }
-}
 
 /**
  * Initialize pie/doughnut/polarArea chart
@@ -256,15 +233,6 @@ export function initRadarChart(
 }
 
 /**
- * The y-value a reference line reaches by the chart's last period. Horizontal
- * lines sit at their value; a cumulative target line (issue #158) climbs to
- * `value × periods`.
- */
-function referenceLineEndValue(line: ReferenceLineSpec, labelCount: number): number {
-    return line.cumulativePerPeriod ? line.value * Math.max(1, labelCount) : line.value
-}
-
-/**
  * suggestedMin/Max so every reference line stays visible; an explicit user
  * scale still wins (min/max override suggested bounds).
  */
@@ -339,78 +307,82 @@ export function buildReferenceLineAnnotations(
 }
 
 /**
+ * Y-axis tick options for a value format: a duration axis gets its step from
+ * the plan and labels like `5:30`. The number format sets nothing, so
+ * Chart.js keeps its own tick labels (unchanged behavior).
+ */
+function valueTickOptions(
+    valueFormat: ValueFormat | undefined,
+    stepSize: number | undefined
+): { stepSize?: number; callback?: (value: number | string) => string } {
+    return {
+        ...(stepSize !== undefined ? { stepSize } : {}),
+        ...(isDurationFormat(valueFormat)
+            ? {
+                  callback: (value: number | string): string =>
+                      formatValue(Number(value), valueFormat)
+              }
+            : {})
+    }
+}
+
+/**
+ * Y-axis bounds of a cartesian chart from its plan. Explicit plan bounds win
+ * over the reference-line hints; an explicit user scale wins over both.
+ */
+export function cartesianYBounds(
+    model: CartesianModel,
+    referenceLines: ReferenceLineSpec[] | undefined,
+    labelCount: number,
+    chartConfig: ChartConfig
+): {
+    min: number | undefined
+    max: number | undefined
+    suggestedMin: number | undefined
+    suggestedMax: number | undefined
+} {
+    // Reference lines outside the data range were invisible: the annotation
+    // plugin does not extend the scale. suggestedMin/Max widen the auto-fit
+    // range to include every reference line value; an explicit user scale
+    // still wins (min/max override suggested bounds).
+    const { suggestedMin, suggestedMax } = referenceLineBounds(
+        referenceLines,
+        labelCount,
+        chartConfig
+    )
+    return {
+        min: chartConfig.scale?.min ?? model.yPlan.min ?? undefined,
+        max: chartConfig.scale?.max ?? model.yPlan.max ?? undefined,
+        suggestedMin,
+        suggestedMax
+    }
+}
+
+/**
  * Initialize cartesian chart (line, bar, area)
  */
 export function initCartesianChart(
     Chart: ChartClass,
     ctx: CanvasRenderingContext2D,
     chartData: ChartData,
+    model: CartesianModel,
     chartConfig: ChartConfig,
     onClick: (elements: ChartClickElement[]) => void,
     referenceLines?: ReferenceLineSpec[]
 ): ChartInstance {
-    // Use fill property from config (area charts have fill: true, line charts have fill: false)
-    const shouldFill = chartConfig.fill ?? false
-
-    // Get colors from the configured scheme (or default)
-    const colors = getChartColorScheme(chartConfig.colorScheme)
-
-    const datasets: ChartDatasetConfig[] = chartData.datasets.map((dataset, index) => {
-        const color = colors[index % colors.length]!
-
-        // The synthetic moving-average dataset (issue #101) reuses its
-        // source dataset's color but renders as a thin dashed line without
-        // points or fill, so it reads as an annotation rather than data
-        if (dataset.isMovingAverage) {
-            const sourceColor = colors[0]!
-            return {
-                label: dataset.label,
-                data: dataset.data,
-                backgroundColor: 'transparent',
-                borderColor: getColorWithAlpha(sourceColor, 0.7),
-                borderWidth: 1.5,
-                borderDash: [6, 4],
-                pointRadius: 0,
-                tension: chartConfig.tension,
-                fill: false
-            }
-        }
-
-        return {
-            label: dataset.label,
-            data: dataset.data,
-            backgroundColor:
-                chartConfig.chartType === 'bar'
-                    ? getColorWithAlpha(color, 0.7)
-                    : getColorWithAlpha(color, 0.3),
-            borderColor: color,
-            borderWidth: 2,
-            tension: chartConfig.tension,
-            fill: shouldFill,
-            // Bars have no point markers to hide (issue #104)
-            ...(chartConfig.chartType === 'bar' ? {} : densePointStyle(dataset.data.length))
-        }
-    })
+    const datasets = model.datasets
 
     // Counts (habits, sessions) should render without decimals: detect when every
     // plotted value is a whole number so the tooltip drops the `.00` (issue #103).
-    const allValues: unknown[] = datasets.flatMap((dataset) => dataset.data as unknown[])
+    const allValues: unknown[] = chartData.datasets.flatMap((dataset) => dataset.data as unknown[])
     const integersOnly = areAllValuesIntegers(allValues)
+    const valueFormat = chartConfig.valueFormat
 
     // Map chart type (area uses line type)
     const chartJsType = chartConfig.chartType === 'line' ? 'line' : chartConfig.chartType
 
     const labelCount = chartData.labels.length
-
-    // Reference lines outside the data range were invisible: the annotation
-    // plugin does not extend the scale. suggestedMin/Max widen the auto-fit
-    // range to include every reference line value; an explicit user scale
-    // still wins (min/max below override suggested bounds).
-    const { suggestedMin, suggestedMax } = referenceLineBounds(
-        referenceLines,
-        labelCount,
-        chartConfig
-    )
+    const yBounds = cartesianYBounds(model, referenceLines, labelCount, chartConfig)
 
     // Build annotation configuration if reference lines exist
     const annotations = buildReferenceLineAnnotations(referenceLines, labelCount)
@@ -452,7 +424,9 @@ export function initCartesianChart(
                             return `${label}: ${formatValueWithEmoji(
                                 value,
                                 chartConfig.valueEmojis,
-                                formatMetricValue(value, integersOnly)
+                                formatValue(value, valueFormat, (v) =>
+                                    formatMetricValue(v, integersOnly)
+                                )
                             )}`
                         }
                     }
@@ -480,11 +454,12 @@ export function initCartesianChart(
                 },
                 y: {
                     display: true,
-                    beginAtZero: !chartConfig.scale?.min,
-                    min: chartConfig.scale?.min ?? undefined,
-                    max: chartConfig.scale?.max ?? undefined,
-                    suggestedMin,
-                    suggestedMax,
+                    beginAtZero: model.beginAtZero,
+                    min: yBounds.min,
+                    max: yBounds.max,
+                    suggestedMin: yBounds.suggestedMin,
+                    suggestedMax: yBounds.suggestedMax,
+                    ticks: valueTickOptions(valueFormat, model.yPlan.stepSize),
                     grid: {
                         display: chartConfig.showGrid
                     }
@@ -660,7 +635,9 @@ export function initScatterChart(
                             return `${formatTimestamp(x)}: ${formatValueWithEmoji(
                                 y,
                                 chartConfig.valueEmojis,
-                                formatMetricValue(y, false)
+                                formatValue(y, chartConfig.valueFormat, (v) =>
+                                    formatMetricValue(v, false)
+                                )
                             )}`
                         }
                     }
@@ -691,9 +668,10 @@ export function initScatterChart(
                         display: true,
                         text: 'Value'
                     },
-                    beginAtZero: !chartConfig.scale?.min,
-                    min: chartConfig.scale?.min ?? undefined,
-                    max: chartConfig.scale?.max ?? undefined,
+                    ...pointChartYAxis(
+                        scatterChartData.points.map((p) => p.y),
+                        chartConfig
+                    ),
                     grid: {
                         display: chartConfig.showGrid
                     }
@@ -704,6 +682,40 @@ export function initScatterChart(
             }
         }
     })
+}
+
+/**
+ * Y-axis range and ticks for scatter and bubble charts: same rules as the
+ * cartesian charts (explicit scale wins, durations fit their data and tick on
+ * the duration ladder), without reference lines or outlier fitting.
+ */
+function pointChartYAxis(
+    values: number[],
+    chartConfig: ChartConfig
+): {
+    beginAtZero: boolean
+    min: number | undefined
+    max: number | undefined
+    ticks: ReturnType<typeof valueTickOptions>
+} {
+    const beginAtZero = yAxisBeginsAtZero(
+        chartConfig.chartType,
+        chartConfig.valueFormat,
+        chartConfig.scale
+    )
+    const plan = planYAxis({
+        series: [{ data: values }],
+        referenceValues: [],
+        scale: chartConfig.scale,
+        beginAtZero,
+        valueFormat: chartConfig.valueFormat
+    })
+    return {
+        beginAtZero,
+        min: chartConfig.scale?.min ?? undefined,
+        max: chartConfig.scale?.max ?? undefined,
+        ticks: valueTickOptions(chartConfig.valueFormat, plan.stepSize)
+    }
 }
 
 /**
@@ -763,7 +775,9 @@ export function initBubbleChart(
                             return `Value: ${formatValueWithEmoji(
                                 y,
                                 chartConfig.valueEmojis,
-                                formatMetricValue(y, false)
+                                formatValue(y, chartConfig.valueFormat, (v) =>
+                                    formatMetricValue(v, false)
+                                )
                             )}, ${entries}`
                         }
                     }
@@ -788,9 +802,10 @@ export function initBubbleChart(
                         display: true,
                         text: 'Value'
                     },
-                    beginAtZero: !chartConfig.scale?.min,
-                    min: chartConfig.scale?.min ?? undefined,
-                    max: chartConfig.scale?.max ?? undefined,
+                    ...pointChartYAxis(
+                        bubbleChartData.points.map((p) => p.y),
+                        chartConfig
+                    ),
                     grid: {
                         display: chartConfig.showGrid
                     }

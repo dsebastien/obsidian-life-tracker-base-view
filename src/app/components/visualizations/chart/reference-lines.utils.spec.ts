@@ -249,3 +249,36 @@ describe('cumulative target under a running total (issue #158)', () => {
         expect(suggestedMax).toBeUndefined()
     })
 })
+
+describe('buildCartesianReferenceLines - value format (3.4.0)', () => {
+    test('default labels read in the card format, custom labels stay as typed', () => {
+        const lines = buildCartesianReferenceLines(
+            {
+                ...baseConfig,
+                valueFormat: 'duration-mm-ss',
+                referenceLine: { enabled: true, value: 330 },
+                target: {
+                    enabled: true,
+                    value: 360,
+                    metric: 'average',
+                    period: TimeGranularity.Daily,
+                    direction: 'at-most'
+                }
+            },
+            undefined,
+            []
+        )
+        expect(lines.map((l) => l.label)).toEqual(['Reference: 5:30', 'Target: 6:00'])
+
+        const custom = buildCartesianReferenceLines(
+            {
+                ...baseConfig,
+                valueFormat: 'duration-mm-ss',
+                referenceLine: { enabled: true, value: 330, label: 'Easy pace' }
+            },
+            undefined,
+            []
+        )
+        expect(custom[0]!.label).toBe('Easy pace')
+    })
+})

@@ -1296,7 +1296,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             configuredAt: overlayConfig.configuredAt,
             scale: overlayConfig.scale,
             colorScheme: overlayConfig.colorScheme,
-            aggregationMethod: overlayConfig.aggregationMethod
+            aggregationMethod: overlayConfig.aggregationMethod,
+            valueFormat: overlayConfig.valueFormat
         }
 
         // Get chart config using the standard helper
@@ -1739,7 +1740,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     propertyIds: result.propertyIds,
                     referenceLines: result.referenceLines,
                     hideIndividualVisualizations: result.hideIndividualVisualizations,
-                    aggregationMethod: result.aggregationMethod
+                    aggregationMethod: result.aggregationMethod,
+                    valueFormat: result.valueFormat
                 })
                 this.onDataUpdated()
             },
@@ -1923,6 +1925,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.runningTotal,
             vizConfig.xAxisSource,
             vizConfig.target,
+            vizConfig.valueFormat,
             this.findPropertyDefinition(propertyId)?.polarity,
             hasListValues,
             isFromPreset,
@@ -2170,6 +2173,32 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                         propertyId,
                         visualizationId,
                         { xAxisSource: action.xAxisSource }
+                    )
+                }
+                this.applyConfigChange(propertyId, visualizationId, displayName)
+                break
+
+            case 'configureValueFormat':
+                if (isFromPreset) {
+                    const preset = this.columnConfigService.findMatchingPreset(propertyId)
+                    if (preset) {
+                        const newId = this.columnConfigService.saveColumnConfig(
+                            propertyId,
+                            preset.visualizationType,
+                            displayName,
+                            preset.scale,
+                            preset.colorScheme,
+                            preset.referenceLine
+                        )
+                        this.columnConfigService.updateVisualizationConfig(propertyId, newId, {
+                            valueFormat: action.valueFormat
+                        })
+                    }
+                } else {
+                    this.columnConfigService.updateVisualizationConfig(
+                        propertyId,
+                        visualizationId,
+                        { valueFormat: action.valueFormat }
                     )
                 }
                 this.applyConfigChange(propertyId, visualizationId, displayName)

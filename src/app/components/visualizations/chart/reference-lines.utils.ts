@@ -1,6 +1,6 @@
 import type { BasesPropertyId } from 'obsidian'
 import type { ChartConfig, ChartDataset, ReferenceLineConfig } from '../../../types'
-import { getChartColorScheme } from '../../../../utils'
+import { formatValue, getChartColorScheme } from '../../../../utils'
 import { periodLabel } from '../../../services/progress-aggregation.utils'
 
 /**
@@ -22,6 +22,29 @@ export interface ReferenceLineSpec {
      * total (issue #158)
      */
     cumulativePerPeriod?: boolean
+}
+
+/**
+ * The y-value a reference line reaches by the chart's last period. Horizontal
+ * lines sit at their value; a cumulative target line (issue #158) climbs to
+ * `value × periods`.
+ */
+export function referenceLineEndValue(line: ReferenceLineSpec, labelCount: number): number {
+    return line.cumulativePerPeriod ? line.value * Math.max(1, labelCount) : line.value
+}
+
+/**
+ * Every y-value the reference lines reach (start and end), so the y-axis can
+ * keep them all in view
+ */
+export function referenceLineValues(
+    referenceLines: ReferenceLineSpec[] | undefined,
+    labelCount: number
+): number[] {
+    return (referenceLines ?? []).flatMap((line) => [
+        line.value,
+        referenceLineEndValue(line, labelCount)
+    ])
 }
 
 /** Dash pattern for explicit reference lines */
@@ -48,12 +71,15 @@ export function buildCartesianReferenceLines(
 ): ReferenceLineSpec[] {
     const referenceLines: ReferenceLineSpec[] = []
     const colors = getChartColorScheme(chartConfig.colorScheme)
+    // Default labels read in the card's value format ("Target: 5:30");
+    // custom labels are the user's own text and stay as typed
+    const show = (value: number): string => formatValue(value, chartConfig.valueFormat, String)
 
     // Single property reference line
     if (chartConfig.referenceLine?.enabled) {
         const color = colors[0] ?? '#8884d8'
         const label =
-            chartConfig.referenceLine.label ?? `Reference: ${chartConfig.referenceLine.value}`
+            chartConfig.referenceLine.label ?? `Reference: ${show(chartConfig.referenceLine.value)}`
         referenceLines.push({
             value: chartConfig.referenceLine.value,
             label,
@@ -79,7 +105,7 @@ export function buildCartesianReferenceLines(
             if (target.period === chartConfig.granularity) {
                 referenceLines.push({
                     value: target.value,
-                    label: `Target: ${target.value}${unit} per ${periodLabel(target.period, 1)} (cumulative)`,
+                    label: `Target: ${show(target.value)}${unit} per ${periodLabel(target.period, 1)} (cumulative)`,
                     color: colors[0] ?? '#8884d8',
                     dash: TARGET_LINE_DASH,
                     labelPosition: 'start',
@@ -89,7 +115,7 @@ export function buildCartesianReferenceLines(
         } else {
             referenceLines.push({
                 value: target.value,
-                label: `Target: ${target.value}${unit}`,
+                label: `Target: ${show(target.value)}${unit}`,
                 color: colors[0] ?? '#8884d8',
                 dash: TARGET_LINE_DASH,
                 labelPosition: 'start'
@@ -107,7 +133,7 @@ export function buildCartesianReferenceLines(
             if (!refLineConfig?.enabled) return
 
             const color = colors[index % colors.length] ?? '#8884d8'
-            const label = refLineConfig.label ?? `${dataset.label}: ${refLineConfig.value}`
+            const label = refLineConfig.label ?? `${dataset.label}: ${show(refLineConfig.value)}`
             referenceLines.push({
                 value: refLineConfig.value,
                 label,

@@ -110,6 +110,38 @@ export const X_AXIS_SOURCES: readonly XAxisSource[] = ['date', 'note-name']
 export const DEFAULT_X_AXIS_SOURCE: XAxisSource = 'date'
 
 /**
+ * How a card displays its values (3.4.0). Stored per visualization in the
+ * `.base` view config, so it travels with the Base.
+ * - 'number': plain numbers (default — preserves prior behavior)
+ * - 'duration-mm-ss': the value is a number of seconds, shown as `m:ss`
+ *   (`h:mm:ss` from one hour), e.g. a pace of 330 s/km reads `5:30`
+ * - 'duration-h-mm': the value is a number of minutes, shown as `h:mm`,
+ *   e.g. 95 minutes of sleep reads `1:35`
+ */
+export type ValueFormat = 'number' | 'duration-mm-ss' | 'duration-h-mm'
+
+/** Every valid value format, for runtime validation of stored config */
+export const VALUE_FORMATS: readonly ValueFormat[] = ['number', 'duration-mm-ss', 'duration-h-mm']
+
+/** Default value format when none is configured */
+export const DEFAULT_VALUE_FORMAT: ValueFormat = 'number'
+
+/** UI labels for the value formats, in menu order */
+export const VALUE_FORMAT_OPTIONS: ReadonlyArray<{ value: ValueFormat; label: string }> = [
+    { value: 'number', label: 'Number' },
+    { value: 'duration-mm-ss', label: 'Duration: seconds as m:ss' },
+    { value: 'duration-h-mm', label: 'Duration: minutes as h:mm' }
+]
+
+/**
+ * Read a value format from view config. The `.base` file can be hand-edited,
+ * so an unknown value is dropped (number format) rather than leaking through.
+ */
+export function normalizeValueFormat(raw: unknown): ValueFormat | undefined {
+    return VALUE_FORMATS.includes(raw as ValueFormat) ? (raw as ValueFormat) : undefined
+}
+
+/**
  * How multiple data points in the same time period are combined into a single value.
  * - 'average': arithmetic mean (default — preserves previous behavior)
  * - 'sum': add the values together (e.g., total workout calories across multiple sessions per day)
@@ -157,6 +189,8 @@ export interface ColumnVisualizationConfig {
     target?: TargetConfig
     /** What the x-axis plots: time periods or one point per note (issue #69) */
     xAxisSource?: XAxisSource
+    /** How values are displayed: plain numbers (default) or durations */
+    valueFormat?: ValueFormat
 }
 
 /**
@@ -356,6 +390,28 @@ export function supportsTarget(vizType: VisualizationType): boolean {
 }
 
 /**
+ * Visualization types whose values can be shown as durations. Pie, doughnut,
+ * polar and radar charts plot counts of values, tag clouds and timelines show
+ * no numbers: a duration format would mislabel them.
+ */
+export const VALUE_FORMAT_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.Heatmap,
+    VisualizationType.LineChart,
+    VisualizationType.BarChart,
+    VisualizationType.AreaChart,
+    VisualizationType.ScatterChart,
+    VisualizationType.BubbleChart,
+    VisualizationType.Progress
+]
+
+/**
+ * Check if a visualization type supports choosing the value format
+ */
+export function supportsValueFormat(vizType: VisualizationType): boolean {
+    return VALUE_FORMAT_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
  * Window sizes offered for the moving average in the UI
  */
 export const MOVING_AVERAGE_PERIOD_OPTIONS = [7, 14, 30]
@@ -425,6 +481,8 @@ export interface OverlayVisualizationConfig {
     hideIndividualVisualizations?: boolean
     /** How to combine multiple values within a time period (default: 'average') */
     aggregationMethod?: AggregationMethod
+    /** How values are displayed: plain numbers (default) or durations */
+    valueFormat?: ValueFormat
 }
 
 /**

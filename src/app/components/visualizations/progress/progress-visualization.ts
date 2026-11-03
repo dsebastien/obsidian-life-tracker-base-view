@@ -6,12 +6,14 @@ import type {
     ProgressData,
     ProgressPeriod,
     TargetConfig,
+    TargetMetric,
+    ValueFormat,
     VisualizationDataPoint,
     VisualizationDateRange
 } from '../../../types'
 import { aggregateForProgress, periodLabel } from '../../../services/progress-aggregation.utils'
 import { TouchNavigationGate } from '../touch-navigation'
-import { formatDateByGranularity, log, setCssProps } from '../../../../utils'
+import { formatDateByGranularity, formatValue, log, setCssProps } from '../../../../utils'
 
 /**
  * Circular progress toward a goal target (issues #6 and #126).
@@ -44,10 +46,24 @@ function formatAmount(value: number): string {
 }
 
 /**
+ * Format an amount measured by a target in the card's value format (3.4.0).
+ * `count` and `days` measure how many entries or days, never the property's
+ * own unit, so they always stay plain numbers.
+ */
+export function formatTargetAmount(
+    value: number,
+    metric: TargetMetric,
+    valueFormat: ValueFormat | undefined
+): string {
+    if (metric === 'count' || metric === 'days') return formatAmount(value)
+    return formatValue(value, valueFormat, formatAmount)
+}
+
+/**
  * One-line statement of what the target asks for, e.g. "3 days per week"
  */
-export function describeTarget(target: TargetConfig): string {
-    const amount = formatAmount(target.value)
+export function describeTarget(target: TargetConfig, valueFormat?: ValueFormat): string {
+    const amount = formatTargetAmount(target.value, target.metric, valueFormat)
     const unit = target.unit
         ? ` ${target.unit}`
         : target.metric === 'count'
@@ -124,7 +140,7 @@ export class ProgressVisualization extends BaseVisualization {
         if (!target?.enabled) return this.displayName
 
         const comparator = target.direction === 'at-most' ? '≤' : '≥'
-        const amount = formatAmount(target.value)
+        const amount = this.formatAmount(target.value, target)
         const unit = target.unit ? ` ${target.unit}` : ''
         // A rate only makes sense for metrics that accumulate: "≥ 150 reps per
         // week" reads right, "≤ 80 kg per week" does not
@@ -134,6 +150,11 @@ export class ProgressVisualization extends BaseVisualization {
                 : ''
 
         return `${this.displayName} · ${comparator} ${amount}${unit}${per}`
+    }
+
+    /** An amount of this card's target, in the card's value format */
+    private formatAmount(value: number, target: TargetConfig): string {
+        return formatTargetAmount(value, target.metric, this.progressConfig.valueFormat)
     }
 
     override update(data: VisualizationDataPoint[]): void {
@@ -174,9 +195,10 @@ export class ProgressVisualization extends BaseVisualization {
             'aria-label',
             status === 'no-data'
                 ? `${this.displayName}: nothing recorded this ${periodLabel(data.target.period, 1)}`
-                : `${this.displayName}: ${formatAmount(current?.actual ?? 0)} of ${formatAmount(
-                      data.target.value
-                  )}`
+                : `${this.displayName}: ${this.formatAmount(
+                      current?.actual ?? 0,
+                      data.target
+                  )} of ${this.formatAmount(data.target.value, data.target)}`
         )
         svg.classList.add('lt-progress-ring-svg')
 
@@ -205,11 +227,11 @@ export class ProgressVisualization extends BaseVisualization {
             cls: 'lt-progress-value',
             // An em dash, not a 0: nothing was recorded, which is not the same
             // as having recorded a zero (issue #6)
-            text: status === 'no-data' ? '—' : formatAmount(current?.actual ?? 0)
+            text: status === 'no-data' ? '—' : this.formatAmount(current?.actual ?? 0, data.target)
         })
         centerEl.createDiv({
             cls: 'lt-progress-goal',
-            text: `/ ${formatAmount(data.target.value)}${data.target.unit ? ` ${data.target.unit}` : ''}`
+            text: `/ ${this.formatAmount(data.target.value, data.target)}${data.target.unit ? ` ${data.target.unit}` : ''}`
         })
 
         if (current && current.filePaths.length > 0) {
@@ -236,7 +258,7 @@ export class ProgressVisualization extends BaseVisualization {
     private renderTargetLine(container: HTMLElement, target: TargetConfig): void {
         container.createDiv({
             cls: 'lt-progress-target',
-            text: describeTarget(target)
+            text: describeTarget(target, this.progressConfig.valueFormat)
         })
     }
 
@@ -283,8 +305,9 @@ export class ProgressVisualization extends BaseVisualization {
             const barEl = stripEl.createDiv({
                 cls: `lt-progress-strip-bar lt-progress-strip-bar--${period.status}`,
                 attr: {
-                    'title': `${formatDateByGranularity(period.date, data.target.period)}: ${formatAmount(
-                        period.actual
+                    'title': `${formatDateByGranularity(period.date, data.target.period)}: ${this.formatAmount(
+                        period.actual,
+                        data.target
                     )}`,
                     'aria-hidden': 'true'
                 }

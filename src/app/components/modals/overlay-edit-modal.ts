@@ -4,7 +4,10 @@ import type { LifeTrackerPlugin } from '../../plugin'
 import {
     VisualizationType,
     DEFAULT_AGGREGATION_METHOD,
+    DEFAULT_VALUE_FORMAT,
+    VALUE_FORMAT_OPTIONS,
     type AggregationMethod,
+    type ValueFormat,
     type OverlayVisualizationConfig,
     type ReferenceLineConfig
 } from '../../types'
@@ -28,6 +31,8 @@ export interface OverlayEditResult {
     referenceLines?: Record<BasesPropertyId, ReferenceLineConfig>
     hideIndividualVisualizations: boolean
     aggregationMethod: AggregationMethod | undefined
+    /** How values read: numbers (undefined) or durations (3.4.0) */
+    valueFormat: ValueFormat | undefined
 }
 
 /**
@@ -64,6 +69,7 @@ export class OverlayEditModal extends Modal {
     private referenceLines: Map<BasesPropertyId, ReferenceLineConfig>
     private hideIndividualVisualizations: boolean
     private aggregationMethod: AggregationMethod
+    private valueFormat: ValueFormat
 
     // DOM elements
     private nameInputEl: HTMLInputElement | null = null
@@ -89,6 +95,7 @@ export class OverlayEditModal extends Modal {
         this.selectedPropertyIds = new Set(overlayConfig.propertyIds)
         this.hideIndividualVisualizations = overlayConfig.hideIndividualVisualizations ?? false
         this.aggregationMethod = overlayConfig.aggregationMethod ?? DEFAULT_AGGREGATION_METHOD
+        this.valueFormat = overlayConfig.valueFormat ?? DEFAULT_VALUE_FORMAT
 
         // Initialize reference lines from config
         this.referenceLines = new Map()
@@ -149,6 +156,9 @@ export class OverlayEditModal extends Modal {
 
         // Aggregation method section
         this.renderAggregationMethodSection(content)
+
+        // Value format section (3.4.0)
+        this.renderValueFormatSection(content)
 
         // Reference lines section
         this.renderReferenceLinesSection(content)
@@ -400,6 +410,31 @@ export class OverlayEditModal extends Modal {
         })
     }
 
+    private renderValueFormatSection(container: HTMLElement): void {
+        const section = container.createDiv({ cls: 'lt-overlay-edit-section' })
+
+        section.createEl('label', {
+            cls: 'lt-overlay-edit-label',
+            text: 'Value format'
+        })
+        section.createDiv({
+            cls: 'lt-overlay-edit-toggle-description',
+            text: 'Show values as numbers, or as durations read from seconds or minutes. Line, bar and area charts only.'
+        })
+
+        const select = section.createEl('select', { cls: 'lt-overlay-edit-input' })
+        for (const option of VALUE_FORMAT_OPTIONS) {
+            const opt = select.createEl('option', { value: option.value, text: option.label })
+            if (option.value === this.valueFormat) {
+                opt.selected = true
+            }
+        }
+
+        select.addEventListener('change', () => {
+            this.valueFormat = select.value as ValueFormat
+        })
+    }
+
     private renderFooter(container: HTMLElement): void {
         const footer = container.createDiv({ cls: 'lt-overlay-edit-footer' })
 
@@ -567,7 +602,8 @@ export class OverlayEditModal extends Modal {
             aggregationMethod:
                 this.aggregationMethod === DEFAULT_AGGREGATION_METHOD
                     ? undefined
-                    : this.aggregationMethod
+                    : this.aggregationMethod,
+            valueFormat: this.valueFormat === DEFAULT_VALUE_FORMAT ? undefined : this.valueFormat
         }
 
         this.callbacks.onSave(result)

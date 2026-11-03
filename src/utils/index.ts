@@ -182,3 +182,16 @@ export {
 // Export utilities (CSV / image export)
 export { toCsv, sanitizeFilename } from './export.utils'
 export { minOf, maxOf } from './number.utils'
+
+// Value display formats (3.4.0)
+export {
+    isDurationFormat,
+    formatSecondsAsDuration,
+    formatMinutesAsDuration,
+    formatPlainNumber,
+    formatValue,
+    durationTickStep,
+    niceNumberStep,
+    axisStep,
+    DURATION_MAX_INTERVALS
+} from './value-format.utils'

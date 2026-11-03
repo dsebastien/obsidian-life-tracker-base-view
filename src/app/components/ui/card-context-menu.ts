@@ -18,6 +18,9 @@ import {
     DEFAULT_AGGREGATION_METHOD,
     DEFAULT_X_AXIS_SOURCE,
     supportsXAxisSource,
+    supportsValueFormat,
+    DEFAULT_VALUE_FORMAT,
+    VALUE_FORMAT_OPTIONS,
     type ScaleConfig,
     type ReferenceLineConfig,
     type AggregationMethod,
@@ -27,6 +30,7 @@ import {
     type TargetConfig,
     type TargetDirection,
     type TargetMetric,
+    type ValueFormat,
     type ValuePolarity,
     type XAxisSource
 } from '../../types'
@@ -114,6 +118,8 @@ export function showCardContextMenu(
     currentRunningTotal: boolean | undefined,
     currentXAxisSource: XAxisSource | undefined,
     currentTarget: TargetConfig | undefined,
+    /** How the card shows its values: numbers or durations (3.4.0) */
+    currentValueFormat: ValueFormat | undefined,
     /** Polarity of the visualized property, used to default a new target's
      *  direction and to flag a contradictory one (issue #21) */
     currentPolarity: ValuePolarity | undefined,
@@ -288,6 +294,7 @@ export function showCardContextMenu(
         // note-name variant — hide the option rather than show an inert one
         const hasXAxisSource = supportsXAxisSource(vizType) && !hasListValues
         const hasTarget = supportsTarget(vizType)
+        const hasValueFormat = supportsValueFormat(vizType)
 
         const hasHeatmapConfig = vizType === VisualizationType.Heatmap
 
@@ -300,6 +307,7 @@ export function showCardContextMenu(
             !hasRunningTotal &&
             !hasXAxisSource &&
             !hasTarget &&
+            !hasValueFormat &&
             !hasHeatmapConfig
         ) {
             optionsContent.createDiv({
@@ -363,6 +371,34 @@ export function showCardContextMenu(
                         scale: { min: min ?? 0, max: max ?? 100 }
                     })
                 }
+            })
+        }
+
+        // Value format dropdown (3.4.0): numbers, or durations read from
+        // seconds or minutes
+        if (hasValueFormat) {
+            const formatGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
+            formatGroup.createEl('label', { text: 'Value format' })
+
+            const formatSelect = formatGroup.createEl('select', { cls: 'lt-card-popover-select' })
+            const effectiveFormat = currentValueFormat ?? DEFAULT_VALUE_FORMAT
+            for (const option of VALUE_FORMAT_OPTIONS) {
+                const opt = formatSelect.createEl('option', {
+                    value: option.value,
+                    text: option.label
+                })
+                if (option.value === effectiveFormat) {
+                    opt.selected = true
+                }
+            }
+
+            formatSelect.addEventListener('change', () => {
+                const value = formatSelect.value as ValueFormat
+                close()
+                onAction({
+                    type: 'configureValueFormat',
+                    valueFormat: value === DEFAULT_VALUE_FORMAT ? undefined : value
+                })
             })
         }
 
@@ -462,7 +498,9 @@ export function showCardContextMenu(
         if (hasTarget) {
             const targetGroup = optionsContent.createDiv({ cls: 'lt-card-popover-option-group' })
             targetGroup.createEl('label', {
-                text: currentTarget?.enabled ? `Target: ${describeTarget(currentTarget)}` : 'Target'
+                text: currentTarget?.enabled
+                    ? `Target: ${describeTarget(currentTarget, currentValueFormat)}`
+                    : 'Target'
             })
 
             const editBtn = targetGroup.createEl('button', {

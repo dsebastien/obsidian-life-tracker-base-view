@@ -27,7 +27,13 @@ export {
     X_AXIS_SOURCE_SUPPORTED_TYPES,
     supportsXAxisSource,
     OVERLAY_ONLY_TYPES,
-    isOverlayOnly
+    isOverlayOnly,
+    VALUE_FORMATS,
+    DEFAULT_VALUE_FORMAT,
+    VALUE_FORMAT_OPTIONS,
+    VALUE_FORMAT_SUPPORTED_TYPES,
+    supportsValueFormat,
+    normalizeValueFormat
 } from './column-config.types'
 export type {
     ScaleConfig,
@@ -42,7 +48,8 @@ export type {
     TargetConfig,
     TargetMetric,
     TargetDirection,
-    XAxisSource
+    XAxisSource,
+    ValueFormat
 } from './column-config.types'
 export type { ColumnConfigResult } from './column-config-result.intf'
 export type { ColumnConfigCallback } from './column-config-callback.intf'

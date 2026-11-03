@@ -6,6 +6,7 @@ import type {
     ReferenceLineConfig,
     AggregationMethod,
     TargetConfig,
+    ValueFormat,
     XAxisSource
 } from '../column/column-config.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
@@ -328,6 +329,8 @@ export interface VisualizationConfig {
     polarity?: ValuePolarity
     /** Value/range → emoji map from the property definition (issue #22) */
     valueEmojis?: EmojiMapping | null
+    /** How values read: plain numbers (absent) or durations (3.4.0) */
+    valueFormat?: ValueFormat
 }
 
 /**
@@ -351,7 +354,14 @@ export interface HeatmapConfig extends VisualizationConfig {
  * Supported Chart.js chart types
  */
 export type ChartJsType =
-    'line' | 'bar' | 'pie' | 'doughnut' | 'radar' | 'polarArea' | 'scatter' | 'bubble'
+    | 'line'
+    | 'bar'
+    | 'pie'
+    | 'doughnut'
+    | 'radar'
+    | 'polarArea'
+    | 'scatter'
+    | 'bubble'
 
 /**
  * Chart-specific configuration

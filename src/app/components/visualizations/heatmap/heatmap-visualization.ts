@@ -28,6 +28,7 @@ import {
     formatDateISO,
     getEventElement,
     isDiscreteHeatmapScheme,
+    formatValue,
     setCssProps
 } from '../../../../utils'
 
@@ -506,15 +507,20 @@ export class HeatmapVisualization extends BaseVisualization {
             isRecordImprovement(this.lastRecordValue, record, polarity) &&
             shouldAnnounceRecord(this.propertyId, record.value)
         ) {
-            new Notice(`🏆 New record! ${this.displayName}: ${formatRecordValue(record.value)}`)
+            new Notice(`🏆 New record! ${this.displayName}: ${this.formatRecord(record.value)}`)
         }
         this.lastRecordValue = record.value
 
         const dateSuffix = record.date ? ` (${formatDate(record.date, 'MMM d, yyyy')})` : ''
         this.streaksEl.createSpan({
             cls: 'lt-heatmap-streaks-item lt-record-item',
-            text: `🏆 Record: ${formatRecordValue(record.value)}${dateSuffix}`
+            text: `🏆 Record: ${this.formatRecord(record.value)}${dateSuffix}`
         })
+    }
+
+    /** A record value in the card's value format ("Record: 5:12") */
+    private formatRecord(value: number): string {
+        return formatValue(value, this.heatmapConfig.valueFormat, formatRecordValue)
     }
 
     /**
@@ -639,7 +645,8 @@ export class HeatmapVisualization extends BaseVisualization {
             this.displayName,
             this.heatmapConfig.granularity,
             // Emoji summary of the value, when the property defines one (#22)
-            this.heatmapConfig.valueEmojis
+            this.heatmapConfig.valueEmojis,
+            this.heatmapConfig.valueFormat
         )
     }
 
@@ -768,7 +775,14 @@ export class HeatmapVisualization extends BaseVisualization {
                 const item = legend.createDiv({ cls: 'lt-heatmap-legend-item' })
                 const box = item.createDiv({ cls: 'lt-heatmap-cell' })
                 setCssProps(box, { width: cellSize, height: cellSize, backgroundColor: color })
-                item.createSpan({ text: value })
+                // Mapping keys are stringified values: show numeric ones in the
+                // card's value format, like the tooltip does
+                const numeric = value.trim() === '' ? Number.NaN : Number(value)
+                item.createSpan({
+                    text: Number.isFinite(numeric)
+                        ? formatValue(numeric, this.heatmapConfig.valueFormat, () => value)
+                        : value
+                })
             }
             return
         }

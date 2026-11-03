@@ -10,6 +10,7 @@ import {
     type TimelineConfig,
     type ProgressConfig,
     normalizeTargetConfig,
+    normalizeValueFormat,
     X_AXIS_SOURCES,
     type VisualizationConfig,
     type ConfigGetter,
@@ -49,7 +50,9 @@ export function getVisualizationConfig(
         showEmptyValues,
         embeddedHeight,
         polarity: definition?.polarity,
-        valueEmojis: definition?.valueEmojis ?? null
+        valueEmojis: definition?.valueEmojis ?? null,
+        // Hand-editable in the .base file: anything unknown reads as numbers
+        valueFormat: normalizeValueFormat(columnConfig.valueFormat)
     }
 
     // Extract scale, color scheme, reference line, and aggregation method from column config if present

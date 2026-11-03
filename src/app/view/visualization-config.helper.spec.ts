@@ -205,3 +205,26 @@ describe('getVisualizationConfig - polarity and emojis (issues #21, #22)', () =>
         expect(config.colorScheme).toEqual(custom)
     })
 })
+
+describe('getVisualizationConfig - value format (3.4.0)', () => {
+    function lineConfig(valueFormat: unknown): ChartConfig {
+        return getVisualizationConfig(
+            VisualizationType.LineChart,
+            {
+                ...columnConfig(),
+                visualizationType: VisualizationType.LineChart,
+                valueFormat: valueFormat as ColumnVisualizationConfig['valueFormat']
+            },
+            configGetter()
+        ) as ChartConfig
+    }
+
+    test('passes a known format through', () => {
+        expect(lineConfig('duration-mm-ss').valueFormat).toBe('duration-mm-ss')
+    })
+
+    test('drops an unknown or absent format', () => {
+        expect(lineConfig('mm:ss').valueFormat).toBeUndefined()
+        expect(lineConfig(undefined).valueFormat).toBeUndefined()
+    })
+})
