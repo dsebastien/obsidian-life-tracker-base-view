@@ -77,4 +77,10 @@ describe('buildDateTicks (3.4.0)', () => {
         const ticks = buildDateTicks(day(2025, 6, 24), day(2025, 6, 24), 10)
         expect(ticks.values).toEqual([day(2025, 6, 24)])
     })
+
+    test('a few hours inside one day still get a tick', () => {
+        const min = day(2025, 6, 24) + 8 * 3600_000
+        const max = min + 3 * 3600_000
+        expect(buildDateTicks(min, max, 10).values).toEqual([min])
+    })
 })

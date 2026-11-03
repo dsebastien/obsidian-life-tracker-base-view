@@ -124,6 +124,10 @@ export function buildDateTicks(min: number, max: number, maxTicks: number): Date
     // Spans beyond centuries: the coarsest unit, thinned to fit
     const coarsest = TICK_UNITS[TICK_UNITS.length - 1]!
     const values = ticksFor(min, max, coarsest, Number.POSITIVE_INFINITY)
+    if (values.length === 0) {
+        // A span inside one day that crosses no midnight: one tick on its start
+        return { values: [min], format: 'MMM d, yyyy' }
+    }
     const stride = Math.ceil(values.length / limit)
     return {
         values: values.filter((_, i) => i % stride === 0),

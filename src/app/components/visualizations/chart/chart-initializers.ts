@@ -383,6 +383,22 @@ export function timeAxisRange(chartData: ChartData): { min: number; max: number 
 /** Half a day: the margin around a time axis whose notes all share one instant */
 const SINGLE_INSTANT_PADDING_MS = 12 * 3600_000
 
+/** Share of the span left empty at each end, so edge points are not cut */
+const TIME_AXIS_EDGE_PADDING = 0.02
+
+/**
+ * Bounds of a time-proportional x-axis: first to last note plus a small
+ * margin, or half a day on each side when every note shares one instant (a
+ * zero-width axis)
+ */
+export function timeAxisBounds(xValues: number[]): { min: number; max: number } {
+    const first = Math.min(...xValues)
+    const last = Math.max(...xValues)
+    const padding =
+        last > first ? (last - first) * TIME_AXIS_EDGE_PADDING : SINGLE_INSTANT_PADDING_MS
+    return { min: first - padding, max: last + padding }
+}
+
 /**
  * The x-axis of the date-per-note axis (3.4.0): a linear scale over epoch-ms
  * values with calendar-aligned date ticks, horizontal labels, auto-skipped.
@@ -390,16 +406,14 @@ const SINGLE_INSTANT_PADDING_MS = 12 * 3600_000
  * `buildDateTicks` instead of a `time` scale.
  */
 function timeXAxis(xValues: number[], chartConfig: ChartConfig): ScaleOptions<'linear'> {
-    const first = Math.min(...xValues)
-    const last = Math.max(...xValues)
-    const padding = last > first ? 0 : SINGLE_INSTANT_PADDING_MS
+    const bounds = timeAxisBounds(xValues)
     let tickFormat = 'MMM d, yyyy'
 
     return {
         type: 'linear',
         display: true,
-        min: first - padding,
-        max: last + padding,
+        min: bounds.min,
+        max: bounds.max,
         // Bars need half a bar of room at both ends
         offset: chartConfig.chartType === 'bar',
         grid: {

@@ -9,6 +9,7 @@ import { TimeGranularity, type ChartConfig, type ChartDataset } from '../../../t
 import {
     buildReferenceLineAnnotations,
     referenceLineBounds,
+    timeAxisBounds,
     timeAxisRange
 } from './chart-initializers'
 
@@ -307,6 +308,20 @@ describe('time axis reference lines (3.4.0)', () => {
         expect(timeAxisRange({ ...base, xValues: [3000, 1000, 2000] })).toEqual({
             min: 1000,
             max: 3000
+        })
+    })
+})
+
+describe('timeAxisBounds (3.4.0)', () => {
+    test('first to last note, with a 2% margin at each end', () => {
+        expect(timeAxisBounds([3000, 1000, 2000])).toEqual({ min: 960, max: 3040 })
+    })
+
+    test('a single instant gets half a day on each side', () => {
+        const day = Date.UTC(2025, 5, 24)
+        expect(timeAxisBounds([day, day])).toEqual({
+            min: day - 12 * 3600_000,
+            max: day + 12 * 3600_000
         })
     })
 })

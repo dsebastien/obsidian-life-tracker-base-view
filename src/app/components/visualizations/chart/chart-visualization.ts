@@ -34,6 +34,7 @@ import {
     initRadarChart,
     initRangeChart,
     initScatterChart,
+    timeAxisBounds,
     timeAxisRange
 } from './chart-initializers'
 import {
@@ -1026,6 +1027,13 @@ export class ChartVisualization extends BaseVisualization {
             labelCount,
             timeAxisRange(chartData)
         )
+
+        // A time-proportional x-axis spans the notes now shown (3.4.0)
+        const xScale = this.chart.options.scales?.['x']
+        if (xScale && chartData.xValues && chartData.xValues.length > 0) {
+            const bounds = timeAxisBounds(chartData.xValues)
+            Object.assign(xScale, { min: bounds.min, max: bounds.max })
+        }
 
         // The y-axis plan moves with the data: bounds and tick step
         const yScale = this.chart.options.scales?.['y']
