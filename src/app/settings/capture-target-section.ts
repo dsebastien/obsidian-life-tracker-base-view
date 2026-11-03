@@ -3,7 +3,10 @@ import type { LifeTrackerPlugin } from '../plugin'
 import { createCaptureTarget, type CaptureTarget } from '../types'
 import { FolderSuggest } from '../components/ui/folder-suggest'
 import { MarkdownFileSuggest } from '../components/ui/markdown-file-suggest'
-import { captureTargetCommandName } from '../commands/capture-target-commands'
+import {
+    captureTargetCommandId,
+    captureTargetCommandName
+} from '../commands/capture-target-commands'
 import { definitionsForDestination } from '../services/capture-target.utils'
 
 /** Note type dropdown value for a target that does not use the Starter Kit */
@@ -81,7 +84,9 @@ export class CaptureTargetSection {
 
         new Setting(card)
             .setName('Name')
-            .setDesc(`Command: ${captureTargetCommandName(target)}`)
+            .setDesc(
+                `Command: ${captureTargetCommandName(target)} (id: ${this.plugin.manifest.id}:${captureTargetCommandId(target)})`
+            )
             .addText((text) => {
                 text.setPlaceholder('Through the day')
                     .setValue(target.name)
