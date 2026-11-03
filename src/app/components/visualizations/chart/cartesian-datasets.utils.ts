@@ -45,6 +45,12 @@ export function densePointStyle(data: readonly (number | null)[]): {
     return { pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 8 }
 }
 
+/** Line width of the moving average when it is the main line */
+export const MOVING_AVERAGE_LINE_WIDTH = 2.5
+
+/** Opacity of the raw series drawn behind a moving average */
+export const RAW_SERIES_ALPHA = 0.35
+
 /** Marker radius of a value drawn at the axis edge: always visible */
 export const OUTLIER_MARKER_RADIUS = 6
 
@@ -111,25 +117,54 @@ export function buildCartesianModel(
         outlierMode: chartConfig.outliers
     })
 
+    // With a moving average on (issue #101), the average becomes the main line
+    // and the raw series a faded line behind it (3.4.0): noisy per-session
+    // values hid the trend the average exists to show
+    const hasMovingAverage = chartData.datasets.some((dataset) => dataset.isMovingAverage)
+
     const datasets: ChartDatasetConfig[] = chartData.datasets.map((dataset, index) => {
         const color = colors[index % colors.length]!
         const data = yPlan.data[index] ?? dataset.data
 
-        // The synthetic moving-average dataset (issue #101) reuses its
-        // source dataset's color but renders as a thin dashed line without
-        // points or fill, so it reads as an annotation rather than data
+        // The synthetic moving-average dataset reuses its source dataset's
+        // color, solid and thicker, drawn on top and listed first in the
+        // legend and the tooltip (`order`)
         if (dataset.isMovingAverage) {
             const sourceColor = colors[0]!
             return {
                 label: dataset.label,
                 data,
-                backgroundColor: 'transparent',
-                borderColor: getColorWithAlpha(sourceColor, 0.7),
-                borderWidth: 1.5,
-                borderDash: [6, 4],
+                backgroundColor: sourceColor,
+                borderColor: sourceColor,
+                borderWidth: MOVING_AVERAGE_LINE_WIDTH,
                 pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHitRadius: 8,
                 tension: chartConfig.tension,
-                fill: false
+                fill: false,
+                order: 0
+            }
+        }
+
+        if (hasMovingAverage) {
+            // The raw series behind the average: thin, faded, no fill, small
+            // faded points while there are few enough to show
+            const faded = getColorWithAlpha(color, RAW_SERIES_ALPHA)
+            const dense = densePointStyle(data)
+            return {
+                label: dataset.label,
+                data,
+                backgroundColor: faded,
+                borderColor: faded,
+                borderWidth: 1,
+                tension: chartConfig.tension,
+                fill: false,
+                pointRadius: dense.pointRadius ?? 2,
+                pointHoverRadius: 4,
+                pointHitRadius: dense.pointHitRadius ?? 4,
+                pointBackgroundColor: faded,
+                pointBorderColor: faded,
+                order: 1
             }
         }
 

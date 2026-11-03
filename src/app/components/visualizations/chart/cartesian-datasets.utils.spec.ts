@@ -4,6 +4,7 @@ import {
     buildCartesianModel,
     densePointStyle,
     isOutlierMarkerDataset,
+    MOVING_AVERAGE_LINE_WIDTH,
     OUTLIER_MARKER_RADIUS,
     POINT_MARKER_THRESHOLD
 } from './cartesian-datasets.utils'
@@ -190,5 +191,58 @@ describe('point markers (3.4.0)', () => {
             undefined
         )
         expect(model.datasets[0]!.pointRadius).toBeUndefined()
+    })
+})
+
+describe('moving average emphasis (3.4.0)', () => {
+    const clean = [372, 380, 385, 390, 377, 395, 388, 383, 379, 391]
+    const average: ChartDataset = {
+        label: '7-note average',
+        data: clean.map(() => 384),
+        filePaths: clean.map(() => []),
+        isMovingAverage: true
+    }
+
+    test('the average is the main line, the raw series fades behind it', () => {
+        const model = buildCartesianModel(
+            chartData(series(clean), average),
+            { ...lineConfig, fill: true, movingAveragePeriod: 7 },
+            undefined
+        )
+        const [raw, avg] = model.datasets
+
+        expect(avg!.borderWidth).toBe(MOVING_AVERAGE_LINE_WIDTH)
+        expect(avg!.borderDash).toBeUndefined()
+        expect(avg!.fill).toBe(false)
+        expect(avg!.order).toBe(0)
+        expect(avg!.pointRadius).toBe(0)
+
+        expect(raw!.borderWidth).toBe(1)
+        expect(raw!.fill).toBe(false)
+        expect(raw!.order).toBe(1)
+        expect(raw!.borderColor).toContain('0.35')
+        expect(raw!.pointRadius).toBe(2)
+    })
+
+    test('a dense raw series behind an average has no markers', () => {
+        const values = Array.from({ length: 60 }, (_, i) => 380 + (i % 10))
+        const model = buildCartesianModel(
+            chartData(series(values), { ...average, data: values.map(() => 384) }),
+            { ...lineConfig, movingAveragePeriod: 7 },
+            undefined
+        )
+        expect(model.datasets[0]!.pointRadius).toBe(0)
+    })
+
+    test('without an average nothing changes', () => {
+        const model = buildCartesianModel(
+            chartData(series(clean)),
+            { ...lineConfig, fill: true },
+            undefined
+        )
+        const raw = model.datasets[0]!
+        expect(raw.borderWidth).toBe(2)
+        expect(raw.fill).toBe(true)
+        expect(raw.order).toBeUndefined()
     })
 })
