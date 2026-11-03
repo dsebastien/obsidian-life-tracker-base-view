@@ -74,6 +74,10 @@ export function getVisualizationConfig(
             ? columnConfig.xAxisSource
             : undefined
     const outliers = normalizeOutlierMode(columnConfig.outliers)
+    // Hand-editable booleans: only a real `true` turns the exclusion on, only
+    // a real `false` turns gap breaks off (absent = on, issue #185)
+    const excludeOutliersFromAverage = columnConfig.excludeOutliersFromAverage === true
+    const breakLineAcrossGaps = columnConfig.breakLineAcrossGaps !== false
 
     switch (vizType) {
         case VisualizationType.Heatmap: {
@@ -140,6 +144,8 @@ export function getVisualizationConfig(
                 target,
                 xAxisSource,
                 outliers,
+                excludeOutliersFromAverage,
+                breakLineAcrossGaps,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -160,6 +166,8 @@ export function getVisualizationConfig(
                 target,
                 xAxisSource,
                 outliers,
+                excludeOutliersFromAverage,
+                breakLineAcrossGaps,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 
@@ -177,6 +185,7 @@ export function getVisualizationConfig(
                 target,
                 xAxisSource,
                 outliers,
+                excludeOutliersFromAverage,
                 showTrendInfo: getBoolConfig(getConfig, 'chartShowTrend') ?? true
             } as ChartConfig
 

@@ -22,6 +22,7 @@ import {
     DEFAULT_VALUE_FORMAT,
     VALUE_FORMAT_OPTIONS,
     supportsOutlierMode,
+    supportsGapBreaks,
     DEFAULT_OUTLIER_MODE,
     OUTLIER_MODE_OPTIONS,
     type ScaleConfig,
@@ -106,6 +107,32 @@ function trapFocus(container: HTMLElement): () => void {
 }
 
 /**
+ * An option group with an On / Off dropdown
+ */
+function createOnOffOption(
+    container: HTMLElement,
+    label: string,
+    enabled: boolean,
+    onChange: (enabled: boolean) => void
+): void {
+    const group = container.createDiv({ cls: 'lt-card-popover-option-group' })
+    group.createEl('label', { text: label })
+
+    const select = group.createEl('select', { cls: 'lt-card-popover-select' })
+    const onOption = select.createEl('option', { value: 'on', text: 'On' })
+    const offOption = select.createEl('option', { value: 'off', text: 'Off' })
+    if (enabled) {
+        onOption.selected = true
+    } else {
+        offOption.selected = true
+    }
+
+    select.addEventListener('change', () => {
+        onChange(select.value === 'on')
+    })
+}
+
+/**
  * Show context menu popover for a visualization card
  * Two-column layout: left = viz type selection, right = options
  * @param canRemove - Whether the "Remove visualization" button should be shown (true when property has 2+ visualizations)
@@ -126,6 +153,10 @@ export function showCardContextMenu(
     currentValueFormat: ValueFormat | undefined,
     /** Whether outliers may set the auto scale (3.4.0) */
     currentOutlierMode: OutlierMode | undefined,
+    /** Whether the average and the trend leave outliers out (issue #186; absent = no) */
+    currentExcludeOutliersFromAverage: boolean | undefined,
+    /** Whether the line breaks across long gaps (issue #185; absent = yes) */
+    currentBreakLineAcrossGaps: boolean | undefined,
     /** The card's own title, if any (3.4.0) */
     currentTitle: string | undefined,
     /** Polarity of the visualized property, used to default a new target's
@@ -317,6 +348,10 @@ export function showCardContextMenu(
         const hasTarget = supportsTarget(vizType)
         const hasValueFormat = supportsValueFormat(vizType)
         const hasOutlierMode = supportsOutlierMode(vizType)
+        // Both only act on the numeric path; gap breaks need a date axis
+        const hasExcludeOutliers = hasOutlierMode && !hasListValues
+        const hasGapBreaks =
+            supportsGapBreaks(vizType) && !hasListValues && currentXAxisSource !== 'note-name'
 
         const hasHeatmapConfig = vizType === VisualizationType.Heatmap
 
@@ -451,6 +486,22 @@ export function showCardContextMenu(
                     outliers: value === DEFAULT_OUTLIER_MODE ? undefined : value
                 })
             })
+        }
+
+        // Leave outliers out of the moving average and the trend (issue #186)
+        if (hasExcludeOutliers) {
+            createOnOffOption(
+                optionsContent,
+                'Leave outliers out of the average',
+                currentExcludeOutliersFromAverage === true,
+                (enabled) => {
+                    close()
+                    onAction({
+                        type: 'configureExcludeOutliersFromAverage',
+                        excludeOutliersFromAverage: enabled
+                    })
+                }
+            )
         }
 
         // Color scheme dropdown (if supported)
@@ -767,6 +818,19 @@ export function showCardContextMenu(
                     runningTotal: enabled
                 })
             })
+        }
+
+        // Break the line across long gaps in time (issue #185), on by default
+        if (hasGapBreaks) {
+            createOnOffOption(
+                optionsContent,
+                'Break line across gaps',
+                currentBreakLineAcrossGaps !== false,
+                (enabled) => {
+                    close()
+                    onAction({ type: 'configureBreakLineAcrossGaps', breakLineAcrossGaps: enabled })
+                }
+            )
         }
 
         // Heatmap-specific options

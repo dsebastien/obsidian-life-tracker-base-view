@@ -42,11 +42,9 @@ import {
     syncDatasetFromModel,
     type CartesianModel
 } from './cartesian-datasets.utils'
-import {
-    computeMovingAverage,
-    computeRunningTotal,
-    computeTrend
-} from '../../../services/chart-aggregation.utils'
+import { computeRunningTotal, computeTrend } from '../../../services/chart-aggregation.utils'
+import { computeSegmentedMovingAverage, gapBreaksFor } from '../../../services/series-gaps.utils'
+import { withoutOutliers } from '../../../services/outlier.utils'
 import { buildCartesianReferenceLines } from './reference-lines.utils'
 import { missingDateAriaLabel, missingDateText, trendWindowLabel } from './chart-format.utils'
 import {
@@ -233,6 +231,10 @@ export class ChartVisualization extends BaseVisualization {
                 // per note when the x-axis plots note names (issue #69)
                 this.chartData = this.aggregateNumericChartData(data)
 
+                // Gaps are found on the real values, before any running total
+                // fills the empty slots (issue #185)
+                this.chartData.gapBreaks = gapBreaksFor(this.chartData, this.chartConfig)
+
                 // Accumulate before overlaying (issue #142): the moving average
                 // is taken over whichever series is plotted.
                 this.applyRunningTotal(this.chartData)
@@ -371,9 +373,17 @@ export class ChartVisualization extends BaseVisualization {
 
         // On the note axes the window counts notes, not periods (3.4.0)
         const unit = this.usesNoteNameAxis() || this.usesDatePerNoteAxis() ? 'note' : 'period'
+        // Outliers can be left out of the average (issue #186). A cumulative
+        // series has none by construction: one jump carries into every later
+        // point, so it is averaged as is
+        const values =
+            this.chartConfig.excludeOutliersFromAverage && !this.chartConfig.runningTotal
+                ? withoutOutliers(source.data)
+                : source.data
         chartData.datasets.push({
             label: `${period}-${unit} average`,
-            data: computeMovingAverage(source.data, period),
+            // One average per segment: a window never spans a gap (issue #185)
+            data: computeSegmentedMovingAverage(values, period, chartData.gapBreaks),
             filePaths: chartData.labels.map(() => []),
             isMovingAverage: true
         })
@@ -411,7 +421,11 @@ export class ChartVisualization extends BaseVisualization {
                 ? 'Per-note trend'
                 : 'Per-period trend'
             : 'Trend'
-        const trend = computeTrend(this.trendSourceData ?? source.data)
+        const trendValues = this.trendSourceData ?? source.data
+        // Outliers can be left out of the trend too (issue #186)
+        const trend = computeTrend(
+            this.chartConfig.excludeOutliersFromAverage ? withoutOutliers(trendValues) : trendValues
+        )
         if (!trend) return
         const comparedTo = trendWindowLabel(trend.periodCount, perNote)
 
@@ -835,6 +849,7 @@ export class ChartVisualization extends BaseVisualization {
             )
         } else {
             newChartData = this.aggregateNumericChartData(data)
+            newChartData.gapBreaks = gapBreaksFor(newChartData, this.chartConfig)
 
             // Same order as the initial render (issue #142)
             this.applyRunningTotal(newChartData)

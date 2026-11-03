@@ -30,6 +30,10 @@ export type CardMenuAction =
     | { type: 'configureValueFormat'; valueFormat: ValueFormat | undefined }
     /** Fit the auto scale to the bulk of the data, or show every value (3.4.0) */
     | { type: 'configureOutliers'; outliers: OutlierMode | undefined }
+    /** Leave outliers out of the moving average and the trend (issue #186) */
+    | { type: 'configureExcludeOutliersFromAverage'; excludeOutliersFromAverage: boolean }
+    /** Break the line across long gaps on a date axis (issue #185) */
+    | { type: 'configureBreakLineAcrossGaps'; breakLineAcrossGaps: boolean }
     /** Set or clear the goal target for this visualization (issue #6) */
     | { type: 'configureTarget'; target: TargetConfig }
     | { type: 'configureHeatmapCellSize'; cellSize: number | undefined }

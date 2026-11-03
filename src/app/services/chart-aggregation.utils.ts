@@ -211,7 +211,8 @@ export function aggregateForChart(
         propertyId,
         displayName,
         labels,
-        datasets: [dataset]
+        datasets: [dataset],
+        periodTimes: resultGroups.map((g) => g.date.getTime())
     }
 }
 

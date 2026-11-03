@@ -229,6 +229,16 @@ export interface ColumnVisualizationConfig {
     valueFormat?: ValueFormat
     /** Whether outliers may set the auto-scaled y-axis (default: they don't) */
     outliers?: OutlierMode
+    /**
+     * Compute the moving average and the trend without the outliers (issue
+     * #186). Absent = off
+     */
+    excludeOutliersFromAverage?: boolean
+    /**
+     * Break the line across long gaps on a date axis (issue #185). Absent =
+     * on, so cards saved before the option get it too; only `false` is stored
+     */
+    breakLineAcrossGaps?: boolean
 }
 
 /**
@@ -464,6 +474,22 @@ export const OUTLIER_MODE_SUPPORTED_TYPES: VisualizationType[] = [
  */
 export function supportsOutlierMode(vizType: VisualizationType): boolean {
     return OUTLIER_MODE_SUPPORTED_TYPES.includes(vizType)
+}
+
+/**
+ * Visualization types that draw a line that can break across gaps in time
+ * (issue #185)
+ */
+export const GAP_BREAK_SUPPORTED_TYPES: VisualizationType[] = [
+    VisualizationType.LineChart,
+    VisualizationType.AreaChart
+]
+
+/**
+ * Check if a visualization type supports breaking its line across gaps
+ */
+export function supportsGapBreaks(vizType: VisualizationType): boolean {
+    return GAP_BREAK_SUPPORTED_TYPES.includes(vizType)
 }
 
 /**

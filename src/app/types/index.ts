@@ -107,7 +107,9 @@ export {
     OUTLIER_MODE_OPTIONS,
     OUTLIER_MODE_SUPPORTED_TYPES,
     supportsOutlierMode,
-    normalizeOutlierMode
+    normalizeOutlierMode,
+    GAP_BREAK_SUPPORTED_TYPES,
+    supportsGapBreaks
 } from './column'
 export type {
     ScaleConfig,

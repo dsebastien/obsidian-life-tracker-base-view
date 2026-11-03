@@ -32,6 +32,7 @@ import { referenceLineEndValue, type ReferenceLineSpec } from './reference-lines
 import { format } from 'date-fns'
 import { areAllValuesIntegers, formatMetricValue, stripNoteTypeSuffix } from './chart-format.utils'
 import { formatHoursAsTime } from '../../../services/range-aggregation.utils'
+import { isGapSegment } from '../../../services/series-gaps.utils'
 import {
     DENSE_SERIES_POINT_THRESHOLD,
     datasetsToggledWith,
@@ -481,6 +482,20 @@ function noteNameXAxis(
 }
 
 /**
+ * Scriptable segment styles that hide the stretch of a line crossing a gap in
+ * time (issue #185). `undefined` keeps the dataset's own style. Both the line
+ * and the area fill below it are hidden, so an area chart breaks as well.
+ */
+export function gapSegmentStyle(getChartData: () => ChartData | null): {
+    borderColor: (context: { p1DataIndex: number }) => string | undefined
+    backgroundColor: (context: { p1DataIndex: number }) => string | undefined
+} {
+    const style = (context: { p1DataIndex: number }): string | undefined =>
+        isGapSegment(getChartData()?.gapBreaks, context.p1DataIndex) ? 'transparent' : undefined
+    return { borderColor: style, backgroundColor: style }
+}
+
+/**
  * Initialize cartesian chart (line, bar, area)
  */
 export function initCartesianChart(
@@ -540,6 +555,12 @@ export function initCartesianChart(
                 }
             },
             interaction: cartesianInteraction(chartData.xValues !== undefined),
+            // Lines break across long gaps in time (issue #185): the segment
+            // that crosses a gap is drawn and filled transparent. Read from the
+            // current chart data, so incremental updates move the breaks too
+            ...(chartJsType === 'line'
+                ? { datasets: { line: { segment: gapSegmentStyle(getChartData) } } }
+                : {}),
             plugins: {
                 legend: {
                     // Always show legend when there are multiple datasets (list

@@ -1925,6 +1925,8 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             vizConfig.target,
             vizConfig.valueFormat,
             vizConfig.outliers,
+            vizConfig.excludeOutliersFromAverage,
+            vizConfig.breakLineAcrossGaps,
             vizConfig.title,
             this.findPropertyDefinition(propertyId)?.polarity,
             hasListValues,
@@ -1967,6 +1969,36 @@ export class LifeTrackerView extends BasesView implements FileProvider {
      * Handle menu action from context menu
      * Fetches fresh config from service to ensure actions use current state
      */
+    /**
+     * Store one card option. A card still showing a preset gets its own config
+     * first, created from the preset, like the other card options
+     */
+    private updateCardOption(
+        propertyId: BasesPropertyId,
+        visualizationId: string,
+        displayName: string,
+        isFromPreset: boolean,
+        updates: Partial<Omit<ColumnVisualizationConfig, 'id' | 'propertyId'>>
+    ): void {
+        if (isFromPreset) {
+            const preset = this.columnConfigService.findMatchingPreset(propertyId)
+            if (preset) {
+                const newId = this.columnConfigService.saveColumnConfig(
+                    propertyId,
+                    preset.visualizationType,
+                    displayName,
+                    preset.scale,
+                    preset.colorScheme,
+                    preset.referenceLine
+                )
+                this.columnConfigService.updateVisualizationConfig(propertyId, newId, updates)
+            }
+        } else {
+            this.columnConfigService.updateVisualizationConfig(propertyId, visualizationId, updates)
+        }
+        this.applyConfigChange(propertyId, visualizationId, displayName)
+    }
+
     private handleCardMenuAction(
         action: CardMenuAction,
         propertyId: BasesPropertyId,
@@ -2254,6 +2286,20 @@ export class LifeTrackerView extends BasesView implements FileProvider {
                     )
                 }
                 this.applyConfigChange(propertyId, visualizationId, displayName)
+                break
+
+            case 'configureExcludeOutliersFromAverage':
+                // Off is the default: store only `true`
+                this.updateCardOption(propertyId, visualizationId, displayName, isFromPreset, {
+                    excludeOutliersFromAverage: action.excludeOutliersFromAverage || undefined
+                })
+                break
+
+            case 'configureBreakLineAcrossGaps':
+                // On is the default (absent): store only `false`
+                this.updateCardOption(propertyId, visualizationId, displayName, isFromPreset, {
+                    breakLineAcrossGaps: action.breakLineAcrossGaps ? undefined : false
+                })
                 break
 
             case 'configureTarget':

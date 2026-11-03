@@ -115,6 +115,16 @@ export interface ChartData {
     xValues?: number[]
     /** Notes left out because they have no date anchor (date-per-note axis) */
     skippedWithoutDate?: number
+    /**
+     * Epoch-ms start of each period on the period axis, so gaps in time can
+     * be found on a category axis that does not show them (issue #185)
+     */
+    periodTimes?: number[]
+    /**
+     * Per point, whether the line breaks before it because the previous point
+     * is too far away in time (issue #185). Absent: the line never breaks
+     */
+    gapBreaks?: boolean[]
 }
 
 /**
@@ -363,14 +373,7 @@ export interface HeatmapConfig extends VisualizationConfig {
  * Supported Chart.js chart types
  */
 export type ChartJsType =
-    | 'line'
-    | 'bar'
-    | 'pie'
-    | 'doughnut'
-    | 'radar'
-    | 'polarArea'
-    | 'scatter'
-    | 'bubble'
+    'line' | 'bar' | 'pie' | 'doughnut' | 'radar' | 'polarArea' | 'scatter' | 'bubble'
 
 /**
  * Chart-specific configuration
@@ -413,6 +416,16 @@ export interface ChartConfig extends VisualizationConfig {
     target?: TargetConfig
     /** Whether outliers may set the auto-scaled y-axis (3.4.0; absent = fit) */
     outliers?: OutlierMode
+    /**
+     * Compute the moving average and the trend without the outliers (issue
+     * #186; absent = off)
+     */
+    excludeOutliersFromAverage?: boolean
+    /**
+     * Break line and area charts on a date axis across long gaps (issue #185;
+     * absent = on)
+     */
+    breakLineAcrossGaps?: boolean
 }
 
 /**

@@ -228,3 +228,55 @@ describe('getVisualizationConfig - value format (3.4.0)', () => {
         expect(lineConfig(undefined).valueFormat).toBeUndefined()
     })
 })
+
+describe('getVisualizationConfig - gap breaks and outliers in the average (issues #185, #186)', () => {
+    function chartConfigFor(
+        type: VisualizationType,
+        overrides: Partial<ColumnVisualizationConfig> = {}
+    ): ChartConfig {
+        return getVisualizationConfig(
+            type,
+            { ...columnConfig(), visualizationType: type, ...overrides },
+            configGetter()
+        ) as ChartConfig
+    }
+
+    test('a card saved before the options breaks its line and keeps outliers in the average', () => {
+        const config = chartConfigFor(VisualizationType.LineChart)
+        expect(config.breakLineAcrossGaps).toBe(true)
+        expect(config.excludeOutliersFromAverage).toBe(false)
+    })
+
+    test('a stored false turns gap breaks off, on area charts too', () => {
+        expect(
+            chartConfigFor(VisualizationType.AreaChart, { breakLineAcrossGaps: false })
+                .breakLineAcrossGaps
+        ).toBe(false)
+    })
+
+    test('only a real true leaves outliers out of the average', () => {
+        expect(
+            chartConfigFor(VisualizationType.LineChart, { excludeOutliersFromAverage: true })
+                .excludeOutliersFromAverage
+        ).toBe(true)
+        // A hand-edited .base file can hold any value
+        const handEdited = Object.assign(columnConfig(), {
+            visualizationType: VisualizationType.LineChart,
+            excludeOutliersFromAverage: 'yes'
+        })
+        const config = getVisualizationConfig(
+            VisualizationType.LineChart,
+            handEdited,
+            configGetter()
+        ) as ChartConfig
+        expect(config.excludeOutliersFromAverage).toBe(false)
+    })
+
+    test('bar charts take the outlier exclusion (trend) but have no line to break', () => {
+        const config = chartConfigFor(VisualizationType.BarChart, {
+            excludeOutliersFromAverage: true
+        })
+        expect(config.excludeOutliersFromAverage).toBe(true)
+        expect(config.breakLineAcrossGaps).toBeUndefined()
+    })
+})
