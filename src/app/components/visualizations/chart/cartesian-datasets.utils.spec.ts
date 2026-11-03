@@ -2,7 +2,9 @@ import { describe, expect, test } from 'bun:test'
 import type { BasesPropertyId } from 'obsidian'
 import {
     buildCartesianModel,
+    datasetsToggledWith,
     densePointStyle,
+    syncDatasetFromModel,
     isOutlierMarkerDataset,
     MOVING_AVERAGE_LINE_WIDTH,
     OUTLIER_MARKER_RADIUS,
@@ -244,5 +246,66 @@ describe('moving average emphasis (3.4.0)', () => {
         expect(raw.borderWidth).toBe(2)
         expect(raw.fill).toBe(true)
         expect(raw.order).toBeUndefined()
+    })
+})
+
+describe('incremental updates (3.4.0)', () => {
+    const durationLine = { ...lineConfig, valueFormat: 'duration-mm-ss' } as ChartConfig
+    const base = [372, 380, 385, 390, 377, 383, 395, 388, 383, 379, 391]
+
+    test('a marker that changes side gets its new direction', () => {
+        const above = [...base]
+        above[5] = 49997
+        const below = [...base]
+        below[5] = 3
+        const before = buildCartesianModel(chartData(series(above)), durationLine, undefined)
+        const after = buildCartesianModel(chartData(series(below)), durationLine, undefined)
+
+        // What the chart holds: a copy of the first render's marker dataset
+        const shown = { ...before.datasets[1]! }
+        expect((shown.pointRotation as number[])[5]).toBe(0)
+        syncDatasetFromModel(shown, after.datasets[1]!)
+        expect((shown.pointRotation as number[])[5]).toBe(180)
+        expect(shown.data).toEqual(after.datasets[1]!.data)
+    })
+
+    test('a marker that moves to another note follows it', () => {
+        const first = [...base]
+        first[2] = 49997
+        const second = [...base]
+        second[8] = 49997
+        const before = buildCartesianModel(chartData(series(first)), durationLine, undefined)
+        const after = buildCartesianModel(chartData(series(second)), durationLine, undefined)
+        const shown = { ...before.datasets[1]! }
+        syncDatasetFromModel(shown, after.datasets[1]!)
+        const data = shown.data as (number | null)[]
+        expect(data[2]).toBeNull()
+        expect(data[8]).not.toBeNull()
+    })
+
+    test('markers come back when a series drops to 40 points or fewer', () => {
+        const dense = Array.from({ length: 50 }, (_, i) => 380 + (i % 10))
+        const sparse = dense.slice(0, 30)
+        const before = buildCartesianModel(chartData(series(dense)), lineConfig, undefined)
+        const after = buildCartesianModel(chartData(series(sparse)), lineConfig, undefined)
+        const shown: Record<string, unknown> = { ...before.datasets[0]! }
+        expect(shown['pointRadius']).toBe(0)
+        syncDatasetFromModel(shown, after.datasets[0]!)
+        expect('pointRadius' in shown).toBe(false)
+        expect('pointHitRadius' in shown).toBe(false)
+    })
+})
+
+describe('datasetsToggledWith (3.4.0)', () => {
+    test('a series toggles with its own outlier markers only', () => {
+        const datasets = [
+            { label: 'A' },
+            { label: 'B' },
+            { label: 'A (outside the scale)', ltOutlierMarkerFor: 0 },
+            { label: 'B (outside the scale)', ltOutlierMarkerFor: 1 }
+        ]
+        expect(datasetsToggledWith(datasets, 0)).toEqual([0, 2])
+        expect(datasetsToggledWith(datasets, 1)).toEqual([1, 3])
+        expect(datasetsToggledWith([{ label: 'A' }], 0)).toEqual([0])
     })
 })

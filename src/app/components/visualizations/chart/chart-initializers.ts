@@ -32,6 +32,7 @@ import { areAllValuesIntegers, formatMetricValue, stripNoteTypeSuffix } from './
 import { formatHoursAsTime } from '../../../services/range-aggregation.utils'
 import {
     DENSE_SERIES_POINT_THRESHOLD,
+    datasetsToggledWith,
     isOutlierMarkerDataset,
     type CartesianModel
 } from './cartesian-datasets.utils'
@@ -545,6 +546,17 @@ export function initCartesianChart(
                     labels: {
                         filter: (item, data): boolean =>
                             !isOutlierMarkerDataset(data.datasets[item.datasetIndex ?? -1])
+                    },
+                    // Hiding a series hides its outlier markers with it (3.4.0)
+                    onClick: (_event, item, legend): void => {
+                        const index = item.datasetIndex
+                        if (index === undefined) return
+                        const chart = legend.chart
+                        const visible = !chart.isDatasetVisible(index)
+                        for (const i of datasetsToggledWith(chart.data.datasets, index)) {
+                            chart.setDatasetVisibility(i, visible)
+                        }
+                        chart.update()
                     }
                 },
                 tooltip: {

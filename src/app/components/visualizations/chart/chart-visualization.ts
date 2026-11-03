@@ -39,6 +39,7 @@ import { timeAxisBounds, timeAxisRange } from './time-axis.utils'
 import {
     buildCartesianModel,
     isOutlierMarkerDataset,
+    syncDatasetFromModel,
     type CartesianModel
 } from './cartesian-datasets.utils'
 import {
@@ -893,15 +894,21 @@ export class ChartVisualization extends BaseVisualization {
         this.chart!.data.labels = newChartData.labels
 
         // Update all datasets (supports multiple datasets for list data)
-        const nextDatasets: { data: unknown[]; label: string }[] =
-            model?.datasets ?? newChartData.datasets
-        nextDatasets.forEach((newDataset, i) => {
-            const chartDataset = this.chart!.data.datasets[i]
-            if (chartDataset) {
-                chartDataset.data = newDataset.data as typeof chartDataset.data
-                chartDataset.label = newDataset.label
-            }
-        })
+        if (model) {
+            // Markers and point radii follow the data (3.4.0): copy them too
+            model.datasets.forEach((newDataset, i) => {
+                const chartDataset = this.chart!.data.datasets[i]
+                if (chartDataset) syncDatasetFromModel(chartDataset, newDataset)
+            })
+        } else {
+            newChartData.datasets.forEach((newDataset, i) => {
+                const chartDataset = this.chart!.data.datasets[i]
+                if (chartDataset) {
+                    chartDataset.data = newDataset.data
+                    chartDataset.label = newDataset.label
+                }
+            })
+        }
 
         // A cumulative target line depends on the period count (issue #158),
         // so the annotations and the bounds that keep them visible must track

@@ -233,3 +233,51 @@ export function buildCartesianModel(
 
     return { datasets, yPlan, beginAtZero }
 }
+
+/**
+ * Dataset options that follow the data, so an incremental update must copy
+ * them along with it: marker positions and directions shift with the clamped
+ * points, and the 40-point marker rule flips as notes are added or removed.
+ */
+const DATA_DEPENDENT_KEYS = [
+    'data',
+    'label',
+    'pointRotation',
+    'pointRadius',
+    'pointHoverRadius',
+    'pointHitRadius'
+] as const
+
+/**
+ * Copy the data-dependent options of a freshly built dataset onto the one the
+ * chart already shows. An option the new dataset leaves unset is removed, so
+ * Chart.js falls back to its default (markers come back below 40 points).
+ */
+export function syncDatasetFromModel(target: object, source: ChartDatasetConfig): void {
+    const writable = target as Record<string, unknown>
+    for (const key of DATA_DEPENDENT_KEYS) {
+        const value = source[key]
+        if (value === undefined) {
+            delete writable[key]
+        } else {
+            writable[key] = value
+        }
+    }
+}
+
+/**
+ * Datasets a legend click on `index` shows or hides: the series and its
+ * outlier markers, which would otherwise linger over a hidden series
+ */
+export function datasetsToggledWith(datasets: readonly unknown[], index: number): number[] {
+    const indices = [index]
+    datasets.forEach((dataset, i) => {
+        if (
+            isOutlierMarkerDataset(dataset) &&
+            (dataset as { ltOutlierMarkerFor?: number }).ltOutlierMarkerFor === index
+        ) {
+            indices.push(i)
+        }
+    })
+    return indices
+}
