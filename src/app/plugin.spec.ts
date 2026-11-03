@@ -115,3 +115,59 @@ describe('loading capture targets', () => {
         expect(squats && 'captureTargetId' in squats).toBe(false)
     })
 })
+
+describe('unloaded while loading (review #6)', () => {
+    test('nothing is registered when the plugin was unloaded during the settings load', async () => {
+        let releaseLoad: (data: unknown) => void = () => undefined
+        const app = {
+            workspace: {
+                onLayoutReady: (): void => undefined,
+                detachLeavesOfType: (): void => undefined
+            }
+        }
+        const plugin = new LifeTrackerPlugin(
+            app as never,
+            {
+                id: 'life-tracker',
+                name: 'Life Tracker',
+                version: '3.3.0'
+            } as never
+        )
+        const registered: string[] = []
+        const record = (name: string) => (): unknown => {
+            registered.push(name)
+            return true
+        }
+        Object.assign(plugin, {
+            registerView: (): void => undefined,
+            register: (): void => undefined,
+            registerBasesView: record('registerBasesView'),
+            addSettingTab: record('addSettingTab'),
+            addCommand: record('addCommand'),
+            addRibbonIcon: record('addRibbonIcon'),
+            registerObsidianProtocolHandler: record('registerObsidianProtocolHandler')
+        })
+        plugin.loadData = () =>
+            new Promise((resolve) => {
+                releaseLoad = resolve
+            })
+
+        const loading = plugin.onload()
+        plugin.onunload()
+        releaseLoad({})
+        await loading
+
+        expect(registered).toEqual([])
+    })
+})
+
+describe('malformed property definitions (review #12)', () => {
+    test('a null or non-object entry does not stop the settings from loading', async () => {
+        const { plugin } = await createPlugin({
+            propertyDefinitions: [null, 'junk', { ...definition('mood'), captureTargetId: 7 }]
+        })
+        expect(plugin.settings.propertyDefinitions).toHaveLength(3)
+        const mood = plugin.settings.propertyDefinitions[2]
+        expect(mood && 'captureTargetId' in mood).toBe(false)
+    })
+})

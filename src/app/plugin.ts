@@ -28,6 +28,9 @@ import { syncCaptureTargetCommands } from './commands/capture-target-commands'
 import { StarterKitService } from './services/starter-kit.service'
 import { syncLinkedDefinitions } from './services/starter-kit.utils'
 
+/** How long settings must stay still before the per-target commands re-sync */
+const COMMAND_SYNC_DEBOUNCE_MS = 500
+
 export class LifeTrackerPlugin extends Plugin {
     /**
      * The plugin settings.
@@ -126,6 +129,16 @@ export class LifeTrackerPlugin extends Plugin {
         log('Initializing', 'debug')
         await this.loadSettings()
 
+        // The plugin may have been unloaded while settings were loading (hot
+        // reload, a quick disable). Registering now would attach views,
+        // commands and the obsidian:// handler to an unloaded component that
+        // never cleans them up, and the next enable fails with "Action
+        // life-tracker-quick-add is already registered".
+        if (this.unloaded) {
+            log('Unloaded while loading settings; skipping registration', 'debug')
+            return
+        }
+
         // Register the Life Tracker Base View
         const registered = this.registerBasesView(LIFE_TRACKER_VIEW_TYPE, {
             name: 'Life Tracker',
@@ -162,10 +175,11 @@ export class LifeTrackerPlugin extends Plugin {
         // Register commands
         registerCommands(this)
         // One "Capture today: <target>" per capture target, kept in step with
-        // the settings (targets added, renamed or removed)
+        // the settings (targets added, renamed or removed). Debounced: the
+        // target name field saves on every keystroke
         syncCaptureTargetCommands(this)
         this.onSettingsChange(() => {
-            syncCaptureTargetCommands(this)
+            this.scheduleCommandSync()
         })
 
         // Refresh Starter Kit-linked definitions once every plugin has loaded:
@@ -206,7 +220,25 @@ export class LifeTrackerPlugin extends Plugin {
         return true
     }
 
-    override onunload() {}
+    /** Set by `onunload`, so an `onload` still awaiting settings stops there */
+    private unloaded = false
+
+    /** Pending debounced command sync, 0 when none */
+    private commandSyncTimer = 0
+
+    /** Re-sync the per-target commands once settings stop changing */
+    private scheduleCommandSync(): void {
+        window.clearTimeout(this.commandSyncTimer)
+        this.commandSyncTimer = window.setTimeout(() => {
+            this.commandSyncTimer = 0
+            if (!this.unloaded) syncCaptureTargetCommands(this)
+        }, COMMAND_SYNC_DEBOUNCE_MS)
+    }
+
+    override onunload() {
+        this.unloaded = true
+        window.clearTimeout(this.commandSyncTimer)
+    }
 
     /**
      * Called by Obsidian when `data.json` changes on disk outside the app
@@ -441,6 +473,9 @@ export class LifeTrackerPlugin extends Plugin {
  * resolver. Definitions without the field are returned untouched.
  */
 function normalizeCaptureTargetId(definition: PropertyDefinition): PropertyDefinition {
+    // A hand-edited data.json can hold anything here (null, a string): `in`
+    // throws on those and would stop the plugin from loading
+    if (!definition || typeof definition !== 'object') return definition
     if (!('captureTargetId' in definition)) return definition
     if (typeof definition.captureTargetId === 'string') return definition
     const { captureTargetId: _ignored, ...rest } = definition
