@@ -1,0 +1,73 @@
+# Chart readability (3.4.0)
+
+Make cartesian cards readable on real data. Trigger: a running tracker over ~170
+session notes whose pace card (`pace_seconds_per_kilometer`, seconds) was
+unreadable: one bad value (49997) set the y-axis to 0–50,000, 170 overlapping
+markers, long rotated labels like `2025-06-24 (Running Session)`, and seconds
+instead of `6:27`. Cards configured with their own `displayName` all showed the
+property name.
+
+Status: implemented on `feat/chart-readability`; needs manual verification in a
+live vault (see Verification).
+
+## Features
+
+| #   | Feature                    | Config key (per card, `columnConfigs`)                   | Default                    |
+| --- | -------------------------- | -------------------------------------------------------- | -------------------------- |
+| 1   | Value format               | `valueFormat: number \| duration-mm-ss \| duration-h-mm` | `number` (absent)          |
+| 2   | Card titles                | existing `displayName`                                   | property display name      |
+| 3   | Outliers don't set scale   | `outliers: fit \| show-all`                              | `fit` (absent)             |
+| 4   | Date, one point per note   | `xAxisSource: date-per-note`                             | `date` (absent)            |
+| 5   | Note-name axis labels      | none                                                     | always on                  |
+| 6   | Point markers above 40 pts | none                                                     | always on                  |
+| 7   | Moving average emphasis    | existing `movingAveragePeriod`                           | only when an average is on |
+
+Overlays (`overlayConfigs`) also take `valueFormat` and `outliers`, set from the
+overlay edit modal.
+
+## Decisions
+
+| Question                                  | Decision                                                                                                                                                                                                                                                                |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where the format lives                    | Per visualization in the `.base` view config (portable). No plugin setting.                                                                                                                                                                                             |
+| Duration units                            | `duration-mm-ss`: value is seconds (330 → `5:30`, ≥ 3600 → `h:mm:ss`). `duration-h-mm`: value is minutes (95 → `1:35`). Rounded to the unit shown.                                                                                                                      |
+| Unformattable values                      | Negative or non-finite values fall back to the number format.                                                                                                                                                                                                           |
+| Duration ticks                            | Fixed step from a duration ladder (seconds: 1/2/5/10/15/30 s, 1/2/5/10/15/30 min, 1/2/3/6/12/24 h; minutes: 1/2/5/10/15/30 min, 1/2/3/6/12/24 h), at most 6 intervals.                                                                                                  |
+| Duration baseline                         | Line/area charts with a duration format fit the y-axis to the data instead of starting at 0 (a pace of 5:00–7:00 from 0:00 flattens every change). Bars always start at 0. Number-format cards keep starting at 0 (backward compatible). An explicit scale always wins. |
+| Where the format applies                  | y ticks, tooltips, moving average, reference line / target labels, progress ring numbers (sum/average/latest metrics only: count/days are counts), records, heatmap tooltip, discrete heatmap legend. Trend row keeps its percentage. CSV keeps raw numbers.            |
+| Card title                                | Card `displayName` when non-empty and not just the raw property name; else the property display name. Progress keeps its goal suffix after it. Exports use the title too.                                                                                               |
+| Outlier rule                              | Tukey fences Q1 − 3·IQR / Q3 + 3·IQR, per series, only with ≥ 8 points, IQR > 0, and when the fences exclude something. Linear-interpolated quartiles.                                                                                                                  |
+| Which series are fitted                   | Line/bar/area numeric series and each overlay series. Not list (0/1) data, not running totals (a cumulative series carries one jump into every later point), not the moving average.                                                                                    |
+| Axis when fitting                         | Range = bulk of every fitted series ∪ reference/target values ∪ 0 when the baseline is 0, rounded out to a nice step. Explicit `min`/`max`/`stepSize`.                                                                                                                  |
+| Clamped points                            | Plotted at the axis edge, plus a triangle marker (up above, down below) in an extra marker dataset (no legend, no tooltip row). The tooltip of the series shows the real value and "outside the scale".                                                                 |
+| Moving average / trend with outliers      | Computed on real values (not clamped). The average can leave the axis; Chart.js clips it.                                                                                                                                                                               |
+| Date-per-note axis                        | Linear x axis over timestamps (no Chart.js date adapter is bundled), date ticks built in `afterBuildTicks` (day/week/month/quarter/year units), horizontal, auto-skipped. Notes sorted by date anchor (stable).                                                         |
+| Date-per-note: notes without date / value | Skipped. The skipped-for-no-date count is shown in the trend row ("N notes without a date").                                                                                                                                                                            |
+| Date-per-note tooltip title               | `MMM d, yyyy · note name`.                                                                                                                                                                                                                                              |
+| Note-name labels                          | Tick labels strip one trailing `(…)` suffix; horizontal first, rotate up to 45°, auto-skip. Tooltip and CSV keep the full name.                                                                                                                                         |
+| Point markers                             | Hidden above 40 points per dataset on line/area (`pointRadius: 0`, hover radius 4, hit radius 8). Was 500.                                                                                                                                                              |
+| Moving average emphasis                   | Average: solid, 2.5 px, full color, drawn on top, first in legend/tooltip (`order`). Raw series: 1 px, 35% opacity, no fill, small faded points (hidden above 40). Click handling picks the first element that has notes, since `order` reorders elements.              |
+
+## Build sequence
+
+1. `ValueFormat` type + normalization, `src/utils/value-format.utils.ts` (+ spec): duration formatting, tick step ladder.
+2. Wire the format into chart ticks/tooltips/reference labels/records, heatmap tooltip/legend, progress ring; card menu + overlay modal + view action.
+3. `resolveCardTitle` (+ spec); view passes the card title to visualizations and exports.
+4. `src/app/services/outlier.utils.ts` (+ spec): quartiles, fences. `chart/y-axis-plan.utils.ts` (+ spec): range, nice step, clamping, outlier list.
+5. Cartesian dataset building in `chart/cartesian-datasets.utils.ts` (+ spec): marker datasets, point radius threshold, moving-average emphasis.
+6. Outlier menu option + overlay modal option; initial render and incremental update use the same plan.
+7. `aggregateForDatePerNoteChart` (+ spec), `chart/date-ticks.utils.ts` (+ spec), linear x axis, menu option, skipped count.
+8. `stripNoteTypeSuffix` (+ spec) on the note-name axis.
+9. Business rules, technical docs, README and `docs/`.
+
+## Verification (manual, in a vault)
+
+See the final checklist in the branch's report; the same list is kept here.
+
+- Pace card with `valueFormat: duration-mm-ss`: y ticks `5:00, 5:30, 6:00…`, tooltip `6:27`, record `Record: 5:12`, reference line label formatted.
+- Same card with the 49997 value: axis stays on the bulk, the outlier is a triangle at the top edge, tooltip shows `13:53:17 (outside the scale)`; `outliers: show-all` restores the full range.
+- `xAxisSource: date-per-note`: points spaced by date, short horizontal date labels, gaps visible, notes without a date counted in the trend row.
+- Note-name axis: `2025-06-24` labels, tooltip keeps `2025-06-24 (Running Session)`.
+- 170-point line: no markers until hover; a 20-point line keeps markers.
+- Moving average on: average solid and first in legend, raw thin and faded; clicking a point opens its note.
+- Three cards on one property with their own `displayName`: each shows its own title; progress keeps `· ≥ N days/week`.
