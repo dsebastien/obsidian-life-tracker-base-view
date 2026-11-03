@@ -1,5 +1,6 @@
 import { type TFile, parseFrontMatterTags, type CachedMetadata, type App } from 'obsidian'
 import type { PropertyDefinition, Mapping } from '../types'
+import { log } from '../../utils'
 
 /**
  * Service responsible for determining which property definitions apply to a file.
@@ -176,7 +177,7 @@ export function matchesMapping(subject: MappingSubject, mapping: Mapping): boole
                 const regex = new RegExp(mapping.value, 'i')
                 return regex.test(subject.path) || regex.test(subject.basename)
             } catch (e) {
-                console.error('Invalid regex pattern:', mapping.value, e)
+                log('Invalid regex in a note filter; it matches nothing', 'warn', mapping.value, e)
                 return false
             }
 
@@ -187,7 +188,7 @@ export function matchesMapping(subject: MappingSubject, mapping: Mapping): boole
         default: {
             // Exhaustive check
             const _exhaustive: never = mapping.type
-            console.error('Unknown mapping type:', _exhaustive)
+            log('Unknown note filter type; it matches nothing', 'warn', _exhaustive)
             return false
         }
     }

@@ -1,10 +1,10 @@
 // The `obsidian` package is type-only; its runtime stub is registered in
 // src/test-preload.ts (loaded via bunfig.toml [test] preload) so that value
 // imports like `parseFrontMatterTags` resolve without errors.
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 import type { App, CachedMetadata, TFile } from 'obsidian'
 import type { Mapping, PropertyDefinition } from '../types'
-import { PropertyRecognitionService } from './property-recognition.service'
+import { PropertyRecognitionService, matchesMapping } from './property-recognition.service'
 
 /**
  * Type alias used to cast structural mocks to TFile without triggering the
@@ -315,5 +315,23 @@ describe('PropertyRecognitionService', () => {
 
             expect(callCount).toBe(2)
         })
+    })
+})
+
+describe('matchesMapping logging (review #16)', () => {
+    test('an invalid regex matches nothing and goes through the plugin log, not console.error', () => {
+        const errorSpy = spyOn(console, 'error').mockImplementation(() => undefined)
+        const warnSpy = spyOn(console, 'warn').mockImplementation(() => undefined)
+        try {
+            const subject = { path: 'a.md', basename: 'a', folder: '', tags: [] }
+            expect(matchesMapping(subject, { type: 'regex', value: '([', enabled: true })).toBe(
+                false
+            )
+            expect(errorSpy).not.toHaveBeenCalled()
+            expect(String(warnSpy.mock.calls[0]?.[0])).toContain('Life Tracker:')
+        } finally {
+            errorSpy.mockRestore()
+            warnSpy.mockRestore()
+        }
     })
 })
