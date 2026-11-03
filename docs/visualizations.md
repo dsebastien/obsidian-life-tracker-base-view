@@ -195,7 +195,7 @@ Line, bar, and area charts normally group entries into time periods. The
   each one, and a three-week break shows as a three-week gap. Date labels are
   short, horizontal, and thinned out so they never overlap. Notes without a
   date can't be placed; the card says how many were left out ("3 notes without
-  a date"). Notes without a value are simply not drawn. Hover a point to see
+  a date"). Notes without a value are not drawn. Hover a point to see
   its date and note name; on this axis the tooltip shows the point nearest to
   the cursor. Bar charts get bars between 3 and 16 pixels wide.
 - **Note name**: one point per note, labeled with the note's name, in the
@@ -206,13 +206,13 @@ Line, bar, and area charts normally group entries into time periods. The
   (`2025-06-24 (Running Session)` reads `2025-06-24`), and labels are thinned
   out instead of overlapping. The tooltip keeps the full name.
 
-On both per-note axes there is no time grouping, so the Aggregation setting
-does not apply; the moving average, running total, and trend indicator operate
+On both per-note axes nothing is grouped by time, so the Aggregation setting
+does not apply. The moving average, running total, and trend indicator work
 over notes instead of periods (in date order on the date axis), and the trend
 row says so ("vs previous 7 notes"). With a running total, a goal target
-climbs over the time your notes span on the date axis; on the note-name axis,
-which has no time, the cumulative target is not drawn. List-valued
-properties keep the date axis.
+climbs over the time your notes span on the date axis. The note-name axis has
+no time, so it draws no cumulative target. List-valued properties keep the
+date axis.
 
 Export CSV on the **Date, one point per note** axis writes one row per note:
 its date, its full name, then the value.
@@ -235,8 +235,8 @@ A custom scale (**Custom...**) sets your own minimum and maximum.
 
 ### Outliers
 
-On line, bar, and area charts with **Auto-detect** scale, one far-off value no
-longer sets the whole axis. A pace of 49997 seconds among runs around 6:20
+On line, bar, and area charts with an **Auto-detect** scale, one far-off value
+no longer sets the whole axis. A pace of 49997 seconds among runs around 6:20
 used to stretch the axis to 50,000 and flatten every real run into a line at
 the bottom. Now the axis fits the bulk of your data, and values far outside it
 are drawn at the edge of the axis with a small triangle (pointing up for a
@@ -261,11 +261,14 @@ Some values are durations stored as plain numbers: a pace in seconds per
 kilometer, sleep in minutes. Set **Value format** in the card's right-click menu
 to read them as times:
 
-| Value format              | Stored value | Shown as             |
-| ------------------------- | ------------ | -------------------- |
-| Number (default)          | 387          | 387                  |
-| Duration: seconds as m:ss | 387          | 6:27 (1:02:05 ≥ 1 h) |
-| Duration: minutes as h:mm | 95           | 1:35                 |
+| Value format              | Stored value | Shown as |
+| ------------------------- | ------------ | -------- |
+| Number (default)          | 387          | 387      |
+| Duration: seconds as m:ss | 387          | 6:27     |
+| Duration: seconds as m:ss | 3725         | 1:02:05  |
+| Duration: minutes as h:mm | 95           | 1:35     |
+
+From one hour on, seconds read as `h:mm:ss`.
 
 The format applies everywhere the card shows a value: axis ticks (which land
 on round times such as 5:00, 5:30, 6:00), tooltips, the moving average,
@@ -292,13 +295,14 @@ Base.
 
 A card shows its property's name. When several cards show the same property
 (a "Run days" heatmap, a progress ring, and a "Distance per run (km)" chart),
-give each its own title: right-click the card, choose **Card title…**, type
-the title and select **Apply**. Leave the field empty to show the property's
-name again. The title is saved as `title` on that card in the `.base` file.
+they all carry that one name. Give each its own title: right-click the card,
+choose **Card title…**, type the title and select **Apply**. Leave the field
+empty to show the property's name again. The title is saved as `title` on that
+card in the `.base` file.
 
 The title is used everywhere the card shows its name, including maximized mode
 and export file names, and a progress ring adds its goal after it ("Run days ·
-≥ 3 days/week"). Overlay charts keep the name you give them in the overlay
+≥ 3/week"). Overlay charts keep the name you give them in the overlay
 editor.
 
 ## Color Schemes

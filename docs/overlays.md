@@ -35,7 +35,7 @@ Right-click the overlay card and select **Edit overlay** to:
 - Add or remove properties
 - Configure reference lines per property
 - Toggle individual visualization hiding
-- Choose a **Value format** (number, or a duration read from seconds or minutes) for the axis and tooltips
+- Choose a **Value format**: a number, or a duration read from seconds (`m:ss`) or minutes (`h:mm`), for the axis and tooltips
 - Choose how **Outliers** are handled: fit the scale to the bulk of the data (default) or show all values
 
 Changes show as soon as you save the overlay.

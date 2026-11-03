@@ -25,11 +25,11 @@ You can find more details and background information here: https://www.knowii.ne
 - **Multiple visualizations per property**: add multiple visualization cards for the same property to compare different chart types or configurations side by side
 - **Overlay charts**: combine multiple properties on a single chart to visualize correlations (e.g., sleep vs mood, exercise vs energy), with option to hide individual property cards
 - **Range charts**: plot a start-to-end span per period from two properties — sleep from "To Bed" to "Wake Up", work hours, or any numeric range — with a clock-time axis that handles spans crossing midnight
-- **X-axis source**: line, bar, and area charts can plot one point per note (labeled with the note name, in the view's sort order) instead of grouping by date — ideal for Bases of books, projects, or people. Long note names lose their trailing type suffix on the axis (`2025-06-24 (Running Session)` reads `2025-06-24`) and labels no longer overlap
-- **Date, one point per note**: plot every note at its own date on a time-proportional axis, without grouping by period — two runs on one day are two points, and a three-week break shows as a gap
-- **Value format**: show a card's values as durations — seconds as `m:ss` (a pace of 387 reads `6:27`) or minutes as `h:mm` (95 minutes of sleep reads `1:35`) — on the axis, tooltips, records, reference lines and progress rings
-- **Outliers don't flatten your charts**: one mistyped value no longer sets the scale; line, bar, and area charts fit their axis to the bulk of your data and mark the far-off values at the edge, with the real value in the tooltip
-- **Card titles**: give a card its own title from its right-click menu (**Card title…**), so several cards on one property stay distinguishable
+- **X-axis source**: line, bar, and area charts can plot one point per note (labeled with the note name, in the view's sort order) instead of grouping by date — ideal for Bases of books, projects, or people. The axis leaves off a trailing type suffix (`2025-06-24 (Running Session)` reads `2025-06-24`), and its labels never overlap
+- **Date, one point per note**: plot every note at its own date, on an axis where distance is time, without grouping by period. Two runs on one day are two points, and a three-week break shows as a three-week gap
+- **Value format**: read durations as times. Seconds show as `m:ss` (a pace of 387 reads `6:27`), minutes as `h:mm` (95 minutes of sleep reads `1:35`), on the axis, in tooltips, records, reference lines and progress rings
+- **Outliers don't flatten your charts**: one mistyped value no longer sets the scale. Line, bar, and area charts fit their axis to the bulk of your data and draw far-off values at the edge with a small triangle; the tooltip shows the real value
+- **Card titles**: give a card its own title from its right-click menu (**Card title…**), so several cards on one property don't all show the same name
 - **List property visualization**: list/tag properties automatically visualized with occurrence counts (pie/doughnut) or presence tracking over time (line/bar)
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
 - **First day of the week**: choose Monday (default), Sunday or Saturday for week grouping and heatmap columns

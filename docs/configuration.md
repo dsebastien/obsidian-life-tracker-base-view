@@ -245,9 +245,10 @@ Stored per view, per visualization. Access via right-click context menu.
 | Aggregation     | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps   |
 | Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                  |
 | Running total   | Off (default) or Enabled — plots the cumulative total; line and area charts only |
-| X-axis          | Date (default), Date, one point per note, or Note name; line, bar, area charts   |
-| Value format    | Number (default), seconds as m:ss, or minutes as h:mm (durations)                |
+| X-axis          | Date (default), "Date, one point per note", or Note name; line, bar, area charts |
+| Value format    | Number (default), seconds as m:ss, or minutes as h:mm                            |
 | Outliers        | Fit the scale to the bulk (default) or Show all values; line, bar, area charts   |
+| Card title      | Your own title for the card; empty shows the property name                       |
 | Heatmap options | Cell size, day/month labels (heatmap only)                                       |
 
 Aggregation also applies to overlay charts (set in the overlay's own config,
@@ -281,6 +282,9 @@ columnConfigs:
 
 Leave a key out to keep its default. An unknown value is ignored. Overlays
 (`overlayConfigs`) accept `valueFormat` and `outliers` too.
+
+`displayName` is written on every card automatically, and the card doesn't
+show it. To name a card, set `title` (or use **Card title…**).
 
 ## Overlay Config
 
