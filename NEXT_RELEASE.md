@@ -25,7 +25,9 @@ This release adds **capture targets** for that.
 - No note yet? With **Create missing notes when capturing** on, the plugin asks
   first, then creates it from its template. If the file name is taken, it picks
   the next free one (`2026-11-03 2 (Strength Session)`). It then writes the
-  date, the match filter values and the tags, even without Templater.
+  date, the match filter values and the tags, even without Templater. Because
+  the note is dated by its date property, the plugin does not warn that it
+  will not appear in your views.
 - "Capture today" now lists only the properties that go to the daily note.
 
 No capture targets? Then nothing changes for you.
@@ -69,11 +71,12 @@ change.
 - Notes created from a Starter Kit note type keep the spaces of the name
   prefix and suffix: `2026-11-03 (Strength Session)`, not
   `2026-11-03(Strength Session)`.
-- No false "this note will not appear in your views" warning for session
-  notes. That check only looks at the file name, and
-  `2026-11-03 (Strength Session)` has no date it can read. A note created for a
-  capture target with a date property is dated by that property, so the check
-  is skipped.
+- A daily note created from its template could lose the values captured
+  right after it was created: Templater could process the new note a second
+  time and overwrite them. The plugin now keeps Templater away from a note it
+  has just created.
+- Turning the plugin off and on again quickly (or a hot reload) could fail
+  with "Action life-tracker-quick-add is already registered". Fixed.
 - The documentation was wrong about dates. With a **Date anchor** property set
   in a view, that property comes first, before the file name. The plugin
   already worked that way; the docs now say so.
