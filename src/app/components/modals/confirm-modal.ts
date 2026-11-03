@@ -9,6 +9,9 @@ import { App, Modal, Setting } from 'obsidian'
  * close otherwise.
  */
 export class ConfirmModal extends Modal {
+    /** Whether the confirm button was used, so closing is not a cancel */
+    private confirmed = false
+
     constructor(
         app: App,
         private message: string,
@@ -18,6 +21,8 @@ export class ConfirmModal extends Modal {
             confirmText?: string
             cancelText?: string
             destructive?: boolean
+            /** Called when the modal closes without confirming */
+            onCancel?: () => void
         } = {}
     ) {
         super(app)
@@ -47,6 +52,7 @@ export class ConfirmModal extends Modal {
                     btn.setCta()
                 }
                 btn.onClick(() => {
+                    this.confirmed = true
                     this.onConfirm()
                     this.close()
                 })
@@ -55,5 +61,6 @@ export class ConfirmModal extends Modal {
 
     override onClose(): void {
         this.contentEl.empty()
+        if (!this.confirmed) this.options.onCancel?.()
     }
 }

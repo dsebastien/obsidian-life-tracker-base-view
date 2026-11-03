@@ -80,6 +80,8 @@ void mock.module('obsidian', () => ({
     TFolder: Stub,
     Value: Stub,
     base64ToArrayBuffer: () => new ArrayBuffer(0),
+    getFrontMatterInfo: () => ({ exists: false, frontmatter: '', from: 0, to: 0, contentStart: 0 }),
+    parseYaml: (): unknown => null,
     setIcon: () => undefined,
 
     /**

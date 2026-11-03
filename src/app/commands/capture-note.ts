@@ -1,25 +1,55 @@
-import { Notice, type App, type TFile } from 'obsidian'
+import { Notice, getFrontMatterInfo, parseYaml, type TFile } from 'obsidian'
 import type { LifeTrackerPlugin } from '../plugin'
 import type { CaptureTarget } from '../types'
 import { ConfirmModal } from '../components/modals/confirm-modal'
 import { CaptureTargetService, type TargetCreationPlan } from '../services/capture-target.service'
 import { NoteCreationService } from '../services/note-creation.service'
+import { InFlight } from '../services/in-flight.utils'
+import { waitForCache } from '../services/metadata-wait.utils'
 import { findDailyNote, offerToCreateDailyNote } from './daily-note'
 import { formatDateISO, isSameDay, log } from '../../utils'
 
 /**
- * How long to wait for the metadata cache to index the values written into a
+ * How long to wait for the metadata cache to show the values written into a
  * new target note. Without the wait, a capture opened at once would see a note
  * without its tags and report "No matching properties" (see the same bound in
  * `NoteCreationService`).
  */
 const INDEX_TIMEOUT_MS = 3000
 
+/**
+ * Called with the destination's note. `created` is true when the note was
+ * created for this request (it may not be fully indexed by the cache yet).
+ */
+export type CaptureNoteReady = (file: TFile, created: boolean) => void
+
+/**
+ * Creations in progress, per target and day: a second quick-add tap while the
+ * first one's note is being created joins it instead of creating `… 3`.
+ */
+const creations = new InFlight<TFile | null>()
+
+/** Frontmatter of a note's text, or null; for lookups that bypass the cache */
+function parseFrontmatter(content: string): Record<string, unknown> | null {
+    const info = getFrontMatterInfo(content)
+    if (!info.exists) return null
+    try {
+        const parsed: unknown = parseYaml(info.frontmatter)
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+            ? (parsed as Record<string, unknown>)
+            : null
+    } catch {
+        return null
+    }
+}
+
 /** The capture target service bound to the plugin's vault and Starter Kit */
 export function createCaptureTargetService(plugin: LifeTrackerPlugin): CaptureTargetService<TFile> {
-    return new CaptureTargetService<TFile>(plugin.app, (id) => {
-        return plugin.starterKit.listNoteTypes().find((noteType) => noteType.id === id) ?? null
-    })
+    return new CaptureTargetService<TFile>(
+        plugin.app,
+        (id) => plugin.starterKit.listNoteTypes().find((noteType) => noteType.id === id) ?? null,
+        parseFrontmatter
+    )
 }
 
 /** Name of a destination for titles and notices */
@@ -34,7 +64,8 @@ function describeDay(date: Date): string {
 
 /**
  * The note captured values of a destination go to for a date: the daily
- * note (null target), or the capture target's note.
+ * note (null target), or the capture target's note. Reads the metadata cache
+ * only, so it is fast enough for rendering.
  */
 export function findCaptureNote(
     plugin: LifeTrackerPlugin,
@@ -47,16 +78,26 @@ export function findCaptureNote(
 
 /**
  * Offer to create a destination's note for a date, then hand it to `onReady`.
- * Same opt-in and confirmation as daily notes (issue #160).
+ * Same opt-in and confirmation as daily notes (issue #160). While a creation
+ * for the same target and day is pending, a second request joins it.
  */
 export function offerToCreateCaptureNote(
     plugin: LifeTrackerPlugin,
     target: CaptureTarget | null,
     date: Date,
-    onReady: (file: TFile) => void
+    onReady: CaptureNoteReady
 ): void {
     if (!target) {
-        offerToCreateDailyNote(plugin, date, onReady)
+        offerToCreateDailyNote(plugin, date, (file) => onReady(file, true))
+        return
+    }
+
+    const key = `${target.id}|${formatDateISO(date)}`
+    const pending = creations.get(key)
+    if (pending) {
+        void pending.then((file) => {
+            if (file) onReady(file, true)
+        })
         return
     }
 
@@ -83,27 +124,35 @@ export function offerToCreateCaptureNote(
         ? `\n\nHeads up: this target has no date property and Life Tracker cannot read the date from this file name, so the note will not appear in your views. Set a date property on the target.`
         : ''
 
-    new ConfirmModal(
-        plugin.app,
-        `No "${name}" note exists for ${day}. Create it at ${plan.resolution.target.path}?${warning}`,
-        () => {
-            void createTargetNote(plugin, service, target, date, plan).then((file) => {
-                if (file) onReady(file)
+    const creation = creations.run(
+        key,
+        () =>
+            new Promise<TFile | null>((resolve) => {
+                new ConfirmModal(
+                    plugin.app,
+                    `No "${name}" note exists for ${day}. Create it at ${plan.resolution.target.path}?${warning}`,
+                    () => {
+                        void createTargetNote(plugin, service, target, date, plan).then(resolve)
+                    },
+                    {
+                        title:
+                            day === 'today'
+                                ? `Create today's "${name}" note`
+                                : `Create the "${name}" note for ${day}`,
+                        confirmText: 'Create',
+                        onCancel: () => resolve(null)
+                    }
+                ).open()
             })
-        },
-        {
-            title:
-                day === 'today'
-                    ? `Create today's "${name}" note`
-                    : `Create the "${name}" note for ${day}`,
-            confirmText: 'Create'
-        }
-    ).open()
+    )
+    void creation.then((file) => {
+        if (file) onReady(file, true)
+    })
 }
 
 /**
  * Create the planned note, write the target's values into it and wait for the
- * cache to see them. Null (with a notice) on any failure.
+ * cache to show them. Null (with a notice) on any failure.
  */
 async function createTargetNote(
     plugin: LifeTrackerPlugin,
@@ -113,7 +162,11 @@ async function createTargetNote(
     plan: TargetCreationPlan
 ): Promise<TFile | null> {
     const expectedPath = plan.resolution.target.path
-    const outcome = await new NoteCreationService(plugin.app).ensureNote(plan.resolution)
+    // The target's template is applied by the plugin, never left to a
+    // Templater folder template (which could be a note type picker)
+    const outcome = await new NoteCreationService(plugin.app).ensureNote(plan.resolution, {
+        alwaysApplyTemplate: true
+    })
     if (!outcome) {
         new Notice(`Could not create ${expectedPath}`)
         return null
@@ -131,7 +184,6 @@ async function createTargetNote(
         return null
     }
 
-    const indexed = waitForIndex(plugin.app, file.path)
     const written = await service.writeCreationValues(file, target, plan.layout, date)
     if (!written) {
         new Notice(
@@ -139,48 +191,44 @@ async function createTargetNote(
         )
         return null
     }
-    await indexed
+
+    // Wait for the cache to show the written values, not just for the next
+    // index of the path: that one can belong to an earlier write
+    const indexed = await waitForCache(
+        plugin.app.metadataCache,
+        file.path,
+        () => service.isIndexedAsTargetNote(file, target, date),
+        INDEX_TIMEOUT_MS
+    )
+    if (!indexed) {
+        log('The new target note was not indexed in time', 'debug', { path: file.path })
+    }
     return file
 }
 
 /**
- * Resolve once the metadata cache has re-indexed `path`, or after a timeout.
- * Started before the write so an index that lands quickly is not missed.
- */
-function waitForIndex(app: App, path: string): Promise<void> {
-    return new Promise<void>((resolve) => {
-        let settled = false
-        const finish = (): void => {
-            if (settled) return
-            settled = true
-            app.metadataCache.offref(eventRef)
-            window.clearTimeout(timer)
-            resolve()
-        }
-        const eventRef = app.metadataCache.on('changed', (changed) => {
-            if (changed.path === path) finish()
-        })
-        const timer = window.setTimeout(() => {
-            log('Timed out waiting for the new target note to be indexed', 'debug', { path })
-            finish()
-        }, INDEX_TIMEOUT_MS)
-    })
-}
-
-/**
  * Find a destination's note for a date, offering creation when it is missing,
- * then run `onReady` on it.
+ * then run `onReady` on it. For a target, a cache miss is checked against the
+ * disk before anything is offered, so a note the cache has not indexed yet is
+ * never created twice.
  */
 export function withCaptureNote(
     plugin: LifeTrackerPlugin,
     target: CaptureTarget | null,
     date: Date,
-    onReady: (file: TFile) => void
+    onReady: CaptureNoteReady
 ): void {
-    const file = findCaptureNote(plugin, target, date)
-    if (file) {
-        onReady(file)
+    if (!target) {
+        const file = findDailyNote(plugin, date)
+        if (file) onReady(file, false)
+        else offerToCreateCaptureNote(plugin, null, date, onReady)
         return
     }
-    offerToCreateCaptureNote(plugin, target, date, onReady)
+
+    void createCaptureTargetService(plugin)
+        .findNoteVerified(target, date)
+        .then((file) => {
+            if (file) onReady(file, false)
+            else offerToCreateCaptureNote(plugin, target, date, onReady)
+        })
 }

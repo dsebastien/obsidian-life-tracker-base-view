@@ -32,7 +32,10 @@ const TARGET: CaptureTarget = {
 const NOV_3 = new Date(2026, 10, 3)
 
 interface FakeFile extends TargetFileLike {
+    /** What the metadata cache holds */
     frontmatter: Record<string, unknown>
+    /** What is on disk, when it differs from the cache (a lagging index) */
+    disk?: Record<string, unknown>
 }
 
 function file(
@@ -79,7 +82,8 @@ function createHost(files: FakeFile[]): CaptureTargetHost<FakeFile> & { scanned:
                 )
                 return exists ? { children: childrenOf(path) } : null
             },
-            getFileByPath: (path) => files.find((f) => f.path === path) ?? null
+            getFileByPath: (path) => files.find((f) => f.path === path) ?? null,
+            read: (f) => Promise.resolve(JSON.stringify(f.disk ?? f.frontmatter))
         },
         metadataCache: {
             getFileCache: (f) => ({ frontmatter: f.frontmatter })
@@ -100,8 +104,18 @@ function service(files: FakeFile[]): {
     const host = createHost(files)
     return {
         host,
-        service: new CaptureTargetService(host, (id) => (id === TYPE_ID ? STRENGTH_TYPE : null))
+        service: new CaptureTargetService(
+            host,
+            (id) => (id === TYPE_ID ? STRENGTH_TYPE : null),
+            parseJson
+        )
     }
+}
+
+/** Test stand-in for frontmatter parsing: the fake disk holds JSON */
+function parseJson(content: string): Record<string, unknown> | null {
+    const parsed: unknown = JSON.parse(content)
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null
 }
 
 const STRENGTH_TAGS = { tags: ['zone/journal', 'type/session/sport/strength'] }
@@ -141,7 +155,9 @@ describe('findNote', () => {
     test('null when the folder does not exist or the type is unavailable', () => {
         expect(service([]).service.findNote(TARGET, NOV_3)).toBeNull()
         const host = createHost([])
-        expect(new CaptureTargetService(host, () => null).findNote(TARGET, NOV_3)).toBeNull()
+        expect(
+            new CaptureTargetService(host, () => null, parseJson).findNote(TARGET, NOV_3)
+        ).toBeNull()
     })
 })
 
@@ -219,9 +235,53 @@ describe('writeCreationValues', () => {
         const host = createHost([created])
         host.fileManager.processFrontMatter = (): Promise<void> =>
             Promise.reject(new Error('locked'))
-        const s = new CaptureTargetService(host, () => STRENGTH_TYPE)
+        const s = new CaptureTargetService(host, () => STRENGTH_TYPE, parseJson)
         const plan = s.planCreation(TARGET, NOV_3)
         if (!plan.ok) throw new Error('expected a plan')
         expect(await s.writeCreationValues(created, TARGET, plan.plan.layout, NOV_3)).toBe(false)
+    })
+})
+
+describe('a note the cache has not indexed yet (vault bug: a second note offered)', () => {
+    const THROUGH = {
+        ...STRENGTH_TAGS,
+        date: '2030-01-02',
+        workout_kind: 'Through the day'
+    }
+    const JAN_2 = new Date(2030, 0, 2)
+    const folder = 'Sessions/Strength/2030'
+
+    test('the cache alone misses it; the verified lookup reads the disk and finds it', async () => {
+        const gym = file(
+            '2030-01-02 (Strength Session)',
+            { ...STRENGTH_TAGS, date: '2030-01-02', workout_kind: 'Full body' },
+            1,
+            folder
+        )
+        // Created and filled, but still indexed as the empty file it started as
+        const through = file('2030-01-02 2 (Strength Session)', {}, 2, folder)
+        through.disk = THROUGH
+        const { service: s } = service([gym, through])
+
+        expect(s.findNote(TARGET, JAN_2)).toBeNull()
+        expect(await s.findNoteVerified(TARGET, JAN_2)).toBe(through)
+    })
+
+    test('the verified lookup still never picks the gym session', async () => {
+        const gym = file(
+            '2030-01-02 (Strength Session)',
+            { ...STRENGTH_TAGS, date: '2030-01-02', workout_kind: 'Full body' },
+            1,
+            folder
+        )
+        expect(await service([gym]).service.findNoteVerified(TARGET, JAN_2)).toBeNull()
+    })
+
+    test('isIndexedAsTargetNote is false until the cache shows the written values', () => {
+        const through = file('2030-01-02 2 (Strength Session)', {}, 2, folder)
+        const { service: s } = service([through])
+        expect(s.isIndexedAsTargetNote(through, TARGET, JAN_2)).toBe(false)
+        through.frontmatter = THROUGH
+        expect(s.isIndexedAsTargetNote(through, TARGET, JAN_2)).toBe(true)
     })
 })

@@ -31,6 +31,8 @@ export interface CaptureTargetHost<F extends TargetFileLike> {
     vault: {
         getFolderByPath(path: string): { children: readonly unknown[] } | null
         getFileByPath(path: string): F | null
+        /** Read a file from disk, bypassing the metadata cache */
+        read(file: F): Promise<string>
     }
     metadataCache: {
         getFileCache(file: F): { frontmatter?: unknown } | null
@@ -68,6 +70,22 @@ function readTags(frontmatter: Record<string, unknown>): string[] {
     return []
 }
 
+/** A lookup candidate from a file and its frontmatter */
+function toCandidate<F extends TargetFileLike>(
+    file: F,
+    frontmatter: Record<string, unknown>
+): TargetNoteCandidate & { file: F } {
+    return {
+        file,
+        path: file.path,
+        basename: file.basename,
+        folder: file.parent?.path ?? '',
+        tags: readTags(frontmatter),
+        frontmatter,
+        mtime: file.stat.mtime
+    }
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
     return value && typeof value === 'object' && !Array.isArray(value)
         ? (value as Record<string, unknown>)
@@ -80,9 +98,14 @@ function asRecord(value: unknown): Record<string, unknown> {
  * are in `capture-target.utils.ts`.
  */
 export class CaptureTargetService<F extends TargetFileLike> {
+    /**
+     * @param parseFrontmatter reads the frontmatter of a note's text (Obsidian's
+     * `getFrontMatterInfo` + `parseYaml` in production); null when it has none
+     */
     constructor(
         private readonly app: CaptureTargetHost<F>,
-        private readonly getNoteType: (id: string) => StarterKitNoteType | null
+        private readonly getNoteType: (id: string) => StarterKitNoteType | null,
+        private readonly parseFrontmatter: (content: string) => Record<string, unknown> | null
     ) {}
 
     private noteTypeOf(target: CaptureTarget): StarterKitNoteType | null {
@@ -121,28 +144,69 @@ export class CaptureTargetService<F extends TargetFileLike> {
      */
     findNote(target: CaptureTarget, date: Date): F | null {
         const noteType = this.noteTypeOf(target)
-        const layout = describeTargetLayout(target, noteType)
-        if (!isTargetLayout(layout)) return null
-        const folder = renderTargetFolder(layout, date)
-        if (folder === null) return null
+        const candidates = this.filesInTargetFolder(target, date).map((file) =>
+            toCandidate(file, asRecord(this.app.metadataCache.getFileCache(file)?.frontmatter))
+        )
+        return pickTargetNote(candidates, target, noteType, date)?.file ?? null
+    }
 
+    /**
+     * Like `findNote`, but when the metadata cache finds nothing, read the
+     * folder's notes from disk before concluding the note is missing.
+     *
+     * The cache lags behind writes: a note just created and filled may still
+     * be indexed as empty, and the cache alone would then offer to create a
+     * second note for the same day. Disk is only read on a miss, which happens
+     * once a day per target (before its note exists).
+     */
+    async findNoteVerified(target: CaptureTarget, date: Date): Promise<F | null> {
+        const cached = this.findNote(target, date)
+        if (cached) return cached
+
+        const noteType = this.noteTypeOf(target)
         const candidates: Array<TargetNoteCandidate & { file: F }> = []
+        for (const file of this.filesInTargetFolder(target, date)) {
+            let content: string
+            try {
+                content = await this.app.vault.read(file)
+            } catch (error: unknown) {
+                log('Could not read a note while looking for a capture target note', 'debug', {
+                    path: file.path,
+                    error
+                })
+                continue
+            }
+            candidates.push(toCandidate(file, this.parseFrontmatter(content) ?? {}))
+        }
+        return pickTargetNote(candidates, target, noteType, date)?.file ?? null
+    }
+
+    /**
+     * Whether the metadata cache already sees `file` as the target's note for
+     * the day (type, filters, date). Used to wait for a new note to be indexed
+     * before capturing into it.
+     */
+    isIndexedAsTargetNote(file: F, target: CaptureTarget, date: Date): boolean {
+        const candidate = toCandidate(
+            file,
+            asRecord(this.app.metadataCache.getFileCache(file)?.frontmatter)
+        )
+        return pickTargetNote([candidate], target, this.noteTypeOf(target), date) !== null
+    }
+
+    /** The markdown files of the target's folder for a date (none when unusable) */
+    private filesInTargetFolder(target: CaptureTarget, date: Date): F[] {
+        const layout = describeTargetLayout(target, this.noteTypeOf(target))
+        if (!isTargetLayout(layout)) return []
+        const folder = renderTargetFolder(layout, date)
+        if (folder === null) return []
+
+        const files: F[] = []
         for (const path of this.markdownPathsIn(folder)) {
             const file = this.app.vault.getFileByPath(path)
-            if (!file) continue
-            const frontmatter = asRecord(this.app.metadataCache.getFileCache(file)?.frontmatter)
-            candidates.push({
-                file,
-                path: file.path,
-                basename: file.basename,
-                folder: file.parent?.path ?? '',
-                tags: readTags(frontmatter),
-                frontmatter,
-                mtime: file.stat.mtime
-            })
+            if (file) files.push(file)
         }
-
-        return pickTargetNote(candidates, target, noteType, date)?.file ?? null
+        return files
     }
 
     /**

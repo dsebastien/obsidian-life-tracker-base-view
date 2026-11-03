@@ -222,6 +222,18 @@ describe('readTargetNoteDate', () => {
         ).toBeNull()
     })
 
+    test('a date parsed by YAML as a Date keeps its calendar day', () => {
+        expect(
+            readTargetNoteDate(
+                candidate({
+                    frontmatter: { date: new Date('2026-11-03T00:00:00Z') },
+                    basename: 'x'
+                }),
+                'date'
+            )
+        ).toEqual(NOV_3)
+    })
+
     test('no date anywhere', () => {
         expect(
             readTargetNoteDate(candidate({ frontmatter: {}, basename: 'Gym', path: 'Gym.md' }), '')

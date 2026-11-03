@@ -148,6 +148,11 @@ export function readTargetNoteDate(
     if (typeof raw === 'string' && raw.trim()) {
         return parseLeadingIsoDay(raw)
     }
+    // A YAML parser that reads timestamps hands over a Date (UTC midnight
+    // for a bare date): take its calendar day, not the local one
+    if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+        return new Date(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate())
+    }
 
     const parsed = parseDateFromPath(candidate.path)
     if (parsed && parsed.granularity === TimeGranularity.Daily) return parsed.date
