@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
     DAILY_NOTE_TARGET_ID,
     createCaptureTarget,
+    sanitizeCaptureTarget,
     sanitizeCaptureTargets,
     type CaptureTarget,
     type PropertyDefinition,
@@ -632,6 +633,53 @@ describe('noteTypeFileName and the legacy fileNamePattern', () => {
     })
 })
 
+describe('typed affixes: regex special characters', () => {
+    function nameWith(pattern: string, prefix: string | null, suffix: string | null): string {
+        const noteType: StarterKitNoteType = {
+            ...STRENGTH_TYPE,
+            noteNamePrefix: prefix,
+            noteNameSuffix: suffix
+        }
+        const layout = describeTargetLayout(throughTheDay({ noteTypeFileName: pattern }), noteType)
+        if (!isTargetLayout(layout)) throw new Error(layout)
+        const path = resolveFreeTargetPath(layout, NOV_3, () => false)?.path ?? ''
+        return path.slice(path.lastIndexOf('/') + 1, -'.md'.length)
+    }
+
+    test('a suffix such as " (C++)" is matched literally', () => {
+        expect(nameWith('{{date}} Gym (C++)', null, ' (C++)')).toBe('2026-11-03 Gym (C++)')
+        expect(nameWith('{{date}} Gym (CCC)', null, ' (C++)')).toBe('2026-11-03 Gym (CCC) (C++)')
+        expect(nameWith('{{date}} Gym (c++)', null, ' (C++)')).toBe('2026-11-03 Gym (C++)')
+    })
+
+    test('$ . * and braces in an affix are literal', () => {
+        expect(nameWith('{{date}} Gym $', null, ' $')).toBe('2026-11-03 Gym $')
+        expect(nameWith('{{date}} Gym', null, ' $')).toBe('2026-11-03 Gym $')
+        expect(nameWith('$ {{date}} Gym', '$ ', null)).toBe('$ 2026-11-03 Gym')
+        expect(nameWith('{{date}} Gym x', null, ' .')).toBe('2026-11-03 Gym x .')
+        expect(nameWith('{{date}} Gym {1}', null, ' {1}')).toBe('2026-11-03 Gym {1}')
+    })
+
+    test('an affix with ? or | (refused by the path) never breaks the matching', () => {
+        // The name itself is refused (illegal characters); matching must not throw
+        expect(() => nameWith('{{date}} Gym (C++)?', null, ' (C++)?')).not.toThrow()
+        expect(() => nameWith('a|b {{date}}', 'a|b ', null)).not.toThrow()
+        const layout = describeTargetLayout(
+            throughTheDay({ noteTypeFileName: '{{date}} Gym (C++)?' }),
+            { ...STRENGTH_TYPE, noteNameSuffix: ' (C++)?' }
+        )
+        if (!isTargetLayout(layout)) throw new Error(layout)
+        expect(layout.tail).toBe(' Gym (C++)?')
+        const piped = describeTargetLayout(throughTheDay({ noteTypeFileName: 'A|B {{date}}' }), {
+            ...STRENGTH_TYPE,
+            noteNamePrefix: 'a|b ',
+            noteNameSuffix: null
+        })
+        if (!isTargetLayout(piped)) throw new Error(piped)
+        expect(piped.head).toBe('a|b {{date}}')
+    })
+})
+
 describe('typed affixes: Unicode', () => {
     function nameWith(pattern: string, suffix: string): string {
         const noteType: StarterKitNoteType = { ...STRENGTH_TYPE, noteNameSuffix: suffix }
@@ -730,7 +778,10 @@ describe('file name patterns capture would refuse', () => {
         'with a note type, a folder separator in %s is its own problem',
         (pattern) => {
             const typed = throughTheDay({ noteTypeFileName: pattern })
-            expect(describeTargetLayout(typed, STRENGTH_TYPE)).toBe('folder-in-file-name')
+            // The layout stays usable: lookup must still find the day's note
+            const layout = describeTargetLayout(typed, STRENGTH_TYPE)
+            if (!isTargetLayout(layout)) throw new Error(layout)
+            expect(resolveFreeTargetPath(layout, NOV_3, () => false)).toBeNull()
             expect(describeTargetIssues(typed, STRENGTH_TYPE, NOV_3)).toEqual([
                 'The file name pattern of capture target "Through the day" contains / or \\. A file name cannot hold folders: the note type gives the folder.'
             ])
@@ -904,6 +955,32 @@ describe('needsDiscoverabilityWarning', () => {
         expect(
             needsDiscoverabilityWarning(noDate, { path: 'S/2026-11-03.md', folder: 'S' }, NOV_3)
         ).toBe(false)
+    })
+})
+
+describe('sanitizeCaptureTarget: noteTypeFileName', () => {
+    const generateId = (): string => 'generated'
+
+    test('a missing or non-string value becomes empty', () => {
+        for (const noteTypeFileName of [undefined, null, 42, ['{{date}}'], { a: 1 }]) {
+            expect(
+                sanitizeCaptureTarget({ id: 't', noteTypeFileName }, generateId)?.noteTypeFileName
+            ).toBe('')
+        }
+    })
+
+    test('a string is kept as written, apart from fileNamePattern', () => {
+        const target = sanitizeCaptureTarget(
+            {
+                id: 't',
+                noteTypeId: 'nt-strength',
+                fileNamePattern: '{{date}} (Workout)',
+                noteTypeFileName: ' {{date}} Gym '
+            },
+            generateId
+        )
+        expect(target?.noteTypeFileName).toBe(' {{date}} Gym ')
+        expect(target?.fileNamePattern).toBe('{{date}} (Workout)')
     })
 })
 

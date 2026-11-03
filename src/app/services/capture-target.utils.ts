@@ -261,11 +261,7 @@ export interface TargetLayout {
 
 /** Why a target cannot be used */
 export type TargetLayoutError =
-    | 'missing-note-type'
-    | 'missing-folder'
-    | 'missing-file-name'
-    | 'missing-date-token'
-    | 'folder-in-file-name'
+    'missing-note-type' | 'missing-folder' | 'missing-file-name' | 'missing-date-token'
 
 /** The `{{date}}` token of a file name pattern (case-insensitive, like rendering) */
 const DATE_TOKEN = /\{\{\s*date\s*\}\}/i
@@ -277,6 +273,11 @@ function lacksDateToken(pattern: string): boolean {
 
 /** A folder separator: a note type target's pattern names a file, never folders */
 const FOLDER_SEPARATOR = /[/\\]/
+
+/** Whether a note type target's own text holds a folder separator */
+function hasFolderSeparator(own: { head: string; tail: string }): boolean {
+    return FOLDER_SEPARATOR.test(own.head) || FOLDER_SEPARATOR.test(own.tail)
+}
 
 /** A letter, combining mark or digit: text continuing a word, so not a boundary */
 const WORD_CHARACTER = /[\p{L}\p{M}\p{N}]/u
@@ -413,7 +414,6 @@ export function describeTargetLayout(
         const prefix = noteType.noteNamePrefix ?? ''
         const suffix = noteType.noteNameSuffix ?? ''
         const own = splitNoteTypePattern(target.noteTypeFileName, prefix, suffix)
-        if (own && FOLDER_SEPARATOR.test(target.noteTypeFileName)) return 'folder-in-file-name'
         return {
             folder,
             head: `${prefix}${own?.head ?? '{{date}}'}`,
@@ -464,8 +464,6 @@ export function describeLayoutError(error: TargetLayoutError, target: CaptureTar
             return `Capture target "${target.name}" has no file name pattern.`
         case 'missing-date-token':
             return `The file name pattern of capture target "${target.name}" needs {{date}}.`
-        case 'folder-in-file-name':
-            return `The file name pattern of capture target "${target.name}" contains / or \\. A file name cannot hold folders: the note type gives the folder.`
     }
 }
 
@@ -475,11 +473,31 @@ export function describeLayoutError(error: TargetLayoutError, target: CaptureTar
  * character a file name cannot hold; in a note type target's own text, also
  * a link-breaking character or a trailing dot (see `TargetLayout.ownText`)
  */
-export function describeInvalidPath(target: CaptureTarget): string {
+function describeInvalidPath(target: CaptureTarget): string {
     const what = target.noteTypeId
         ? 'unknown {{tokens}}, characters such as : ? | # * " < > [ ] ^, or a trailing dot'
         : 'unknown {{tokens}} or characters such as : ? | * " < > \\'
     return `Capture target "${target.name}" does not give a valid note path. Check the file name pattern (and the folder) for ${what}.`
+}
+
+/**
+ * Why a usable layout gives no name capture would create for `date`, or null
+ * when it gives one (taken or not). Shared by Problems and creation, so both
+ * say the same thing. A `/` or `\\` in a note type target's own text has its
+ * own message. Only creation refuses these: lookup goes by note type, filters
+ * and date, so a name mistake never hides an existing note
+ */
+export function describeUnusableName(
+    target: CaptureTarget,
+    layout: TargetLayout,
+    date: Date
+): string | null {
+    if (layout.ownText && hasFolderSeparator(layout.ownText)) {
+        return `The file name pattern of capture target "${target.name}" contains / or \\. A file name cannot hold folders: the note type gives the folder.`
+    }
+    if (resolveFreeTargetPath(layout, date, () => false) === null)
+        return describeInvalidPath(target)
+    return null
 }
 
 /**
@@ -495,10 +513,11 @@ export function describeTargetIssues(
 ): string[] {
     const issues: string[] = []
     const layout = describeTargetLayout(target, noteType)
+    const unusable = isTargetLayout(layout) ? describeUnusableName(target, layout, date) : null
     if (!isTargetLayout(layout)) issues.push(describeLayoutError(layout, target))
-    else if (resolveFreeTargetPath(layout, date, () => false) === null) {
+    else if (unusable) {
         // What capture would refuse: say so before the first capture does
-        issues.push(describeInvalidPath(target))
+        issues.push(unusable)
     } else if (target.noteTypeId && lacksDateToken(target.noteTypeFileName)) {
         // Usable, but the pattern is ignored: say so, as standalone mode does
         issues.push(
@@ -532,11 +551,13 @@ const LINK_BREAKING_CHARS = /[#^[\]|]/
 
 /**
  * Whether the user's own text around the date makes a name worth creating:
- * no link-breaking character, and no trailing dot when it ends the name
+ * no folder separator, no link-breaking character, and no trailing dot when
+ * it ends the name
  * (`Gym..md` is a legal path, but a name ending in a dot is one Windows tools
  * and sync clients mangle). Unknown tokens are caught by rendering the layout
  */
 function isValidOwnText(own: NonNullable<TargetLayout['ownText']>, date: Date): boolean {
+    if (hasFolderSeparator(own)) return false
     const head = renderDateTokens(own.head, date, { preserveWhitespace: true }) ?? ''
     const tail = renderDateTokens(own.tail, date, { preserveWhitespace: true }) ?? ''
     if (LINK_BREAKING_CHARS.test(`${head}${tail}`)) return false

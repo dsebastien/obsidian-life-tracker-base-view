@@ -160,6 +160,23 @@ describe('findNote', () => {
         expect(service([nested]).service.findNote(TARGET, NOV_3)).toBe(nested)
     })
 
+    test("a / or \\ in noteTypeFileName never hides the day's existing note", async () => {
+        const through = file('2026-11-03 (Strength Session)', {
+            ...STRENGTH_TAGS,
+            date: '2026-11-03',
+            workout_kind: 'Through the day'
+        })
+        for (const noteTypeFileName of ['{{year}}/{{date}}', '{{date}}\\Gym']) {
+            const target = { ...TARGET, noteTypeFileName }
+            const { host, service: s } = service([through])
+            expect(s.findNote(target, NOV_3)).toBe(through)
+            expect(host.scanned).toEqual([FOLDER])
+            expect(await s.findNoteVerified(target, NOV_3)).toBe(through)
+            // Creation alone refuses the name
+            expect(s.planCreation(target, NOV_3).ok).toBe(false)
+        }
+    })
+
     test('null when the folder does not exist or the type is unavailable', () => {
         expect(service([]).service.findNote(TARGET, NOV_3)).toBeNull()
         const host = createHost([])

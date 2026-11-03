@@ -85,8 +85,10 @@ An explicit id pointing at a deleted target falls back to automatic.
   pattern (text around the date) + suffix, a typed leading prefix or trailing
   suffix dropped at a word boundary. Empty or `{{date}}` alone: the plain type
   name. `/` or `\`, `# ^ [ ]` or a trailing dot in that text, or a value that
-  renders to no valid name, is listed under Problems and refused at capture
-  with the same message; the type's own affixes are not checked.
+  renders to no valid name, is listed under Problems and refused at creation
+  with the same message (lookup is unaffected); the type's own affixes are
+  not checked. A save from 3.5.0 drops `noteTypeFileName` (targets rebuilt
+  field by field): the type's usual name until the user sets it again.
   `fileNamePattern` is standalone-only (never read with a note type, so a
   pattern hidden in 3.5.0 cannot count; no migration, loading never writes).
   Standalone targets keep the 3.5.0 rules (`/` makes subfolders; only unknown
