@@ -17,11 +17,13 @@ When a new business rule is mentioned:
 
 ## Date Anchor Resolution
 
-Priority order for resolving an entry's date:
+Priority order for resolving an entry's date when the view has **no** date anchor property set (the automatic chain):
 
 1. Filename pattern — custom patterns first (in configured order), then the built-ins (YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-Qq, YYYY)
-2. Configured date anchor property
-3. File metadata (ctime, mtime)
+2. The `date` property, then the `created` property
+3. File metadata (ctime)
+
+When a Life Tracker view sets a date anchor property, that property comes **first**, then the filename, then ctime. The setting is an explicit per-view choice, and per-view configuration beats automatic defaults (see Configuration Priority); a property chosen by the user that a filename could silently override would be a setting that does nothing on dated notes. The Grid view has no date anchor option and always uses the automatic chain.
 
 ## Filename Date Patterns
 
@@ -211,7 +213,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 ## Starter Kit Integration
 
 - Life Tracker reads the Obsidian Starter Kit plugin (`obsidian-starter-kit`) through its `plugin.api`, and only ever reads. The integration is entirely optional: absent, disabled, or an API missing an expected method all degrade to "not available", never an error
-- **Ownership split for a linked definition**: Starter Kit owns the structure — `name`, `type`, `allowedValues`, `numberRange`, `defaultValue`, `required`, `description`, and `mappings`. Life Tracker owns `id`, `order`, `displayName`, `valueMapping`, `polarity`, `valueEmojis`, `showInQuickAdd`. A sync never touches a Life-Tracker-owned field
+- **Ownership split for a linked definition**: Starter Kit owns the structure — `name`, `type`, `allowedValues`, `numberRange`, `defaultValue`, `required`, `description`, and `mappings`. Life Tracker owns `id`, `order`, `displayName`, `valueMapping`, `polarity`, `valueEmojis`, `showInQuickAdd`, `captureTargetId`. A sync never touches a Life-Tracker-owned field
 - **`displayName` belongs to Life Tracker**: it is presentation, and Starter Kit defaults it to the raw property name. A label the user customized (one that differs from the raw name) is kept; an empty or raw-name label takes Starter Kit's, which is how a freshly imported property gets a sensible one. Validated against a real vault where the naive rule would have renamed 90 labelled properties back to `health_energy_level` and friends
 - The same property name can legitimately exist in many Starter Kit note types (one real vault has `rating` in 22 of them), while Life Tracker has **one definition per frontmatter key**. The first source to claim a name wins and the rest are conflicts, naming the note type that holds it so the user can choose
 - `polarity` / `valueEmojis` are deliberately **not** mirrored into Starter Kit's schema: it would store them without ever acting on them, and two homes for one value is the drift the link exists to prevent
@@ -229,6 +231,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - A definition that a source will rename releases its **old** name for the same plan, so a new Starter Kit property may legitimately take it
 - Names that link-resolved sources will occupy are reserved before planning. A source that merely shares a name cannot claim it first by being earlier in the list — the definition that already belongs to a source has the better claim on its own name
 - Only successful entries claim a name. An entry that ends up a conflict changes nothing, so it must not block a later source that legitimately wants that name
+- Starter Kit name affixes are read untrimmed (only an all-whitespace affix counts as absent): `" (Strength Session)"` must keep its leading space
 - A source is not importable when its property name is blank, or when its note type has **no enabled mappings**. Starter Kit treats "no enabled mappings" as matching _nothing_, while Life Tracker treats an empty mapping list as applying to _every_ note — importing would silently invert the scope and write frontmatter into unrelated notes
 - Starter Kit property types Life Tracker lacks (`select`, `url`, `time`, and the legacy `multitext` / `boolean` aliases) are normalized on import — all are string-typed, so unknown types become `text` rather than being stored verbatim
 - Life Tracker's mapping matching is case-insensitive where Starter Kit's is case-sensitive, so a linked property can apply to marginally more notes than Starter Kit would recognize. Left as-is: changing shared matching semantics for every user to serve this integration would be the worse trade
@@ -366,6 +369,9 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Links target `date` or today, **never the open note**: a home-screen shortcut must do the same thing whatever is open. `date` is parsed as local midnight and rolled-over dates (2026-02-31) are rejected
 - Property lookup: exact name, then case-insensitive name or display name. A property whose mappings exclude the day's note is refused, not written
 - A link with no `property` and no action opens the panel on `date` or today
+- `append=<value>` adds one entry to a list or tags property (e.g. `reps@weight`), after the existing entries; refused on every other type and when the value is empty. The new list is validated like any other write
+- Links and the panel write each property into the note of its capture target (see Capture Targets); the daily note when it has none
+- The panel groups its rows by destination (daily note, then each target in settings order). A destination is listed when at least one quick-add property resolves to it. When the daily note is the only destination, the panel has no group header and looks as before
 
 ## Creating Missing Notes
 
@@ -377,12 +383,28 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - The default basename per granularity is the inverse of Life Tracker's own built-in parse formats, and the weekly one uses **ISO** week tokens (`GGGG-[W]WW`). Locale tokens (`gggg-[W]ww`) name a different week than they mean: an en locale makes Sunday 2026-08-30 week 36 while ISO makes it week 35
 - A resolved path is refused if it is unsafe: a `..` segment, a control or reserved character (`\ : * ? " < > |`), or a segment ending in a dot or space. A leading `/` is normalized away instead, matching Obsidian's own `normalizePath`
 - Only Periodic Notes' flat 0.x settings shape is understood. A 1.x `calendarSets` layout parses to nothing and degrades to "not available" rather than being misread. An absent `enabled` counts as **disabled**, matching Periodic Notes and failing closed on an operation that writes files
-- A note is never overwritten: an existing file at the target path is reused
+- A note is never overwritten: an existing file at the target path is reused (daily notes). Capture targets never reuse a file only because it sits at the resolved path — see Capture Targets
 - **A template is applied exactly once.** When Templater is configured to template new files itself (`trigger_on_file_creation` with `trigger_on_file_creation_mode: 'folder'` and a covering folder template, outside `ignore_folders_on_creation`), the note is created plainly and Templater does the work — applying the configured template on top would duplicate the whole note. Otherwise Templater is driven explicitly, and Templater skips files it created itself, so that path cannot double-fire either. The legacy `enable_folder_templates` / `enable_file_templates` booleans are consulted only when the mode key is absent; in Templater 2.25 they merely drive settings-pane visibility
 - Frontmatter is written only after templating has settled. Templater's creation hook sleeps before writing, so a capture that wrote immediately would race it and lose data
 - Creation returns only once the metadata cache has indexed the templated note (bounded wait). The vault reports Templater's write before the cache has parsed it; a capture opened in that gap sees no tags, every tag-mapped property definition fails to apply, and the modal reports "No matching properties" on a note that is complete on disk. An untemplated note has nothing to index and does not wait
 - With no Templater, or a template that fails or is missing, the note is still created and still receives its properties: capture is the point of the operation
 - Creation warns, but does not refuse, when the resolved filename is one Life Tracker cannot parse back (a name prefix, a format like `DD-MM-YYYY`, locale week tokens). Such a note is invisible in every view — issue #160 reintroduced — but the configuration is the user's, and a matching filename date pattern (issue #139) fixes it
+
+## Capture Targets
+
+- A capture target is a named destination for captured values other than the daily note: a note type (a Starter Kit note type, or a standalone folder + file name pattern + tags), a match filter (`property = value` pairs), an optional template and a date property (`date` by default)
+- Which target a property uses: an explicit target on the definition; `daily-note` forces the daily note; otherwise, for a Starter Kit-linked definition, the one target whose note type equals the link's note type (zero or several → none); otherwise the daily note. A definition naming a deleted target falls back to the automatic rule. Existing settings have no targets, so every property keeps going to the daily note
+- A property is still defined once (one definition per frontmatter key); the target says where that one key is written, it never duplicates the definition
+- Lookup scans only the target's folder rendered for the date (e.g. `Sessions/{{year}}` → that year), recursively, never the whole vault
+- A note belongs to a Starter Kit target when one of the note type's enabled mappings matches (OR, copied semantics as in Starter Kit Integration); a note type with no enabled mapping matches nothing. A standalone target requires every configured tag; with no tags, the folder alone decides
+- Every filter pair must match: trimmed, case-insensitive string comparison; a list value matches when one of its items matches. Filters are what tell two notes of one type apart on the same day (a Garmin gym session and the through-the-day session)
+- A note's date is its date property (`YYYY-MM-DD`, or a datetime starting with one); when that property is empty, the date read from its file name (filename patterns, then a leading `YYYY-MM-DD`). Several matches: the most recently modified wins
+- **A file at the resolved path is never reused** for a target: it may be a different note of the same type. Creation takes the next free name, with a counter right after the date part (`2026-11-03 2 (Strength Session)`)
+- Creation follows Creating Missing Notes (opt-in, confirmed, template applied once). Templater creates the file at its final name in its final folder, so a template sees the dated title. The target's template overrides the note type's
+- After creation the plugin writes the date property, every filter pair, and the mandatory tags (Starter Kit type tags or standalone tags, merged into `tags`), so the note is found again even when no template ran (no Templater, or a template that failed)
+- The "will not appear in your views" warning is not shown for a target with a date property: the note is dated by that property. A target with an empty date property falls back to the filename check
+- `Capture today` keeps its id and only lists the properties whose destination is the daily note. Each target adds a command `Capture today: <name>` (id `capture-today-target-<target id>`), re-registered whenever targets change; a removed target's command is removed
+- Opening `Capture properties` on a note is unchanged: the open note, every applicable property
 
 ## High Contrast Mode
 
@@ -395,7 +417,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 ## Goals and Targets
 
 - A target (issue #6) reads as one sentence: "<metric> of <property> per <period> must be <direction> <value>". `{ metric: 'count', period: 'weekly', direction: 'at-least', value: 3 }` is "do it on 3 days a week".
-- Metrics: `count` (entries with a non-zero value), `sum`, `average`, `latest`. `count` deliberately excludes zero — a note recording `push_ups: 0` says the exercise was _not_ done, and counting it would make any "N days a week" target trivially true for anyone who logs daily.
+- Metrics: `count` (entries with a non-zero value), `days` (distinct days with at least one non-zero entry), `sum`, `average`, `latest`. `days` exists because several notes can share a day (a gym session and a through-the-day session): `count` would read two notes as two days. `count` keeps its meaning; stored configs are never rewritten. `days` accumulates from zero and is measurable when empty, like `count`. `count` deliberately excludes zero — a note recording `push_ups: 0` says the exercise was _not_ done, and counting it would make any "N days a week" target trivially true for anyone who logs daily.
 - Targets are stored per visualization, so one property can carry several (e.g. squats: days-per-week on one card, reps-per-week on another).
 - Supported by the progress ring and by cartesian charts, which draw the target as a reference line. A target and an explicitly configured reference line are BOTH drawn (issue #156) — they answer different questions; the target line uses a tighter dash pattern and anchors its label at the left edge while reference labels anchor at the right, so the two stay readable even at the same value.
 - Targets read from a `.base` file are validated field by field; anything malformed is dropped whole rather than half-applied — a ring silently measuring the wrong thing is worse than no ring.
