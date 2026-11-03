@@ -1,5 +1,12 @@
 import { test, expect, describe } from 'bun:test'
-import { areAllValuesIntegers, formatMetricValue, stripNoteTypeSuffix } from './chart-format.utils'
+import {
+    areAllValuesIntegers,
+    formatMetricValue,
+    missingDateAriaLabel,
+    missingDateText,
+    stripNoteTypeSuffix,
+    trendWindowLabel
+} from './chart-format.utils'
 
 describe('areAllValuesIntegers', () => {
     test('true for whole numbers and nulls', () => {
@@ -53,5 +60,22 @@ describe('stripNoteTypeSuffix (3.4.0)', () => {
 
     test('a name that is only a suffix is kept', () => {
         expect(stripNoteTypeSuffix('(Inbox)')).toBe('(Inbox)')
+    })
+})
+
+describe('trendWindowLabel (3.4.0)', () => {
+    test('periods on the period axes, notes on the per-note axes', () => {
+        expect(trendWindowLabel(7, false)).toBe('vs previous 7 periods')
+        expect(trendWindowLabel(7, true)).toBe('vs previous 7 notes')
+        expect(trendWindowLabel(1, true)).toBe('vs previous 1 note')
+        expect(trendWindowLabel(1, false)).toBe('vs previous 1 period')
+    })
+})
+
+describe('missing date chip (3.4.0)', () => {
+    test('text and accessible label both carry the count', () => {
+        expect(missingDateText(1)).toBe('1 note without a date')
+        expect(missingDateText(3)).toBe('3 notes without a date')
+        expect(missingDateAriaLabel(3)).toContain('3 notes without a date')
     })
 })

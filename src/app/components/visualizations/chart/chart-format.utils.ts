@@ -36,3 +36,25 @@ export function stripNoteTypeSuffix(noteName: string): string {
     const stripped = noteName.replace(TRAILING_SUFFIX_PATTERN, '')
     return stripped.trim() === '' ? noteName : stripped
 }
+
+/**
+ * The window a trend compares against (3.4.0): on the per-note axes the
+ * trend compares notes, so it says so ("vs previous 7 notes")
+ */
+export function trendWindowLabel(count: number, perNote: boolean): string {
+    const unit = perNote ? 'note' : 'period'
+    return `vs previous ${count} ${count === 1 ? unit : `${unit}s`}`
+}
+
+/** Text of the date-per-note chip counting notes left out (3.4.0) */
+export function missingDateText(count: number): string {
+    return `${count} ${count === 1 ? 'note' : 'notes'} without a date`
+}
+
+/**
+ * Accessible label of that chip: the count first, so a screen reader hears
+ * it, then why those notes are missing
+ */
+export function missingDateAriaLabel(count: number): string {
+    return `${missingDateText(count)}: a note needs a date anchor to be placed on this axis`
+}

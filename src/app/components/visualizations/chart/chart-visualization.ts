@@ -48,6 +48,7 @@ import {
     computeTrend
 } from '../../../services/chart-aggregation.utils'
 import { buildCartesianReferenceLines } from './reference-lines.utils'
+import { missingDateAriaLabel, missingDateText, trendWindowLabel } from './chart-format.utils'
 import {
     computeRecord,
     formatRecordValue,
@@ -403,9 +404,16 @@ export class ChartVisualization extends BaseVisualization {
         // to an ever-rising cumulative line, a bare "Trend: ↓" reads as a
         // contradiction (issue #149) — it describes the per-period rate.
         const isPerPeriodRate = this.trendSourceData !== null
-        const trendLabel = isPerPeriodRate ? 'Per-period trend' : 'Trend'
+        // On the per-note axes the trend compares notes, not periods (3.4.0)
+        const perNote = this.usesNoteNameAxis() || this.usesDatePerNoteAxis()
+        const trendLabel = isPerPeriodRate
+            ? perNote
+                ? 'Per-note trend'
+                : 'Per-period trend'
+            : 'Trend'
         const trend = computeTrend(this.trendSourceData ?? source.data)
         if (!trend) return
+        const comparedTo = trendWindowLabel(trend.periodCount, perNote)
 
         const arrow = trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'
         const sign = trend.changePercent > 0 ? '+' : ''
@@ -417,9 +425,7 @@ export class ChartVisualization extends BaseVisualization {
         const sentiment = resolveTrendSentiment(trend.direction, polarity)
         const wording = describeTrendSentiment(trend.direction, polarity)
 
-        const description = `${wording}, ${sign}${trend.changePercent.toFixed(1)}% vs previous ${trend.periodCount} ${
-            trend.periodCount === 1 ? 'period' : 'periods'
-        }`
+        const description = `${wording}, ${sign}${trend.changePercent.toFixed(1)}% ${comparedTo}`
 
         // Arrow inside the title: the header is justify-between, so a
         // sibling element would push the action buttons around. Only
@@ -442,9 +448,7 @@ export class ChartVisualization extends BaseVisualization {
         })
         this.trendStatsEl?.createSpan({
             cls: 'lt-chart-trend-item',
-            text: `vs previous ${trend.periodCount} ${
-                trend.periodCount === 1 ? 'period' : 'periods'
-            }`
+            text: comparedTo
         })
     }
 
@@ -947,8 +951,8 @@ export class ChartVisualization extends BaseVisualization {
 
         this.trendStatsEl.createSpan({
             cls: 'lt-chart-trend-item lt-missing-date-item',
-            text: `${skipped} ${skipped === 1 ? 'note' : 'notes'} without a date`,
-            attr: { 'aria-label': 'Notes without a date anchor cannot be placed on this axis' }
+            text: missingDateText(skipped),
+            attr: { 'aria-label': missingDateAriaLabel(skipped) }
         })
     }
 
