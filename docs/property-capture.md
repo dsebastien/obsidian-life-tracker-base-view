@@ -220,7 +220,7 @@ Set targets up in **Settings → Life Tracker → Capture targets**. Each target
 | Name          | Shown in the command name and in the quick-add panel                                                                                                                      |
 | Note type     | An Obsidian Starter Kit note type, or "Folder and file name" to work without the Starter Kit                                                                              |
 | Folder        | Without the Starter Kit: where the notes live, with placeholders such as `{{year}}`                                                                                       |
-| File name     | Without the Starter Kit: name of a new note. Must contain `{{date}}`; other date placeholders are allowed                                                                 |
+| File name     | Name of a new note. Must contain `{{date}}`; other date placeholders are allowed. With a note type: optional, the text around the date (see below)                        |
 | Tags          | Without the Starter Kit: tags a note must have; added to a new note                                                                                                       |
 | Template      | Optional template for a new note. With a Starter Kit note type, overrides the note type's template                                                                        |
 | Date property | The property that holds the date of the note (`date` by default)                                                                                                          |
@@ -288,7 +288,12 @@ confirmation.
 
 - The name comes from the note type (its name prefix and suffix around the
   date, for example `2026-11-03 (Strength Session)`) or from the target's file
-  name. If a file with that name already exists, it is **not** reused, because
+  name. With a note type, a file name sets the text around the date, and the
+  note type still adds its prefix and suffix: `{{date}} Through the day` gives
+  `2026-11-03 Through the day (Strength Session)`. If you type the suffix in
+  the file name too, it is not added twice. An empty file name, or `{{date}}`
+  alone, gives the note type's name. A file name without `{{date}}` is ignored
+  and listed under **Problems**. If a file with that name already exists, it is **not** reused, because
   it can be another note of the same type. The next free name is taken, with a
   number right after the date (`2026-11-03 2 (Strength Session)`).
 - Before asking, the plugin checks that it would find the new note again. If
@@ -345,8 +350,10 @@ Here's how I set it up in my own vault, with the Obsidian Starter Kit.
    existing definition back and keeps its value direction, emojis, value
    mapping and quick-add setting.
 2. I created a capture target named "Through the day": note type **Strength
-   Sessions**, match filter `workout_kind` = `Through the day`. Template and
-   date property stay at their defaults.
+   Sessions**, match filter `workout_kind` = `Through the day`, file name
+   `{{date}} Through the day`. Template and date property stay at their
+   defaults. The day's note is `2026-11-03 Through the day (Strength Session)`,
+   so it never takes the name of the gym session note Garmin creates.
 3. The imported counters now go to that target automatically. **Show in quick
    add** is on for them.
 4. Quick add shows a "Through the day" group. A link such as

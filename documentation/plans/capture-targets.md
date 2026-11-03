@@ -29,7 +29,8 @@ interface CaptureTarget {
     noteTypeId: string
     /** Standalone: folder with {{token}}s, e.g. Sessions/{{year}} */
     folder: string
-    /** Standalone: basename pattern with {{token}}s, e.g. {{date}} (Strength Session) */
+    /** Basename pattern with {{token}}s, e.g. {{date}} (Strength Session).
+     *  With a note type: optional text around {{date}}, inside the type's affixes */
     fileNamePattern: string
     /** Optional template; overrides the note type's template; '' = none */
     templatePath: string
@@ -77,6 +78,9 @@ An explicit id pointing at a deleted target falls back to automatic.
 - Opt-in (`createMissingNotes`) and confirmed, exactly like daily notes. The
   confirmation shows the path.
 - Name: Starter Kit prefix + `YYYY-MM-DD` + suffix, or the standalone pattern.
+  A Starter Kit target with a pattern holding `{{date}}`: prefix + pattern
+  (text around the date) + suffix, a typed trailing suffix dropped. Empty
+  pattern or `{{date}}` alone: the plain type name.
   If a file exists at that path, the next free name is used: a counter goes
   right after the date part (`2026-11-03 2 (Strength Session)`). An existing
   file is never reused for a target.
