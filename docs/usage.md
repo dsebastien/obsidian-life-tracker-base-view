@@ -64,6 +64,11 @@ Filter visualizations to show specific date ranges:
 
 Adjust the number of columns (1-6) to control card density.
 
+The time frame and the number of columns are saved in the `.base` file. If you
+edit them there (by hand, or through sync) while the view is open, the view
+picks up your edit. It saves a value only when you change it in the view's
+toolbar, and only that value.
+
 ### Reorder Cards
 
 By default, cards appear in the order defined by your Base's property list, with overlay charts at the end.

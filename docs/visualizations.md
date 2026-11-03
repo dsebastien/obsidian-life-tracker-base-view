@@ -248,7 +248,20 @@ What counts as far off: values more than three interquartile ranges beyond
 the middle half of the data (Tukey's "far out" fences), checked only when the
 series has at least 8 values. Ordinary highs and lows stay on the scale.
 
-- The trend, the moving average, records, and CSV export use the real values.
+When most values are the same (10 minutes of meditation nearly every day), the
+middle half has no spread, so a second rule takes over: a value more than 10
+times the usual value, or less than a tenth of it, counts as far off. One typo
+of 1000 among your 10s no longer sets a 0 to 1000 axis. This rule needs a
+usual value above 0, so a habit you log as 0 on most days never turns its 1s
+into outliers. On a habit you do most days (mostly 1s), a 0 counts as far off
+too: it still shows in place on an axis that starts at 0, but keep that in
+mind before you leave outliers out of the average.
+
+- The trend, the moving average, records, and CSV export use the real values,
+  unless you switch **Leave outliers out of the average** to **On** in the
+  card's right-click menu. Then the moving average and the trend ignore the
+  far-off values. The points stay on the chart (as triangles at the edge when
+  the scale is fitted), and records and CSV still use them.
 - Running totals, list properties, and moving averages are never trimmed.
 - To see every value, set **Outliers** to **Show all values** in the card's
   right-click menu (or in the overlay editor). A fixed scale (a preset or
@@ -438,6 +451,18 @@ needs no polarity: it counts periods rather than calling any of them best.
 For line and area charts, enable a moving average from the card's right-click menu (7, 14, or 30 periods). It smooths noisy metrics like mood, weight, steps, or pace. Each point is the mean of the recorded values in the trailing window — missing periods are skipped, not counted as 0.
 
 When the moving average is on, it becomes the main line: solid, thicker, in full color, drawn on top, and listed first in the legend and tooltip. Your raw values stay visible as a thin, faded line behind it. On the per-note axes the window counts notes ("7-note average").
+
+The average never reaches across a gap in your data (see [Gaps in the line](#gaps-in-the-line)): after a long break it starts again from the first new value. To keep one bad value from pulling the average off course, switch **Leave outliers out of the average** to **On** (see [Outliers](#outliers)).
+
+## Gaps in the line
+
+Line and area charts on a date axis (**Date** or **Date, one point per note**) stop the line when two points are far apart in time. Without this, a break from December to March drew a long straight line, and a moving average drew a flat stretch that looked like a stable trend.
+
+Two points are far apart when the time between them is more than three times the usual time between your points, and at least 14 days. For daily data, a break of more than two weeks stops the line. For monthly data, a break of more than about three months does.
+
+The raw line, the area below it, and the moving average all stop at the gap. The points themselves stay where they are.
+
+This is on by default. To keep one continuous line, set **Break line across gaps** to **Off** in the card's right-click menu (`breakLineAcrossGaps: false` in the `.base` file). The **Note name** axis has no dates, so its line never breaks.
 
 ## Running Total
 

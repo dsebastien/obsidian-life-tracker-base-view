@@ -146,7 +146,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - View-config reads in `ColumnConfigService` are memoized per render cycle and invalidated at the start of each cycle (and on every write)
 - Line/area datasets with more than 40 non-null points render without point markers (`pointRadius: 0`, hover radius 4, hit radius 8; was 500 before 3.4.0, lowered because 170 sessions drew overlapping dots that hid the line). Outlier markers always stay visible. Dense scatter charts (above 500 points) shrink their dots. No data points are ever dropped
 - Chart.js' decimation plugin is deliberately not enabled: it requires a linear/time x scale with `parsing: false`, while most of these charts use a category scale of formatted period labels
-- The incremental fast path only re-aggregates data against the **existing** visualization configs. Every view setting baked into those configs — time frame, time granularity, control-bar visibility, trend and streak toggles — MUST therefore invalidate the fast path in `canDoIncrementalUpdate`, or the change only appears after the Base is reopened (issue #146). A setting added to the view options without a matching guard is silently ignored until reload
+- The incremental fast path only re-aggregates data against the **existing** visualization configs. Every view setting baked into those configs — time frame, grid columns, time granularity, control-bar visibility, trend and streak toggles — MUST therefore invalidate the fast path in `canDoIncrementalUpdate`, or the change only appears after the Base is reopened (issue #146). A setting added to the view options without a matching guard is silently ignored until reload
 
 ## Card Ordering
 
@@ -251,6 +251,13 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 
 - If the plugin is unloaded while `onload` awaits the settings (hot reload, a quick disable), `onload` stops there and registers nothing: views, commands and the `obsidian://` handler registered on an unloaded component are never cleaned up, and the next enable fails with "Action … is already registered"
 
+## View Settings Persistence
+
+- The `.base` view config is the only source of truth for a view's grid settings (`timeFrame`, `gridColumns`) and every other view option (issue #189). The view reads them on each render; an in-memory copy is never written back
+- A grid setting differing from the one rendered (the file was edited, or Bases reloaded it) invalidates the incremental path: the full render re-reads them and rebuilds the control bar
+- The view writes a grid setting only on a user action in its control bar, and only the setting the user changed, compared with the config as it is at that moment. Never on load, reload, or hot reload
+- Still written outside a user action: the legacy column-config migration and the orphaned-config cleanup (see Property Removal Cleanup), each only when it has something to fix
+
 ## Settings Persistence
 
 - Settings writes are serialized through a queue (`createSerialQueue`): editors call `updateSettings` on every keystroke, and two overlapping `saveData` calls can otherwise land out of order, persisting the _older_ snapshot — a corruption that only surfaces after a restart
@@ -337,8 +344,17 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Only single-dataset numeric charts get the overlay (list data and overlay charts already carry multiple datasets)
 - Missing periods are skipped inside the window, never counted as 0
 - When on, the average is the main line (3.4.0): solid, 2.5 px, full dataset color, no points, drawn on top and listed first in the legend and tooltip (Chart.js `order`). The raw series becomes a 1 px line at 35% opacity, without fill, with small faded points (none above 40 points). Without a moving average, the series styling is unchanged
-- The average is computed on real values, never on values clamped to the axis edge (see Chart Outliers); it can leave the axis and is clipped by the chart area
+- The average is computed on real values, never on values clamped to the axis edge (see Chart Outliers); it can leave the axis and is clipped by the chart area. With "Leave outliers out of the average" on, the outliers are left out of the window (see Chart Outliers)
+- The average is computed per segment between gap breaks (see Line Gaps): a window never reaches across a gap
 - A click opens the first clicked element that has notes behind it: the average (and outlier markers) come first in `order` and carry none
+
+## Line Gaps
+
+- Line and area charts on a date axis (period axis, and date-per-note) break the line between two consecutive points further apart than max(3 × the median gap between consecutive points, 14 days) (issue #185). A flat segment across months without data read as a stable trend
+- Points are the slots with a value; empty period slots draw nothing and already break the line. The period axis measures from each period's start date (`periodTimes`), the date-per-note axis from the note's x position
+- Both the raw line and the moving average break; area fill breaks with them. Drawn with Chart.js `segment` styles (the crossing segment is transparent), so indices, tooltips, clicks, markers and CSV are untouched
+- On by default; per card `breakLineAcrossGaps: false` (menu "Break line across gaps") turns it off. Absent reads as on, so cards saved before the option get it. Only `false` is stored
+- Not applied: the note-name axis (no time), bar charts, list data, overlays
 
 ## Trend Indicator
 
@@ -517,12 +533,14 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 ## Chart Outliers
 
 - Line, bar and area charts (and line/bar/area overlays) with no explicit scale fit the y-axis to the bulk of the data (3.4.0, default `outliers: fit`). One bad entry (49997 among ~380) otherwise set the axis to 0–50,000
-- Outliers are values beyond Tukey's far-out fences, Q1 − 3·IQR and Q3 + 3·IQR (linear-interpolated quartiles), computed per series. Fences apply only with at least 8 values, IQR > 0 (a mostly-0 habit series would otherwise make every 1 an outlier), and when they actually exclude something
+- Outliers are values beyond Tukey's far-out fences, Q1 − 3·IQR and Q3 + 3·IQR (linear-interpolated quartiles), computed per series. Fences apply only with at least 8 values and when they actually exclude something
+- IQR = 0 (issue #187: 10, 10, 10 … plus one typo of 1000 kept a 0–1000 axis): fences fall back to median ± 3.5 · 1.4826 · MAD (modified z-score > 3.5); when the MAD is 0 too, to median / 10 … median · 10, only with a median > 0. A mostly-0 habit series (median 0) therefore never makes its 1s outliers. Equal quartiles put more than half the values on the median, so the MAD is 0 as well and the ratio rule decides in practice. Side effect: on a mostly-1 series (a checkbox habit done most days), every 0 is beyond the ratio fences; a 0 inside the axis (number format, axis from 0) is still drawn in place, but "Leave outliers out of the average" leaves it out
 - Fitted series: real per-period or per-note values. Never fitted: the moving average, running totals (one jump carries into every later point), list (0/1) data
 - Axis range when fitting: in-fence values of every series, plus every reference/target line value, plus 0 when the axis starts at 0; rounded out to a nice step (duration ladder for duration formats, 1/2/5 × 10ⁿ otherwise). Bounds and step are set explicitly
 - Values beyond the axis are drawn at its edge and get a triangle marker (up above, down below) in the series color, from a separate marker dataset: always visible, never in the legend or the tooltip. The tooltip of the series shows the real value plus "(outside the scale)"
 - A value beyond the fences but inside the rounded axis is drawn as is
 - The moving average, trend, records and CSV use real values, never clamped ones
+- `excludeOutliersFromAverage: true` (card menu "Leave outliers out of the average", issue #186; default off, absent = off; line, bar and area cards, not list data) computes the moving average and the trend without the values beyond the fences (same fences as the axis, computed on the series the average or trend reads). The points are still drawn: as edge markers when fitted, in place with `show-all` or an explicit scale. A running total is averaged as is (it has no outliers of its own); the per-period trend of a running total leaves them out. Not offered on overlays
 - `outliers: show-all` (card menu "Outliers", overlay modal) restores the full range. An explicit scale (`min` or `max` set) always wins: no fitting
 - Hiding a series from the legend hides its outlier markers too
 - Incremental updates copy the markers' positions and directions and the point radii along with the data, so a marker follows its outlier and markers come back when a series drops to 40 points or fewer. A different set of marker datasets (outliers appearing or disappearing) rebuilds the chart

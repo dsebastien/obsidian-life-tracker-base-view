@@ -37,6 +37,8 @@ Per-visualization settings stored in view config. Multiple visualizations can ex
 - `xAxisSource`: `date` | `note-name` | `date-per-note` (cartesian charts)
 - `valueFormat`: `ValueFormat` — `number` | `duration-mm-ss` | `duration-h-mm` (3.4.0)
 - `outliers`: `OutlierMode` — `fit` | `show-all` (3.4.0)
+- `excludeOutliersFromAverage`: boolean — moving average and trend without outliers (#186); absent = off
+- `breakLineAcrossGaps`: boolean — `false` keeps the line whole across gaps (#185); absent = on
 
 **Note**: A property can have multiple visualizations, each independently configurable. The `ColumnConfigMap` stores arrays of configs per property.
 

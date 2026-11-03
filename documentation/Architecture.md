@@ -38,7 +38,8 @@ src/
       data-aggregation.service.ts  # Aggregate data for visualizations
       frontmatter.service.ts       # Read/write frontmatter properties
       chart-aggregation.utils.ts   # Chart-specific aggregation (incl. date-per-note)
-      outlier.utils.ts             # Quartiles + Tukey fences (3.4.0)
+      outlier.utils.ts             # Quartiles, Tukey fences, IQR = 0 fallback, withoutOutliers
+      series-gaps.utils.ts         # Gap breaks, per-segment moving average (#185)
       date-grouping.utils.ts       # Time period grouping
     view/
       life-tracker-view.ts         # Main BasesView (visualizations)
@@ -46,6 +47,7 @@ src/
         grid-view.ts               # Grid BasesView (card editing)
         grid-view-options.ts       # Grid view options
       view-options.ts              # Life tracker view options
+      grid-settings.utils.ts       # Grid settings: read from config, write only user changes (#189)
       column-config.service.ts     # Per-column config management (memoized per render cycle)
       card-title.utils.ts          # Card title: own title or property name (3.4.0)
       card-order.service.ts        # Manual order + pinning reconciliation
@@ -109,6 +111,7 @@ src/
 - Renders grid of visualization cards
 - Delegates to services for data processing
 - Creates visualization instances per property
+- Reads its grid settings (time frame, columns) from the view config on every render; writes one only on a user change in the control bar (`grid-settings.utils.ts`)
 
 #### GridView (`view/grid-view/grid-view.ts`)
 
@@ -171,4 +174,5 @@ ChartData → buildCartesianReferenceLines → buildCartesianModel (planYAxis) �
 
 - `buildCartesianModel` is shared by the first render and incremental updates, so both apply the same y-axis plan, clamping and marker datasets. An update whose marker datasets differ (outliers appear or disappear) falls back to a full render.
 - Tooltips read real values through a `getChartData()` getter, so a clamped point always reports its real value after updates.
+- Gap breaks (`ChartData.gapBreaks`, from `gapBreaksFor`) are computed before the running total and the moving average; `initCartesianChart` hides the segments that cross them with Chart.js `segment` styles, read through the same getter so incremental updates move them.
 - The date-per-note axis uses a linear x scale over epoch ms and sets its ticks in `afterBuildTicks` from `buildDateTicks` (no Chart.js date adapter is bundled).

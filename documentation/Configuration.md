@@ -69,6 +69,10 @@ Configured via Obsidian's view options UI.
 | `gridColumns`        | number          | `3`        | Grid columns (1-6)                                          |
 | `showLegend`         | boolean         | `true`     | Show chart legends                                          |
 
+`timeFrame` and `gridColumns` are also set from the view's control bar. The
+view reads them from the config on every render and writes only the one the
+user changed (issue #189; Business Rules → View Settings Persistence).
+
 ## Grid View Options (Per-View)
 
 Configured via Obsidian's view options UI.
@@ -117,31 +121,33 @@ Stored in view config under `columnConfigs` key as `Record<PropertyId, ColumnVis
 
 **Multiple visualizations per property**: Each property can have multiple visualizations, each independently configurable. Right-click a visualization to add a new one (copies settings from source) or remove it (only if 2+ exist for the property).
 
-| Field                    | Description                                                                                 |
-| ------------------------ | ------------------------------------------------------------------------------------------- |
-| `id`                     | Unique visualization ID (UUID)                                                              |
-| `propertyId`             | Bases property ID                                                                           |
-| `visualizationType`      | Selected visualization                                                                      |
-| `displayName`            | Cached property name (written at config time; not shown)                                    |
-| `title`                  | Card title (3.4.0); absent or empty = property display name. Set from "Card title…"         |
-| `configuredAt`           | Timestamp                                                                                   |
-| `scale`                  | Optional {min, max}                                                                         |
-| `colorScheme`            | Optional color scheme                                                                       |
-| `heatmapCellSize`        | Optional heatmap cell size override                                                         |
-| `heatmapShowMonthLabels` | Optional heatmap month labels visibility                                                    |
-| `heatmapShowDayLabels`   | Optional heatmap day labels visibility                                                      |
-| `referenceLine`          | Optional `{ enabled, value, label? }`                                                       |
-| `aggregationMethod`      | `average` (default) \| `sum`                                                                |
-| `movingAveragePeriod`    | Rolling mean window (7, 14, 30); absent = off                                               |
-| `runningTotal`           | Plot the cumulative total                                                                   |
-| `target`                 | Goal target (see Business Rules → Goals and Targets)                                        |
-| `xAxisSource`            | `date` (default) \| `note-name` \| `date-per-note` (3.4.0)                                  |
-| `valueFormat`            | `number` (default) \| `duration-mm-ss` (seconds → m:ss) \| `duration-h-mm` (minutes → h:mm) |
-| `outliers`               | `fit` (default) \| `show-all` — whether outliers may set the auto-scaled y-axis (3.4.0)     |
+| Field                        | Description                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `id`                         | Unique visualization ID (UUID)                                                              |
+| `propertyId`                 | Bases property ID                                                                           |
+| `visualizationType`          | Selected visualization                                                                      |
+| `displayName`                | Cached property name (written at config time; not shown)                                    |
+| `title`                      | Card title (3.4.0); absent or empty = property display name. Set from "Card title…"         |
+| `configuredAt`               | Timestamp                                                                                   |
+| `scale`                      | Optional {min, max}                                                                         |
+| `colorScheme`                | Optional color scheme                                                                       |
+| `heatmapCellSize`            | Optional heatmap cell size override                                                         |
+| `heatmapShowMonthLabels`     | Optional heatmap month labels visibility                                                    |
+| `heatmapShowDayLabels`       | Optional heatmap day labels visibility                                                      |
+| `referenceLine`              | Optional `{ enabled, value, label? }`                                                       |
+| `aggregationMethod`          | `average` (default) \| `sum`                                                                |
+| `movingAveragePeriod`        | Rolling mean window (7, 14, 30); absent = off                                               |
+| `runningTotal`               | Plot the cumulative total                                                                   |
+| `target`                     | Goal target (see Business Rules → Goals and Targets)                                        |
+| `xAxisSource`                | `date` (default) \| `note-name` \| `date-per-note` (3.4.0)                                  |
+| `valueFormat`                | `number` (default) \| `duration-mm-ss` (seconds → m:ss) \| `duration-h-mm` (minutes → h:mm) |
+| `outliers`                   | `fit` (default) \| `show-all` — whether outliers may set the auto-scaled y-axis (3.4.0)     |
+| `excludeOutliersFromAverage` | `true` = moving average and trend leave outliers out (#186); absent = off                   |
+| `breakLineAcrossGaps`        | `false` = line/area keep one line across long gaps (#185); absent = break (on)              |
 
 Unknown `xAxisSource`, `valueFormat` and `outliers` values are ignored (default
 behavior). Rules: `documentation/Business Rules.md` → Value Format, Card Titles,
-Chart Outliers, Chart X-Axis Source.
+Chart Outliers, Chart X-Axis Source, Line Gaps.
 
 Example (`.base` YAML, one card):
 

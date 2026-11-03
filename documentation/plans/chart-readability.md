@@ -80,7 +80,7 @@ Agents cannot run Obsidian: everything below needs a look in a vault.
 
 ## Follow-ups (not done)
 
-- The moving average uses real values, so one outlier pulls the average off the axis for a window. An option to leave outliers out of the average may be worth adding.
+- ~~The moving average uses real values, so one outlier pulls the average off the axis for a window.~~ Done in #186: per-card "Leave outliers out of the average".
 - Number-format line charts still start at 0 when auto-scaled (backward compatible); a "fit to data" baseline option could help non-duration metrics too.
 
 ## Review fixes

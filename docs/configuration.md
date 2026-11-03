@@ -236,20 +236,22 @@ Configured via the view's settings panel (gear icon).
 
 Stored per view, per visualization. Access via right-click context menu.
 
-| Setting         | Description                                                                      |
-| --------------- | -------------------------------------------------------------------------------- |
-| Type            | Visualization type                                                               |
-| Scale           | Min/max range (auto or preset)                                                   |
-| Color scheme    | Color palette; heatmaps add Viridis/Cividis and a custom value-to-color mapping  |
-| Reference line  | Target line with value and label                                                 |
-| Aggregation     | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps   |
-| Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                  |
-| Running total   | Off (default) or Enabled — plots the cumulative total; line and area charts only |
-| X-axis          | Date (default), "Date, one point per note", or Note name; line, bar, area charts |
-| Value format    | Number (default), seconds as m:ss, or minutes as h:mm                            |
-| Outliers        | Fit the scale to the bulk (default) or Show all values; line, bar, area charts   |
-| Card title      | Your own title for the card; empty shows the property name                       |
-| Heatmap options | Cell size, day/month labels (heatmap only)                                       |
+| Setting                           | Description                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Type                              | Visualization type                                                                                |
+| Scale                             | Min/max range (auto or preset)                                                                    |
+| Color scheme                      | Color palette; heatmaps add Viridis/Cividis and a custom value-to-color mapping                   |
+| Reference line                    | Target line with value and label                                                                  |
+| Aggregation                       | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps                    |
+| Moving average                    | Off (default), 7, 14, or 30 periods — line and area charts only                                   |
+| Running total                     | Off (default) or Enabled — plots the cumulative total; line and area charts only                  |
+| X-axis                            | Date (default), "Date, one point per note", or Note name; line, bar, area charts                  |
+| Value format                      | Number (default), seconds as m:ss, or minutes as h:mm                                             |
+| Outliers                          | Fit the scale to the bulk (default) or Show all values; line, bar, area charts                    |
+| Leave outliers out of the average | Off (default) or On — the moving average and the trend ignore outliers; line, bar, area charts    |
+| Break line across gaps            | On (default) or Off — stop the line across long gaps in time; line and area charts on a date axis |
+| Card title                        | Your own title for the card; empty shows the property name                                        |
+| Heatmap options                   | Cell size, day/month labels (heatmap only)                                                        |
 
 Aggregation also applies to overlay charts (set in the overlay's own config,
 where it is shared across all of the overlay's properties — see [Overlay Config](#overlay-config)).
@@ -259,12 +261,14 @@ where it is shared across all of the overlay's properties — see [Overlay Confi
 These settings are saved in the view's `columnConfigs`, one entry per card, so
 you can also edit them by hand:
 
-| Key           | Values                                                |
-| ------------- | ----------------------------------------------------- |
-| `title`       | The card's title (empty or absent: the property name) |
-| `xAxisSource` | `date` (default), `date-per-note`, `note-name`        |
-| `valueFormat` | `number` (default), `duration-mm-ss`, `duration-h-mm` |
-| `outliers`    | `fit` (default), `show-all`                           |
+| Key                          | Values                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| `title`                      | The card's title (empty or absent: the property name)                   |
+| `xAxisSource`                | `date` (default), `date-per-note`, `note-name`                          |
+| `valueFormat`                | `number` (default), `duration-mm-ss`, `duration-h-mm`                   |
+| `outliers`                   | `fit` (default), `show-all`                                             |
+| `excludeOutliersFromAverage` | `true` to leave outliers out of the average and the trend (absent: off) |
+| `breakLineAcrossGaps`        | `false` to keep one line across gaps (absent: on)                       |
 
 ```yaml
 columnConfigs:
