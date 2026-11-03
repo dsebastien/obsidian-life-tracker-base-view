@@ -100,6 +100,7 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 ## Overlay Charts
 
 - Overlay visualizations require at least 2 properties
+- Saving or deleting an overlay from its edit modal forces a full render: the incremental path re-aggregates against the existing overlay config and would show the edit only after the Base is reopened
 - Only cartesian chart types support overlay mode: LineChart, BarChart, AreaChart — plus RangeChart, which exists ONLY as an overlay (issue #81)
 - Legends are always shown for overlay charts (to identify each property's line/bar)
 - When a property in an overlay is removed from Base, it is automatically removed from the overlay
@@ -181,8 +182,12 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - An unknown stored `xAxisSource` value falls back to the date axis
 - Radar charts share the cartesian aggregation path but keep the date axis: their spokes are periods by design
 - `xAxisSource: 'date-per-note'` (3.4.0) plots one point per note at its own date anchor on a time-proportional axis: no per-period aggregation (two notes on one day are two points), gaps show as distance. Points are in date order (stable, so same-day notes keep the view order); the moving average and the trend read notes in that order
-- On the date-per-note axis, notes without a date anchor are skipped and counted in the trend row ("N notes without a date"); notes without a value draw nothing (never a 0)
-- The date-per-note axis is a Chart.js linear scale over epoch-ms values with calendar-aligned ticks (day, week, month, quarter, year) built by the plugin: no Chart.js date adapter is bundled, and adding one would be a new runtime dependency. Labels stay horizontal and are auto-skipped; the tooltip title is "date · note name"
+- On the date-per-note axis, notes with a value but no date anchor are skipped and counted in the trend row ("N notes without a date"; the accessible label starts with the count). Notes without a value draw nothing (never a 0) and are not counted
+- Notes sharing one instant (filename dates all land on local midnight) are spread within their day in note order: the first keeps its instant, a group of k gets slots of (time to the end of the day) / k. Otherwise the second point sits on the first and can never be hovered or opened. Tooltips and CSV still show the same date
+- The date-per-note axis picks points with `nearest` mode on both axes (`intersect: false`): `index` mode resolves to the first of two close notes. Its tooltip therefore lists the nearest point only. Period and note-name axes keep `index` mode (every series at the hovered period)
+- Bars on the date-per-note axis: no Chart.js `offset` (on a linear scale it reserves room per tick and squeezes the data toward the middle); the axis gets half a day of room at each end instead. Bar width is 80% of the smallest pixel gap between notes, clamped to 3–16 px, set right before the bars are laid out (Chart.js would size every bar from the smallest gap and draw hairlines, with no minimum of its own). Lines get 2% of the span at each end
+- On the per-note axes (date-per-note and note-name) the trend row compares notes: "vs previous 7 notes", "Per-note trend" with a running total
+- The date-per-note axis is a Chart.js linear scale over epoch-ms values with calendar-aligned ticks (day, week, month, quarter, year) built by the plugin: no Chart.js date adapter is bundled, and adding one would be a new runtime dependency. Labels stay horizontal and are auto-skipped; the tooltip title is "date · note name" Two-/three-day and two-week ticks count from a fixed calendar origin (local 1970-01-01), so they stay on the same days when an earlier note is added; months align to January, years to multiples of the step
 - On the note-name axis, tick labels drop one trailing `(…)` suffix (`2025-06-24 (Running Session)` → `2025-06-24`), start horizontal, rotate at most 45° and are auto-skipped. Tooltips and CSV keep the full note name. A name that is only a suffix is kept whole
 - On both note axes the moving average is labelled per note (`7-note average`)
 
@@ -446,6 +451,8 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - Supported by the progress ring and by cartesian charts, which draw the target as a reference line. A target and an explicitly configured reference line are BOTH drawn (issue #156) — they answer different questions; the target line uses a tighter dash pattern and anchors its label at the left edge while reference labels anchor at the right, so the two stay readable even at the same value.
 - Targets read from a `.base` file are validated field by field; anything malformed is dropped whole rather than half-applied — a ring silently measuring the wrong thing is worse than no ring.
 - When the chart plots a running total, the target line accumulates with it (issue #158): it slopes from `value` at the first period to `value × periods` at the last, and its label says "(cumulative)". This only holds when the target's period matches the plotted granularity — a "per week" goal has no honest slope on a daily axis, so a period-mismatched target is not drawn at all under a running total rather than drawn wrong. Explicit reference lines are unaffected: a user-configured horizontal threshold stays horizontal.
+- On the date-per-note axis (3.4.0), a cumulative target slopes over the time the notes span: `span / period length + 1` periods (average lengths: 1, 7, 365.25/12, 365.25/4, 365.25 days), whatever the target's period, since a time axis gives every period an honest slope. With no notes there is no span and no line. On the note-name axis, which has no time, a cumulative target is not drawn: notes are not periods
+- Target labels on charts: `count` and `days` targets stay plain numbers under a duration format ("Target: 3", never "Target: 0:03")
 
 ## Progress Ring
 
@@ -501,8 +508,10 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 
 ## Card Titles
 
-- A configured card shows its own `displayName` when it is non-empty and not just the raw property name (`distance_kilometers`, `note.distance_kilometers`, case-insensitive); otherwise the property's display name (3.4.0). Several cards on one property ("Run days", "Distance per run (km)") stay distinguishable
-- `displayName` is also written automatically at configuration time (the property display name then). A raw-name value carries no intent and gives way, so a display name set in the Base later still shows. A cached display name that was later renamed in the Base keeps showing the old name: there is no way to tell it from a custom title
+- A configured card shows its own `title` when it is a non-empty string, else the property's current display name, as before 3.4.0. Several cards on one property ("Run days", "Distance per run (km)") stay distinguishable
+- `title` is set from "Card title…" in the card's right-click menu (or by hand in the `.base` file); applying an empty field removes it
+- `displayName` is never used as the title: it is written automatically at configuration time (the property name then), so every existing card carries one, and showing it froze each card on the name its property had back then. It keeps its old meaning
+- Overlays keep using their own `displayName`, which the user chooses in the overlay modal
 - The title is used for the card header, maximized view, progress goal suffix (`Run days · ≥ 3 days/week`), empty states, record notices, series label and export file names. Data points keep the property's display name
 
 ## Chart Outliers
@@ -515,3 +524,5 @@ When the "Capture properties" command is invoked from a custom base view (Life T
 - A value beyond the fences but inside the rounded axis is drawn as is
 - The moving average, trend, records and CSV use real values, never clamped ones
 - `outliers: show-all` (card menu "Outliers", overlay modal) restores the full range. An explicit scale (`min` or `max` set) always wins: no fitting
+- Hiding a series from the legend hides its outlier markers too
+- Incremental updates copy the markers' positions and directions and the point radii along with the data, so a marker follows its outlier and markers come back when a series drops to 40 points or fewer. A different set of marker datasets (outliers appearing or disappearing) rebuilds the chart

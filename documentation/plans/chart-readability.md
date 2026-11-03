@@ -4,8 +4,7 @@ Make cartesian cards readable on real data. Trigger: a running tracker over ~170
 session notes whose pace card (`pace_seconds_per_kilometer`, seconds) was
 unreadable: one bad value (49997) set the y-axis to 0–50,000, 170 overlapping
 markers, long rotated labels like `2025-06-24 (Running Session)`, and seconds
-instead of `6:27`. Cards configured with their own `displayName` all showed the
-property name.
+instead of `6:27`. Several cards on one property all showed the property name.
 
 Status: **done** on `feat/chart-readability` (all build steps below shipped;
 `bun run tsc`, `bun run lint`, `bun test`, `bun run build` clean). Needs manual
@@ -16,7 +15,7 @@ verification in a live vault (see Verification). Not merged or released.
 | #   | Feature                    | Config key (per card, `columnConfigs`)                   | Default                    |
 | --- | -------------------------- | -------------------------------------------------------- | -------------------------- |
 | 1   | Value format               | `valueFormat: number \| duration-mm-ss \| duration-h-mm` | `number` (absent)          |
-| 2   | Card titles                | existing `displayName`                                   | property display name      |
+| 2   | Card titles                | `title` (new; set from "Card title…")                    | property display name      |
 | 3   | Outliers don't set scale   | `outliers: fit \| show-all`                              | `fit` (absent)             |
 | 4   | Date, one point per note   | `xAxisSource: date-per-note`                             | `date` (absent)            |
 | 5   | Note-name axis labels      | none                                                     | always on                  |
@@ -36,7 +35,7 @@ overlay edit modal.
 | Duration ticks                            | Fixed step from a duration ladder (seconds: 1/2/5/10/15/30 s, 1/2/5/10/15/30 min, 1/2/3/6/12/24 h; minutes: 1/2/5/10/15/30 min, 1/2/3/6/12/24 h), at most 6 intervals.                                                                                                  |
 | Duration baseline                         | Line/area charts with a duration format fit the y-axis to the data instead of starting at 0 (a pace of 5:00–7:00 from 0:00 flattens every change). Bars always start at 0. Number-format cards keep starting at 0 (backward compatible). An explicit scale always wins. |
 | Where the format applies                  | y ticks, tooltips, moving average, reference line / target labels, progress ring numbers (sum/average/latest metrics only: count/days are counts), records, heatmap tooltip, discrete heatmap legend. Trend row keeps its percentage. CSV keeps raw numbers.            |
-| Card title                                | Card `displayName` when non-empty and not just the raw property name; else the property display name. Progress keeps its goal suffix after it. Exports use the title too.                                                                                               |
+| Card title                                | Card `title` when set (menu "Card title…", empty clears), else the property display name. `displayName` is auto-saved on every card and keeps its old meaning. Progress keeps its goal suffix. Exports use the title.                                                   |
 | Outlier rule                              | Tukey fences Q1 − 3·IQR / Q3 + 3·IQR, per series, only with ≥ 8 points, IQR > 0, and when the fences exclude something. Linear-interpolated quartiles.                                                                                                                  |
 | Which series are fitted                   | Line/bar/area numeric series and each overlay series. Not list (0/1) data, not running totals (a cumulative series carries one jump into every later point), not the moving average.                                                                                    |
 | Axis when fitting                         | Range = bulk of every fitted series ∪ reference/target values ∪ 0 when the baseline is 0, rounded out to a nice step. Explicit `min`/`max`/`stepSize`.                                                                                                                  |
@@ -72,7 +71,7 @@ Agents cannot run Obsidian: everything below needs a look in a vault.
 - Note-name axis: `2025-06-24` labels, tooltip keeps `2025-06-24 (Running Session)`.
 - 170-point line: no markers until hover; a 20-point line keeps markers.
 - Moving average on: average solid and first in legend, raw thin and faded; clicking a point opens its note.
-- Three cards on one property with their own `displayName`: each shows its own title; progress keeps `· ≥ N days/week`.
+- Three cards on one property, each given a title with "Card title…": each shows its own title; progress keeps `· ≥ N days/week`; clearing the title brings back the property name.
 - Incremental update (edit a pace value in a note while the view is open): axis, markers and the "notes without a date" count follow; adding or removing the outlier rebuilds the card.
 - Play animation on a date-per-note chart: points appear left to right, no console error.
 - Overlay with `valueFormat`/`outliers` set from the edit modal: ticks, tooltips and markers follow; range charts ignore both.
@@ -83,4 +82,16 @@ Agents cannot run Obsidian: everything below needs a look in a vault.
 
 - The moving average uses real values, so one outlier pulls the average off the axis for a window. An option to leave outliers out of the average may be worth adding.
 - Number-format line charts still start at 0 when auto-scaled (backward compatible); a "fit to data" baseline option could help non-duration metrics too.
-- A `displayName` cached at configuration time and later renamed in the Base keeps the old title; a "Rename card" menu entry would make titles explicit.
+
+## Review fixes
+
+An adversarial review found these; all fixed with specs:
+
+- Same-day notes on the date-per-note axis were unreachable: notes sharing an instant are spread within their day, and that axis uses `nearest` interaction on both axes.
+- Bars on that axis: no `offset`, half a day of room at each end, 3–16 px bars from the smallest gap.
+- Overlay edits now force a full render.
+- Card titles moved from the auto-saved `displayName` to an explicit `title` key with a "Card title…" menu item.
+- Incremental updates copy marker rotation and point radii; hiding a series in the legend hides its markers.
+- Cumulative targets: time-span periods on the date-per-note axis, not drawn on the note-name axis. Count/days target labels stay numbers.
+- "Notes without a date" counts only notes with a value; its accessible label carries the count. Trend row says "notes" on per-note axes.
+- Multi-day ticks anchored to a calendar origin; folds instead of `Math.min(...arr)`.

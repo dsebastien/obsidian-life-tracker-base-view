@@ -27,7 +27,8 @@ Per-visualization settings stored in view config. Multiple visualizations can ex
 - `id`: Unique visualization ID (UUID)
 - `propertyId`: Bases property ID
 - `visualizationType`: Selected visualization
-- `displayName`: Card title when set (3.4.0); written with the property display name at configuration time
+- `displayName`: Cached display name (written at configuration time)
+- `title`: Card title (3.4.0); absent or empty = the property's display name
 - `scale`: Optional ScaleConfig
 - `colorScheme`: Optional color scheme override
 - `heatmapCellSize`: Optional heatmap cell size override

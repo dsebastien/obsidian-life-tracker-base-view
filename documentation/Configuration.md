@@ -122,7 +122,8 @@ Stored in view config under `columnConfigs` key as `Record<PropertyId, ColumnVis
 | `id`                     | Unique visualization ID (UUID)                                                              |
 | `propertyId`             | Bases property ID                                                                           |
 | `visualizationType`      | Selected visualization                                                                      |
-| `displayName`            | Card title (3.4.0); written with the property name at config time, editable in the `.base`  |
+| `displayName`            | Cached property name (written at config time; not shown)                                    |
+| `title`                  | Card title (3.4.0); absent or empty = property display name. Set from "Card title…"         |
 | `configuredAt`           | Timestamp                                                                                   |
 | `scale`                  | Optional {min, max}                                                                         |
 | `colorScheme`            | Optional color scheme                                                                       |
@@ -150,7 +151,8 @@ columnConfigs:
         - id: 8c0f…
           propertyId: note.pace_seconds_per_kilometer
           visualizationType: line-chart
-          displayName: Pace (min/km)
+          displayName: Pace
+          title: Pace (min/km)
           configuredAt: 1730000000000
           xAxisSource: date-per-note
           valueFormat: duration-mm-ss
