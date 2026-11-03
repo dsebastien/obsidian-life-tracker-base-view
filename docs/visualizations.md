@@ -189,14 +189,28 @@ Line, bar, and area charts normally group entries into time periods. The
 **X-axis** option in the card's right-click menu offers an alternative:
 
 - **Date** (default): group entries by period via the date anchor.
+- **Date, one point per note**: every note is plotted at its own date, on an
+  axis where distance is time. Nothing is grouped: two runs on the same day are
+  two points, and a three-week break shows as a three-week gap. Date labels
+  are short, horizontal, and thinned out so they never overlap. Notes without a
+  date can't be placed; the card says how many were left out ("3 notes without
+  a date"). Notes without a value are simply not drawn. Hover a point to see
+  its date and note name.
 - **Note name**: one point per note, labeled with the note's name, in the
   Base view's own sort order — sort the view to arrange the axis. Entries
   don't need a date, which makes this ideal for Bases whose notes aren't
-  date-shaped (books with ratings, projects with scores, people).
+  date-shaped (books with ratings, projects with scores, people). A trailing
+  type suffix in parentheses is left off the axis label
+  (`2025-06-24 (Running Session)` reads `2025-06-24`), and labels are thinned
+  out instead of overlapping. The tooltip keeps the full name.
 
-On the note-name axis there is no time grouping, so the Aggregation setting
+On both per-note axes there is no time grouping, so the Aggregation setting
 does not apply; the moving average, running total, and trend indicator operate
-over notes instead of periods. List-valued properties keep the date axis.
+over notes instead of periods (in date order on the date axis). List-valued
+properties keep the date axis.
+
+Export CSV on the **Date, one point per note** axis writes one row per note:
+its date, its full name, then the value.
 
 ## Scale Configuration
 
@@ -211,6 +225,72 @@ For numeric visualizations, configure the Y-axis scale:
 | 0-10   | 0 to 10  | 10-point scales           |
 | 1-10   | 1 to 10  | Rating scales (no zero)   |
 | 0-100  | 0 to 100 | Percentages, large ranges |
+
+A custom scale (**Custom...**) sets your own minimum and maximum.
+
+### Outliers
+
+On line, bar, and area charts with **Auto-detect** scale, one far-off value no
+longer sets the whole axis. A pace of 49997 seconds among runs around 6:20
+used to stretch the axis to 50,000 and flatten every real run into a line at
+the bottom. Now the axis fits the bulk of your data, and values far outside it
+are drawn at the edge of the axis with a small triangle (pointing up for a
+value above, down for a value below). Hover the point to see its real value,
+marked "outside the scale". Clicking it opens the note, so you can fix the
+typo.
+
+What counts as far off: values more than three interquartile ranges beyond
+the middle half of the data (Tukey's "far out" fences), checked only when the
+series has at least 8 values. Ordinary highs and lows stay on the scale.
+
+- The trend, the moving average, records, and CSV export use the real values.
+- Running totals, list properties, and moving averages are never trimmed.
+- To see every value, set **Outliers** to **Show all values** in the card's
+  right-click menu (or in the overlay editor). A fixed scale (a preset or
+  **Custom...**) always wins over both.
+
+## Value Format
+
+Some values are durations stored as plain numbers: a pace in seconds per
+kilometer, sleep in minutes. Set **Value format** in the card's right-click menu
+to read them as times:
+
+| Value format              | Stored value | Shown as             |
+| ------------------------- | ------------ | -------------------- |
+| Number (default)          | 387          | 387                  |
+| Duration: seconds as m:ss | 387          | 6:27 (1:02:05 ≥ 1 h) |
+| Duration: minutes as h:mm | 95           | 1:35                 |
+
+The format applies everywhere the card shows a value: axis ticks (which land
+on round times such as 5:00, 5:30, 6:00), tooltips, the moving average,
+default reference line and target labels, the record chip ("Record: 5:12"),
+heatmap tooltips, and progress ring amounts. It changes only how values read:
+the trend row keeps its percentage, and CSV export keeps the raw numbers so a
+spreadsheet can still compute with them. Negative values are shown as plain
+numbers.
+
+On line and area charts, a duration axis fits your data instead of starting
+at zero, so a pace between 5:00 and 7:00 fills the chart. Bar charts always
+start at zero.
+
+Progress rings format the amounts of **sum**, **average** and **latest**
+targets; **count** and **days** targets count entries or days and stay plain
+numbers.
+
+The format is offered for heatmap, line, bar, area, scatter, bubble and
+progress cards, and is stored in the view's configuration in the `.base` file
+(`valueFormat: duration-mm-ss` or `duration-h-mm`), so it travels with the
+Base.
+
+## Card Titles
+
+A card shows its property's name. When several cards show the same property
+(a "Run days" heatmap, a progress ring, and a "Distance per run (km)" chart),
+give each its own title: set `displayName` on that card in the `.base` file's
+`columnConfigs`. The title is used everywhere the card shows its name,
+including maximized mode and export file names, and a progress ring adds its
+goal after it ("Run days · ≥ 3 days/week"). An empty `displayName`, or one
+that is just the raw property name, shows the property's name.
 
 ## Color Schemes
 
@@ -342,7 +422,9 @@ needs no polarity: it counts periods rather than calling any of them best.
 
 ## Moving Average
 
-For line and area charts, enable a moving average from the card's right-click menu (7, 14, or 30 periods). It renders as a thin dashed line in the chart's color, smoothing noisy daily metrics like mood, weight, or steps. Each point is the mean of the recorded values in the trailing window — missing periods are skipped, not counted as 0.
+For line and area charts, enable a moving average from the card's right-click menu (7, 14, or 30 periods). It smooths noisy metrics like mood, weight, steps, or pace. Each point is the mean of the recorded values in the trailing window — missing periods are skipped, not counted as 0.
+
+When the moving average is on, it becomes the main line: solid, thicker, in full color, drawn on top, and listed first in the legend and tooltip. Your raw values stay visible as a thin, faded line behind it. On the per-note axes the window counts notes ("7-note average").
 
 ## Running Total
 
@@ -369,6 +451,8 @@ Single-dataset line, bar, and area charts show a small ↑ / ↓ / → arrow nex
 Right-click any visualization card (long-press on mobile) to export it:
 
 - **Export image**: saves a PNG of the chart in its current state. Available for chart types (line, bar, area, pie, doughnut, radar, polar area, scatter, bubble).
-- **Export CSV**: saves the data exactly as displayed — chart periods and values, heatmap dates/values/entry counts, tag frequencies, or timeline points.
+- **Export CSV**: saves the data exactly as displayed — chart periods and values, heatmap dates/values/entry counts, tag frequencies, or timeline points. Values are raw numbers, even when the card shows them as durations, and values drawn at the edge of the axis are exported with their real value.
+
+Exported files are named after the card's title.
 
 Files are saved to your vault's attachment folder, and a notice shows the exact path.

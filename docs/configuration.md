@@ -245,11 +245,41 @@ Stored per view, per visualization. Access via right-click context menu.
 | Aggregation     | Average (default) or Sum — line, bar, area, radar, bubble charts, and heatmaps   |
 | Moving average  | Off (default), 7, 14, or 30 periods — line and area charts only                  |
 | Running total   | Off (default) or Enabled — plots the cumulative total; line and area charts only |
-| X-axis          | Date (default) or Note name — one point per note; line, bar, and area charts     |
+| X-axis          | Date (default), Date, one point per note, or Note name; line, bar, area charts   |
+| Value format    | Number (default), seconds as m:ss, or minutes as h:mm (durations)                |
+| Outliers        | Fit the scale to the bulk (default) or Show all values; line, bar, area charts   |
 | Heatmap options | Cell size, day/month labels (heatmap only)                                       |
 
 Aggregation also applies to overlay charts (set in the overlay's own config,
 where it is shared across all of the overlay's properties — see [Overlay Config](#overlay-config)).
+
+### In the `.base` file
+
+These settings are saved in the view's `columnConfigs`, one entry per card, so
+you can also edit them by hand:
+
+| Key           | Values                                                |
+| ------------- | ----------------------------------------------------- |
+| `displayName` | The card's title                                      |
+| `xAxisSource` | `date` (default), `date-per-note`, `note-name`        |
+| `valueFormat` | `number` (default), `duration-mm-ss`, `duration-h-mm` |
+| `outliers`    | `fit` (default), `show-all`                           |
+
+```yaml
+columnConfigs:
+    note.pace_seconds_per_kilometer:
+        - id: 8c0f2d6e-…
+          propertyId: note.pace_seconds_per_kilometer
+          visualizationType: line-chart
+          displayName: Pace (min/km)
+          configuredAt: 1730000000000
+          xAxisSource: date-per-note
+          valueFormat: duration-mm-ss
+          movingAveragePeriod: 7
+```
+
+Leave a key out to keep its default. An unknown value is ignored. Overlays
+(`overlayConfigs`) accept `valueFormat` and `outliers` too.
 
 ## Overlay Config
 
@@ -264,6 +294,8 @@ Stored per view. Access via overlay card context menu.
 | Color scheme                   | Color palette                                        |
 | Reference lines                | Per-property target lines                            |
 | Aggregation                    | Average (default) or Sum — applied to all properties |
+| Value format                   | Number (default) or a duration format                |
+| Outliers                       | Fit the scale to the bulk (default) or Show all      |
 | Hide individual visualizations | Hide separate cards for overlay props                |
 
 ## Scale Presets

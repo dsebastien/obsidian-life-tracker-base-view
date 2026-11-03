@@ -86,9 +86,9 @@ For vaults with many notes:
 
 Cards appear as soon as the view opens: their outlines are laid out immediately
 and each one fills in as it finishes rendering, so a multi-year dashboard is
-usable while it is still drawing. Dense line and area charts (more than 500
-points, roughly 18 months of daily data) drop their point markers and draw just
-the line — every point is still plotted and still shows a tooltip on hover.
+usable while it is still drawing. Line and area charts with more than 40
+points drop their point markers and draw just the line — every point is still
+plotted, and the point under the cursor shows with its tooltip on hover.
 
 ### Many Visualizations
 
