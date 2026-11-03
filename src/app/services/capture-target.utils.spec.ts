@@ -1,0 +1,473 @@
+import { describe, expect, test } from 'bun:test'
+import {
+    DAILY_NOTE_TARGET_ID,
+    createCaptureTarget,
+    sanitizeCaptureTargets,
+    type CaptureTarget,
+    type PropertyDefinition,
+    type StarterKitNoteType
+} from '../types'
+import { createDefaultPropertyDefinition } from '../types/property/property-definition.types'
+import {
+    buildCreationFrontmatter,
+    definitionsForDestination,
+    describeTargetLayout,
+    groupByDestination,
+    isOfTargetType,
+    isTargetLayout,
+    matchesFilters,
+    needsDiscoverabilityWarning,
+    pickTargetNote,
+    readTargetNoteDate,
+    resolveDefinitionTarget,
+    resolveFreeTargetPath,
+    type TargetLayout,
+    type TargetNoteCandidate
+} from './capture-target.utils'
+
+const STRENGTH_TYPE_ID = 'nt-1793122063547-rrrhxc2'
+
+/** The real Strength Sessions type from the reference vault */
+const STRENGTH_TYPE: StarterKitNoteType = {
+    id: STRENGTH_TYPE_ID,
+    name: 'Strength Sessions',
+    description: 'One strength workout',
+    icon: null,
+    mappings: [{ type: 'tag', value: 'type/session/sport/strength', enabled: true }],
+    properties: [],
+    associatedFolder: '40 Journal/46 Sessions/Sport/Strength/{{year}}',
+    templatePath: '50 Resources/54 Templates/Templater/TPL Strength Session.md',
+    noteNamePrefix: null,
+    noteNameSuffix: ' (Strength Session)',
+    tags: ['zone/journal', 'type/session/sport/strength']
+}
+
+const NOV_3 = new Date(2026, 10, 3)
+
+function throughTheDay(overrides: Partial<CaptureTarget> = {}): CaptureTarget {
+    return {
+        ...createCaptureTarget('t-through', 'Through the day'),
+        noteTypeId: STRENGTH_TYPE_ID,
+        filters: [{ property: 'workout_kind', value: 'Through the day' }],
+        ...overrides
+    }
+}
+
+function definition(overrides: Partial<PropertyDefinition> = {}): PropertyDefinition {
+    return { ...createDefaultPropertyDefinition('d-1', 0), name: 'push_ups', ...overrides }
+}
+
+function linkedTo(noteTypeId: string): Partial<PropertyDefinition> {
+    return {
+        starterKitLink: { noteTypeId, noteTypeName: 'Type', propertyName: 'push_ups' }
+    }
+}
+
+function candidate(overrides: Partial<TargetNoteCandidate> = {}): TargetNoteCandidate {
+    return {
+        path: '40 Journal/46 Sessions/Sport/Strength/2026/2026-11-03 (Strength Session).md',
+        basename: '2026-11-03 (Strength Session)',
+        folder: '40 Journal/46 Sessions/Sport/Strength/2026',
+        tags: ['zone/journal', 'type/session/sport/strength'],
+        frontmatter: { date: '2026-11-03', workout_kind: 'Through the day' },
+        mtime: 1,
+        ...overrides
+    }
+}
+
+describe('resolveDefinitionTarget', () => {
+    const target = throughTheDay()
+
+    test('a definition with no target and no link goes to the daily note', () => {
+        expect(resolveDefinitionTarget(definition(), [target])).toBeNull()
+    })
+
+    test('no targets configured: every definition goes to the daily note', () => {
+        expect(resolveDefinitionTarget(definition(linkedTo(STRENGTH_TYPE_ID)), [])).toBeNull()
+    })
+
+    test('an explicit target wins', () => {
+        const other = { ...throughTheDay(), id: 't-other', noteTypeId: '' }
+        expect(
+            resolveDefinitionTarget(
+                definition({ ...linkedTo(STRENGTH_TYPE_ID), captureTargetId: 't-other' }),
+                [target, other]
+            )
+        ).toBe(other)
+    })
+
+    test('daily-note forces the daily note even when a target matches the link', () => {
+        expect(
+            resolveDefinitionTarget(
+                definition({
+                    ...linkedTo(STRENGTH_TYPE_ID),
+                    captureTargetId: DAILY_NOTE_TARGET_ID
+                }),
+                [target]
+            )
+        ).toBeNull()
+    })
+
+    test('a linked definition derives the one target of its note type', () => {
+        expect(resolveDefinitionTarget(definition(linkedTo(STRENGTH_TYPE_ID)), [target])).toBe(
+            target
+        )
+    })
+
+    test('two targets of the same type are ambiguous: daily note', () => {
+        const second = { ...throughTheDay(), id: 't-gym' }
+        expect(
+            resolveDefinitionTarget(definition(linkedTo(STRENGTH_TYPE_ID)), [target, second])
+        ).toBeNull()
+    })
+
+    test('a deleted explicit target falls back to the automatic rule', () => {
+        expect(
+            resolveDefinitionTarget(
+                definition({ ...linkedTo(STRENGTH_TYPE_ID), captureTargetId: 'gone' }),
+                [target]
+            )
+        ).toBe(target)
+        expect(
+            resolveDefinitionTarget(definition({ captureTargetId: 'gone' }), [target])
+        ).toBeNull()
+    })
+
+    test('a global Starter Kit property (null note type) derives nothing', () => {
+        expect(
+            resolveDefinitionTarget(
+                definition({
+                    starterKitLink: { noteTypeId: null, noteTypeName: '', propertyName: 'x' }
+                }),
+                [{ ...target, noteTypeId: '' }]
+            )
+        ).toBeNull()
+    })
+})
+
+describe('groupByDestination', () => {
+    test('daily first, then targets in settings order, empty groups dropped', () => {
+        const a = throughTheDay({ id: 'a', noteTypeId: '' })
+        const b = throughTheDay({ id: 'b', noteTypeId: '' })
+        const unused = throughTheDay({ id: 'c', noteTypeId: '' })
+        const water = definition({ id: 'w', name: 'water' })
+        const pushUps = definition({ id: 'p', captureTargetId: 'b' })
+        const squats = definition({ id: 's', captureTargetId: 'a' })
+
+        const groups = groupByDestination([pushUps, water, squats], [a, b, unused])
+
+        expect(groups.map((group) => group.target?.id ?? 'daily')).toEqual(['daily', 'a', 'b'])
+        expect(groups[0]?.definitions).toEqual([water])
+        expect(definitionsForDestination([pushUps, water, squats], [a, b], null)).toEqual([water])
+    })
+
+    test('with no targets there is a single daily group holding everything', () => {
+        const all = [definition({ id: '1' }), definition({ id: '2' })]
+        expect(groupByDestination(all, [])).toEqual([{ target: null, definitions: all }])
+    })
+})
+
+describe('matchesFilters', () => {
+    const filters = [{ property: 'workout_kind', value: 'Through the day' }]
+
+    test('trimmed, case-insensitive match', () => {
+        expect(matchesFilters({ workout_kind: '  through THE day ' }, filters)).toBe(true)
+        expect(matchesFilters({ workout_kind: 'Full body' }, filters)).toBe(false)
+        expect(matchesFilters({}, filters)).toBe(false)
+    })
+
+    test('a list matches when one item matches', () => {
+        expect(matchesFilters({ workout_kind: ['Core', 'Through the day'] }, filters)).toBe(true)
+    })
+
+    test('numbers and booleans compare as text; an empty property name is ignored', () => {
+        expect(matchesFilters({ n: 3 }, [{ property: 'n', value: '3' }])).toBe(true)
+        expect(matchesFilters({ b: true }, [{ property: 'b', value: 'TRUE' }])).toBe(true)
+        expect(matchesFilters({}, [{ property: ' ', value: 'x' }])).toBe(true)
+    })
+
+    test('an empty value matches an empty or missing property', () => {
+        expect(matchesFilters({}, [{ property: 'kind', value: '' }])).toBe(true)
+        expect(matchesFilters({ kind: 'x' }, [{ property: 'kind', value: '' }])).toBe(false)
+    })
+})
+
+describe('readTargetNoteDate', () => {
+    test('reads the date property, also from a datetime', () => {
+        expect(readTargetNoteDate(candidate(), 'date')).toEqual(NOV_3)
+        expect(
+            readTargetNoteDate(candidate({ frontmatter: { when: '2026-11-03T07:30' } }), 'when')
+        ).toEqual(NOV_3)
+    })
+
+    test('the property wins over the file name', () => {
+        expect(
+            readTargetNoteDate(candidate({ frontmatter: { date: '2026-11-04' } }), 'date')
+        ).toEqual(new Date(2026, 10, 4))
+    })
+
+    test('falls back to a leading ISO date in the file name', () => {
+        expect(
+            readTargetNoteDate(
+                candidate({ frontmatter: {}, basename: '2026-11-03 2 (Strength Session)' }),
+                'date'
+            )
+        ).toEqual(NOV_3)
+    })
+
+    test('an invalid property date is not silently replaced by the file name', () => {
+        expect(readTargetNoteDate(candidate({ frontmatter: { date: 'soon' } }), 'date')).toBeNull()
+        expect(
+            readTargetNoteDate(candidate({ frontmatter: { date: '2026-02-31' } }), 'date')
+        ).toBeNull()
+    })
+
+    test('no date anywhere', () => {
+        expect(
+            readTargetNoteDate(candidate({ frontmatter: {}, basename: 'Gym', path: 'Gym.md' }), '')
+        ).toBeNull()
+    })
+})
+
+describe('isOfTargetType', () => {
+    test('a Starter Kit target uses the note type mappings', () => {
+        expect(isOfTargetType(candidate(), throughTheDay(), STRENGTH_TYPE)).toBe(true)
+        expect(isOfTargetType(candidate({ tags: ['other'] }), throughTheDay(), STRENGTH_TYPE)).toBe(
+            false
+        )
+    })
+
+    test('a Starter Kit target whose type is unavailable matches nothing', () => {
+        expect(isOfTargetType(candidate(), throughTheDay(), null)).toBe(false)
+    })
+
+    test('a type with only disabled mappings matches nothing', () => {
+        const disabled = {
+            ...STRENGTH_TYPE,
+            mappings: [
+                { type: 'tag' as const, value: 'type/session/sport/strength', enabled: false }
+            ]
+        }
+        expect(isOfTargetType(candidate(), throughTheDay(), disabled)).toBe(false)
+    })
+
+    test('a standalone target needs every tag; none means the folder decides', () => {
+        const standalone = throughTheDay({ noteTypeId: '', tags: ['#workout', 'daily-moves'] })
+        expect(
+            isOfTargetType(candidate({ tags: ['workout', 'Daily-Moves'] }), standalone, null)
+        ).toBe(true)
+        expect(isOfTargetType(candidate({ tags: ['workout'] }), standalone, null)).toBe(false)
+        expect(isOfTargetType(candidate({ tags: [] }), { ...standalone, tags: [] }, null)).toBe(
+            true
+        )
+    })
+})
+
+describe('pickTargetNote', () => {
+    const target = throughTheDay()
+
+    test('the Garmin gym session of the same day is not the through-the-day note', () => {
+        const gym = candidate({
+            path: 'S/2026-11-03 (Strength Session).md',
+            frontmatter: { date: '2026-11-03', workout_kind: 'Full body' },
+            mtime: 9
+        })
+        const through = candidate({
+            path: 'S/2026-11-03 2 (Strength Session).md',
+            basename: '2026-11-03 2 (Strength Session)',
+            mtime: 2
+        })
+        expect(pickTargetNote([gym, through], target, STRENGTH_TYPE, NOV_3)).toBe(through)
+    })
+
+    test('another day does not match; several matches pick the newest', () => {
+        const other = candidate({
+            frontmatter: { date: '2026-11-02', workout_kind: 'Through the day' }
+        })
+        const older = candidate({ path: 'a.md', mtime: 1 })
+        const newer = candidate({ path: 'b.md', mtime: 5 })
+        expect(pickTargetNote([other], target, STRENGTH_TYPE, NOV_3)).toBeNull()
+        expect(pickTargetNote([older, newer], target, STRENGTH_TYPE, NOV_3)).toBe(newer)
+    })
+})
+
+describe('describeTargetLayout', () => {
+    test('a Starter Kit target takes the type folder, affixes, template and tags', () => {
+        expect(describeTargetLayout(throughTheDay(), STRENGTH_TYPE)).toEqual({
+            folder: '40 Journal/46 Sessions/Sport/Strength/{{year}}',
+            head: '{{date}}',
+            tail: ' (Strength Session)',
+            templatePath: '50 Resources/54 Templates/Templater/TPL Strength Session.md',
+            tags: ['zone/journal', 'type/session/sport/strength']
+        })
+    })
+
+    test('the target template overrides the type template', () => {
+        const layout = describeTargetLayout(
+            throughTheDay({ templatePath: ' Templates/Quick.md ' }),
+            STRENGTH_TYPE
+        )
+        expect(isTargetLayout(layout) && layout.templatePath).toBe('Templates/Quick.md')
+    })
+
+    test('errors: missing type, missing folder, missing file name', () => {
+        expect(describeTargetLayout(throughTheDay(), null)).toBe('missing-note-type')
+        expect(
+            describeTargetLayout(throughTheDay(), { ...STRENGTH_TYPE, associatedFolder: null })
+        ).toBe('missing-folder')
+        expect(describeTargetLayout(throughTheDay({ noteTypeId: '' }), null)).toBe('missing-folder')
+        expect(
+            describeTargetLayout(
+                throughTheDay({ noteTypeId: '', folder: 'Workouts', fileNamePattern: ' ' }),
+                null
+            )
+        ).toBe('missing-file-name')
+    })
+
+    test('a standalone pattern is split after its last token', () => {
+        const layout = describeTargetLayout(
+            throughTheDay({
+                noteTypeId: '',
+                folder: 'Workouts/{{year}}',
+                fileNamePattern: 'Moves {{date}} (quick)',
+                tags: ['#workout', ' ']
+            }),
+            null
+        )
+        expect(layout).toEqual({
+            folder: 'Workouts/{{year}}',
+            head: 'Moves {{date}}',
+            tail: ' (quick)',
+            templatePath: null,
+            tags: ['workout']
+        })
+    })
+})
+
+describe('resolveFreeTargetPath', () => {
+    const layout = describeTargetLayout(throughTheDay(), STRENGTH_TYPE) as TargetLayout
+    const folder = '40 Journal/46 Sessions/Sport/Strength/2026'
+
+    test('the plain name when free', () => {
+        expect(resolveFreeTargetPath(layout, NOV_3, () => false)).toEqual({
+            path: `${folder}/2026-11-03 (Strength Session).md`,
+            folder
+        })
+    })
+
+    test('a taken name is never reused: the counter goes after the date', () => {
+        const taken = new Set([
+            `${folder}/2026-11-03 (Strength Session).md`,
+            `${folder}/2026-11-03 2 (Strength Session).md`
+        ])
+        expect(resolveFreeTargetPath(layout, NOV_3, (path) => taken.has(path))?.path).toBe(
+            `${folder}/2026-11-03 3 (Strength Session).md`
+        )
+    })
+
+    test('a pattern without tokens gets the counter at the end', () => {
+        const plain: TargetLayout = { ...layout, folder: 'W', head: 'Workout', tail: '' }
+        expect(resolveFreeTargetPath(plain, NOV_3, (path) => path === 'W/Workout.md')?.path).toBe(
+            'W/Workout 2.md'
+        )
+    })
+
+    test('unrenderable or unsafe layouts and exhausted counters give null', () => {
+        expect(resolveFreeTargetPath({ ...layout, folder: 'A/*' }, NOV_3, () => false)).toBeNull()
+        expect(
+            resolveFreeTargetPath({ ...layout, tail: ' {{nope}}' }, NOV_3, () => false)
+        ).toBeNull()
+        expect(resolveFreeTargetPath({ ...layout, folder: '../x' }, NOV_3, () => false)).toBeNull()
+        expect(resolveFreeTargetPath(layout, NOV_3, () => true)).toBeNull()
+    })
+})
+
+describe('buildCreationFrontmatter', () => {
+    const layout = describeTargetLayout(throughTheDay(), STRENGTH_TYPE) as TargetLayout
+
+    test('writes the date, the filters and merges the mandatory tags', () => {
+        expect(buildCreationFrontmatter(throughTheDay(), layout, NOV_3, ['zone/journal'])).toEqual({
+            date: '2026-11-03',
+            workout_kind: 'Through the day',
+            tags: ['zone/journal', 'type/session/sport/strength']
+        })
+    })
+
+    test('a single-string tags value and a missing one are merged too', () => {
+        expect(buildCreationFrontmatter(throughTheDay(), layout, NOV_3, 'mine')['tags']).toEqual([
+            'mine',
+            'zone/journal',
+            'type/session/sport/strength'
+        ])
+        expect(buildCreationFrontmatter(throughTheDay(), layout, NOV_3, undefined)['tags']).toEqual(
+            ['zone/journal', 'type/session/sport/strength']
+        )
+    })
+
+    test('no tags to add, no date property: neither is written', () => {
+        const values = buildCreationFrontmatter(
+            throughTheDay({ dateProperty: ' ', filters: [] }),
+            { ...layout, tags: [] },
+            NOV_3,
+            undefined
+        )
+        expect(values).toEqual({})
+    })
+})
+
+describe('needsDiscoverabilityWarning', () => {
+    const resolved = { path: 'S/2026-11-03 (Strength Session).md', folder: 'S' }
+
+    test('never with a date property, even for an unparseable file name', () => {
+        expect(needsDiscoverabilityWarning(throughTheDay(), resolved, NOV_3)).toBe(false)
+    })
+
+    test('without a date property the file name decides', () => {
+        const noDate = throughTheDay({ dateProperty: '' })
+        expect(needsDiscoverabilityWarning(noDate, resolved, NOV_3)).toBe(true)
+        expect(
+            needsDiscoverabilityWarning(noDate, { path: 'S/2026-11-03.md', folder: 'S' }, NOV_3)
+        ).toBe(false)
+    })
+})
+
+describe('sanitizeCaptureTargets', () => {
+    let counter = 0
+    const generateId = (): string => `gen-${++counter}`
+
+    test('defaults every missing or malformed field', () => {
+        const [target] = sanitizeCaptureTargets(
+            [
+                {
+                    id: 'x',
+                    name: 3,
+                    filters: [{ property: 'a', value: 'b' }, { property: 1 }, null],
+                    tags: ['t', 2]
+                }
+            ],
+            generateId
+        )
+        expect(target).toEqual({
+            id: 'x',
+            name: '',
+            noteTypeId: '',
+            folder: '',
+            fileNamePattern: '{{date}}',
+            templatePath: '',
+            tags: ['t'],
+            filters: [{ property: 'a', value: 'b' }],
+            dateProperty: 'date'
+        })
+    })
+
+    test('a non-list is empty; non-objects dropped; missing and duplicate ids re-minted', () => {
+        expect(sanitizeCaptureTargets('nope', generateId)).toEqual([])
+        const targets = sanitizeCaptureTargets(
+            [null, 'x', [], { id: 'a' }, { id: 'a' }, {}],
+            generateId
+        )
+        expect(targets).toHaveLength(3)
+        expect(new Set(targets.map((target) => target.id)).size).toBe(3)
+        expect(targets[0]?.id).toBe('a')
+    })
+})

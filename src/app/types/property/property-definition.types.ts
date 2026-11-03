@@ -234,6 +234,13 @@ export interface PropertyDefinition {
      * Absent means a purely local definition, which is the default.
      */
     starterKitLink?: StarterKitPropertyLink | null
+    /**
+     * Where captured values of this property are written: a capture target
+     * id, `DAILY_NOTE_TARGET_ID` for the daily note, or absent / empty for
+     * automatic (the target matching the Starter Kit link's note type, else
+     * the daily note). Life Tracker-owned: a Starter Kit sync never touches it.
+     */
+    captureTargetId?: string
 }
 
 /**

@@ -7,6 +7,7 @@ import type {
 } from '../column/column-config.types'
 import type { PropertyDefinition } from '../property/property-definition.types'
 import type { WeekStartDay } from '../../../utils/date.utils'
+import type { CaptureTarget } from './capture-target.types'
 
 /**
  * Global preset for a property name pattern
@@ -108,6 +109,13 @@ export interface PluginSettings {
      * and Periodic Notes is used instead.
      */
     dailyNoteTypeId: string
+
+    /**
+     * Named destinations other than the daily note (capture targets), e.g.
+     * the day's strength session. Empty by default, which keeps every
+     * property going to the daily note.
+     */
+    captureTargets: CaptureTarget[]
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -120,5 +128,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     filenameDatePatterns: [],
     highContrast: false,
     createMissingNotes: false,
-    dailyNoteTypeId: ''
+    dailyNoteTypeId: '',
+    captureTargets: []
 }

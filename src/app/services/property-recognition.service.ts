@@ -83,80 +83,7 @@ export class PropertyRecognitionService {
         metadata: CachedMetadata | null,
         mapping: Mapping
     ): boolean {
-        switch (mapping.type) {
-            case 'tag':
-                return this.matchesTag(metadata, mapping.value)
-
-            case 'folder':
-                return this.matchesFolder(file, mapping.value)
-
-            case 'regex':
-                return this.matchesRegex(file, mapping.value)
-
-            case 'formula':
-                // Formula matching not yet implemented
-                return false
-
-            default: {
-                // Exhaustive check
-                const _exhaustive: never = mapping.type
-                console.error('Unknown mapping type:', _exhaustive)
-                return false
-            }
-        }
-    }
-
-    /**
-     * Check if a file has a specific tag in its frontmatter.
-     */
-    private matchesTag(metadata: CachedMetadata | null, tag: string): boolean {
-        if (!metadata?.frontmatter) {
-            return false
-        }
-
-        const tags = parseFrontMatterTags(metadata.frontmatter)
-        if (!tags) {
-            return false
-        }
-
-        // Normalize tag (remove # prefix if present)
-        const normalizedTag = tag.startsWith('#') ? tag.slice(1) : tag
-
-        return tags.some((t) => {
-            const normalized = t.startsWith('#') ? t.slice(1) : t
-            return normalized.toLowerCase() === normalizedTag.toLowerCase()
-        })
-    }
-
-    /**
-     * Check if a file is in a specific folder.
-     */
-    private matchesFolder(file: TFile, folderPath: string): boolean {
-        // Normalize folder path (remove leading/trailing slashes)
-        const normalizedFolder = folderPath.replace(/^\/|\/$/g, '')
-
-        // Get file's folder path
-        const fileFolder = file.parent?.path || ''
-
-        // Exact match or subfolder match
-        return (
-            fileFolder.toLowerCase() === normalizedFolder.toLowerCase() ||
-            fileFolder.toLowerCase().startsWith(normalizedFolder.toLowerCase() + '/')
-        )
-    }
-
-    /**
-     * Check if a file path or name matches a regex pattern.
-     */
-    private matchesRegex(file: TFile, pattern: string): boolean {
-        try {
-            const regex = new RegExp(pattern, 'i')
-            // Test against both full path and basename
-            return regex.test(file.path) || regex.test(file.basename)
-        } catch (e) {
-            console.error('Invalid regex pattern:', pattern, e)
-            return false
-        }
+        return matchesMapping(toMappingSubject(file, metadata), mapping)
     }
 
     /**
@@ -188,6 +115,80 @@ export class PropertyRecognitionService {
             }
         } else {
             this.cache.clear()
+        }
+    }
+}
+
+/**
+ * What a mapping looks at, independent of Obsidian's file classes so capture
+ * target lookup (and tests) can use the exact same matching.
+ */
+export interface MappingSubject {
+    /** Vault-relative path */
+    path: string
+    /** File name without extension */
+    basename: string
+    /** Parent folder path; empty for the vault root */
+    folder: string
+    /** Frontmatter tags, with or without a leading `#` */
+    tags: readonly string[]
+}
+
+/** Build the mapping subject of a vault file from its cached metadata */
+export function toMappingSubject(file: TFile, metadata: CachedMetadata | null): MappingSubject {
+    const tags = metadata?.frontmatter ? (parseFrontMatterTags(metadata.frontmatter) ?? []) : []
+    return {
+        path: file.path,
+        basename: file.basename,
+        folder: file.parent?.path ?? '',
+        tags
+    }
+}
+
+function normalizeTag(tag: string): string {
+    return (tag.startsWith('#') ? tag.slice(1) : tag).toLowerCase()
+}
+
+/** Whether a subject carries a tag (frontmatter tags, case-insensitive, `#` optional) */
+export function subjectHasTag(subject: MappingSubject, tag: string): boolean {
+    const wanted = normalizeTag(tag)
+    return subject.tags.some((candidate) => normalizeTag(candidate) === wanted)
+}
+
+/**
+ * Whether a subject matches one mapping: a frontmatter tag, a folder (exact
+ * or below it), or a regex tested against the path and the basename. Formula
+ * mappings are not implemented and never match.
+ */
+export function matchesMapping(subject: MappingSubject, mapping: Mapping): boolean {
+    switch (mapping.type) {
+        case 'tag':
+            return subjectHasTag(subject, mapping.value)
+
+        case 'folder': {
+            const folder = mapping.value.replace(/^\/|\/$/g, '').toLowerCase()
+            const fileFolder = subject.folder.toLowerCase()
+            return fileFolder === folder || fileFolder.startsWith(folder + '/')
+        }
+
+        case 'regex':
+            try {
+                const regex = new RegExp(mapping.value, 'i')
+                return regex.test(subject.path) || regex.test(subject.basename)
+            } catch (e) {
+                console.error('Invalid regex pattern:', mapping.value, e)
+                return false
+            }
+
+        case 'formula':
+            // Formula matching not yet implemented
+            return false
+
+        default: {
+            // Exhaustive check
+            const _exhaustive: never = mapping.type
+            console.error('Unknown mapping type:', _exhaustive)
+            return false
         }
     }
 }

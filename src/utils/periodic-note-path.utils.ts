@@ -190,6 +190,14 @@ export function resolvePeriodicNotesTarget(
 }
 
 /**
+ * Build a target from an already rendered folder and basename, with the same
+ * safety checks as the periodic note resolvers. Null when the path is unsafe.
+ */
+export function buildNoteTarget(folder: string, basename: string): ResolvedNoteTarget | null {
+    return toTarget(toVaultPath(folder, basename))
+}
+
+/**
  * Every folder that must exist for `folder` to be creatable, outermost first.
  *
  * Obsidian's `createFolder` does not create intermediate directories, and

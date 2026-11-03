@@ -2,7 +2,9 @@ import { registerWhatsNewView } from './whats-new'
 import { Plugin, type TFile } from 'obsidian'
 import {
     DEFAULT_SETTINGS,
+    sanitizeCaptureTargets,
     type PluginSettings,
+    type PropertyDefinition,
     type BatchFilterMode,
     type FileProvider,
     type SettingsChangeCallback,
@@ -22,6 +24,7 @@ import { getLifeTrackerViewOptions } from './view/view-options'
 import { GridView, GRID_VIEW_TYPE } from './view/grid-view/grid-view'
 import { getGridViewOptions } from './view/grid-view/grid-view-options'
 import { registerCommands } from './commands'
+import { syncCaptureTargetCommands } from './commands/capture-target-commands'
 import { StarterKitService } from './services/starter-kit.service'
 import { syncLinkedDefinitions } from './services/starter-kit.utils'
 
@@ -158,6 +161,12 @@ export class LifeTrackerPlugin extends Plugin {
 
         // Register commands
         registerCommands(this)
+        // One "Capture today: <target>" per capture target, kept in step with
+        // the settings (targets added, renamed or removed)
+        syncCaptureTargetCommands(this)
+        this.onSettingsChange(() => {
+            syncCaptureTargetCommands(this)
+        })
 
         // Refresh Starter Kit-linked definitions once every plugin has loaded:
         // during our own onload, Starter Kit may not be registered yet
@@ -262,7 +271,8 @@ export class LifeTrackerPlugin extends Plugin {
 
         // Load property definitions
         if (Array.isArray(loadedSettings.propertyDefinitions)) {
-            draft.propertyDefinitions = loadedSettings.propertyDefinitions
+            draft.propertyDefinitions =
+                loadedSettings.propertyDefinitions.map(normalizeCaptureTargetId)
         }
 
         // Load confetti setting
@@ -292,6 +302,11 @@ export class LifeTrackerPlugin extends Plugin {
         if (typeof loadedSettings.dailyNoteTypeId === 'string') {
             draft.dailyNoteTypeId = loadedSettings.dailyNoteTypeId
         }
+
+        // Load capture targets: field by field, malformed entries defaulted
+        draft.captureTargets = sanitizeCaptureTargets(loadedSettings.captureTargets, () =>
+            crypto.randomUUID()
+        )
 
         // Load custom filename date patterns (issue #139). Entries can be
         // hand-edited in data.json, so keep anything with a usable pattern
@@ -418,4 +433,16 @@ export class LifeTrackerPlugin extends Plugin {
             }
         }
     }
+}
+
+/**
+ * Keep a definition's `captureTargetId` only when it is a string: a value of
+ * another shape (hand edit, other version) would otherwise reach the target
+ * resolver. Definitions without the field are returned untouched.
+ */
+function normalizeCaptureTargetId(definition: PropertyDefinition): PropertyDefinition {
+    if (!('captureTargetId' in definition)) return definition
+    if (typeof definition.captureTargetId === 'string') return definition
+    const { captureTargetId: _ignored, ...rest } = definition
+    return rest
 }

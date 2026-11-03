@@ -113,7 +113,8 @@ export {
     resolveStarterKitTarget,
     resolvePeriodicNotesTarget,
     folderAncestry,
-    isTargetDiscoverable
+    isTargetDiscoverable,
+    buildNoteTarget
 } from './periodic-note-path.utils'
 export type {
     ResolvedNoteTarget,

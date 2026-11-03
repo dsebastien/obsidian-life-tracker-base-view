@@ -83,3 +83,35 @@ describe('onExternalSettingsChange', () => {
         expect(saved?.propertyDefinitions.map((d) => d.name)).toEqual(['mood'])
     })
 })
+
+describe('loading capture targets', () => {
+    test('settings written before capture targets load with none, definitions untouched', async () => {
+        const stored = { propertyDefinitions: [definition('mood')], dailyNoteTypeId: 'nt-0038' }
+        const { plugin } = await createPlugin(stored)
+
+        expect(plugin.settings.captureTargets).toEqual([])
+        expect(plugin.settings.propertyDefinitions).toEqual(stored.propertyDefinitions)
+        expect(plugin.settings.dailyNoteTypeId).toBe('nt-0038')
+    })
+
+    test('targets are read field by field and a malformed captureTargetId is dropped', async () => {
+        const { plugin } = await createPlugin({
+            propertyDefinitions: [
+                { ...definition('push_ups'), captureTargetId: 't1' },
+                { ...definition('squats'), captureTargetId: 42 }
+            ],
+            captureTargets: [{ id: 't1', name: 'Through the day', filters: 'oops' }, 'junk']
+        })
+
+        expect(plugin.settings.captureTargets).toHaveLength(1)
+        expect(plugin.settings.captureTargets[0]).toMatchObject({
+            id: 't1',
+            name: 'Through the day',
+            filters: [],
+            dateProperty: 'date'
+        })
+        const [pushUps, squats] = plugin.settings.propertyDefinitions
+        expect(pushUps?.captureTargetId).toBe('t1')
+        expect(squats && 'captureTargetId' in squats).toBe(false)
+    })
+})

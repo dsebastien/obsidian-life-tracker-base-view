@@ -168,7 +168,13 @@ export {
     DEFAULT_BATCH_FILTER_MODE,
     BATCH_FILTER_MODE_OPTIONS,
     BATCH_FILTER_MODES,
-    getBatchFilterModeLabel
+    getBatchFilterModeLabel,
+    DAILY_NOTE_TARGET_ID,
+    DEFAULT_TARGET_DATE_PROPERTY,
+    DEFAULT_TARGET_FILE_NAME_PATTERN,
+    createCaptureTarget,
+    sanitizeCaptureTarget,
+    sanitizeCaptureTargets
 } from './plugin'
 export type {
     PluginSettings,
@@ -178,7 +184,9 @@ export type {
     SettingsChangeInfo,
     FileProvider,
     BatchFilterMode,
-    CaptureContext
+    CaptureContext,
+    CaptureTarget,
+    CaptureTargetFilter
 } from './plugin'
 
 // View types

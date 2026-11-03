@@ -25,7 +25,7 @@ export interface NoteTargetHost {
 }
 
 /** Where a resolved target's configuration came from, for messages and tests */
-export type NoteTargetSource = 'starter-kit' | 'periodic-notes'
+export type NoteTargetSource = 'starter-kit' | 'periodic-notes' | 'capture-target'
 
 /**
  * A place to create a note, plus the template to apply and where it came from.

@@ -138,7 +138,9 @@ export class PropertyCaptureModal extends Modal {
         const file = this.getCurrentFile()
         if (!file) return
 
-        const allDefinitions = this.plugin.settings.propertyDefinitions
+        // A destination-scoped capture (Capture today, capture targets) hands
+        // in its own subset; otherwise every definition is a candidate
+        const allDefinitions = this.context.definitions ?? this.plugin.settings.propertyDefinitions
 
         // Filter to only applicable definitions for this file
         // Order is preserved from the settings array

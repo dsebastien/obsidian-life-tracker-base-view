@@ -15,3 +15,12 @@ export {
 export type { BatchFilterMode } from './batch-filter-mode.intf'
 export { getBatchFilterModeLabel } from './batch-filter-mode.intf'
 export type { CaptureContext } from './capture-context.intf'
+export {
+    DAILY_NOTE_TARGET_ID,
+    DEFAULT_TARGET_DATE_PROPERTY,
+    DEFAULT_TARGET_FILE_NAME_PATTERN,
+    createCaptureTarget,
+    sanitizeCaptureTarget,
+    sanitizeCaptureTargets
+} from './capture-target.types'
+export type { CaptureTarget, CaptureTargetFilter } from './capture-target.types'
