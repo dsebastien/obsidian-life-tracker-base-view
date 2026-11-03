@@ -38,6 +38,8 @@ Right-click the overlay card and select **Edit overlay** to:
 - Choose a **Value format** (number, or a duration read from seconds or minutes) for the axis and tooltips
 - Choose how **Outliers** are handled: fit the scale to the bulk of the data (default) or show all values
 
+Changes show as soon as you save the overlay.
+
 ## Hide Individual Visualizations
 
 When you combine properties into an overlay, you may want to hide their separate cards to reduce visual clutter.

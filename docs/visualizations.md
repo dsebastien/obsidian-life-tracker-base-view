@@ -191,11 +191,13 @@ Line, bar, and area charts normally group entries into time periods. The
 - **Date** (default): group entries by period via the date anchor.
 - **Date, one point per note**: every note is plotted at its own date, on an
   axis where distance is time. Nothing is grouped: two runs on the same day are
-  two points, and a three-week break shows as a three-week gap. Date labels
-  are short, horizontal, and thinned out so they never overlap. Notes without a
+  two points, placed side by side within that day so you can hover or open
+  each one, and a three-week break shows as a three-week gap. Date labels are
+  short, horizontal, and thinned out so they never overlap. Notes without a
   date can't be placed; the card says how many were left out ("3 notes without
   a date"). Notes without a value are simply not drawn. Hover a point to see
-  its date and note name.
+  its date and note name; on this axis the tooltip shows the point nearest to
+  the cursor. Bar charts get bars between 3 and 16 pixels wide.
 - **Note name**: one point per note, labeled with the note's name, in the
   Base view's own sort order — sort the view to arrange the axis. Entries
   don't need a date, which makes this ideal for Bases whose notes aren't
@@ -206,7 +208,10 @@ Line, bar, and area charts normally group entries into time periods. The
 
 On both per-note axes there is no time grouping, so the Aggregation setting
 does not apply; the moving average, running total, and trend indicator operate
-over notes instead of periods (in date order on the date axis). List-valued
+over notes instead of periods (in date order on the date axis), and the trend
+row says so ("vs previous 7 notes"). With a running total, a goal target
+climbs over the time your notes span on the date axis; on the note-name axis,
+which has no time, the cumulative target is not drawn. List-valued
 properties keep the date axis.
 
 Export CSV on the **Date, one point per note** axis writes one row per note:
@@ -248,6 +253,7 @@ series has at least 8 values. Ordinary highs and lows stay on the scale.
 - To see every value, set **Outliers** to **Show all values** in the card's
   right-click menu (or in the overlay editor). A fixed scale (a preset or
   **Custom...**) always wins over both.
+- Hiding a series by clicking its legend entry hides its triangles too.
 
 ## Value Format
 
@@ -273,9 +279,9 @@ On line and area charts, a duration axis fits your data instead of starting
 at zero, so a pace between 5:00 and 7:00 fills the chart. Bar charts always
 start at zero.
 
-Progress rings format the amounts of **sum**, **average** and **latest**
-targets; **count** and **days** targets count entries or days and stay plain
-numbers.
+Progress rings and target lines format the amounts of **sum**, **average** and
+**latest** targets; **count** and **days** targets count entries or days and
+stay plain numbers ("Target: 3").
 
 The format is offered for heatmap, line, bar, area, scatter, bubble and
 progress cards, and is stored in the view's configuration in the `.base` file
@@ -286,11 +292,14 @@ Base.
 
 A card shows its property's name. When several cards show the same property
 (a "Run days" heatmap, a progress ring, and a "Distance per run (km)" chart),
-give each its own title: set `displayName` on that card in the `.base` file's
-`columnConfigs`. The title is used everywhere the card shows its name,
-including maximized mode and export file names, and a progress ring adds its
-goal after it ("Run days · ≥ 3 days/week"). An empty `displayName`, or one
-that is just the raw property name, shows the property's name.
+give each its own title: right-click the card, choose **Card title…**, type
+the title and select **Apply**. Leave the field empty to show the property's
+name again. The title is saved as `title` on that card in the `.base` file.
+
+The title is used everywhere the card shows its name, including maximized mode
+and export file names, and a progress ring adds its goal after it ("Run days ·
+≥ 3 days/week"). Overlay charts keep the name you give them in the overlay
+editor.
 
 ## Color Schemes
 

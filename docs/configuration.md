@@ -260,7 +260,7 @@ you can also edit them by hand:
 
 | Key           | Values                                                |
 | ------------- | ----------------------------------------------------- |
-| `displayName` | The card's title                                      |
+| `title`       | The card's title (empty or absent: the property name) |
 | `xAxisSource` | `date` (default), `date-per-note`, `note-name`        |
 | `valueFormat` | `number` (default), `duration-mm-ss`, `duration-h-mm` |
 | `outliers`    | `fit` (default), `show-all`                           |
@@ -271,7 +271,8 @@ columnConfigs:
         - id: 8c0f2d6e-…
           propertyId: note.pace_seconds_per_kilometer
           visualizationType: line-chart
-          displayName: Pace (min/km)
+          displayName: Pace
+          title: Pace (min/km)
           configuredAt: 1730000000000
           xAxisSource: date-per-note
           valueFormat: duration-mm-ss

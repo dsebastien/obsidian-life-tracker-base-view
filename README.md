@@ -29,7 +29,7 @@ You can find more details and background information here: https://www.knowii.ne
 - **Date, one point per note**: plot every note at its own date on a time-proportional axis, without grouping by period — two runs on one day are two points, and a three-week break shows as a gap
 - **Value format**: show a card's values as durations — seconds as `m:ss` (a pace of 387 reads `6:27`) or minutes as `h:mm` (95 minutes of sleep reads `1:35`) — on the axis, tooltips, records, reference lines and progress rings
 - **Outliers don't flatten your charts**: one mistyped value no longer sets the scale; line, bar, and area charts fit their axis to the bulk of your data and mark the far-off values at the edge, with the real value in the tooltip
-- **Card titles**: a card shows its own name when you give it one in the `.base` file, so several cards on one property stay distinguishable
+- **Card titles**: give a card its own title from its right-click menu (**Card title…**), so several cards on one property stay distinguishable
 - **List property visualization**: list/tag properties automatically visualized with occurrence counts (pie/doughnut) or presence tracking over time (line/bar)
 - **Per-view settings**: time granularity (daily to yearly), date anchor property, layout options
 - **First day of the week**: choose Monday (default), Sunday or Saturday for week grouping and heatmap columns
