@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.6.1](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/3.6.0...3.6.1) (2026-11-15)
+
+### Bug Fixes
+
+* **plugin:** hide note property suggestions behind capture modals ([862c7b1](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/862c7b1137378d770c6e00ca1afb4f93d214c635))
+* **plugin:** stop clamping number inputs on every keystroke ([41e6aba](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/41e6abad65c601e074dac39c08c9ce0a2be37b34))
+
 ## [3.6.0](https://github.com/dsebastien/obsidian-life-tracker-base-view/compare/3.5.0...3.6.0) (2026-11-04)
 
 ### File names for capture targets with a note type
@@ -874,6 +881,7 @@ Claude-Session: https://claude.ai/code/session_01LM4hi11kohPVqgZNLpjRgh
 * **all:** removed animations for heatmaps (nok) ([1178a1f](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/1178a1ffe084166921f56e08c4d1f77126a9fe5c))
 * **all:** updated build to also take care of the CSS with Tailwind ([4091553](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4091553d491051d4d8874438555fa49f8d0787ae))
 * **build:** handle copying manifest.json and versions.js in the build script ([4aff9ff](https://github.com/dsebastien/obsidian-life-tracker-base-view/commit/4aff9ff22ea4b9ccb6a735e56e6db3d499b91948))
+
 
 
 

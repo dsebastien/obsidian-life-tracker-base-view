@@ -1,5 +1,12 @@
 # Release Notes
 
+## 3.6.1 (2026-11-15)
+
+### Bug Fixes
+
+- **plugin:** hide note property suggestions behind capture modals
+- **plugin:** stop clamping number inputs on every keystroke
+
 ## 3.6.0 (2026-11-04)
 
 ### File names for capture targets with a note type
