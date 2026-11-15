@@ -199,29 +199,16 @@ export function setupNumberInputBlocking(
         }
     }
 
-    const handleInput = (): void => {
-        // Additional validation after input - clamp if outside range
-        if (range && input.value !== '' && input.value !== '-') {
-            const numValue = parseFloat(input.value)
-            if (!isNaN(numValue)) {
-                const clamped = clampToRange(numValue, range)
-                if (clamped !== null && clamped !== numValue) {
-                    input.value = String(clamped)
-                    onValueClamped?.(clamped)
-                }
-            }
-        }
-    }
-
+    // Typed values are not clamped here: a partial entry like "6" (on the way
+    // to "65") is below a min of 40, and clamping it mid-typing makes the field
+    // impossible to edit. Callers clamp on commit (blur / Enter) instead.
     input.addEventListener('keydown', handleKeydown)
     input.addEventListener('paste', handlePaste)
-    input.addEventListener('input', handleInput)
 
     // Return cleanup function
     return () => {
         input.removeEventListener('keydown', handleKeydown)
         input.removeEventListener('paste', handlePaste)
-        input.removeEventListener('input', handleInput)
     }
 }
 
