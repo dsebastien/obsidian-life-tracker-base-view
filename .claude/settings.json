@@ -3,5 +3,10 @@
         "obsidian@obsidian-skills": true,
         "superpowers@claude-plugins-official": true,
         "clean-commits@dsebastien/claude-code-clean-commits": true
+    },
+    "attribution": {
+        "commit": "",
+        "pr": "",
+        "sessionUrl": false
     }
 }
