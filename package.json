@@ -87,7 +87,7 @@
     },
     "dependencies": {
         "canvas-confetti": "1.9.4",
-        "chart.js": "4.5.1",
+        "chart.js": "4.6.1",
         "chartjs-plugin-annotation": "^3.0.1",
         "date-fns": "4.4.0"
     },
