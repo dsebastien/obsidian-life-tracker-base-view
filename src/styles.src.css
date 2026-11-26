@@ -1146,7 +1146,9 @@
     /* Horizontal scrolling is confined to the grid: the legend and streak
        rows outside this element stay visible at any scroll position */
     .lt-heatmap-scroll {
-        @apply overflow-x-auto;
+        /* overflow-x alone turns overflow-y to auto as well, and the grid's
+           sub-pixel height then shows a vertical scrollbar on every heatmap */
+        @apply overflow-x-auto overflow-y-hidden;
     }
 
     .lt-heatmap-wrapper {
@@ -1250,8 +1252,10 @@
 
     .lt-heatmap-month-slot {
         /* Width is set dynamically in JS to match config.cellSize */
-        /* Allow text to overflow into adjacent empty slots */
-        @apply flex-shrink-0 overflow-visible;
+        /* Allow text to overflow into adjacent empty slots. No wrapping: in a
+           note's reading view (overflow-wrap: anywhere) a 12px slot broke
+           "Sep" into one letter per line */
+        @apply flex-shrink-0 overflow-visible whitespace-nowrap;
     }
 
     .lt-heatmap-month-label {
