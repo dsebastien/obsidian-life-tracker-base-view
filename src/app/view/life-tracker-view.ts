@@ -22,6 +22,7 @@ import {
     type BatchFilterMode,
     type ColumnVisualizationConfig,
     type ChartConfig,
+    type VisualizationConfig,
     type HeatmapConfig,
     type TagCloudConfig,
     type VisualizationDataPoint,
@@ -98,6 +99,7 @@ import {
     overlayUpdateFromEditResult,
     type EditableProperty
 } from '../components/modals/overlay-edit-modal'
+import { QuickAddModal } from '../components/modals/quick-add-modal'
 
 /**
  * Data attribute for visualization ID.
@@ -1800,13 +1802,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
         switch (columnConfig.visualizationType) {
             case VisualizationType.Heatmap:
-                return new HeatmapVisualization(
-                    cardEl,
-                    this.app,
-                    columnConfig.propertyId,
-                    displayName,
-                    vizConfig as HeatmapConfig
-                )
+                return this.createHeatmap(cardEl, columnConfig, displayName, vizConfig)
 
             case VisualizationType.LineChart:
             case VisualizationType.BarChart:
@@ -1854,14 +1850,28 @@ export class LifeTrackerView extends BasesView implements FileProvider {
 
             default:
                 // Fallback to heatmap
-                return new HeatmapVisualization(
-                    cardEl,
-                    this.app,
-                    columnConfig.propertyId,
-                    displayName,
-                    vizConfig as HeatmapConfig
-                )
+                return this.createHeatmap(cardEl, columnConfig, displayName, vizConfig)
         }
+    }
+
+    /**
+     * A heatmap whose empty days open quick add for their date
+     */
+    private createHeatmap(
+        cardEl: HTMLElement,
+        columnConfig: ColumnVisualizationConfig,
+        displayName: string,
+        vizConfig: VisualizationConfig
+    ): HeatmapVisualization {
+        const heatmap = new HeatmapVisualization(
+            cardEl,
+            this.app,
+            columnConfig.propertyId,
+            displayName,
+            vizConfig as HeatmapConfig
+        )
+        heatmap.setFillDayCallback((date) => new QuickAddModal(this.plugin, date).open())
+        return heatmap
     }
 
     /**
