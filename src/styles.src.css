@@ -4445,6 +4445,18 @@ body:has(.lt-carousel-modal, .lt-quick-add-modal) .suggestion-container.mod-prop
 }
 
 /* ============================================================
+   Day/file navigation arrows (quick add, capture dialog)
+   Intentionally unlayered, for the same reason as the control bar buttons
+   below (issue #144): Obsidian's unlayered `button` padding (12px a side)
+   left about 2px of the 28px button for the chevron, so the arrows looked
+   like empty circles.
+   ============================================================ */
+
+.lt-carousel-file-nav-btn {
+    padding: 0;
+}
+
+/* ============================================================
    Control bar buttons
    Intentionally unlayered (issue #144). Obsidian's own
    `button { padding: var(--size-4-1) var(--size-4-3); height:
