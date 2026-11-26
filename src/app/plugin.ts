@@ -317,6 +317,11 @@ export class LifeTrackerPlugin extends Plugin {
             draft.autoAdvanceOnPick = loadedSettings.autoAdvanceOnPick
         }
 
+        // Load quick-add descriptions
+        if (typeof loadedSettings.showQuickAddDescriptions === 'boolean') {
+            draft.showQuickAddDescriptions = loadedSettings.showQuickAddDescriptions
+        }
+
         // Load week start (0 = Sunday, 1 = Monday)
         if (isWeekStartDay(loadedSettings.weekStartsOn)) {
             draft.weekStartsOn = loadedSettings.weekStartsOn

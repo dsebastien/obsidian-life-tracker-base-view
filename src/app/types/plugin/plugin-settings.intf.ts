@@ -73,6 +73,12 @@ export interface PluginSettings {
     autoAdvanceOnPick: boolean
 
     /**
+     * Show each property's description under its name in the quick-add panel.
+     * Off by default, so the panel stays short.
+     */
+    showQuickAddDescriptions: boolean
+
+    /**
      * First day of the week for week grouping and heatmap columns.
      * 0 = Sunday, 1 = Monday, 6 = Saturday. Defaults to Monday (issues #99, #162).
      */
@@ -124,6 +130,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     propertyDefinitions: [],
     showConfettiOnCapture: true,
     autoAdvanceOnPick: false,
+    showQuickAddDescriptions: false,
     weekStartsOn: 1,
     filenameDatePatterns: [],
     highContrast: false,
