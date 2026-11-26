@@ -46,7 +46,12 @@ export class QuickAddModal extends Modal {
 
     constructor(
         private readonly plugin: LifeTrackerPlugin,
-        date: Date
+        date: Date,
+        /**
+         * Show only this property (by name), whether or not it is marked for
+         * quick add: the panel opened from that property's heatmap
+         */
+        private readonly onlyProperty: string | null = null
     ) {
         super(plugin.app)
         this.date = date
@@ -112,10 +117,10 @@ export class QuickAddModal extends Modal {
     /** The destinations to show: those with at least one quick-add property */
     private sections(): DestinationSection[] {
         const { propertyDefinitions, captureTargets } = this.plugin.settings
-        const groups = groupByDestination(
-            propertyDefinitions.filter(isShownInQuickAdd),
-            captureTargets
-        )
+        const shown = this.onlyProperty
+            ? propertyDefinitions.filter((definition) => definition.name === this.onlyProperty)
+            : propertyDefinitions.filter(isShownInQuickAdd)
+        const groups = groupByDestination(shown, captureTargets)
         // Nothing marked for quick add: the daily note section explains it
         return groups.length > 0 ? groups : [{ target: null, definitions: [] }]
     }

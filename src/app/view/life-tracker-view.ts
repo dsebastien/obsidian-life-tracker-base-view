@@ -1855,7 +1855,7 @@ export class LifeTrackerView extends BasesView implements FileProvider {
     }
 
     /**
-     * A heatmap whose empty days open quick add for their date
+     * A heatmap whose days open quick add for their date and its property
      */
     private createHeatmap(
         cardEl: HTMLElement,
@@ -1870,7 +1870,14 @@ export class LifeTrackerView extends BasesView implements FileProvider {
             displayName,
             vizConfig as HeatmapConfig
         )
-        heatmap.setFillDayCallback((date) => new QuickAddModal(this.plugin, date).open())
+        // Filled in one property at a time: the one this heatmap shows. A
+        // property without a definition has no editor, so it is not offered.
+        const definition = this.findPropertyDefinition(columnConfig.propertyId)
+        if (definition) {
+            heatmap.setFillDayCallback((date) =>
+                new QuickAddModal(this.plugin, date, definition.name).open()
+            )
+        }
         return heatmap
     }
 

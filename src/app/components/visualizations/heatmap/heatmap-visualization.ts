@@ -818,7 +818,7 @@ export class HeatmapVisualization extends BaseVisualization {
         const menu = new Menu()
         menu.addItem((item) =>
             item
-                .setTitle('Fill in quick add')
+                .setTitle('Fill in')
                 .setIcon('circle-plus')
                 .onClick(() => fillDay(target.date))
         )
