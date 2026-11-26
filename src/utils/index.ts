@@ -170,6 +170,7 @@ export {
 export {
     extractNumber,
     extractNumberWithMapping,
+    resolveValueLabel,
     isBlankValue,
     extractBoolean,
     extractDate,

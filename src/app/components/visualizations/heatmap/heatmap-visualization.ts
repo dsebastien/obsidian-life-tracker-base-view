@@ -646,7 +646,8 @@ export class HeatmapVisualization extends BaseVisualization {
             this.heatmapConfig.granularity,
             // Emoji summary of the value, when the property defines one (#22)
             this.heatmapConfig.valueEmojis,
-            this.heatmapConfig.valueFormat
+            this.heatmapConfig.valueFormat,
+            this.heatmapConfig.valueMapping
         )
     }
 

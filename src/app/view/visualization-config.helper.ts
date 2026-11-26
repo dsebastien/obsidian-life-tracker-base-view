@@ -52,6 +52,7 @@ export function getVisualizationConfig(
         embeddedHeight,
         polarity: definition?.polarity,
         valueEmojis: definition?.valueEmojis ?? null,
+        valueMapping: definition?.valueMapping ?? null,
         // Hand-editable in the .base file: anything unknown reads as numbers
         valueFormat: normalizeValueFormat(columnConfig.valueFormat)
     }

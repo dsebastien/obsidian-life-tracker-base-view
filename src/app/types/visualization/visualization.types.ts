@@ -11,7 +11,11 @@ import type {
     XAxisSource
 } from '../column/column-config.types'
 import type { ChartColorScheme } from '../../../utils/color.utils'
-import type { EmojiMapping, ValuePolarity } from '../property/property-definition.types'
+import type {
+    EmojiMapping,
+    ValueMapping,
+    ValuePolarity
+} from '../property/property-definition.types'
 
 /**
  * A single data point for visualization.
@@ -353,6 +357,8 @@ export interface VisualizationConfig {
     polarity?: ValuePolarity
     /** Value/range → emoji map from the property definition (issue #22) */
     valueEmojis?: EmojiMapping | null
+    /** Text → number map from the property definition, used to label values */
+    valueMapping?: ValueMapping | null
     /** How values read: plain numbers (absent) or durations (3.4.0) */
     valueFormat?: ValueFormat
 }

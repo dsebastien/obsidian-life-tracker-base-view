@@ -173,6 +173,22 @@ export function extractNumberWithMapping(
 }
 
 /**
+ * Reverse of {@link extractNumberWithMapping}: the text a value mapping pairs
+ * with a number, for display. Null when no entry maps to exactly that number
+ * (e.g. a day averaged from several entries).
+ *
+ * @example
+ * resolveValueLabel(2, { "⭐": 1, "⭐⭐": 2 }) // returns "⭐⭐"
+ */
+export function resolveValueLabel(
+    value: number | null | undefined,
+    mapping: Record<string, number> | null | undefined
+): string | null {
+    if (value === null || value === undefined || !mapping) return null
+    return Object.keys(mapping).find((key) => mapping[key] === value) ?? null
+}
+
+/**
  * Extract boolean value.
  * Returns true/false for boolean values, null otherwise.
  */
