@@ -579,7 +579,10 @@ export class HeatmapVisualization extends BaseVisualization {
             // their own Element constructor (issue #104)
             const target = getEventElement(event.target)
             if (!target) return null
-            const cell = target.closest<HTMLElement>(CSS_SELECTOR.HEATMAP_CELL)
+            // A dated placeholder is an empty day, which can be filled in
+            const cell = target.closest<HTMLElement>(
+                `${CSS_SELECTOR.HEATMAP_CELL}, .lt-heatmap-placeholder--day`
+            )
             return cell && gridEl.contains(cell) ? cell : null
         }
 
