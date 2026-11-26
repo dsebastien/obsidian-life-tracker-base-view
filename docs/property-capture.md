@@ -46,6 +46,10 @@ visualizations and aggregations use the mapped numbers. This is ideal for
 tracking mood, energy, or ratings with emoji or words like `bad` / `ok` /
 `great` and still getting heatmaps, trends, and averages.
 
+Heatmap and chart tooltips show the text back: hovering a day whose value is
+`2` reads `⭐⭐`. A value that matches no entry, such as an average of several
+entries, shows as a number.
+
 ### Value direction (higher or lower is better)
 
 Number and checkbox properties — and text properties that have a value mapping —

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
     extractNumber,
     extractNumberWithMapping,
+    resolveValueLabel,
     isBlankValue,
     extractBoolean,
     extractDate,
@@ -399,5 +400,23 @@ describe('value-extractors', () => {
                 expect(isBlankValue(value)).toBe(false)
             }
         })
+    })
+})
+
+describe('resolveValueLabel', () => {
+    const mapping = { bad: 0, ok: 1, great: 2 }
+
+    test('returns the text mapped to the value', () => {
+        expect(resolveValueLabel(0, mapping)).toBe('bad')
+        expect(resolveValueLabel(2, mapping)).toBe('great')
+    })
+
+    test('returns null when no entry maps to the value', () => {
+        expect(resolveValueLabel(1.5, mapping)).toBeNull()
+    })
+
+    test('returns null without a value or a mapping', () => {
+        expect(resolveValueLabel(null, mapping)).toBeNull()
+        expect(resolveValueLabel(1, null)).toBeNull()
     })
 })

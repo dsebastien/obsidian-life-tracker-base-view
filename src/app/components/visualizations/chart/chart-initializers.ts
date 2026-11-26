@@ -21,6 +21,7 @@ import {
     getValueMatchedSegmentColors,
     prefersReducedMotion,
     formatValueWithEmoji,
+    resolveValueLabel,
     formatValue,
     isDurationFormat,
     maxOf,
@@ -615,14 +616,18 @@ export function initCartesianChart(
                                 ] ?? null
                             const value = real ?? plotted
                             const outside = real !== null && real !== plotted
-                            // Emoji summary when the property defines one (#22)
-                            return `${label}: ${formatValueWithEmoji(
-                                value,
-                                chartConfig.valueEmojis,
-                                formatValue(value, valueFormat, (v) =>
-                                    formatMetricValue(v, integersOnly)
+                            // The mapped text when the value is one (e.g. "⭐⭐"),
+                            // else the number with its emoji summary (#22)
+                            const shown =
+                                resolveValueLabel(value, chartConfig.valueMapping) ??
+                                formatValueWithEmoji(
+                                    value,
+                                    chartConfig.valueEmojis,
+                                    formatValue(value, valueFormat, (v) =>
+                                        formatMetricValue(v, integersOnly)
+                                    )
                                 )
-                            )}${outside ? ' (outside the scale)' : ''}`
+                            return `${label}: ${shown}${outside ? ' (outside the scale)' : ''}`
                         }
                     }
                 },
