@@ -1195,6 +1195,12 @@
         pointer-events: none;
     }
 
+    /* An empty day of a daily heatmap: hover shows its date, click fills it in */
+    .lt-heatmap-placeholder--day {
+        @apply cursor-pointer;
+        pointer-events: auto;
+    }
+
     .lt-heatmap-cell--has-data:hover {
         @apply scale-110;
     }

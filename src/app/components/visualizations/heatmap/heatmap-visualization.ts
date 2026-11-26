@@ -1,5 +1,5 @@
 import type { App, BasesPropertyId } from 'obsidian'
-import { Notice } from 'obsidian'
+import { Menu, Notice } from 'obsidian'
 import { BaseVisualization } from '../base-visualization'
 import { GRANULARITY_UNIT, TimeGranularity } from '../../../types'
 import type {
@@ -34,6 +34,8 @@ import {
 
 /** Shown instead of the tooltip subtitle when a cell is armed for opening */
 const TAP_AGAIN_HINT = 'Tap again to open'
+/** Tooltip subtitle of an empty day when it can be filled in */
+const FILL_HINT = 'Click to fill in'
 
 /**
  * GitHub-contribution-style heatmap visualization
@@ -63,6 +65,11 @@ export class HeatmapVisualization extends BaseVisualization {
      * tooltip and only a second tap opens the note (issue #154)
      */
     private readonly touchNavigation = new TouchNavigationGate()
+    /**
+     * Opens quick add for a day. Set by the view; without it an empty day
+     * stays inert and the cell menu is not offered.
+     */
+    private onFillDay: ((date: Date) => void) | null = null
     /**
      * Period the view covers, independent of which dates carry a value. Keeps
      * the grid spanning the whole selected range for optional properties
@@ -572,7 +579,10 @@ export class HeatmapVisualization extends BaseVisualization {
             // their own Element constructor (issue #104)
             const target = getEventElement(event.target)
             if (!target) return null
-            const cell = target.closest<HTMLElement>(CSS_SELECTOR.HEATMAP_CELL)
+            // A dated placeholder is an empty day, which can be filled in
+            const cell = target.closest<HTMLElement>(
+                `${CSS_SELECTOR.HEATMAP_CELL}, .lt-heatmap-placeholder--day`
+            )
             return cell && gridEl.contains(cell) ? cell : null
         }
 
@@ -586,6 +596,10 @@ export class HeatmapVisualization extends BaseVisualization {
         const onClick = (event: MouseEvent): void => {
             const cell = cellFrom(event)
             if (cell) this.handleCellClick(cell, event)
+        }
+        const onContextMenu = (event: MouseEvent): void => {
+            const cell = cellFrom(event)
+            if (cell) this.handleCellContextMenu(event, cell)
         }
         const onFocusIn = (event: FocusEvent): void => {
             const cell = cellFrom(event)
@@ -604,6 +618,7 @@ export class HeatmapVisualization extends BaseVisualization {
         gridEl.addEventListener('mouseover', onMouseOver)
         gridEl.addEventListener('mouseout', onMouseOut)
         gridEl.addEventListener('click', onClick)
+        gridEl.addEventListener('contextmenu', onContextMenu)
         gridEl.addEventListener('focusin', onFocusIn)
         gridEl.addEventListener('focusout', onFocusOut)
         gridEl.addEventListener('keydown', onKeyDown)
@@ -612,6 +627,7 @@ export class HeatmapVisualization extends BaseVisualization {
             gridEl.removeEventListener('mouseover', onMouseOver)
             gridEl.removeEventListener('mouseout', onMouseOut)
             gridEl.removeEventListener('click', onClick)
+            gridEl.removeEventListener('contextmenu', onContextMenu)
             gridEl.removeEventListener('focusin', onFocusIn)
             gridEl.removeEventListener('focusout', onFocusOut)
             gridEl.removeEventListener('keydown', onKeyDown)
@@ -638,7 +654,7 @@ export class HeatmapVisualization extends BaseVisualization {
         const value = valueStr ? parseFloat(valueStr) : null
         const count = countStr ? parseInt(countStr, 10) : 0
 
-        return formatHeatmapTooltip(
+        const tooltip = formatHeatmapTooltip(
             date,
             value,
             count,
@@ -648,6 +664,18 @@ export class HeatmapVisualization extends BaseVisualization {
             this.heatmapConfig.valueEmojis,
             this.heatmapConfig.valueFormat
         )
+        if (count === 0 && this.canFillDays()) {
+            return { ...tooltip, subtitle: FILL_HINT }
+        }
+        return tooltip
+    }
+
+    /**
+     * Days can be filled in when the view wired quick add and each cell is one
+     * day: a weekly or monthly cell has no single date to fill.
+     */
+    private canFillDays(): boolean {
+        return this.onFillDay !== null && this.heatmapConfig.granularity === TimeGranularity.Daily
     }
 
     /**
@@ -725,32 +753,84 @@ export class HeatmapVisualization extends BaseVisualization {
     }
 
     /**
-     * Handle cell click - open related files
+     * Let empty days open quick add for their date, and offer it from the
+     * cell's context menu.
      */
-    private handleCellClick(cellEl: HTMLElement, event?: MouseEvent): void {
-        if (!this.heatmapData) return
+    setFillDayCallback(callback: (date: Date) => void): void {
+        this.onFillDay = callback
+    }
+
+    /** The cell's date and the notes behind it, or null without a date */
+    private cellTarget(
+        cellEl: HTMLElement
+    ): { dateStr: string; date: Date; filePaths: string[] } | null {
+        if (!this.heatmapData) return null
 
         const dateStr = cellEl.dataset['date']
-        if (!dateStr) return
+        if (!dateStr) return null
 
         const date = parseISO(dateStr)
-
-        // Find file paths for this date
         const cell = this.heatmapData.cells.find((c) => isSameDay(c.date, date))
+        return { dateStr, date, filePaths: cell?.filePaths ?? [] }
+    }
 
-        if (cell && cell.filePaths.length > 0) {
-            // On touch there is no hover, so the first tap shows the tooltip
-            // and only a second tap on the same cell opens the note (#154)
-            if (!this.touchNavigation.shouldNavigate(dateStr)) {
-                if (event) {
-                    this.handleCellHover(event, cellEl, TAP_AGAIN_HINT)
-                } else {
-                    this.handleCellFocus(cellEl)
-                }
-                return
+    /**
+     * Handle cell click - open related files, or fill in an empty day
+     */
+    private handleCellClick(cellEl: HTMLElement, event?: MouseEvent): void {
+        const target = this.cellTarget(cellEl)
+        if (!target) return
+
+        const hasNotes = target.filePaths.length > 0
+        if (!hasNotes && !this.canFillDays()) return
+
+        // On touch there is no hover, so the first tap shows the tooltip
+        // and only a second tap on the same cell acts on it (#154)
+        if (!this.touchNavigation.shouldNavigate(target.dateStr)) {
+            if (event) {
+                this.handleCellHover(event, cellEl, TAP_AGAIN_HINT)
+            } else {
+                this.handleCellFocus(cellEl)
             }
-            this.openFilePaths(cell.filePaths)
+            return
         }
+
+        if (hasNotes) {
+            this.openFilePaths(target.filePaths)
+        } else if (this.canFillDays()) {
+            this.onFillDay?.(target.date)
+        }
+    }
+
+    /**
+     * Right-click on a day: fill it in, or open its note. Stops the card's
+     * own menu from opening on top.
+     */
+    private handleCellContextMenu(event: MouseEvent, cellEl: HTMLElement): void {
+        const target = this.cellTarget(cellEl)
+        if (!target || !this.onFillDay || !this.canFillDays()) return
+
+        event.preventDefault()
+        event.stopPropagation()
+        this.handleCellLeave()
+
+        const fillDay = this.onFillDay
+        const menu = new Menu()
+        menu.addItem((item) =>
+            item
+                .setTitle('Fill in')
+                .setIcon('circle-plus')
+                .onClick(() => fillDay(target.date))
+        )
+        if (target.filePaths.length > 0) {
+            menu.addItem((item) =>
+                item
+                    .setTitle('Open note')
+                    .setIcon('file-text')
+                    .onClick(() => this.openFilePaths(target.filePaths))
+            )
+        }
+        menu.showAtMouseEvent(event)
     }
 
     /**

@@ -70,6 +70,7 @@ void mock.module('obsidian', () => ({
     ItemView: Stub,
     ListValue: Stub,
     MarkdownRenderer: Stub,
+    Menu: Stub,
     Modal: Stub,
     Notice: Stub,
     NullValue: Stub,

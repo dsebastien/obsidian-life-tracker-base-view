@@ -199,9 +199,13 @@ function renderDailyHeatmap(
 
             // When showEmptyValues is false, skip cells without actual data
             if (!config.showEmptyValues && !cellHasData(cell)) {
-                // Create placeholder for grid layout but make it invisible/non-interactive
-                const placeholderEl = weekCol.createDiv({ cls: 'lt-heatmap-placeholder' })
+                // Create placeholder for grid layout. It carries its date so the
+                // day can still be filled in from the heatmap.
+                const placeholderEl = weekCol.createDiv({
+                    cls: 'lt-heatmap-placeholder lt-heatmap-placeholder--day'
+                })
                 setCssProps(placeholderEl, { width: config.cellSize, height: config.cellSize })
+                placeholderEl.dataset['date'] = dateKey
                 continue
             }
 
