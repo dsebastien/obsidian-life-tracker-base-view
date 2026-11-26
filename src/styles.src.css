@@ -1252,8 +1252,10 @@
 
     .lt-heatmap-month-slot {
         /* Width is set dynamically in JS to match config.cellSize */
-        /* Allow text to overflow into adjacent empty slots */
-        @apply flex-shrink-0 overflow-visible;
+        /* Allow text to overflow into adjacent empty slots. No wrapping: in a
+           note's reading view (overflow-wrap: anywhere) a 12px slot broke
+           "Sep" into one letter per line */
+        @apply flex-shrink-0 overflow-visible whitespace-nowrap;
     }
 
     .lt-heatmap-month-label {
